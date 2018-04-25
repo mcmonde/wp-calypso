@@ -84,3 +84,21 @@ export const recordDomainAvailabilityReceive = (
 			section,
 		} )
 	);
+
+export function recordFilterApply( filters, section ) {
+	return composeAnalytics(
+		recordGoogleEvent( 'Domain Search', 'Applied Filters' ),
+		recordTracksEvent( 'calypso_domain_search_results_filter_submit', { filters, section } )
+	);
+}
+
+export function recordFilterReset( lastFilters, keysToReset, section ) {
+	return composeAnalytics(
+		recordGoogleEvent( 'Domain Search', 'Reset Filters' ),
+		recordTracksEvent( 'calypso_domain_search_results_filter_reset', {
+			keys_to_reset: keysToReset,
+			last_filters: lastFilters,
+			section,
+		} )
+	);
+}

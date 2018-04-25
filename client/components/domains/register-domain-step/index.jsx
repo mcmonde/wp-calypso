@@ -63,6 +63,8 @@ import {
 } from 'components/domains/register-domain-step/utility';
 import {
 	recordDomainAvailabilityReceive,
+	recordFilterReset,
+	recordFilterApply,
 	recordMapDomainButtonClick,
 	recordSearchFormSubmit,
 	recordSearchFormView,
@@ -165,6 +167,8 @@ class RegisterDomainStep extends React.Component {
 		onAddDomain: PropTypes.func,
 		onAddTransfer: PropTypes.func,
 		designType: PropTypes.string,
+		recordFilterApply: PropTypes.func.isRequired,
+		recordFilterReset: PropTypes.func.isRequired,
 	};
 
 	static defaultProps = {
@@ -506,6 +510,7 @@ class RegisterDomainStep extends React.Component {
 	};
 
 	onFiltersReset = ( ...keysToReset ) => {
+		this.props.recordFilterReset( this.state.filters, keysToReset, this.props.analyticsSection );
 		this.setState(
 			{
 				filters: {
@@ -520,6 +525,7 @@ class RegisterDomainStep extends React.Component {
 	};
 
 	onFiltersSubmit = () => {
+		this.props.recordFilterApply( this.state.filters, this.props.analyticsSection );
 		this.repeatSearch( { pageNumber: 1 } );
 	};
 
@@ -1053,6 +1059,8 @@ export default connect(
 	},
 	{
 		recordDomainAvailabilityReceive,
+		recordFilterReset,
+		recordFilterApply,
 		recordMapDomainButtonClick,
 		recordSearchFormSubmit,
 		recordSearchFormView,
