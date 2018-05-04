@@ -166,6 +166,31 @@ class LineChart extends Component {
 		this.setState( { pointHovered: null } );
 	};
 
+	handleDataSeriesSelected = legendItem => {
+		const { data } = this.props;
+		data.forEach( ( dataSeries, dataSeriesIndex ) => {
+			if ( legendItem === dataSeriesIndex ) {
+				d3Select( `path.line-chart__line-${ dataSeriesIndex }` ).classed(
+					'line-chart__line-selected',
+					true
+				);
+				d3Select( `path.line-chart__area-${ dataSeriesIndex }` ).classed(
+					'line-chart__area-selected',
+					true
+				);
+			} else {
+				d3Select( `path.line-chart__line-${ dataSeriesIndex }` ).classed(
+					'line-chart__line-selected',
+					false
+				);
+				d3Select( `path.line-chart__area-${ dataSeriesIndex }` ).classed(
+					'line-chart__area-selected',
+					false
+				);
+			}
+		} );
+	};
+
 	getParams = node => {
 		const { aspectRatio, margin, data, yAxisMode } = this.props;
 		const newWidth = node.offsetWidth;
@@ -222,7 +247,12 @@ class LineChart extends Component {
 
 		return (
 			<div className="line-chart">
-				{ legendInfo && <LineChartLegend data={ legendInfo } /> }
+				{ legendInfo && (
+					<LineChartLegend
+						data={ legendInfo }
+						onDataSeriesSelected={ this.handleDataSeriesSelected }
+					/>
+				) }
 
 				<D3Base
 					className="line-chart__base"
