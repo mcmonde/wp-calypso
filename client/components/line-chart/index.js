@@ -17,6 +17,7 @@ import { concat, first, last } from 'lodash';
  */
 import D3Base from 'components/d3-base';
 import Tooltip from 'components/tooltip';
+import LineChartLegend from './legend';
 
 const POINT_SIZE = 3;
 const END_POINT_SIZE = 1;
@@ -212,7 +213,7 @@ class LineChart extends Component {
 	};
 
 	render() {
-		const { data } = this.props;
+		const { data, legendInfo } = this.props;
 		const { pointHovered } = this.state;
 
 		if ( ! data ) {
@@ -220,7 +221,9 @@ class LineChart extends Component {
 		}
 
 		return (
-			<div>
+			<div className="line-chart">
+				{ legendInfo && <LineChartLegend data={ legendInfo } /> }
+
 				<D3Base
 					className="line-chart__base"
 					drawChart={ this.drawChart }
