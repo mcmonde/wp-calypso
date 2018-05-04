@@ -76,10 +76,14 @@ export class TldFilterBar extends Component {
 		this.props.onSubmit();
 	};
 	handleTokenChange = newTlds => {
-		this.props.onChange(
-			{ tlds: newTlds.filter( tld => includes( this.props.availableTlds, tld ) ) },
-			{ shouldSubmit: true }
-		);
+		const tlds = [
+			...new Set( [
+				...this.getSelectedSuggestedTlds(),
+				...newTlds.filter( tld => includes( this.props.availableTlds, tld ) ),
+			] ),
+		];
+
+		this.props.onChange( { tlds } );
 	};
 
 	togglePopover = () => {
@@ -87,6 +91,26 @@ export class TldFilterBar extends Component {
 			showPopover: ! this.state.showPopover,
 		} );
 	};
+
+	getAvailableSuggestedTlds() {
+		return this.props.availableTlds.slice( 0, this.props.numberOfTldsShown );
+	}
+
+	getAvailableRegularTlds() {
+		return this.props.availableTlds.slice( this.props.numberOfTldsShown );
+	}
+
+	getSelectedSuggestedTlds() {
+		return this.props.filters.tlds.filter( tld =>
+			includes( this.getAvailableSuggestedTlds(), tld )
+		);
+	}
+
+	getSelectedRegularTlds() {
+		return this.props.filters.tlds.filter(
+			tld => ! includes( this.getAvailableSuggestedTlds(), tld )
+		);
+	}
 
 	render() {
 		const isKrackenUi = config.isEnabled( 'domains/kracken-ui/tld-filters' );
@@ -98,18 +122,12 @@ export class TldFilterBar extends Component {
 			return this.renderPlaceholder();
 		}
 
-		const {
-			availableTlds,
-			filters: { tlds },
-			lastFilters: { tlds: selectedTlds },
-			translate,
-			numberOfTldsShown,
-		} = this.props;
+		const { filters: { tlds }, lastFilters: { tlds: selectedTlds }, translate } = this.props;
 		const hasFilterValue = tlds.length > 0;
 
 		return (
 			<CompactCard className="search-filters__buttons">
-				{ availableTlds.slice( 0, numberOfTldsShown ).map( ( tld, index ) => (
+				{ this.getAvailableSuggestedTlds().map( ( tld, index ) => (
 					<Button
 						className={ classNames( { 'is-active': includes( selectedTlds, tld ) } ) }
 						data-selected={ includes( selectedTlds, tld ) }
@@ -140,7 +158,7 @@ export class TldFilterBar extends Component {
 	}
 
 	renderPopover() {
-		const { filters: { tlds }, translate } = this.props;
+		const { translate } = this.props;
 
 		return (
 			<Popover
@@ -154,11 +172,11 @@ export class TldFilterBar extends Component {
 				<FormFieldset className="search-filters__token-field-fieldset">
 					<TokenField
 						isExpanded
-						onChange={ this.handleOnChange }
+						onChange={ this.handleTokenChange }
 						placeholder={ translate( 'Select an extension' ) }
-						suggestions={ this.props.availableTlds }
+						suggestions={ this.getAvailableRegularTlds() }
 						tokenizeOnSpace
-						value={ tlds }
+						value={ this.getSelectedRegularTlds() }
 					/>
 				</FormFieldset>
 				<FormFieldset className="search-filters__buttons-fieldset">
