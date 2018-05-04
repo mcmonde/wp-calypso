@@ -51,7 +51,6 @@ export default function() {
 	page(
 		paths.managePurchase(),
 		meController.sidebar,
-		siteSelection,
 		controller.managePurchase,
 		makeLayout,
 		clientRender
