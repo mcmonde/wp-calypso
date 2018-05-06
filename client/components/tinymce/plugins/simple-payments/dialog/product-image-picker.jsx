@@ -41,11 +41,11 @@ class ProductImagePicker extends Component {
 			return;
 		}
 
+		this.setState( { isSelecting: true } );
+
 		if ( featuredImage ) {
 			MediaActions.setLibrarySelectedItems( siteId, [ featuredImage ] );
 		}
-
-		this.setState( { isSelecting: true } );
 	};
 
 	hideMediaModal = () => this.setState( { isSelecting: false } );
@@ -100,6 +100,7 @@ class ProductImagePicker extends Component {
 
 	render() {
 		const { siteId, translate } = this.props;
+		const { isSelecting } = this.state;
 
 		if ( ! siteId ) {
 			return;
@@ -107,20 +108,22 @@ class ProductImagePicker extends Component {
 
 		return (
 			<div className="dialog__product-image-picker">
-				<MediaLibrarySelectedData siteId={ siteId }>
-					<AsyncLoad
-						require="post-editor/media-modal"
-						siteId={ siteId }
-						onClose={ this.setImage }
-						enabledFilters={ [ 'images' ] }
-						visible={ this.state.isSelecting }
-						isBackdropVisible={ false }
-						labels={ {
-							confirm: translate( 'Add' ),
-						} }
-						single
-					/>
-				</MediaLibrarySelectedData>
+				{ isSelecting && (
+					<MediaLibrarySelectedData siteId={ siteId }>
+						<AsyncLoad
+							require="post-editor/media-modal"
+							siteId={ siteId }
+							onClose={ this.setImage }
+							enabledFilters={ [ 'images' ] }
+							visible={ isSelecting }
+							isBackdropVisible={ false }
+							labels={ {
+								confirm: translate( 'Add' ),
+							} }
+							single
+						/>
+					</MediaLibrarySelectedData>
+				) }
 
 				<div className="dialog__product-image-container">
 					{ this.props.input.value && this.getCurrentImage() }
