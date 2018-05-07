@@ -7,6 +7,7 @@
 import React from 'react';
 
 const ReaderCombinedCardPostPlaceholder = () => {
+	/* eslint-disable wpcalypso/jsx-classname-namespace */
 	return (
 		<li className="reader-combined-card__post is-placeholder">
 			<div className="reader-combined-card__featured-image-wrapper" />
@@ -20,6 +21,7 @@ const ReaderCombinedCardPostPlaceholder = () => {
 			</div>
 		</li>
 	);
+	/* eslint-enable wpcalypso/jsx-classname-namespace */
 };
 
 export default ReaderCombinedCardPostPlaceholder;
