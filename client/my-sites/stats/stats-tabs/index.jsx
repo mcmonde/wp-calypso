@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -13,6 +11,11 @@ import { find } from 'lodash';
  * Internal dependencies
  */
 import StatTab from './tab';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 export default class extends React.Component {
 	static displayName = 'StatsTabs';
@@ -43,7 +46,7 @@ export default class extends React.Component {
 		if ( data && ! children ) {
 			const activeData = find( data, { [ activeKey ]: activeIndex } );
 
-			statsTabs = tabs.map( tab => {
+			statsTabs = tabs.map( ( tab ) => {
 				const hasData =
 					activeData && activeData[ tab.attr ] >= 0 && activeData[ tab.attr ] !== null;
 
@@ -56,6 +59,7 @@ export default class extends React.Component {
 					selected: selectedTab === tab.attr,
 					tabClick: switchTab,
 					value: hasData ? activeData[ tab.attr ] : null,
+					format: tab.format,
 				};
 
 				return <StatTab key={ tabOptions.attr } { ...tabOptions } />;

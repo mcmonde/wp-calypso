@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -20,7 +18,7 @@ import { getShortcode } from 'state/shortcodes/selectors';
  */
 import ShortcodeFrame from './frame';
 
-const Shortcode = props => {
+const Shortcode = ( props ) => {
 	const { siteId, className, children, filterRenderResult, shortcode } = props;
 	const classes = classNames( 'shortcode', className );
 	let filteredShortcode = {};
@@ -46,10 +44,12 @@ Shortcode.propTypes = {
 	filterRenderResult: PropTypes.func.isRequired,
 	className: PropTypes.string,
 	shortcode: PropTypes.object,
+	allowSameOrigin: PropTypes.bool,
 };
 
 Shortcode.defaultProps = {
 	filterRenderResult: identity,
+	allowSameOrigin: false,
 };
 
 export default connect(

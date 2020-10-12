@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -14,7 +12,7 @@ import { flow, get } from 'lodash';
  * Internal dependencies
  */
 import { selectPostRevision } from 'state/posts/revisions/actions';
-import { getUser } from 'state/users/selectors';
+import { getPostRevisionAuthor } from 'state/posts/revisions/authors/selectors';
 import { isSingleUserSite } from 'state/sites/selectors';
 import TimeSince from 'components/time-since';
 
@@ -52,8 +50,9 @@ class EditorRevisionsListItem extends PureComponent {
 					<TimeSince date={ get( revision, 'post_modified_gmt' ) } dateFormat="lll" />
 				</span>
 
-				{ authorName &&
-					isMultiUserSite && <span className="editor-revisions-list__author">{ authorName }</span> }
+				{ authorName && isMultiUserSite && (
+					<span className="editor-revisions-list__author">{ authorName }</span>
+				) }
 
 				<div className="editor-revisions-list__changes">
 					{ added > 0 && (
@@ -78,12 +77,11 @@ class EditorRevisionsListItem extends PureComponent {
 						</span>
 					) }
 
-					{ added === 0 &&
-						removed === 0 && (
-							<span className="editor-revisions-list__minor-changes">
-								{ translate( 'minor', { context: 'post revisions: minor changes' } ) }
-							</span>
-						) }
+					{ added === 0 && removed === 0 && (
+						<span className="editor-revisions-list__minor-changes">
+							{ translate( 'minor', { context: 'post revisions: minor changes' } ) }
+						</span>
+					) }
 				</div>
 			</button>
 		);
@@ -111,7 +109,11 @@ export default flow(
 	localize,
 	connect(
 		( state, { revision, siteId } ) => ( {
-			authorName: get( getUser( state, get( revision, 'post_author' ) ), 'display_name', '' ),
+			authorName: get(
+				getPostRevisionAuthor( state, get( revision, 'post_author' ) ),
+				'display_name',
+				''
+			),
 			isMultiUserSite: ! isSingleUserSite( state, siteId ),
 		} ),
 		{ selectPostRevision }

@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -13,9 +11,8 @@ import { localize } from 'i18n-calypso';
 /**
  * Internal dependencies
  */
-import Button from 'components/button';
-import Card from 'components/card';
-import InfoPopover from 'components/info-popover';
+import { Card } from '@automattic/components';
+import SupportInfo from 'components/support-info';
 import ExternalLink from 'components/external-link';
 import FormInput from 'components/forms/form-text-input-with-affixes';
 import FormInputValidation from 'components/forms/form-input-validation';
@@ -23,10 +20,11 @@ import FormFieldset from 'components/forms/form-fieldset';
 import JetpackModuleToggle from 'my-sites/site-settings/jetpack-module-toggle';
 import QueryJetpackModules from 'components/data/query-jetpack-modules';
 import QuerySiteSettings from 'components/data/query-site-settings';
-import SectionHeader from 'components/section-header';
+import SettingsSectionHeader from 'my-sites/site-settings/settings-section-header';
+import getCurrentRouteParameterized from 'state/selectors/get-current-route-parameterized';
 import { getSelectedSite, getSelectedSiteId } from 'state/ui/selectors';
-import { isJetpackModuleActive } from 'state/selectors';
-import { isJetpackMinimumVersion, isJetpackSite } from 'state/sites/selectors';
+import isJetpackModuleActive from 'state/selectors/is-jetpack-module-active';
+import { isJetpackSite } from 'state/sites/selectors';
 import {
 	isSiteSettingsSaveSuccessful,
 	getSiteSettingsSaveError,
@@ -50,7 +48,7 @@ class SiteVerification extends Component {
 		invalidatedSiteObject: this.props.site,
 	};
 
-	componentWillMount() {
+	UNSAFE_componentWillMount() {
 		this.changeGoogleCode = this.handleVerificationCodeChange( 'googleCode' );
 		this.changeBingCode = this.handleVerificationCodeChange( 'bingCode' );
 		this.changePinterestCode = this.handleVerificationCodeChange( 'pinterestCode' );
@@ -61,7 +59,7 @@ class SiteVerification extends Component {
 		this.refreshSite();
 	}
 
-	componentWillReceiveProps( nextProps ) {
+	UNSAFE_componentWillReceiveProps( nextProps ) {
 		const { siteId: prevSiteId, translate } = this.props;
 		const { site: nextSite, siteId: nextSiteId } = nextProps;
 		const { dirtyFields } = this.state;
@@ -164,7 +162,7 @@ class SiteVerification extends Component {
 	}
 
 	handleVerificationCodeChange( serviceCode ) {
-		return event => {
+		return ( event ) => {
 			if ( ! this.state.hasOwnProperty( serviceCode ) ) {
 				return;
 			}
@@ -205,8 +203,8 @@ class SiteVerification extends Component {
 		);
 	}
 
-	handleFormSubmit = event => {
-		const { siteId, translate, trackSiteVerificationUpdated } = this.props;
+	handleFormSubmit = ( event ) => {
+		const { path, siteId, translate, trackSiteVerificationUpdated } = this.props;
 		const { dirtyFields } = this.state;
 
 		if ( ! event.isDefaultPrevented() && event.nativeEvent ) {
@@ -242,41 +240,34 @@ class SiteVerification extends Component {
 		};
 
 		this.props.saveSiteSettings( siteId, updatedOptions );
-		this.props.trackFormSubmitted();
+		this.props.trackFormSubmitted( { path } );
 
 		if ( dirtyFields.has( 'googleCode' ) ) {
-			trackSiteVerificationUpdated( 'google' );
+			trackSiteVerificationUpdated( 'google', path );
 		}
 
 		if ( dirtyFields.has( 'bingCode' ) ) {
-			trackSiteVerificationUpdated( 'bing' );
+			trackSiteVerificationUpdated( 'bing', path );
 		}
 
 		if ( dirtyFields.has( 'pinterestCode' ) ) {
-			trackSiteVerificationUpdated( 'pinterest' );
+			trackSiteVerificationUpdated( 'pinterest', path );
 		}
 
 		if ( dirtyFields.has( 'yandexCode' ) ) {
-			trackSiteVerificationUpdated( 'yandex' );
+			trackSiteVerificationUpdated( 'yandex', path );
 		}
 	};
 
 	render() {
-		const {
-			isVerificationToolsActive,
-			jetpackVersionSupportsSeo,
-			siteId,
-			siteIsJetpack,
-			translate,
-		} = this.props;
+		const { isVerificationToolsActive, siteId, siteIsJetpack, translate } = this.props;
 		const {
 			isSubmittingForm,
 			isFetchingSettings,
 			showPasteError = false,
 			invalidCodes = [],
 		} = this.state;
-		const isJetpackUnsupported = siteIsJetpack && ! jetpackVersionSupportsSeo;
-		const isDisabled = isJetpackUnsupported || isSubmittingForm || isFetchingSettings;
+		const isDisabled = isSubmittingForm || isFetchingSettings;
 		const isVerificationDisabled = isDisabled || isVerificationToolsActive === false;
 		const isSaveDisabled =
 			isDisabled || isSubmittingForm || ( ! showPasteError && invalidCodes.length > 0 );
@@ -294,40 +285,26 @@ class SiteVerification extends Component {
 				<QuerySiteSettings siteId={ siteId } />
 				{ siteIsJetpack && <QueryJetpackModules siteId={ siteId } /> }
 
-				<SectionHeader label={ translate( 'Site Verification Services' ) }>
-					<Button
-						compact
-						primary
-						onClick={ this.handleFormSubmit }
-						type="submit"
-						disabled={ isSaveDisabled || isVerificationDisabled }
-					>
-						{ isSubmittingForm ? translate( 'Saving…' ) : translate( 'Save Settings' ) }
-					</Button>
-				</SectionHeader>
+				<SettingsSectionHeader
+					disabled={ isSaveDisabled || isVerificationDisabled }
+					isSaving={ isSubmittingForm }
+					onButtonClick={ this.handleFormSubmit }
+					showButton
+					title={ translate( 'Site verification services' ) }
+				/>
 				<Card>
 					{ siteIsJetpack && (
 						<FormFieldset>
-							<div className="seo-settings__info site-settings__info-link-container">
-								<InfoPopover position="left">
-									{ translate(
-										'Provides the necessary hidden tags needed to ' +
-											'verify your WordPress site with various services.'
-									) }{' '}
-									<ExternalLink
-										href="https://jetpack.com/support/site-verification-tools"
-										icon={ false }
-										target="_blank"
-									>
-										{ translate( 'Learn more' ) }
-									</ExternalLink>
-								</InfoPopover>
-							</div>
-
+							<SupportInfo
+								text={ translate(
+									'Provides the necessary hidden tags needed to verify your WordPress site with various services.'
+								) }
+								link="https://jetpack.com/support/site-verification-tools/"
+							/>
 							<JetpackModuleToggle
 								siteId={ siteId }
 								moduleSlug="verification-tools"
-								label={ translate( 'Enable Site Verification Services.' ) }
+								label={ translate( 'Verify site ownership with third-party services' ) }
 								disabled={ isDisabled }
 							/>
 						</FormFieldset>
@@ -348,7 +325,7 @@ class SiteVerification extends Component {
 										<ExternalLink
 											icon={ true }
 											target="_blank"
-											href="https://en.support.wordpress.com/webmaster-tools/"
+											href="https://wordpress.com/support/webmaster-tools/"
 										/>
 									),
 									google: (
@@ -388,7 +365,6 @@ class SiteVerification extends Component {
 							<FormInput
 								prefix={ translate( 'Google' ) }
 								name="verification_code_google"
-								type="text"
 								value={ googleCode }
 								id="verification_code_google"
 								spellCheck="false"
@@ -403,7 +379,6 @@ class SiteVerification extends Component {
 							<FormInput
 								prefix={ translate( 'Bing' ) }
 								name="verification_code_bing"
-								type="text"
 								value={ bingCode }
 								id="verification_code_bing"
 								spellCheck="false"
@@ -418,7 +393,6 @@ class SiteVerification extends Component {
 							<FormInput
 								prefix={ translate( 'Pinterest' ) }
 								name="verification_code_pinterest"
-								type="text"
 								value={ pinterestCode }
 								id="verification_code_pinterest"
 								spellCheck="false"
@@ -433,7 +407,6 @@ class SiteVerification extends Component {
 							<FormInput
 								prefix={ translate( 'Yandex' ) }
 								name="verification_code_yandex"
-								type="text"
 								value={ yandexCode }
 								id="verification_code_yandex"
 								spellCheck="false"
@@ -452,27 +425,28 @@ class SiteVerification extends Component {
 }
 
 export default connect(
-	state => {
+	( state ) => {
 		const site = getSelectedSite( state );
 		const siteId = getSelectedSiteId( state );
 
 		return {
 			isSaveSuccess: isSiteSettingsSaveSuccessful( state, siteId ),
 			isVerificationToolsActive: isJetpackModuleActive( state, siteId, 'verification-tools' ),
-			jetpackVersionSupportsSeo: isJetpackMinimumVersion( state, siteId, '4.4-beta1' ),
 			saveError: getSiteSettingsSaveError( state, siteId ),
 			site,
 			siteId,
 			siteIsJetpack: isJetpackSite( state, siteId ),
+			path: getCurrentRouteParameterized( state, siteId ),
 		};
 	},
 	{
 		requestSite,
 		requestSiteSettings,
 		saveSiteSettings,
-		trackSiteVerificationUpdated: service =>
+		trackSiteVerificationUpdated: ( service, path ) =>
 			recordTracksEvent( 'calypso_seo_tools_site_verification_updated', {
 				service,
+				path,
 			} ),
 		trackFormSubmitted: partial( recordTracksEvent, 'calypso_seo_settings_form_submit' ),
 	},

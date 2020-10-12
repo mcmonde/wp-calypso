@@ -1,4 +1,3 @@
-/** @format */
 /*
  * External dependencies
  */
@@ -13,6 +12,8 @@ import FormFieldset from 'components/forms/form-fieldset';
 import FormLabel from 'components/forms/form-label';
 import FormInputValidation from 'components/forms/form-input-validation';
 import FormSettingExplanation from 'components/forms/form-setting-explanation';
+
+import 'state/form/init';
 
 /*
  * Render a `FormFieldset` parametrized by the input field component type.

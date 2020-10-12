@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -13,7 +11,12 @@ class ContactFormViewPreviewRequired extends React.Component {
 
 	render() {
 		if ( this.props.required ) {
-			return <em>&nbsp;({ this.props.translate( 'required' ) })</em>;
+			return (
+				<em>
+					&nbsp;(
+					{ this.props.translate( 'required' ) })
+				</em>
+			);
 		}
 
 		return null;

@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -43,8 +41,11 @@ import {
 	isThemeAvailableOnJetpackSite,
 	getWpcomParentThemeId,
 } from '../selectors';
-import { PLAN_FREE, PLAN_PREMIUM, PLAN_BUSINESS } from 'lib/plans/constants';
+import { PLAN_FREE, PLAN_PREMIUM, PLAN_BUSINESS, PLAN_ECOMMERCE } from 'lib/plans/constants';
 import ThemeQueryManager from 'lib/query-manager/theme';
+
+// Gets rid of warnings such as 'UnhandledPromiseRejectionWarning: Error: No available storage method found.'
+jest.mock( 'lib/user', () => () => {} );
 
 const twentyfifteen = {
 	id: 'twentyfifteen',
@@ -859,6 +860,9 @@ describe( 'themes selectors', () => {
 								},
 							} ),
 						},
+						recommendedThemes: {
+							themes: [],
+						},
 					},
 				},
 				2916284,
@@ -866,6 +870,34 @@ describe( 'themes selectors', () => {
 			);
 
 			expect( themes ).to.eql( [ twentyfifteen, twentysixteen ] );
+		} );
+
+		test( 'should remove recommendedThemes with no filter and no search in query', () => {
+			const themes = getThemesForQueryIgnoringPage(
+				{
+					themes: {
+						queries: {
+							2916284: new ThemeQueryManager( {
+								items: {
+									twentyfifteen,
+									twentysixteen,
+								},
+								queries: {
+									'[]': {
+										itemKeys: [ 'twentyfifteen', 'twentysixteen' ],
+									},
+								},
+							} ),
+						},
+						recommendedThemes: {
+							themes: [ { id: 'twentyfifteen' } ],
+						},
+					},
+				},
+				2916284,
+				{ search: '', number: 1 }
+			);
+			expect( themes ).to.eql( [ twentysixteen ] );
 		} );
 
 		test( "should omit found items for which the requested result hasn't been received", () => {
@@ -1008,34 +1040,6 @@ describe( 'themes selectors', () => {
 			} );
 
 			describe( 'with JP version >= 4.7', () => {
-				describe( 'with Jetpack Manage turned off', () => {
-					test( "should return the site's wp-admin theme details URL", () => {
-						const detailsUrl = getThemeDetailsUrl(
-							{
-								sites: {
-									items: {
-										77203074: {
-											ID: 77203074,
-											URL: 'https://example.net',
-											jetpack: true,
-											options: {
-												admin_url: 'https://example.net/wp-admin/',
-												jetpack_version: '4.7',
-												active_modules: [],
-											},
-										},
-									},
-								},
-							},
-							'twentysixteen',
-							77203074
-						);
-						expect( detailsUrl ).to.equal(
-							'https://example.net/wp-admin/themes.php?theme=twentysixteen'
-						);
-					} );
-				} );
-
 				describe( 'with Jetpack Manage not explicitly turned off', () => {
 					test( 'should return the Calypso theme sheet URL', () => {
 						const detailsUrl = getThemeDetailsUrl(
@@ -1354,6 +1358,7 @@ describe( 'themes selectors', () => {
 								items: { twentysixteen },
 							} ),
 						},
+						activeThemes: {},
 					},
 				},
 				'twentysixteen',
@@ -1411,6 +1416,7 @@ describe( 'themes selectors', () => {
 								items: { twentysixteen },
 							} ),
 						},
+						activeThemes: {},
 					},
 				};
 
@@ -1465,6 +1471,7 @@ describe( 'themes selectors', () => {
 								items: { twentysixteen },
 							} ),
 						},
+						activeThemes: {},
 					},
 				};
 
@@ -1746,7 +1753,7 @@ describe( 'themes selectors', () => {
 		test( 'given no site, should return null', () => {
 			const activeTheme = getActiveTheme( {
 				themes: {
-					activeTheme: {},
+					activeThemes: {},
 				},
 			} );
 
@@ -2428,39 +2435,41 @@ describe( 'themes selectors', () => {
 		} );
 
 		test( 'given a site with the unlimited premium themes bundle, should return true', () => {
-			const isAvailable = isPremiumThemeAvailable(
-				{
-					sites: {
-						items: {
-							2916284: {},
-						},
-						plans: {
-							2916284: {
-								data: [
-									{
-										currentPlan: true,
-										productSlug: PLAN_BUSINESS,
-									},
-								],
+			[ PLAN_BUSINESS, PLAN_ECOMMERCE ].forEach( ( plan ) => {
+				const isAvailable = isPremiumThemeAvailable(
+					{
+						sites: {
+							items: {
+								2916284: {},
+							},
+							plans: {
+								2916284: {
+									data: [
+										{
+											currentPlan: true,
+											productSlug: plan,
+										},
+									],
+								},
 							},
 						},
-					},
-					themes: {
-						queries: {
-							wpcom: new ThemeQueryManager( {
-								items: { mood },
-							} ),
+						themes: {
+							queries: {
+								wpcom: new ThemeQueryManager( {
+									items: { mood },
+								} ),
+							},
+						},
+						purchases: {
+							data: [],
 						},
 					},
-					purchases: {
-						data: [],
-					},
-				},
-				'mood',
-				2916284
-			);
+					'mood',
+					2916284
+				);
 
-			expect( isAvailable ).to.be.true;
+				expect( isAvailable ).to.be.true;
+			} );
 		} );
 	} );
 

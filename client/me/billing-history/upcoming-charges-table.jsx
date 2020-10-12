@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -10,9 +9,9 @@ import { localize } from 'i18n-calypso';
 /**
  * Internal Dependencies
  */
-import { managePurchase, purchasesRoot } from 'me/purchases/paths';
+import { managePurchase, purchasesRoot } from 'calypso/me/purchases/paths';
 import TransactionsTable from './transactions-table';
-import { getSiteSlugsForUpcomingTransactions } from 'state/selectors';
+import getSiteSlugsForUpcomingTransactions from 'calypso/state/selectors/get-site-slugs-for-upcoming-transactions';
 
 class UpcomingChargesTable extends Component {
 	static propTypes = {
@@ -20,7 +19,7 @@ class UpcomingChargesTable extends Component {
 		siteSlugs: PropTypes.object.isRequired,
 	};
 
-	renderTransaction = transaction => {
+	renderTransaction = ( transaction ) => {
 		const { translate } = this.props;
 		const siteSlug = this.props.siteSlugs[ Number( transaction.blog_id ) ];
 
@@ -31,7 +30,7 @@ class UpcomingChargesTable extends Component {
 		return (
 			<div className="billing-history__transaction-links">
 				<a href={ managePurchase( siteSlug, transaction.id ) }>
-					{ translate( 'Manage Purchase' ) }
+					{ translate( 'Manage purchase' ) }
 				</a>
 			</div>
 		);
@@ -50,8 +49,7 @@ class UpcomingChargesTable extends Component {
 
 		return (
 			<TransactionsTable
-				transactions={ this.props.transactions }
-				initialFilter={ { date: { newest: 20 } } }
+				transactionType="upcoming"
 				emptyTableText={ emptyTableText }
 				noFilterResultsText={ noFilterResultsText }
 				transactionRenderer={ this.renderTransaction }
@@ -60,6 +58,6 @@ class UpcomingChargesTable extends Component {
 	}
 }
 
-export default connect( state => ( {
+export default connect( ( state ) => ( {
 	siteSlugs: getSiteSlugsForUpcomingTransactions( state ),
 } ) )( localize( UpcomingChargesTable ) );

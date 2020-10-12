@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -7,13 +6,15 @@ import { noop } from 'lodash';
 /**
  * Internal dependencies
  */
-import { READER_SUBSCRIBE_TO_NEW_POST_NOTIFICATIONS } from 'state/action-types';
+import { READER_SUBSCRIBE_TO_NEW_POST_NOTIFICATIONS } from 'state/reader/action-types';
 import { http } from 'state/data-layer/wpcom-http/actions';
-import { dispatchRequestEx } from 'state/data-layer/wpcom-http/utils';
+import { dispatchRequest } from 'state/data-layer/wpcom-http/utils';
 import { errorNotice } from 'state/notices/actions';
 import { translate } from 'i18n-calypso';
 import { bypassDataLayer } from 'state/data-layer/utils';
 import { unsubscribeToNewPostNotifications } from 'state/reader/follows/actions';
+
+import { registerHandlers } from 'state/data-layer/handler-registry';
 
 export function fromApi( response ) {
 	const isSubscribed = !! ( response && response.subscribed );
@@ -47,13 +48,13 @@ export function receiveNotificationSubscriptionError( action ) {
 	];
 }
 
-export default {
+registerHandlers( 'state/data-layer/wpcom/read/sites/notification-subscriptions/new/index.js', {
 	[ READER_SUBSCRIBE_TO_NEW_POST_NOTIFICATIONS ]: [
-		dispatchRequestEx( {
+		dispatchRequest( {
 			fetch: requestNotificationSubscription,
 			onSuccess: noop,
 			onError: receiveNotificationSubscriptionError,
 			fromApi,
 		} ),
 	],
-};
+} );

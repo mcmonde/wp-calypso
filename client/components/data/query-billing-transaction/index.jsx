@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -11,7 +9,9 @@ import { connect } from 'react-redux';
 /**
  * Internal dependencies
  */
-import { getPastBillingTransaction, isRequestingBillingTransaction } from 'state/selectors';
+import getPastBillingTransaction from 'state/selectors/get-past-billing-transaction';
+
+import isRequestingBillingTransaction from 'state/selectors/is-requesting-billing-transaction';
 import { requestBillingTransaction } from 'state/billing-transactions/individual-transactions/actions';
 
 class QueryBillingTransaction extends Component {
@@ -29,7 +29,7 @@ class QueryBillingTransaction extends Component {
 		this.fetch( this.props );
 	}
 
-	componentWillReceiveProps( nextProps ) {
+	UNSAFE_componentWillReceiveProps( nextProps ) {
 		this.fetch( nextProps );
 	}
 

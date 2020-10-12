@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -13,8 +11,13 @@ import classNames from 'classnames';
 import CompactToggle from 'components/forms/form-toggle/compact';
 import InfoPopover from 'components/info-popover';
 
+/**
+ * Style dependencies
+ */
+import './style.scss';
+
 class PluginAction extends React.Component {
-	handleAction = event => {
+	handleAction = ( event ) => {
 		if ( ! this.props.disabledInfo ) {
 			this.props.action();
 		} else {
@@ -22,7 +25,7 @@ class PluginAction extends React.Component {
 		}
 	};
 
-	disabledInfoLabelRef = ref => {
+	disabledInfoLabelRef = ( ref ) => {
 		this.disabledInfoLabel = ref;
 	};
 
@@ -43,7 +46,7 @@ class PluginAction extends React.Component {
 		);
 	}
 
-	infoPopoverRef = ref => {
+	infoPopoverRef = ( ref ) => {
 		this.infoPopover = ref;
 	};
 

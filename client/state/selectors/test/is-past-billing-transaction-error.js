@@ -1,8 +1,7 @@
-/** @format */
 /**
  * Internal dependencies
  */
-import { isPastBillingTransactionError } from 'state/selectors';
+import isPastBillingTransactionError from 'state/selectors/is-past-billing-transaction-error';
 
 describe( 'getPastBillingTransactionError()', () => {
 	const state = {

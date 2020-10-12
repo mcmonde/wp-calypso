@@ -1,9 +1,6 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import PropTypes from 'prop-types';
 import React from 'react';
 import classnames from 'classnames';
@@ -14,14 +11,18 @@ import { localize } from 'i18n-calypso';
  * Internal dependencies
  */
 import { getEditedPost } from 'state/posts/selectors';
-import { getSelectedSite } from 'state/ui/selectors';
-import { getEditorPostId } from 'state/ui/editor/selectors';
+import { getSelectedSiteId } from 'state/ui/selectors';
+import { getEditorPostId } from 'state/editor/selectors';
 import { getPostType } from 'state/post-types/selectors';
 import QueryPostTypes from 'components/data/query-post-types';
 import { decodeEntities } from 'lib/formatting';
-import PostStatus from 'blocks/post-status';
 
-function EditorPostType( { translate, siteId, typeSlug, type, globalId, isSettings } ) {
+/**
+ * Style dependencies
+ */
+import './style.scss';
+
+function EditorPostType( { translate, siteId, typeSlug, type, isSettings } ) {
 	let label;
 	if ( 'page' === typeSlug ) {
 		if ( isSettings ) {
@@ -56,10 +57,10 @@ function EditorPostType( { translate, siteId, typeSlug, type, globalId, isSettin
 
 	return (
 		<span className={ classes }>
-			{ siteId &&
-				'page' !== typeSlug &&
-				'post' !== typeSlug && <QueryPostTypes siteId={ siteId } /> }
-			{ label } <PostStatus globalId={ globalId } showAll showIcon={ false } />
+			{ siteId && 'page' !== typeSlug && 'post' !== typeSlug && (
+				<QueryPostTypes siteId={ siteId } />
+			) }
+			{ label }
 		</span>
 	);
 }
@@ -69,26 +70,24 @@ EditorPostType.propTypes = {
 	siteId: PropTypes.number,
 	typeSlug: PropTypes.string,
 	type: PropTypes.object,
-	globalId: PropTypes.string,
 	isSettings: PropTypes.bool,
 };
 
-export default connect( state => {
+export default connect( ( state ) => {
 	const props = {};
-	const site = getSelectedSite( state );
-	if ( ! site ) {
+	const siteId = getSelectedSiteId( state );
+	if ( ! siteId ) {
 		return props;
 	}
 
-	props.siteId = site.ID;
-	const post = getEditedPost( state, site.ID, getEditorPostId( state ) );
+	props.siteId = siteId;
+	const post = getEditedPost( state, siteId, getEditorPostId( state ) );
 	if ( ! post ) {
 		return props;
 	}
 
 	return Object.assign( props, {
 		typeSlug: post.type,
-		type: getPostType( state, site.ID, post.type ),
-		globalId: post.global_ID,
+		type: getPostType( state, siteId, post.type ),
 	} );
 } )( localize( EditorPostType ) );

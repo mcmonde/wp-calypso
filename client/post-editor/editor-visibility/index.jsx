@@ -1,14 +1,11 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import PropTypes from 'prop-types';
 import React from 'react';
-import { find } from 'lodash';
+import { find, get } from 'lodash';
 import classNames from 'classnames';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 import { connect } from 'react-redux';
 import { localize } from 'i18n-calypso';
 
@@ -19,22 +16,27 @@ import FormFieldset from 'components/forms/form-fieldset';
 import FormInputValidation from 'components/forms/form-input-validation';
 import FormTextInput from 'components/forms/form-text-input';
 import SelectDropdown from 'components/select-dropdown';
-import DropdownItem from 'components/select-dropdown/item';
 import { hasTouch } from 'lib/touch-detect';
-import postActions from 'lib/posts/actions';
-import { recordEvent, recordStat } from 'lib/posts/stats';
-import { tracks } from 'lib/analytics';
+import { recordEditorEvent, recordEditorStat } from 'state/posts/stats';
+import { recordTracksEvent } from 'state/analytics/actions';
 import accept from 'lib/accept';
 import { editPost } from 'state/posts/actions';
+import { getEditedPost, getSitePost } from 'state/posts/selectors';
 import { getSelectedSiteId } from 'state/ui/selectors';
-import { getEditorPostId } from 'state/ui/editor/selectors';
-import { isPrivateSite as isPrivateSiteSelector } from 'state/selectors';
+import { getEditorPostId } from 'state/editor/selectors';
+import isPrivateSiteSelector from 'state/selectors/is-private-site';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class EditorVisibility extends React.Component {
 	static propTypes = {
 		context: PropTypes.string,
 		onPrivatePublish: PropTypes.func,
 		isPrivateSite: PropTypes.bool,
+		hasPost: PropTypes.bool,
 		type: PropTypes.string,
 		status: PropTypes.string,
 		password: PropTypes.string,
@@ -48,7 +50,7 @@ class EditorVisibility extends React.Component {
 		passwordIsValid: true,
 	};
 
-	componentWillReceiveProps( nextProps ) {
+	UNSAFE_componentWillReceiveProps( nextProps ) {
 		if ( this.props.password === nextProps.password ) {
 			return;
 		}
@@ -77,69 +79,55 @@ class EditorVisibility extends React.Component {
 		return 'public';
 	};
 
-	updatePostStatus = () => {
-		const defaultVisibility = 'draft' === this.props.status ? 'draft' : 'publish';
-		const postEdits = { status: defaultVisibility };
-
-		postActions.edit( postEdits );
-	};
-
-	recordStats = newVisibility => {
+	recordStats = ( newVisibility ) => {
 		if ( this.getVisibility() !== newVisibility ) {
-			recordStat( 'visibility-set-' + newVisibility );
-			recordEvent( 'Changed visibility', newVisibility );
-			tracks.recordEvent( 'calypso_editor_visibility_set', {
+			this.props.recordEditorStat( 'visibility-set-' + newVisibility );
+			this.props.recordEditorEvent( 'Changed visibility', newVisibility );
+			this.props.recordTracksEvent( 'calypso_editor_visibility_set', {
 				context: this.props.context,
 				visibility: newVisibility,
 			} );
 		}
 	};
 
-	updateVisibility = newVisibility => {
-		const { siteId, postId } = this.props;
-		let reduxPostEdits;
+	updateVisibility( newVisibility ) {
+		const { siteId, postId, status } = this.props;
+
+		// This is necessary for cases when the post is changed from private
+		// to another visibility since private has its own post status.
+		const newStatus = status === 'draft' ? 'draft' : 'publish';
+
+		const postEdits = { status: newStatus };
 
 		switch ( newVisibility ) {
 			case 'public':
-				reduxPostEdits = { password: '' };
+				postEdits.password = '';
 				break;
 
 			case 'password':
-				reduxPostEdits = {
-					password: this.props.savedPassword || ' ',
-					// Password protected posts cannot be sticky
-					sticky: false,
-				};
+				postEdits.password = this.props.savedPassword || ' ';
+				// Password protected posts cannot be sticky
+				postEdits.sticky = false;
 				this.setState( { passwordIsValid: true } );
 				break;
 		}
 
+		this.props.editPost( siteId, postId, postEdits );
 		this.recordStats( newVisibility );
+	}
 
-		// This is necessary for cases when the post is changed from private to another visibility
-		// since private has its own post status.
-		this.updatePostStatus();
-
-		if ( reduxPostEdits ) {
-			this.props.editPost( siteId, postId, reduxPostEdits );
-		}
-	};
-
-	setPostToPrivate = () => {
+	setPostToPrivate() {
 		const { siteId, postId } = this.props;
-		// TODO: REDUX - remove flux actions when whole post-editor is reduxified
-		postActions.edit( {
-			status: 'private',
-		} );
 
 		// Private posts cannot be sticky
 		this.props.editPost( siteId, postId, {
+			status: 'private',
 			password: '',
 			sticky: false,
 		} );
 
 		this.recordStats( 'private' );
-	};
+	}
 
 	onPrivatePublish = () => {
 		this.setPostToPrivate();
@@ -168,7 +156,7 @@ class EditorVisibility extends React.Component {
 
 		accept(
 			message,
-			accepted => {
+			( accepted ) => {
 				if ( accepted ) {
 					this.onPrivatePublish();
 				}
@@ -178,7 +166,7 @@ class EditorVisibility extends React.Component {
 		);
 	};
 
-	onPasswordChange = event => {
+	onPasswordChange = ( event ) => {
 		const { siteId, postId } = this.props;
 		let newPassword = event.target.value.trim();
 		const passwordIsValid = newPassword.length > 0;
@@ -189,7 +177,6 @@ class EditorVisibility extends React.Component {
 			newPassword = ' ';
 		}
 
-		// TODO: REDUX - remove flux actions when whole post-editor is reduxified
 		this.props.editPost( siteId, postId, { password: newPassword } );
 	};
 
@@ -218,7 +205,7 @@ class EditorVisibility extends React.Component {
 		);
 	}
 
-	renderPrivacyDropdown = visibility => {
+	renderPrivacyDropdown = ( visibility ) => {
 		const publicLabelPublicSite = this.props.translate( 'Public', {
 			context: 'Editor: Radio label to set post visible to public',
 		} );
@@ -266,8 +253,8 @@ class EditorVisibility extends React.Component {
 						}
 						selectedIcon={ selectedItem.icon }
 					>
-						{ dropdownItems.map( option => (
-							<DropdownItem
+						{ dropdownItems.map( ( option ) => (
+							<SelectDropdown.Item
 								selected={ option.value === visibility }
 								key={ option.value }
 								value={ option.value }
@@ -275,7 +262,7 @@ class EditorVisibility extends React.Component {
 								icon={ option.icon }
 							>
 								{ option.label }
-							</DropdownItem>
+							</SelectDropdown.Item>
 						) ) }
 					</SelectDropdown>
 					{ 'password' === visibility ? this.renderPasswordInput() : null }
@@ -285,6 +272,11 @@ class EditorVisibility extends React.Component {
 	};
 
 	render() {
+		// don't render anything until the edited post is loaded
+		if ( ! this.props.hasPost ) {
+			return null;
+		}
+
 		const visibility = this.getVisibility();
 		const classes = classNames( 'editor-visibility', {
 			'is-touch': hasTouch(),
@@ -295,16 +287,23 @@ class EditorVisibility extends React.Component {
 }
 
 export default connect(
-	state => {
+	( state ) => {
 		const siteId = getSelectedSiteId( state );
 		const postId = getEditorPostId( state );
-		const isPrivateSite = isPrivateSiteSelector( state, siteId );
+		const currentPost = getSitePost( state, siteId, postId );
+		const post = getEditedPost( state, siteId, postId );
 
 		return {
 			siteId,
 			postId,
-			isPrivateSite,
+			hasPost: !! post,
+			type: get( post, 'type', null ),
+			status: get( post, 'status', 'draft' ),
+			password: get( post, 'password', null ),
+			savedStatus: get( currentPost, 'status', null ),
+			savedPassword: get( currentPost, 'password', null ),
+			isPrivateSite: isPrivateSiteSelector( state, siteId ),
 		};
 	},
-	{ editPost }
+	{ editPost, recordEditorStat, recordEditorEvent, recordTracksEvent }
 )( localize( EditorVisibility ) );

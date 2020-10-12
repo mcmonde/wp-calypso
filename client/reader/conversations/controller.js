@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -10,8 +9,7 @@ import React from 'react';
 import { sectionify } from 'lib/route';
 import { recordTrack } from 'reader/stats';
 import AsyncLoad from 'components/async-load';
-import { trackPageLoad, trackScrollPage, ensureStoreLoading } from 'reader/controller-helper';
-import feedStreamStore from 'lib/feed-stream-store';
+import { trackPageLoad, trackScrollPage } from 'reader/controller-helper';
 
 export function conversations( context, next ) {
 	const basePath = sectionify( context.path );
@@ -21,9 +19,7 @@ export function conversations( context, next ) {
 	trackPageLoad( basePath, 'Reader > Conversations', mcKey );
 	recordTrack( 'calypso_reader_conversations_viewed' );
 
-	const convoStream = feedStreamStore( 'conversations' );
-	ensureStoreLoading( convoStream, context );
-
+	const streamKey = 'conversations';
 	const scrollTracker = trackScrollPage.bind( null, '/read/conversations', title, 'Reader', mcKey );
 
 	context.primary = (
@@ -31,7 +27,7 @@ export function conversations( context, next ) {
 			require="reader/conversations/stream"
 			key={ 'conversations' }
 			title="Conversations"
-			store={ convoStream }
+			streamKey={ streamKey }
 			trackScrollPage={ scrollTracker }
 		/>
 	);
@@ -46,8 +42,7 @@ export function conversationsA8c( context, next ) {
 	trackPageLoad( basePath, 'Reader > Conversations > Automattic', mcKey );
 	recordTrack( 'calypso_reader_conversations_automattic_viewed' );
 
-	const convoStream = feedStreamStore( 'conversations-a8c' );
-	ensureStoreLoading( convoStream, context );
+	const streamKey = 'conversations-a8c';
 
 	const scrollTracker = trackScrollPage.bind(
 		null,
@@ -62,7 +57,7 @@ export function conversationsA8c( context, next ) {
 			require="reader/conversations/stream"
 			key={ 'conversations' }
 			title="Conversations @ Automattic"
-			store={ convoStream }
+			streamKey={ streamKey }
 			trackScrollPage={ scrollTracker }
 		/>
 	);

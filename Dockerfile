@@ -1,11 +1,16 @@
-FROM       node:8.11.0
-LABEL maintainer="Automattic"
+FROM node:12.18.4 as builder
 
-WORKDIR    /calypso
-
-
-ENV        CONTAINER 'docker'
-ENV        NODE_PATH=/calypso/server:/calypso/client
+ARG commit_sha="(unknown)"
+ARG workers
+ENV CONTAINER 'docker'
+ENV PROGRESS true
+ENV COMMIT_SHA $commit_sha
+ENV CALYPSO_ENV production
+ENV WORKERS $workers
+ENV BUILD_TRANSLATION_CHUNKS true
+ENV CHROMEDRIVER_SKIP_DOWNLOAD true
+ENV PUPPETEER_SKIP_DOWNLOAD true
+WORKDIR /calypso
 
 # Build a "base" layer
 #
@@ -17,46 +22,33 @@ ENV        NODE_PATH=/calypso/server:/calypso/client
 # env-config.sh
 #   used by systems to overwrite some defaults
 #   such as the apt and npm mirrors
-COPY       ./env-config.sh /tmp/env-config.sh
-RUN        bash /tmp/env-config.sh
-
-# Build a "dependencies" layer
-#
-# This layer should include all required npm modules
-# and should only change as often as the dependencies
-# change. This layer should allow for final build times
-# to be limited only by the Calypso build speed.
-COPY       ./package.json ./npm-shrinkwrap.json /calypso/
-RUN        true \
-           && npm install --production \
-           && rm -rf /root/.npm \
-           && true
+COPY ./env-config.sh /tmp/env-config.sh
+RUN bash /tmp/env-config.sh
 
 # Build a "source" layer
 #
 # This layer is populated with up-to-date files from
 # Calypso development.
-#
-# If package.json and npm-shrinkwrap are unchanged,
-# `install-if-deps-outdated` should require no action.
-# However, time is being spent in the build step on
-# `install-if-deps-outdated`. This is because in the
-# following COPY, the npm-shrinkwrap mtime is being
-# updated, which is confusing `install-if-deps-outdated`.
-# Touch after copy to ensure that this layer will
-# not trigger additional install as part of the build
-# in the following step.
-COPY       . /calypso/
-RUN        touch node_modules
+COPY . /calypso/
+RUN yarn install --frozen-lockfile
 
 # Build the final layer
 #
 # This contains built environments of Calypso. It will
 # change any time any of the Calypso source-code changes.
-ARG        commit_sha="(unknown)"
-ENV        COMMIT_SHA $commit_sha
+RUN yarn run build && rm -fr .cache
 
-RUN        CALYPSO_ENV=production npm run build
+###################
+FROM node:12.18.4-alpine as app
 
-USER       nobody
-CMD        NODE_ENV=production node build/bundle.js
+ARG commit_sha="(unknown)"
+ENV COMMIT_SHA $commit_sha
+ENV NODE_ENV production
+WORKDIR /calypso
+
+RUN apk add --no-cache tini
+COPY --from=builder --chown=nobody:nobody /calypso/ /calypso/
+
+USER nobody
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD ["node", "build/server.js"]

@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -14,47 +12,25 @@ import { flowRight, get, pick } from 'lodash';
 import wrapSettingsForm from './wrap-settings-form';
 import config from 'config';
 import PressThis from './press-this';
-import SectionHeader from 'components/section-header';
-import Button from 'components/button';
 import QueryTaxonomies from 'components/data/query-taxonomies';
 import TaxonomyCard from './taxonomies/taxonomy-card';
-import {
-	isJetpackSite,
-	isJetpackMinimumVersion,
-	siteSupportsJetpackSettingsUi,
-} from 'state/sites/selectors';
+import { isJetpackSite } from 'state/sites/selectors';
 import { getSelectedSiteId } from 'state/ui/selectors';
 import { requestPostTypes } from 'state/post-types/actions';
 import Composing from './composing';
 import CustomContentTypes from './custom-content-types';
+import isSiteAutomatedTransfer from 'state/selectors/is-site-automated-transfer';
 import FeedSettings from 'my-sites/site-settings/feed-settings';
 import PodcastingLink from 'my-sites/site-settings/podcasting-details/link';
 import Masterbar from './masterbar';
-import MediaSettings from './media-settings';
+import MediaSettingsWriting from './media-settings-writing';
 import ThemeEnhancements from './theme-enhancements';
+import Widgets from './widgets';
 import PublishingTools from './publishing-tools';
 import QueryJetpackModules from 'components/data/query-jetpack-modules';
-import SpeedUpYourSite from './speed-up-site-settings';
+import SettingsSectionHeader from 'my-sites/site-settings/settings-section-header';
 
 class SiteSettingsFormWriting extends Component {
-	renderSectionHeader( title, showButton = true ) {
-		const { handleSubmitForm, isRequestingSettings, isSavingSettings, translate } = this.props;
-		return (
-			<SectionHeader label={ title }>
-				{ showButton && (
-					<Button
-						compact
-						primary
-						onClick={ handleSubmitForm }
-						disabled={ isRequestingSettings || isSavingSettings }
-					>
-						{ isSavingSettings ? translate( 'Saving…' ) : translate( 'Save Settings' ) }
-					</Button>
-				) }
-			</SectionHeader>
-		);
-	}
-
 	isMobile() {
 		return /Mobile|iP(hone|od|ad)|Android|BlackBerry|IEMobile|Silk/.test( navigator.userAgent );
 	}
@@ -69,38 +45,24 @@ class SiteSettingsFormWriting extends Component {
 			handleAutosavingToggle,
 			handleAutosavingRadio,
 			handleSubmitForm,
+			isPodcastingSupported,
+			isMasterbarSectionVisible,
 			isRequestingSettings,
 			isSavingSettings,
-			jetpackMasterbarSupported,
-			jetpackSettingsUISupported,
 			onChangeField,
 			setFieldValue,
 			siteId,
 			siteIsJetpack,
 			translate,
 			updateFields,
-			jetpackVersionSupportsLazyImages,
 		} = this.props;
-
-		const jetpackSettingsUI = siteIsJetpack && jetpackSettingsUISupported;
 
 		return (
 			<form
 				id="site-settings"
 				onSubmit={ handleSubmitForm }
-				className="site-settings__general-settings"
+				className="site-settings__writing-settings"
 			>
-				{ siteIsJetpack &&
-					jetpackMasterbarSupported && (
-						<div>
-							{ this.renderSectionHeader( translate( 'WordPress.com toolbar' ), false ) }
-							<Masterbar
-								isSavingSettings={ isSavingSettings }
-								isRequestingSettings={ isRequestingSettings }
-							/>
-						</div>
-					) }
-
 				{ config.isEnabled( 'manage/site-settings/categories' ) && (
 					<div className="site-settings__taxonomies">
 						<QueryTaxonomies siteId={ siteId } postType="post" />
@@ -109,7 +71,13 @@ class SiteSettingsFormWriting extends Component {
 					</div>
 				) }
 
-				{ this.renderSectionHeader( translate( 'Composing' ) ) }
+				<SettingsSectionHeader
+					disabled={ isRequestingSettings || isSavingSettings }
+					isSaving={ isSavingSettings }
+					onButtonClick={ handleSubmitForm }
+					showButton
+					title={ translate( 'Composing' ) }
+				/>
 				<Composing
 					handleSelect={ handleSelect }
 					handleToggle={ handleToggle }
@@ -122,36 +90,34 @@ class SiteSettingsFormWriting extends Component {
 					fields={ fields }
 					updateFields={ updateFields }
 				/>
-				{ jetpackSettingsUI && (
+
+				{ siteIsJetpack && (
 					<div>
-						{ this.renderSectionHeader( translate( 'Media' ) ) }
-						<MediaSettings
+						<SettingsSectionHeader
+							disabled={ isRequestingSettings || isSavingSettings }
+							isSaving={ isSavingSettings }
+							onButtonClick={ handleSubmitForm }
+							showButton
+							title={ translate( 'Media' ) }
+						/>
+						<MediaSettingsWriting
 							siteId={ siteId }
 							handleAutosavingToggle={ handleAutosavingToggle }
 							onChangeField={ onChangeField }
 							isSavingSettings={ isSavingSettings }
 							isRequestingSettings={ isRequestingSettings }
 							fields={ fields }
-							jetpackVersionSupportsLazyImages={ jetpackVersionSupportsLazyImages }
 						/>
 					</div>
 				) }
 
-				{ jetpackSettingsUI &&
-					jetpackVersionSupportsLazyImages && (
-						<div>
-							{ this.renderSectionHeader( translate( 'Speed up your site' ), false ) }
-							<SpeedUpYourSite
-								isSavingSettings={ isSavingSettings }
-								isRequestingSettings={ isRequestingSettings }
-								fields={ fields }
-								jetpackVersionSupportsLazyImages={ jetpackVersionSupportsLazyImages }
-							/>
-						</div>
-					) }
-
-				{ this.renderSectionHeader( translate( 'Content types' ) ) }
-
+				<SettingsSectionHeader
+					disabled={ isRequestingSettings || isSavingSettings }
+					isSaving={ isSavingSettings }
+					onButtonClick={ handleSubmitForm }
+					showButton
+					title={ translate( 'Content types' ) }
+				/>
 				<CustomContentTypes
 					handleAutosavingToggle={ handleAutosavingToggle }
 					onChangeField={ onChangeField }
@@ -169,12 +135,9 @@ class SiteSettingsFormWriting extends Component {
 					onChangeField={ onChangeField }
 				/>
 
-				{ ! siteIsJetpack &&
-					config.isEnabled( 'manage/site-settings/podcasting' ) && (
-						<PodcastingLink fields={ fields } />
-					) }
+				{ isPodcastingSupported && <PodcastingLink fields={ fields } /> }
 
-				{ jetpackSettingsUI && <QueryJetpackModules siteId={ siteId } /> }
+				{ siteIsJetpack && <QueryJetpackModules siteId={ siteId } /> }
 
 				<ThemeEnhancements
 					onSubmitForm={ handleSubmitForm }
@@ -182,49 +145,65 @@ class SiteSettingsFormWriting extends Component {
 					handleAutosavingRadio={ handleAutosavingRadio }
 					isSavingSettings={ isSavingSettings }
 					isRequestingSettings={ isRequestingSettings }
-					jetpackSettingsUI={ jetpackSettingsUI }
 					fields={ fields }
 				/>
 
-				{ jetpackSettingsUI &&
-					config.isEnabled( 'press-this' ) && (
-						<PublishingTools
-							onSubmitForm={ handleSubmitForm }
+				{ siteIsJetpack && (
+					<Widgets
+						onSubmitForm={ handleSubmitForm }
+						isSavingSettings={ isSavingSettings }
+						isRequestingSettings={ isRequestingSettings }
+						fields={ fields }
+					/>
+				) }
+
+				{ siteIsJetpack && config.isEnabled( 'press-this' ) && (
+					<PublishingTools
+						onSubmitForm={ handleSubmitForm }
+						isSavingSettings={ isSavingSettings }
+						isRequestingSettings={ isRequestingSettings }
+						fields={ fields }
+					/>
+				) }
+
+				{ config.isEnabled( 'press-this' ) && ! this.isMobile() && ! siteIsJetpack && (
+					<div>
+						<SettingsSectionHeader
+							title={ translate( 'Press This', { context: 'name of browser bookmarklet tool' } ) }
+						/>
+						<PressThis />
+					</div>
+				) }
+
+				{ isMasterbarSectionVisible && (
+					<div>
+						<SettingsSectionHeader title={ translate( 'WordPress.com toolbar' ) } />
+						<Masterbar
 							isSavingSettings={ isSavingSettings }
 							isRequestingSettings={ isRequestingSettings }
-							fields={ fields }
 						/>
-					) }
-
-				{ config.isEnabled( 'press-this' ) &&
-					! this.isMobile() &&
-					! ( siteIsJetpack || jetpackSettingsUISupported ) && (
-						<div>
-							{ this.renderSectionHeader(
-								translate( 'Press This', {
-									context: 'name of browser bookmarklet tool',
-								} ),
-								false
-							) }
-
-							<PressThis />
-						</div>
-					) }
+					</div>
+				) }
 			</form>
 		);
 	}
 }
 
 const connectComponent = connect(
-	state => {
+	( state ) => {
 		const siteId = getSelectedSiteId( state );
+		const siteIsJetpack = isJetpackSite( state, siteId );
+		const siteIsAutomatedTransfer = isSiteAutomatedTransfer( state, siteId );
+		const isPodcastingSupported = ! siteIsJetpack || siteIsAutomatedTransfer;
 
 		return {
-			jetpackSettingsUISupported: siteSupportsJetpackSettingsUi( state, siteId ),
-			jetpackMasterbarSupported: isJetpackMinimumVersion( state, siteId, '4.8' ),
-			siteIsJetpack: isJetpackSite( state, siteId ),
+			siteIsJetpack,
 			siteId,
-			jetpackVersionSupportsLazyImages: isJetpackMinimumVersion( state, siteId, '5.8-alpha' ),
+			isMasterbarSectionVisible:
+				siteIsJetpack &&
+				// Masterbar can't be turned off on Atomic sites - don't show the toggle in that case
+				! siteIsAutomatedTransfer,
+			isPodcastingSupported,
 		};
 	},
 	{ requestPostTypes },
@@ -232,7 +211,7 @@ const connectComponent = connect(
 	{ pure: false }
 );
 
-const getFormSettings = settings => {
+const getFormSettings = ( settings ) => {
 	const formSettings = pick( settings, [
 		'posts_per_page',
 		'posts_per_rss',
@@ -251,7 +230,6 @@ const getFormSettings = settings => {
 		'wp_mobile_featured_images',
 		'wp_mobile_app_promos',
 		'post_by_email_address',
-		'after-the-deadline',
 		'onpublish',
 		'onupdate',
 		'guess_lang',
@@ -266,7 +244,6 @@ const getFormSettings = settings => {
 		'Phrases to Avoid',
 		'Redundant Expression',
 		'ignored_phrases',
-		'photon',
 		'carousel',
 		'carousel_background_color',
 		'carousel_display_exif',
@@ -274,7 +251,6 @@ const getFormSettings = settings => {
 		'start_of_week',
 		'time_format',
 		'timezone_string',
-		'lazy-images',
 		'podcasting_category_id',
 	] );
 
@@ -283,12 +259,13 @@ const getFormSettings = settings => {
 	const timezone_string = get( settings, 'timezone_string' );
 
 	if ( ! timezone_string && typeof gmt_offset === 'string' && gmt_offset.length ) {
-		formSettings.timezone_string = 'UTC' + ( /\-/.test( gmt_offset ) ? '' : '+' ) + gmt_offset;
+		formSettings.timezone_string = 'UTC' + ( /-/.test( gmt_offset ) ? '' : '+' ) + gmt_offset;
 	}
 
 	return formSettings;
 };
 
-export default flowRight( connectComponent, wrapSettingsForm( getFormSettings ) )(
-	SiteSettingsFormWriting
-);
+export default flowRight(
+	connectComponent,
+	wrapSettingsForm( getFormSettings )
+)( SiteSettingsFormWriting );

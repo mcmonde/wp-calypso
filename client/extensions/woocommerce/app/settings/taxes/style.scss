@@ -1,17 +1,17 @@
 .taxes__taxes-rates {
 	.form-toggle__label-content {
 		float: left;
-		font-size: 14px;
+		font-size: $font-body-small;
 		margin-right: 8px;
 	}
 
 	.taxes__taxes-calculate {
-		color: $alert-green;
+		color: var( --color-success );
 		margin-bottom: 1.5em;
 	}
 
 	.taxes__taxes-calculate .gridicon {
-		color: $alert-green;
+		color: var( --color-success );
 		vertical-align: top;
 		margin-right: 4px;
 	}
@@ -19,7 +19,7 @@
 	.taxes__taxes-calculate-label {
 		margin-top: 2px;
 		display: inline-block;
-		color: $gray;
+		color: var( --color-neutral-light );
 	}
 
 	a.external-link {

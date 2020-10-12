@@ -1,6 +1,7 @@
 /**
  * The currently selected site block
  * at the top of the sidebar in My Sites
+ *
  */
 
 .current-site.card {
@@ -15,7 +16,7 @@
 		}
 
 		.site__title {
-			color: $gray-darken-20;
+			color: var( --color-neutral-50 );
 			line-height: 35px;
 		}
 
@@ -33,7 +34,7 @@
 	transition: opacity 0.15s ease-in-out;
 
 	.site__info {
-		animation: appear .3s ease-in-out;
+		animation: appear 0.3s ease-in-out;
 	}
 
 	.focus-sites & {
@@ -45,15 +46,15 @@
 .current-site {
 	.site,
 	.all-sites {
-		background: $white;
-		border-bottom: 1px solid darken( $sidebar-bg-color, 5% );
+		background: var( --color-sidebar-background );
+		border-bottom: 1px solid var( --color-sidebar-border );
 	}
 }
 
 .current-site__switch-sites {
 	display: block;
-	background: var( --current-site-switch-sites-background );
-	border-bottom: 1px solid darken( $sidebar-bg-color, 5% );
+	background: var( --color-sidebar-background );
+	border-bottom: 1px solid var( --color-sidebar-border );
 
 	.button.is-borderless {
 		display: block;
@@ -62,27 +63,28 @@
 		padding: 12px 8px 12px 44px;
 		position: relative;
 		font-weight: normal;
-		color: $gray-text;
+		color: var( --color-sidebar-text );
 
 		.gridicon {
 			height: 24px;
 			width: 24px;
-			fill: $gray-text;
+			fill: var( --color-sidebar-gridicon-fill );
 			position: absolute;
-				top: 12px;
-				left: 14px;
+			top: 12px;
+			left: 14px;
 		}
 	}
 
 	&:hover {
-		background-color: lighten( $sidebar-bg-color, 3% );
+		background-color: var( --color-sidebar-menu-hover-background );
 
 		.button.is-borderless:hover,
 		.button.is-borderless:focus {
-			color: $blue-medium;
+			background-color: var( --color-sidebar-menu-hover-background );
+			color: var( --color-sidebar-menu-hover-text );
 
 			.gridicon {
-				fill: $blue-medium;
+				fill: var( --color-sidebar-menu-hover-text );
 			}
 		}
 	}
@@ -100,5 +102,6 @@
 
 	.notice__action {
 		margin-left: auto;
+		white-space: normal;
 	}
 }

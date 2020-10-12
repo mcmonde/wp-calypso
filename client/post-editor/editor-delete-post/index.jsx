@@ -1,35 +1,40 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import PropTypes from 'prop-types';
 import { localize } from 'i18n-calypso';
 import React from 'react';
 import classnames from 'classnames';
 import { connect } from 'react-redux';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 import { get, isNull } from 'lodash';
 
 /**
  * Internal dependencies
  */
 import accept from 'lib/accept';
-import Button from 'components/button';
+import { Button } from '@automattic/components';
 import { getSelectedSiteId } from 'state/ui/selectors';
-import { getEditorPostId } from 'state/ui/editor/selectors';
+import { getEditorPostId } from 'state/editor/selectors';
 import { getEditedPost } from 'state/posts/selectors';
 import { trashPost } from 'state/posts/actions';
 import { getCurrentUserId } from 'state/current-user/selectors';
-import { canCurrentUser } from 'state/selectors';
+import canCurrentUser from 'state/selectors/can-current-user';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class EditorDeletePost extends React.Component {
 	static displayName = 'EditorDeletePost';
 
 	static propTypes = {
-		site: PropTypes.object,
-		post: PropTypes.object,
+		siteId: PropTypes.number,
+		postId: PropTypes.number,
+		postType: PropTypes.string,
+		postStatus: PropTypes.string,
+		canDelete: PropTypes.bool,
 		onTrashingPost: PropTypes.func,
 	};
 
@@ -54,14 +59,14 @@ class EditorDeletePost extends React.Component {
 	};
 
 	onSendToTrash = () => {
-		const { translate, post } = this.props;
+		const { translate, postType } = this.props;
 
 		if ( this.state.isTrashing ) {
 			return;
 		}
 
 		let message;
-		if ( post.type === 'page' ) {
+		if ( postType === 'page' ) {
 			message = translate( 'Are you sure you want to trash this page?' );
 		} else {
 			message = translate( 'Are you sure you want to trash this post?' );
@@ -69,7 +74,7 @@ class EditorDeletePost extends React.Component {
 
 		accept(
 			message,
-			accepted => {
+			( accepted ) => {
 				if ( accepted ) {
 					this.sendToTrash();
 				}
@@ -107,7 +112,7 @@ class EditorDeletePost extends React.Component {
 }
 
 export default connect(
-	state => {
+	( state ) => {
 		const siteId = getSelectedSiteId( state );
 		const postId = getEditorPostId( state );
 		const post = getEditedPost( state, siteId, postId );
@@ -117,8 +122,8 @@ export default connect(
 
 		return {
 			siteId,
-			post,
 			postId,
+			postType: get( post, 'type', null ),
 			postStatus: get( post, 'status', null ),
 			canDelete: canCurrentUser( state, siteId, isAuthor ? 'delete_posts' : 'delete_others_posts' ),
 		};

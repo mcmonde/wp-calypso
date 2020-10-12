@@ -1,9 +1,7 @@
-/** @format */
-
 /**
  * Internal dependencies
  */
-import { getJetpackRemoteInstallErrorMessage } from 'state/selectors';
+import getJetpackRemoteInstallErrorMessage from 'state/selectors/get-jetpack-remote-install-error-message';
 
 const url = 'https://yourgroovydomain.com';
 

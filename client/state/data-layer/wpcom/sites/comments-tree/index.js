@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -11,27 +9,26 @@ import { flatMap, flatten, isArray, map } from 'lodash';
  * Internal dependencies
  */
 import { COMMENTS_TREE_SITE_ADD, COMMENTS_TREE_SITE_REQUEST } from 'state/action-types';
-import { mergeHandlers } from 'state/action-watchers/utils';
 import { http } from 'state/data-layer/wpcom-http/actions';
 import { dispatchRequest } from 'state/data-layer/wpcom-http/utils';
 import { errorNotice } from 'state/notices/actions';
-import { getRawSite } from 'state/sites/selectors';
+import getRawSite from 'state/selectors/get-raw-site';
 
-export const fetchCommentsTreeForSite = ( { dispatch }, action ) => {
+import { registerHandlers } from 'state/data-layer/handler-registry';
+
+export const fetchCommentsTreeForSite = ( action ) => {
 	const { siteId, status = 'unapproved' } = action.query;
 
-	dispatch(
-		http(
-			{
-				method: 'GET',
-				path: `/sites/${ siteId }/comments-tree`,
-				apiVersion: '1.1',
-				query: {
-					status: 'unapproved' === status ? 'pending' : status,
-				},
+	return http(
+		{
+			method: 'GET',
+			path: `/sites/${ siteId }/comments-tree`,
+			apiVersion: '1.1',
+			query: {
+				status: 'unapproved' === status ? 'pending' : status,
 			},
-			action
-		)
+		},
+		action
 	);
 };
 
@@ -40,7 +37,7 @@ const mapPosts = ( commentIds, apiPostId ) => {
 	const [ topLevelIds, replyIds ] = ! isArray( commentIds[ 0 ] ) ? [ commentIds, [] ] : commentIds;
 
 	return flatten( [
-		topLevelIds.map( commentId => [ commentId, postId, 0 ] ),
+		topLevelIds.map( ( commentId ) => [ commentId, postId, 0 ] ),
 		replyIds.map( ( [ commentId, commentParentId ] ) => [ commentId, postId, commentParentId ] ),
 	] );
 };
@@ -55,7 +52,7 @@ const mapTree = ( tree, status, type ) => {
 	} ) );
 };
 
-export const addCommentsTree = ( { dispatch }, { query }, data ) => {
+export const addCommentsTree = ( { query }, data ) => {
 	const { siteId, status } = query;
 
 	const tree = [
@@ -64,15 +61,15 @@ export const addCommentsTree = ( { dispatch }, { query }, data ) => {
 		...mapTree( data.trackbacks_tree, status, 'trackback' ),
 	];
 
-	dispatch( {
+	return {
 		type: COMMENTS_TREE_SITE_ADD,
 		siteId,
 		status,
 		tree,
-	} );
+	};
 };
 
-export const announceFailure = ( { dispatch, getState }, { query } ) => {
+export const announceFailure = ( { query } ) => ( dispatch, getState ) => {
 	const { siteId } = query;
 	const site = getRawSite( getState(), siteId );
 
@@ -80,16 +77,18 @@ export const announceFailure = ( { dispatch, getState }, { query } ) => {
 		site && site.name
 			? translate( 'Failed to retrieve comments for site “%(siteName)s”', {
 					args: { siteName: site.name },
-				} )
+			  } )
 			: translate( 'Failed to retrieve comments for your site' );
 
 	dispatch( errorNotice( error ) );
 };
 
-const treeHandlers = {
+registerHandlers( 'state/data-layer/wpcom/sites/comments-tree/index.js', {
 	[ COMMENTS_TREE_SITE_REQUEST ]: [
-		dispatchRequest( fetchCommentsTreeForSite, addCommentsTree, announceFailure ),
+		dispatchRequest( {
+			fetch: fetchCommentsTreeForSite,
+			onSuccess: addCommentsTree,
+			onError: announceFailure,
+		} ),
 	],
-};
-
-export default mergeHandlers( treeHandlers );
+} );

@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -33,11 +32,12 @@ class ListMissing extends React.Component {
 	};
 
 	render() {
+		/* eslint-disable wpcalypso/jsx-classname-namespace */
 		const action = (
 				<a
 					className="empty-content__action button is-primary"
 					onClick={ this.recordAction }
-					href="/"
+					href="/read"
 				>
 					{ this.props.translate( 'Back to Followed Sites' ) }
 				</a>
@@ -48,7 +48,7 @@ class ListMissing extends React.Component {
 					onClick={ this.recordSecondaryAction }
 					href="/discover"
 				>
-					{ this.props.translate( 'Explore Discover' ) }
+					{ this.props.translate( 'Explore' ) }
 				</a>
 			) : null;
 
@@ -65,6 +65,7 @@ class ListMissing extends React.Component {
 				/>
 			</div>
 		);
+		/* eslint-enable wpcalypso/jsx-classname-namespace */
 	}
 }
 

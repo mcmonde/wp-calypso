@@ -1,10 +1,8 @@
-/** @format */
-
 jest.mock( 'lib/abtest', () => ( {
 	abtest: () => '',
 } ) );
 
-const translate = x => x;
+const translate = ( x ) => x;
 jest.mock( '../option', () => 'SubscriptionLengthOption' );
 
 /**
@@ -26,12 +24,14 @@ describe( 'SubscriptionLengthPicker basic tests', () => {
 			planSlug: PLAN_BUSINESS,
 			plan: getPlan( PLAN_BUSINESS ),
 			priceFull: 1200,
+			priceFinal: 1200,
 			priceMonthly: 100,
 		},
 		{
 			planSlug: PLAN_BUSINESS_2_YEARS,
 			plan: getPlan( PLAN_BUSINESS_2_YEARS ),
 			priceFull: 1800,
+			priceFinal: 1800,
 			priceMonthly: 150,
 		},
 	];
@@ -44,7 +44,7 @@ describe( 'SubscriptionLengthPicker basic tests', () => {
 				translate={ translate }
 			/>
 		);
-		expect( picker.find( '.subscription-length-picker' ).length ).toBe( 1 );
+		expect( picker.find( '.subscription-length-picker' ) ).toHaveLength( 1 );
 	} );
 
 	test( 'should contain as many <SubscriptionLengthOption/> as products passed', () => {
@@ -55,7 +55,7 @@ describe( 'SubscriptionLengthPicker basic tests', () => {
 				translate={ translate }
 			/>
 		);
-		expect( picker.find( 'SubscriptionLengthOption' ).length ).toBe( 2 );
+		expect( picker.find( 'SubscriptionLengthOption' ) ).toHaveLength( 2 );
 	} );
 
 	test( 'should mark appropriate SubscriptionLengthOption as checked', () => {
@@ -79,10 +79,16 @@ describe( 'SubscriptionLengthPicker basic tests', () => {
 } );
 
 describe( 'myFormatCurrency', () => {
+	test( 'Should pass through additional options', () => {
+		expect( myFormatCurrency( 1, 'USD' ) ).toBe( '$1' );
+		expect( myFormatCurrency( 1, 'USD', { symbol: '' } ) ).toBe( '1' );
+		expect( myFormatCurrency( 1, 'USD', { symbol: '?' } ) ).toBe( '?1' );
+	} );
+
 	describe( 'USD - precision 2', () => {
 		const code = 'USD';
 		const symbol = '$';
-		const results = amount => myFormatCurrency( amount, code ).replace( symbol, '' );
+		const results = ( amount ) => myFormatCurrency( amount, code ).replace( symbol, '' );
 
 		test( 'Should return correctly formatted amount for no cents', () => {
 			expect( results( 1 ) ).toBe( '1' );
@@ -108,7 +114,7 @@ describe( 'myFormatCurrency', () => {
 	describe( 'BHD - precision 3', () => {
 		const code = 'BHD';
 		const symbol = 'د.ب.‏';
-		const results = amount => myFormatCurrency( amount, code ).replace( symbol, '' );
+		const results = ( amount ) => myFormatCurrency( amount, code ).replace( symbol, '' );
 
 		test( 'Should return correctly formatted amount for no cents', () => {
 			expect( results( 1 ) ).toBe( '1' );

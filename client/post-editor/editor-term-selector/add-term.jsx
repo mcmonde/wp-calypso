@@ -1,26 +1,28 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 import classNames from 'classnames';
 import { connect } from 'react-redux';
 import { get, noop } from 'lodash';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 
 /**
  * Internal dependencies
  */
-import Button from 'components/button';
+import { Button } from '@automattic/components';
 import TermFormDialog from 'blocks/term-form-dialog';
 import { getSelectedSiteId } from 'state/ui/selectors';
-import { getEditorPostId } from 'state/ui/editor/selectors';
+import { getEditorPostId } from 'state/editor/selectors';
 import { getEditedPostValue } from 'state/posts/selectors';
 import { getPostTypeTaxonomy } from 'state/post-types/taxonomies/selectors';
 import { getTerms } from 'state/terms/selectors';
+
+/**
+ * Style dependencies
+ */
+import './add-term.scss';
 
 class TermSelectorAddTerm extends Component {
 	static propTypes = {
@@ -42,7 +44,7 @@ class TermSelectorAddTerm extends Component {
 		};
 	}
 
-	openDialog = event => {
+	openDialog = ( event ) => {
 		event.preventDefault();
 		this.setState( { showDialog: true } );
 	};

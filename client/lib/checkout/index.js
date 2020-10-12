@@ -1,29 +1,124 @@
-/** @format */
+/**
+ * External dependencies
+ */
+import { parse } from 'url';
 
 /**
  * Internal dependencies
  */
-
-import { cartItems } from 'lib/cart-values';
+import {
+	hasRenewalItem,
+	getRenewalItems,
+	hasDomainRegistration,
+	hasDomainMapping,
+	hasProduct,
+} from 'lib/cart-values/cart-items';
 import { managePurchase } from 'me/purchases/paths';
+import {
+	UPGRADE_INTENT_PLUGINS,
+	UPGRADE_INTENT_INSTALL_PLUGIN,
+	UPGRADE_INTENT_THEMES,
+	UPGRADE_INTENT_INSTALL_THEME,
+} from 'lib/checkout/constants';
+import { decodeURIComponentIfValid, isExternal } from 'lib/url';
+import { domainManagementEdit } from '../../my-sites/domains/paths';
+import { isDomainRegistration } from '../products-values';
 
-export function getExitCheckoutUrl( cart, siteSlug ) {
+const isValidValue = ( url ) => typeof url === 'string' && url;
+
+export function isValidUpgradeIntent( upgradeIntent ) {
+	switch ( upgradeIntent ) {
+		case UPGRADE_INTENT_PLUGINS:
+		case UPGRADE_INTENT_INSTALL_PLUGIN:
+		case UPGRADE_INTENT_THEMES:
+		case UPGRADE_INTENT_INSTALL_THEME:
+			return true;
+	}
+	return false;
+}
+
+export function parseRedirectToChain( rawUrl, includeOriginalUrl = true ) {
+	const redirectChain = [];
+	const url = decodeURIComponentIfValid( rawUrl );
+
+	if ( includeOriginalUrl && isValidValue( url ) ) {
+		redirectChain.push( url );
+	}
+
+	const parseUrlAndPushToChain = ( currentUrl ) => {
+		const {
+			query: { redirect_to },
+		} = parse( currentUrl, true );
+		if ( isValidValue( redirect_to ) ) {
+			redirectChain.push( redirect_to );
+			parseUrlAndPushToChain( decodeURIComponentIfValid( redirect_to ) );
+		}
+	};
+
+	parseUrlAndPushToChain( url );
+	return redirectChain;
+}
+
+export function getValidDeepRedirectTo( redirectTo ) {
+	const redirectChain = parseRedirectToChain( redirectTo );
+	if (
+		Array.isArray( redirectChain ) &&
+		redirectChain.length &&
+		! isExternal( redirectChain[ redirectChain.length - 1 ] )
+	) {
+		return redirectChain[ redirectChain.length - 1 ];
+	}
+}
+
+export function getExitCheckoutUrl(
+	cart,
+	siteSlug,
+	upgradeIntent,
+	redirectTo,
+	returnToBlockEditor,
+	returnToHome,
+	previousPath
+) {
 	let url = '/plans/';
 
-	if ( cartItems.hasRenewalItem( cart ) ) {
-		const { purchaseId, purchaseDomain } = cartItems.getRenewalItems( cart )[ 0 ].extra,
+	if ( returnToBlockEditor ) {
+		return `/block-editor/page/${ siteSlug }/home`;
+	}
+
+	if ( returnToHome ) {
+		return `/home/${ siteSlug }`;
+	}
+
+	if ( hasRenewalItem( cart ) ) {
+		const firstRenewalItem = getRenewalItems( cart )[ 0 ];
+		const { purchaseId, purchaseDomain } = firstRenewalItem.extra,
 			siteName = siteSlug || purchaseDomain;
+
+		if ( isDomainRegistration( firstRenewalItem ) ) {
+			const domainManagementPage = domainManagementEdit( siteName, firstRenewalItem.meta );
+
+			if ( previousPath && previousPath.startsWith( domainManagementPage ) ) {
+				return domainManagementPage;
+			}
+		}
 
 		return managePurchase( siteName, purchaseId );
 	}
 
-	if ( cartItems.hasDomainRegistration( cart ) ) {
+	if ( isValidUpgradeIntent( upgradeIntent ) ) {
+		const finalRedirectTo = getValidDeepRedirectTo( redirectTo );
+		if ( finalRedirectTo ) {
+			return finalRedirectTo;
+		}
+	}
+
+	if ( hasDomainRegistration( cart ) ) {
 		url = '/domains/add/';
-	} else if ( cartItems.hasDomainMapping( cart ) ) {
+	} else if ( hasDomainMapping( cart ) ) {
 		url = '/domains/add/mapping/';
-	} else if ( cartItems.hasProduct( cart, 'offsite_redirect' ) ) {
+	} else if ( hasProduct( cart, 'offsite_redirect' ) ) {
 		url = '/domains/add/site-redirect/';
-	} else if ( cartItems.hasProduct( cart, 'premium_theme' ) ) {
+	} else if ( hasProduct( cart, 'premium_theme' ) ) {
 		url = '/themes/';
 	}
 
@@ -31,3 +126,4 @@ export function getExitCheckoutUrl( cart, siteSlug ) {
 }
 
 export { getCreditCardType, validatePaymentDetails } from './validation';
+export { maskField, unmaskField } from './masking';

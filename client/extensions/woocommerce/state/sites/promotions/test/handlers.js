@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -21,6 +19,7 @@ import {
 import {
 	WOOCOMMERCE_COUPONS_REQUEST,
 	WOOCOMMERCE_COUPONS_UPDATED,
+	WOOCOMMERCE_PRODUCTS_REQUEST,
 } from 'woocommerce/state/action-types';
 
 describe( 'handlers', () => {
@@ -46,8 +45,13 @@ describe( 'handlers', () => {
 				} )
 			);
 
-			// TODO: Test as above after products use data-layer
-			expect( store.dispatch.secondCall.returnValue ).to.be.a.function;
+			expect( store.dispatch ).to.have.been.calledWith(
+				match( {
+					type: WOOCOMMERCE_PRODUCTS_REQUEST,
+					siteId: 123,
+					params: { offset: 0, per_page: 3 },
+				} )
+			);
 		} );
 	} );
 

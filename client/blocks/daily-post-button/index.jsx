@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External Dependencies
  */
@@ -8,22 +7,27 @@ import page from 'page';
 import PropTypes from 'prop-types';
 import { stringify } from 'qs';
 import { get, defer } from 'lodash';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 import { connect } from 'react-redux';
 
 /**
  * Internal Dependencies
  */
+import AsyncLoad from 'components/async-load';
 import { translate } from 'i18n-calypso';
-import { preload } from 'sections-helper';
-import SitesPopover from 'components/sites-popover';
-import Button from 'components/button';
+import { preloadEditor } from 'sections-preloaders';
+import { Button } from '@automattic/components';
 import { markPostSeen } from 'state/reader/posts/actions';
 import { recordGaEvent, recordAction, recordTrackForPost } from 'reader/stats';
 import { getDailyPostType } from './helper';
-import { getPrimarySiteId } from 'state/selectors';
+import getPrimarySiteId from 'state/selectors/get-primary-site-id';
 import { getSiteSlug } from 'state/sites/selectors';
 import { getCurrentUser } from 'state/current-user/selectors';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 function getPingbackAttributes( post ) {
 	const typeTitles = {
@@ -39,10 +43,6 @@ function getPingbackAttributes( post ) {
 	};
 }
 
-function preloadEditor() {
-	preload( 'post-editor' );
-}
-
 export class DailyPostButton extends React.Component {
 	constructor() {
 		super();
@@ -52,6 +52,7 @@ export class DailyPostButton extends React.Component {
 
 		this._closeTimerId = null;
 		this._isMounted = false;
+		this.dailyPostButtonRef = React.createRef();
 	}
 
 	static propTypes = {
@@ -91,7 +92,7 @@ export class DailyPostButton extends React.Component {
 		} );
 	}
 
-	openEditorWithSite = siteSlug => {
+	openEditorWithSite = ( siteSlug ) => {
 		const pingbackAttributes = getPingbackAttributes( this.props.post );
 
 		recordAction( 'daily_post_challenge' );
@@ -104,7 +105,7 @@ export class DailyPostButton extends React.Component {
 		return true;
 	};
 
-	toggle = event => {
+	toggle = ( event ) => {
 		event.preventDefault();
 		if ( ! this.state.showingMenu ) {
 			recordAction( 'open_daily_post_challenge' );
@@ -128,11 +129,14 @@ export class DailyPostButton extends React.Component {
 	};
 
 	renderSitesPopover = () => {
+		/* eslint-disable wpcalypso/jsx-classname-namespace */
 		return (
-			<SitesPopover
+			<AsyncLoad
+				require="components/sites-popover"
+				placeholder={ null }
 				key="menu"
 				header={ <div> { translate( 'Post on' ) } </div> }
-				context={ this.refs && this.refs.dailyPostButton }
+				context={ this.dailyPostButtonRef.current }
 				visible={ this.state.showingMenu }
 				groups={ true }
 				onSiteSelect={ this.openEditorWithSite }
@@ -141,6 +145,7 @@ export class DailyPostButton extends React.Component {
 				className="is-reader"
 			/>
 		);
+		/* eslint-enable wpcalypso/jsx-classname-namespace */
 	};
 
 	render() {
@@ -164,7 +169,13 @@ export class DailyPostButton extends React.Component {
 				onMouseEnter: preloadEditor,
 			},
 			[
-				<Button ref="dailyPostButton" key="button" compact primary className={ buttonClasses }>
+				<Button
+					ref={ this.dailyPostButtonRef }
+					key="button"
+					compact
+					primary
+					className={ buttonClasses }
+				>
 					<Gridicon icon="create" />
 					<span>{ translate( 'Post about %(title)s', { args: { title } } ) } </span>
 				</Button>,
@@ -175,7 +186,7 @@ export class DailyPostButton extends React.Component {
 }
 
 export default connect(
-	state => {
+	( state ) => {
 		const primarySiteId = getPrimarySiteId( state );
 		const user = getCurrentUser( state );
 		const visibleSiteCount = get( user, 'visible_site_count', 0 );

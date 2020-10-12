@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -10,7 +9,7 @@ import { connect } from 'react-redux';
 /**
  * Internal dependencies
  */
-import ReaderMain from 'components/reader-main';
+import ReaderMain from 'reader/components/reader-main';
 import MobileBackToSidebar from 'components/mobile-back-to-sidebar';
 import EmptyContent from 'components/empty-content';
 import { recordTrack as recordReaderTrack } from 'reader/stats';
@@ -56,6 +55,7 @@ class SiteBlocked extends React.Component {
 						components: {
 							em: <em />,
 						},
+						comment: '%s is a site name - for example, "Discover"',
 					} ) }
 					illustration={ '/calypso/images/illustrations/error.svg' }
 					illustrationWidth={ 500 }

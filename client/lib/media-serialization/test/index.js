@@ -1,5 +1,4 @@
 /**
- * @format
  * @jest-environment jsdom
  */
 
@@ -78,7 +77,7 @@ describe( 'MediaSerialization', () => {
 		test( 'should parse images with the data-istransient attribute as transient images', () => {
 			const parsed = deserialize(
 				'<img data-istransient="istransient" src="https://andrewmduthietest.files.wordpress.com/2015/01/img_0372.jpg" class="size-full wp-image-1627 alignright" alt="Example" width="660" height="660" />'
-			); // eslint-disable-line max-len
+			);
 
 			expect( parsed.media.transient ).to.be.true;
 		} );
@@ -86,19 +85,19 @@ describe( 'MediaSerialization', () => {
 		test( 'should parse images without the data-istransient attribute as not transient images', () => {
 			const parsed = deserialize(
 				'<img src="blob:http%3A//wordpress.com/75205e1a-0f78-4a0b-b0e2-5f47a3471769" class="size-full wp-image-1627 alignright" alt="Example" width="660" height="660" />'
-			); // eslint-disable-line max-len
+			);
 
 			expect( parsed.media.transient ).to.be.false;
 		} );
 
 		test( 'should favor natural dimensions over inferred', () => {
 			const img = document.createElement( 'img' );
-			[ 'width', 'height' ].forEach( dimension => {
+			[ 'width', 'height' ].forEach( ( dimension ) => {
 				Object.defineProperty( img, dimension, {
 					get: () => 660,
 				} );
 			} );
-			[ 'naturalWidth', 'naturalHeight' ].forEach( dimension => {
+			[ 'naturalWidth', 'naturalHeight' ].forEach( ( dimension ) => {
 				Object.defineProperty( img, dimension, {
 					get: () => 1320,
 				} );
@@ -114,7 +113,7 @@ describe( 'MediaSerialization', () => {
 			const img = document.createElement( 'img' );
 			img.width = 660;
 			img.height = 660;
-			[ 'naturalWidth', 'naturalHeight' ].forEach( dimension => {
+			[ 'naturalWidth', 'naturalHeight' ].forEach( ( dimension ) => {
 				Object.defineProperty( img, dimension, {
 					get: () => 1320,
 				} );

@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -14,11 +12,16 @@ import { sortBy, sumBy } from 'lodash';
  */
 import DataType from './data-type';
 
+/**
+ * Style dependencies
+ */
+import './style.scss';
+
 const SVG_SIZE = 300;
 const NUM_COLOR_SECTIONS = 3;
 
 function transformData( data ) {
-	const sortedData = sortBy( data, datum => datum.value )
+	const sortedData = sortBy( data, ( datum ) => datum.value )
 		.reverse()
 		.map( ( datum, index ) => ( {
 			...datum,
@@ -27,13 +30,13 @@ function transformData( data ) {
 
 	const arcs = d3Pie()
 		.startAngle( -Math.PI )
-		.value( datum => datum.value )( sortedData );
+		.value( ( datum ) => datum.value )( sortedData );
 
 	const arcGen = d3Arc()
 		.innerRadius( 0 )
 		.outerRadius( SVG_SIZE / 2 );
 
-	const paths = arcs.map( arc => arcGen( arc ) );
+	const paths = arcs.map( ( arc ) => arcGen( arc ) );
 
 	return sortedData.map( ( datum, index ) => ( {
 		...datum,
@@ -57,7 +60,7 @@ class PieChart extends Component {
 		if ( nextProps.data !== prevState.data ) {
 			return {
 				data: nextProps.data,
-				dataTotal: sumBy( nextProps.data, datum => datum.value ),
+				dataTotal: sumBy( nextProps.data, ( datum ) => datum.value ),
 				transformedData: transformData( nextProps.data ),
 			};
 		}
@@ -67,7 +70,8 @@ class PieChart extends Component {
 
 	renderPieChart() {
 		const { transformedData } = this.state;
-		return transformedData.map( datum => {
+
+		return transformedData.map( ( datum ) => {
 			return (
 				<path
 					className={ `pie-chart__chart-section-${ datum.sectionNum }` }
@@ -89,9 +93,9 @@ class PieChart extends Component {
 		const { dataTotal } = this.state;
 
 		return (
-			<div className={ 'pie-chart' }>
+			<div className="pie-chart">
 				<svg
-					className={ 'pie-chart__chart-drawing' }
+					className="pie-chart__chart-drawing"
 					viewBox={ `0 0 ${ SVG_SIZE } ${ SVG_SIZE }` }
 					preserveAspectRatio={ 'xMidYMid meet' }
 				>
@@ -99,8 +103,9 @@ class PieChart extends Component {
 						{ dataTotal > 0 ? this.renderPieChart() : this.renderEmptyChart() }
 					</g>
 				</svg>
+
 				{ title && (
-					<h2 className={ 'pie-chart__title' }>
+					<h2 className="pie-chart__title">
 						{ 'string' === typeof title ? title : title( translate, dataTotal ) }
 					</h2>
 				) }

@@ -1,121 +1,124 @@
-/** @format */
-
 /**
  * External dependencies
  */
 
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
 import { localize } from 'i18n-calypso';
-import Gridicon from 'gridicons';
-import { find } from 'lodash';
+import Gridicon from 'components/gridicon';
+import { find, includes } from 'lodash';
 import PropTypes from 'prop-types';
 import classnames from 'classnames';
 
 /**
  * Internal dependencies
  */
-import Button from 'components/button';
+import { Button, ScreenReaderText } from '@automattic/components';
 import PopoverMenu from 'components/popover/menu';
 import PopoverMenuItem from 'components/popover/menu-item';
+import GooglePhotosIcon from './google-photos-icon';
 import config from 'config';
+import { getSelectedSiteId } from 'state/ui/selectors';
+import canCurrentUser from 'state/selectors/can-current-user';
 
 export class MediaLibraryDataSource extends Component {
 	static propTypes = {
 		source: PropTypes.string.isRequired,
 		onSourceChange: PropTypes.func.isRequired,
 		disabledSources: PropTypes.array,
+		ignorePermissions: PropTypes.bool,
 	};
 
 	static defaultProps = {
 		disabledSources: [],
+		ignorePermissions: false,
 	};
 
-	constructor( props ) {
-		super( props );
+	state = { popover: false };
 
-		this.state = { popover: false };
-	}
+	storeButtonRef = ( ref ) => ( this.buttonRef = ref );
 
 	togglePopover = () => {
 		this.setState( { popover: ! this.state.popover } );
 	};
 
-	changeSource = item => {
-		const { target } = item;
-		const action = target.getAttribute( 'action' )
-			? target.getAttribute( 'action' )
-			: target.parentNode.getAttribute( 'action' );
-		const newSource = action ? action : '';
-
+	changeSource = ( newSource ) => () => {
 		if ( newSource !== this.props.source ) {
 			this.props.onSourceChange( newSource );
 		}
 	};
 
+	getSources = () => {
+		const { disabledSources, translate, ignorePermissions, canUserUploadFiles } = this.props;
+		const includeExternalMedia = ignorePermissions || canUserUploadFiles;
+		const sources = [
+			{
+				value: '',
+				label: translate( 'Media library' ),
+				icon: <Gridicon icon="image" size={ 24 } />,
+			},
+		];
+		if ( config.isEnabled( 'external-media/google-photos' ) && includeExternalMedia ) {
+			sources.push( {
+				value: 'google_photos',
+				label: translate( 'Google Photos' ),
+				icon: <GooglePhotosIcon />,
+			} );
+		}
+		if ( config.isEnabled( 'external-media/free-photo-library' ) && includeExternalMedia ) {
+			sources.push( {
+				value: 'pexels',
+				label: translate( 'Pexels free photos' ),
+				icon: <Gridicon icon="image-multiple" size={ 24 } />,
+			} );
+		}
+		return sources.filter( ( { value } ) => ! includes( disabledSources, value ) );
+	};
+
 	renderScreenReader( selected ) {
-		/* eslint-disable wpcalypso/jsx-classname-namespace */
-		return <span className="screen-reader-text">{ selected && selected.label }</span>;
-		/* eslint-enable wpcalypso/jsx-classname-namespace */
+		return <ScreenReaderText>{ selected && selected.label }</ScreenReaderText>;
 	}
 
 	renderMenuItems( sources ) {
-		return sources
-			.filter( item => -1 === this.props.disabledSources.indexOf( item.value ) )
-			.map( item => (
-				<PopoverMenuItem action={ item.value } key={ item.value } onClick={ this.changeSource }>
-					{ item.icon }
-					{ item.label }
-				</PopoverMenuItem>
-			) );
+		return sources.map( ( { icon, label, value } ) => (
+			<PopoverMenuItem key={ value } data-source={ value } onClick={ this.changeSource( value ) }>
+				{ icon }
+				{ label }
+			</PopoverMenuItem>
+		) );
 	}
 
 	render() {
 		const { translate, source } = this.props;
-		const sources = [
-			{
-				value: '',
-				label: translate( 'WordPress library' ),
-				icon: <Gridicon icon="image" size={ 24 } />,
-			},
-			{
-				value: 'google_photos',
-				label: translate( 'Photos from your Google library' ),
-				icon: <Gridicon icon="shutter" size={ 24 } />,
-			},
-		];
-		if ( config.isEnabled( 'external-media/free-photo-library' ) ) {
-			sources.push( {
-				value: 'pexels',
-				label: translate( 'Free photo library' ),
-				icon: <Gridicon icon="image-multiple" size={ 24 } />,
-			} );
-		}
-		const currentSelected = find( sources, item => item.value === source );
-		const classes = classnames( {
-			button: true,
-			'media-library__source-button': true,
+		const sources = this.getSources();
+		const currentSelected = find( sources, ( item ) => item.value === source );
+		const classes = classnames( 'media-library__datasource', {
+			'is-single-source': 1 === sources.length,
+		} );
+		const buttonClasses = classnames( 'button media-library__source-button', {
 			'is-open': this.state.popover,
 		} );
 
-		if ( ! config.isEnabled( 'external-media' ) ) {
+		if ( ! config.isEnabled( 'external-media' ) && ! sources.length ) {
 			return null;
 		}
 
 		return (
-			<div className="media-library__datasource">
+			<div className={ classes }>
 				<Button
 					borderless
-					ref="popoverMenuButton"
-					className={ classes }
+					ref={ this.storeButtonRef }
+					className={ buttonClasses }
 					onClick={ this.togglePopover }
 					title={ translate( 'Choose media library source' ) }
 				>
 					{ currentSelected && currentSelected.icon }
 					{ this.renderScreenReader( currentSelected ) }
 					<Gridicon icon="chevron-down" size={ 18 } />
-
+				</Button>
+				{ sources.length > 1 && (
 					<PopoverMenu
-						context={ this.refs && this.refs.popoverMenuButton }
+						context={ this.buttonRef }
 						isVisible={ this.state.popover }
 						position="bottom right"
 						onClose={ this.togglePopover }
@@ -123,10 +126,14 @@ export class MediaLibraryDataSource extends Component {
 					>
 						{ this.renderMenuItems( sources ) }
 					</PopoverMenu>
-				</Button>
+				) }
 			</div>
 		);
 	}
 }
 
-export default localize( MediaLibraryDataSource );
+const mapStateToProps = ( state ) => ( {
+	canUserUploadFiles: canCurrentUser( state, getSelectedSiteId( state ), 'upload_files' ),
+} );
+
+export default connect( mapStateToProps )( localize( MediaLibraryDataSource ) );

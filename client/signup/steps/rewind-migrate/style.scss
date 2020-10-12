@@ -22,7 +22,7 @@
 	display: flex;
 	align-items: center;
 	flex-direction: column;
-	padding: 4rem 4rem 3rem;
+	padding: rem( 40px ) rem( 40px ) rem( 30px );
 	margin-top: 48px;
 
 	& + .step-wrapper__buttons .navigation-link {
@@ -35,18 +35,16 @@
 
 .rewind-switch__heading {
 	display: inline-block;
-	font-size: 2.5rem;
-	font-weight: 300;
-	letter-spacing: .15rem;
-	color: $gray-dark;
+	font-size: rem( 25px );
+	letter-spacing: rem( 1.5px );
+	color: var( --color-neutral-70 );
 }
 
 .rewind-switch__description {
 	max-width: 600px;
-	color: $gray-text-min;
-	font-size: 1.35rem;
-	font-weight: 100;
-	line-height: 2.5rem;
+	color: var( --color-text );
+	font-size: rem( 13.5px );
+	line-height: rem( 25px );
 }
 
 .rewind-migrate__warning {
@@ -57,7 +55,7 @@
 	p {
 		max-width: 600px;
 		font-style: italic;
-		font-size: 12px;
-		color: $gray;
+		font-size: $font-body-extra-small;
+		color: var( --color-text-inverted );
 	}
 }

@@ -1,5 +1,4 @@
 /**
- * @format
  * @jest-environment jsdom
  */
 
@@ -16,11 +15,28 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 
 describe( 'oAuthStore', () => {
-	let oAuthStore, oAuthToken;
+	let oAuthStore, oAuthToken, originalDocumentProperties;
 
 	beforeEach( () => {
 		oAuthToken = require( 'lib/oauth-token' );
 		oAuthStore = require( 'lib/oauth-store' );
+
+		// global.document.location is not configurable and global.document has an empty setter
+		// so the only way to mock global.document.location.replace is do a full replacement
+		// of global.document using a property descriptor
+		originalDocumentProperties = Object.getOwnPropertyDescriptors( global ).document;
+		Object.defineProperty( global, 'document', {
+			writable: true,
+			value: {
+				location: {
+					replace: sinon.stub(),
+				},
+			},
+		} );
+	} );
+
+	afterEach( () => {
+		Object.defineProperty( global, 'document', originalDocumentProperties );
 	} );
 
 	test( 'is in progress when attempting login', () => {
@@ -92,34 +108,32 @@ describe( 'oAuthStore', () => {
 		} );
 	} );
 
-	test(
-		'sets OAuth token when login is correct',
-		sinon.test( function() {
-			this.stub( global.document.location, 'replace' );
-			this.stub( oAuthToken, 'setToken' );
+	test( 'sets OAuth token when login is correct', () => {
+		sinon.stub( oAuthToken, 'setToken' );
 
-			Dispatcher.handleViewAction( { type: actions.AUTH_LOGIN } );
-			Dispatcher.handleViewAction( {
-				type: actions.RECEIVE_AUTH_LOGIN,
-				error: false,
-				data: {
-					body: {
-						access_token: 'token',
-					},
+		Dispatcher.handleViewAction( { type: actions.AUTH_LOGIN } );
+		Dispatcher.handleViewAction( {
+			type: actions.RECEIVE_AUTH_LOGIN,
+			error: false,
+			data: {
+				body: {
+					access_token: 'token',
 				},
-			} );
+			},
+		} );
 
-			expect( oAuthToken.setToken ).to.have.been.calledOnce;
-			expect( oAuthToken.setToken ).to.have.been.calledWith( 'token' );
-			expect( global.document.location.replace ).to.have.been.calledOnce;
-			expect( global.document.location.replace ).to.have.been.calledWith( '/' );
+		expect( oAuthToken.setToken ).to.have.been.calledOnce;
+		expect( oAuthToken.setToken ).to.have.been.calledWith( 'token' );
+		expect( global.document.location.replace ).to.have.been.calledOnce;
+		expect( global.document.location.replace ).to.have.been.calledWith( '/' );
 
-			expect( oAuthStore.get() ).to.deep.equal( {
-				inProgress: true,
-				requires2fa: true,
-				errorMessage: false,
-				errorLevel: false,
-			} );
-		} )
-	);
+		expect( oAuthStore.get() ).to.deep.equal( {
+			inProgress: true,
+			requires2fa: true,
+			errorMessage: false,
+			errorLevel: false,
+		} );
+
+		oAuthToken.setToken.restore();
+	} );
 } );

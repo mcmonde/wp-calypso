@@ -1,9 +1,6 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import PropTypes from 'prop-types';
 import { localize } from 'i18n-calypso';
 import React from 'react';
@@ -18,7 +15,12 @@ import { getMimePrefix, filterItemsByMimePrefix, url } from 'lib/media/utils';
 import HeaderCake from 'components/header-cake';
 import preloadImage from '../preload-image';
 import { ModalViews } from 'state/ui/media-modal/constants';
-import { setEditorMediaModalView } from 'state/ui/editor/actions';
+import { setEditorMediaModalView } from 'state/editor/actions';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class EditorMediaModalDetailBase extends React.Component {
 	static propTypes = {
@@ -45,7 +47,7 @@ class EditorMediaModalDetailBase extends React.Component {
 	}
 
 	preloadImages = () => {
-		filterItemsByMimePrefix( this.props.items, 'image' ).forEach( function( image ) {
+		filterItemsByMimePrefix( this.props.items, 'image' ).forEach( function ( image ) {
 			const src = url( image, {
 				photon: this.props.site && ! this.props.site.is_private,
 			} );
@@ -54,7 +56,7 @@ class EditorMediaModalDetailBase extends React.Component {
 		}, this );
 	};
 
-	incrementIndex = increment => {
+	incrementIndex = ( increment ) => {
 		this.props.onSelectedIndexChange( this.props.selectedIndex + increment );
 	};
 
@@ -63,10 +65,12 @@ class EditorMediaModalDetailBase extends React.Component {
 			items,
 			selectedIndex,
 			site,
+			backButtonText,
 			onEditImageItem,
 			onEditVideoItem,
 			onRestoreItem,
 			onReturnToList,
+			translate,
 		} = this.props;
 
 		const item = items[ selectedIndex ];
@@ -76,7 +80,7 @@ class EditorMediaModalDetailBase extends React.Component {
 			<div className="editor-media-modal-detail">
 				<HeaderCake
 					onClick={ onReturnToList }
-					backText={ this.props.translate( 'Media Library' ) }
+					backText={ backButtonText ? backButtonText : translate( 'Media Library' ) }
 				/>
 				<DetailItem
 					site={ site }

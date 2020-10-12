@@ -1,18 +1,18 @@
-/** @format */
-
 /**
  * External dependencies
  */
 
 import PropTypes from 'prop-types';
 import React from 'react';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 import { connect } from 'react-redux';
 
 /**
  * Internal dependencies
  */
-import Button from 'components/button';
+import FormTextInput from 'components/forms/form-text-input';
+import FormFieldset from 'components/forms/form-fieldset';
+import { Button } from '@automattic/components';
 import { composeAnalytics, recordGoogleEvent, recordTracksEvent } from 'state/analytics/actions';
 
 class CustomNameserversRow extends React.PureComponent {
@@ -37,10 +37,9 @@ class CustomNameserversRow extends React.PureComponent {
 
 	render() {
 		return (
-			<div className="custom-nameservers-row">
-				<fieldset>
-					<input
-						type="text"
+			<div className="name-servers__custom-nameservers-row">
+				<FormFieldset>
+					<FormTextInput
 						placeholder={ this.props.placeholder }
 						onChange={ this.handleChange }
 						onFocus={ this.handleFocus }
@@ -48,12 +47,12 @@ class CustomNameserversRow extends React.PureComponent {
 					/>
 
 					{ this.renderRemoveIcon() }
-				</fieldset>
+				</FormFieldset>
 			</div>
 		);
 	}
 
-	handleChange = event => {
+	handleChange = ( event ) => {
 		if ( this.props.onChange ) {
 			this.props.onChange( event.target.value, this.props.index );
 		}
@@ -63,7 +62,7 @@ class CustomNameserversRow extends React.PureComponent {
 		this.props.customNameserverInputFocus( this.props.selectedDomainName );
 	};
 
-	handleRemove = event => {
+	handleRemove = ( event ) => {
 		event.preventDefault();
 
 		this.props.removeNameserversClick( this.props.selectedDomainName );
@@ -72,7 +71,7 @@ class CustomNameserversRow extends React.PureComponent {
 	};
 }
 
-const customNameserverInputFocus = domainName =>
+const customNameserverInputFocus = ( domainName ) =>
 	composeAnalytics(
 		recordGoogleEvent(
 			'Domain Management',
@@ -85,7 +84,7 @@ const customNameserverInputFocus = domainName =>
 		} )
 	);
 
-const removeNameserversClick = domainName =>
+const removeNameserversClick = ( domainName ) =>
 	composeAnalytics(
 		recordGoogleEvent(
 			'Domain Management',

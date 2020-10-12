@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -11,25 +9,27 @@ import classNames from 'classnames';
 import { flowRight, get, includes, noop } from 'lodash';
 import { localize } from 'i18n-calypso';
 import url from 'url';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 
 /**
  * Internal dependencies
  */
+import EditorMediaModalContent from '../content';
 import EditorMediaModalDetailFields from './detail-fields';
 import EditorMediaModalDetailFileInfo from './detail-file-info';
 import EditorMediaModalDetailPreviewImage from './detail-preview-image';
 import EditorMediaModalDetailPreviewVideo from './detail-preview-video';
 import EditorMediaModalDetailPreviewAudio from './detail-preview-audio';
 import EditorMediaModalDetailPreviewDocument from './detail-preview-document';
-import Button from 'components/button';
+import { Button, ScreenReaderText } from '@automattic/components';
 import QueryJetpackModules from 'components/data/query-jetpack-modules';
 import versionCompare from 'lib/version-compare';
 import { getMimePrefix, isItemBeingUploaded, isVideoPressItem } from 'lib/media/utils';
 import config from 'config';
 import { getSelectedSiteId } from 'state/ui/selectors';
 import { getSiteOption, isJetpackModuleActive, isJetpackSite } from 'state/sites/selectors';
-import { isPrivateSite, canCurrentUser } from 'state/selectors';
+import canCurrentUser from 'state/selectors/can-current-user';
+import isPrivateSite from 'state/selectors/is-private-site';
 
 export class EditorMediaModalDetailItem extends Component {
 	static propTypes = {
@@ -55,8 +55,8 @@ export class EditorMediaModalDetailItem extends Component {
 	/**
 	 * This function returns true if the video editor can be enabled/shown.
 	 *
-	 * @param  {Object}  item Media item
-	 * @return {Boolean} Whether the video editor can be enabled
+	 * @param  {object}  item Media item
+	 * @returns {boolean} Whether the video editor can be enabled
 	 */
 	shouldShowVideoEditingButtons( item ) {
 		const { isJetpack, isVideoPressEnabled, isVideoPressModuleActive } = this.props;
@@ -85,7 +85,7 @@ export class EditorMediaModalDetailItem extends Component {
 	 *
 	 * @param  {object} item - media item
 	 * @param  {object} site - current site
-	 * @return {boolean} `true` if the image-editor can be enabled.
+	 * @returns {boolean} `true` if the image-editor can be enabled.
 	 */
 	shouldShowImageEditingButtons( item, site ) {
 		const { isSitePrivate } = this.props;
@@ -230,7 +230,7 @@ export class EditorMediaModalDetailItem extends Component {
 		return (
 			<button onClick={ onShowPreviousItem } className="editor-media-modal-detail__previous">
 				<Gridicon icon="chevron-left" size={ 36 } />
-				<span className="screen-reader-text">{ translate( 'Previous' ) }</span>
+				<ScreenReaderText>{ translate( 'Previous' ) }</ScreenReaderText>
 			</button>
 		);
 	}
@@ -245,7 +245,7 @@ export class EditorMediaModalDetailItem extends Component {
 		return (
 			<button onClick={ onShowNextItem } className="editor-media-modal-detail__next">
 				<Gridicon icon="chevron-right" size={ 36 } />
-				<span className="screen-reader-text">{ translate( 'Next' ) }</span>
+				<ScreenReaderText>{ translate( 'Next' ) }</ScreenReaderText>
 			</button>
 		);
 	}
@@ -292,7 +292,7 @@ export class EditorMediaModalDetailItem extends Component {
 
 		return (
 			<figure className={ classes }>
-				<div className="editor-media-modal-detail__content editor-media-modal__content">
+				<EditorMediaModalContent className="editor-media-modal-detail__content">
 					<div className="editor-media-modal-detail__preview-wrapper">
 						{ this.renderItem() }
 						{ this.renderMediaEditorButtons( item ) }
@@ -301,20 +301,22 @@ export class EditorMediaModalDetailItem extends Component {
 					</div>
 
 					<div className="editor-media-modal-detail__sidebar">
-						{ isJetpack && (
-							<QueryJetpackModules siteId={ siteId } />
-						) /* Is the VideoPress module active? */ }
+						{
+							isJetpack && (
+								<QueryJetpackModules siteId={ siteId } />
+							) /* Is the VideoPress module active? */
+						}
 						{ this.renderMediaEditorButtons( item, 'is-mobile' ) }
 						{ this.renderFields() }
 						<EditorMediaModalDetailFileInfo item={ item } />
 					</div>
-				</div>
+				</EditorMediaModalContent>
 			</figure>
 		);
 	}
 }
 
-const connectComponent = connect( state => {
+const connectComponent = connect( ( state ) => {
 	const siteId = getSelectedSiteId( state );
 	const canUserUploadFiles = canCurrentUser( state, siteId, 'upload_files' );
 

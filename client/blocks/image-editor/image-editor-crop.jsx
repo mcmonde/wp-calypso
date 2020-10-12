@@ -1,9 +1,6 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
@@ -20,11 +17,11 @@ import {
 	getImageEditorTransform,
 	getImageEditorCrop,
 	imageEditorHasChanges,
-} from 'state/ui/editor/image-editor/selectors';
-import { AspectRatios } from 'state/ui/editor/image-editor/constants';
-import { imageEditorCrop, imageEditorComputedCrop } from 'state/ui/editor/image-editor/actions';
-import { defaultCrop } from 'state/ui/editor/image-editor/reducer';
-import { getImageEditorOriginalAspectRatio } from 'state/selectors';
+} from 'state/editor/image-editor/selectors';
+import { AspectRatios } from 'state/editor/image-editor/constants';
+import { imageEditorCrop, imageEditorComputedCrop } from 'state/editor/image-editor/actions';
+import { defaultCrop } from 'state/editor/image-editor/reducer';
+import getImageEditorOriginalAspectRatio from 'state/selectors/get-image-editor-original-aspect-ratio';
 
 class ImageEditorCrop extends Component {
 	static propTypes = {
@@ -91,11 +88,11 @@ class ImageEditorCrop extends Component {
 		};
 	}
 
-	componentWillMount() {
+	UNSAFE_componentWillMount() {
 		this.updateCrop( this.getDefaultState( this.props ), this.props, this.applyComputedCrop );
 	}
 
-	componentWillReceiveProps( newProps ) {
+	UNSAFE_componentWillReceiveProps( newProps ) {
 		const { bounds, aspectRatio, crop } = this.props;
 
 		if ( ! isEqual( bounds, newProps.bounds ) ) {
@@ -481,7 +478,7 @@ class ImageEditorCrop extends Component {
 }
 
 export default connect(
-	state => {
+	( state ) => {
 		const bounds = getImageEditorCropBounds( state );
 		const crop = getImageEditorCrop( state );
 		const aspectRatio = getImageEditorAspectRatio( state );

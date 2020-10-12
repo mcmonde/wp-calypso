@@ -1,6 +1,5 @@
 .purchase-item.card {
 	&.is-expired {
-
 		.purchase-item__plan-icon,
 		.purchase-item__title,
 		.purchase-item__purchase-type {
@@ -29,7 +28,7 @@
 	.purchase-item__title,
 	.purchase-item__purchase-date,
 	.purchase-item__purchase-type {
-		@include placeholder( 23% );
+		@include placeholder( --color-neutral-10 );
 	}
 
 	.purchase-item__plan-icon {
@@ -57,8 +56,8 @@
 
 	.gridicon {
 		padding: 4px;
-		background: $blue-medium;
-		fill: $white;
+		background: var( --color-neutral );
+		fill: var( --color-text-inverted );
 	}
 
 	.gridicons-domains {
@@ -66,10 +65,11 @@
 	}
 
 	.gridicons-themes {
-		border-radius: 4px;
+		border-radius: 2px;
 	}
 }
 
+.purchase-item__term-label,
 .purchase-item__purchase-date,
 .purchase-item__purchase-type {
 	line-height: 14px;
@@ -77,34 +77,35 @@
 }
 
 .purchase-item__title {
-	color: $blue-wordpress;
+	color: var( --color-text );
 	display: block;
-	font-size: 14px;
+	font-size: $font-body-small;
 	line-height: 1.2em;
 	margin: 4px 20px 4px 0;
 	overflow: hidden;
 	position: relative;
 	white-space: nowrap;
 
-	&:after:not( .is-placeholder ) {
+	&::after:not( .is-placeholder ) {
 		@include long-content-fade();
 	}
 
-	@include breakpoint( ">480px" ) {
-		font-size: 18px;
+	@include breakpoint-deprecated( '>480px' ) {
+		font-size: $font-title-small;
 		max-width: none;
 	}
 }
 
-.purchase-item__purchase-type {
-	color: $gray-text-min;
-	font-size: 12px;
+.purchase-item__term-label,
+.purchase-item__purchase-type, {
+	color: var( --color-text-subtle );
+	font-size: $font-body-extra-small;
 	margin: 0 0 4px;
 	overflow: hidden;
 	text-overflow: ellipsis;
 }
 
 .purchase-item__purchase-date {
-	color: $gray-dark;
-	font-size: 12px;
+	color: var( --color-neutral-70 );
+	font-size: $font-body-extra-small;
 }

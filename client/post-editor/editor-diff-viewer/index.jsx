@@ -1,26 +1,31 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
+import { isWithinBreakpoint } from '@automattic/viewport';
 import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import { connect } from 'react-redux';
-import { debounce, filter, first, flow, get, has, last, map, partial, throttle } from 'lodash';
+import { debounce, filter, first, flow, get, has, last, map, throttle } from 'lodash';
 import { localize } from 'i18n-calypso';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 
 /**
  * Internal dependencies
  */
-import { getPostRevision } from 'state/selectors';
+import { getPostRevision } from 'state/posts/selectors/get-post-revision';
+import { getPostRevisionsDiffView } from 'state/posts/selectors/get-post-revisions-diff-view';
 import TextDiff from 'components/text-diff';
 import scrollTo from 'lib/scroll-to';
 import { recordTracksEvent } from 'state/analytics/actions';
 
-const getCenterOffset = node => get( node, 'offsetTop', 0 ) + get( node, 'offsetHeight', 0 ) / 2;
+/**
+ * Style dependencies
+ */
+import './style.scss';
+
+const getCenterOffset = ( node ) =>
+	get( node, 'offsetTop', 0 ) + get( node, 'offsetHeight', 0 ) / 2;
 
 class EditorDiffViewer extends PureComponent {
 	static propTypes = {
@@ -32,6 +37,7 @@ class EditorDiffViewer extends PureComponent {
 			post_title: PropTypes.array,
 			totals: PropTypes.object,
 		} ).isRequired,
+		diffView: PropTypes.string,
 
 		// connected to dispatch
 		recordTracksEvent: PropTypes.func.isRequired,
@@ -46,10 +52,13 @@ class EditorDiffViewer extends PureComponent {
 		viewportHeight: 0,
 	};
 
+	isBigViewport = false;
+
 	componentDidMount() {
 		this.tryScrollingToFirstChangeOrTop();
 		if ( typeof window !== 'undefined' ) {
 			window.addEventListener( 'resize', this.debouncedRecomputeChanges );
+			this.isBigViewport = isWithinBreakpoint( '>1040px' );
 		}
 	}
 
@@ -63,9 +72,12 @@ class EditorDiffViewer extends PureComponent {
 		this.tryScrollingToFirstChangeOrTop();
 	}
 
-	componentWillReceiveProps( nextProps ) {
+	UNSAFE_componentWillReceiveProps( nextProps ) {
 		if ( nextProps.selectedRevisionId !== this.props.selectedRevisionId ) {
 			this.setState( { changeOffsets: [] } );
+		}
+		if ( nextProps.diffView !== this.props.diffView ) {
+			this.recomputeChanges( null );
 		}
 	}
 
@@ -87,8 +99,14 @@ class EditorDiffViewer extends PureComponent {
 		} );
 	};
 
-	recomputeChanges = callback => {
-		const diffNodes = this.node.querySelectorAll( '.text-diff__additions, .text-diff__deletions' );
+	recomputeChanges = ( callback ) => {
+		let selectors = '.text-diff__additions, .text-diff__deletions';
+		if ( this.isBigViewport && this.props.diffView === 'split' ) {
+			selectors =
+				'.editor-diff-viewer__secondary-pane .text-diff__additions,' +
+				' .editor-diff-viewer__main-pane .text-diff__deletions';
+		}
+		const diffNodes = this.node.querySelectorAll( selectors );
 		this.setState(
 			{
 				changeOffsets: map( diffNodes, getCenterOffset ),
@@ -99,7 +117,10 @@ class EditorDiffViewer extends PureComponent {
 		);
 	};
 
-	debouncedRecomputeChanges = debounce( partial( this.recomputeChanges, null ), 500 );
+	debouncedRecomputeChanges = debounce( () => {
+		this.isBigViewport = isWithinBreakpoint( '>1040px' );
+		this.recomputeChanges( null );
+	}, 500 );
 
 	centerScrollingOnOffset = ( offset, animated = true ) => {
 		const nextScrollTop = Math.max( 0, offset - this.state.viewportHeight / 2 );
@@ -116,7 +137,7 @@ class EditorDiffViewer extends PureComponent {
 		} );
 	};
 
-	handleScroll = e => {
+	handleScroll = ( e ) => {
 		this.setState( {
 			scrollTop: get( e.target, 'scrollTop', 0 ),
 		} );
@@ -124,7 +145,7 @@ class EditorDiffViewer extends PureComponent {
 
 	throttledScrollHandler = throttle( this.handleScroll, 100 );
 
-	handleScrollableRef = node => {
+	handleScrollableRef = ( node ) => {
 		if ( node ) {
 			this.node = node;
 			this.node.addEventListener( 'scroll', this.throttledScrollHandler );
@@ -149,9 +170,10 @@ class EditorDiffViewer extends PureComponent {
 	};
 
 	render() {
-		const { diff } = this.props;
+		const { diff, diffView } = this.props;
 		const classes = classNames( 'editor-diff-viewer', {
 			'is-loading': ! has( diff, 'post_content' ) && ! has( diff, 'post_title' ),
+			'is-split': diffView === 'split',
 		} );
 
 		const bottomBoundary = this.state.scrollTop + this.state.viewportHeight;
@@ -159,11 +181,11 @@ class EditorDiffViewer extends PureComponent {
 		// saving to `this` so we can access if from `scrollAbove` and `scrollBelow`
 		this.changesAboveViewport = filter(
 			this.state.changeOffsets,
-			offset => offset < this.state.scrollTop
+			( offset ) => offset < this.state.scrollTop
 		);
 		this.changesBelowViewport = filter(
 			this.state.changeOffsets,
-			offset => offset > bottomBoundary
+			( offset ) => offset > bottomBoundary
 		);
 
 		const showHints = this.state.viewportHeight > 470;
@@ -173,33 +195,45 @@ class EditorDiffViewer extends PureComponent {
 		return (
 			<div className={ classes }>
 				<div className="editor-diff-viewer__scrollable" ref={ this.handleScrollableRef }>
-					<h1 className="editor-diff-viewer__title">
-						<TextDiff operations={ diff.post_title } />
-					</h1>
-					<pre className="editor-diff-viewer__content">
-						<TextDiff operations={ diff.post_content } splitLines />
-					</pre>
+					<div className="editor-diff-viewer__main-pane">
+						<h1 className="editor-diff-viewer__title">
+							<TextDiff operations={ diff.post_title } />
+						</h1>
+						<pre className="editor-diff-viewer__content">
+							<TextDiff operations={ diff.post_content } splitLines />
+						</pre>
+					</div>
+					{ diffView === 'split' && (
+						<div className="editor-diff-viewer__secondary-pane">
+							<h1 className="editor-diff-viewer__title">
+								<TextDiff operations={ diff.post_title } />
+							</h1>
+							<pre className="editor-diff-viewer__content">
+								<TextDiff operations={ diff.post_content } splitLines />
+							</pre>
+						</div>
+					) }
 				</div>
-				{ showHints &&
-					countAbove > 0 && (
-						<div className="editor-diff-viewer__hint-above" onClick={ this.scrollAbove }>
-							<Gridicon className="editor-diff-viewer__hint-icon" size={ 18 } icon="arrow-up" />
-							{ this.props.translate( '%(numberOfChanges)d change', '%(numberOfChanges)d changes', {
-								args: { numberOfChanges: countAbove },
-								count: countAbove,
-							} ) }
-						</div>
-					) }
-				{ showHints &&
-					countBelow > 0 && (
-						<div className="editor-diff-viewer__hint-below" onClick={ this.scrollBelow }>
-							<Gridicon className="editor-diff-viewer__hint-icon" size={ 18 } icon="arrow-down" />
-							{ this.props.translate( '%(numberOfChanges)d change', '%(numberOfChanges)d changes', {
-								args: { numberOfChanges: countBelow },
-								count: countBelow,
-							} ) }
-						</div>
-					) }
+				{ showHints && countAbove > 0 && (
+					// eslint-disable-next-line jsx-a11y/no-static-element-interactions,jsx-a11y/click-events-have-key-events
+					<div className="editor-diff-viewer__hint-above" onClick={ this.scrollAbove }>
+						<Gridicon className="editor-diff-viewer__hint-icon" size={ 18 } icon="arrow-up" />
+						{ this.props.translate( '%(numberOfChanges)d change', '%(numberOfChanges)d changes', {
+							args: { numberOfChanges: countAbove },
+							count: countAbove,
+						} ) }
+					</div>
+				) }
+				{ showHints && countBelow > 0 && (
+					// eslint-disable-next-line jsx-a11y/no-static-element-interactions,jsx-a11y/click-events-have-key-events
+					<div className="editor-diff-viewer__hint-below" onClick={ this.scrollBelow }>
+						<Gridicon className="editor-diff-viewer__hint-icon" size={ 18 } icon="arrow-down" />
+						{ this.props.translate( '%(numberOfChanges)d change', '%(numberOfChanges)d changes', {
+							args: { numberOfChanges: countBelow },
+							count: countBelow,
+						} ) }
+					</div>
+				) }
 			</div>
 		);
 	}
@@ -210,6 +244,7 @@ export default flow(
 	connect(
 		( state, { siteId, postId, selectedRevisionId } ) => ( {
 			revision: getPostRevision( state, siteId, postId, selectedRevisionId, 'display' ),
+			diffView: getPostRevisionsDiffView( state ),
 		} ),
 		{ recordTracksEvent }
 	)

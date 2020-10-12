@@ -1,27 +1,33 @@
-/** @format */
-
 /**
  * External dependencies
  */
 
-import { assign, cloneDeep, merge } from 'lodash';
+import { assign, cloneDeep, get, merge } from 'lodash';
 import update from 'immutability-helper';
 
 /**
  * Internal dependencies
  */
-import { action as UpgradesActionTypes } from 'lib/upgrades/constants';
-import { cartItems } from 'lib/cart-values';
+import { CART_ITEM_REMOVE } from 'lib/cart/action-types';
+import {
+	TRANSACTION_DOMAIN_DETAILS_SET,
+	TRANSACTION_NEW_CREDIT_CARD_DETAILS_SET,
+	TRANSACTION_PAYMENT_SET,
+	TRANSACTION_RESET,
+	TRANSACTION_STEP_SET,
+	TRANSACTION_STRIPE_SET,
+} from './action-types';
+import { hasDomainDetails } from './selectors';
+import { hasDomainRegistration } from 'lib/cart-values/cart-items';
 import CartStore from 'lib/cart/store';
 import Emitter from 'lib/mixins/emitter';
 import Dispatcher from 'dispatcher';
 import { BEFORE_SUBMIT } from 'lib/store-transactions/step-types';
-import { hasDomainDetails } from 'lib/store-transactions';
 
 let _transaction = createInitialTransaction();
 
 const TransactionStore = {
-	get: function() {
+	get: function () {
 		return _transaction;
 	},
 };
@@ -55,6 +61,10 @@ function setPayment( payment ) {
 	replaceData( assign( {}, _transaction, { payment: payment } ) );
 }
 
+function setStripeObject( stripe, stripeConfiguration ) {
+	replaceData( assign( {}, _transaction, { stripe, stripeConfiguration } ) );
+}
+
 function setStep( step ) {
 	replaceData(
 		assign( {}, _transaction, {
@@ -78,7 +88,7 @@ function setNewCreditCardDetails( options ) {
 	// method is responsible for using the above data to populate the payment
 	// object correctly, e.g. by calling newCardPayment() and passing in the
 	// transaction.newCardRawDetails object from above.)
-	if ( _transaction.payment.newCardDetails ) {
+	if ( get( _transaction, [ 'payment', 'newCardDetails' ] ) ) {
 		transactionUpdates.payment = { newCardDetails: { $merge: options.rawDetails } };
 	}
 
@@ -87,38 +97,42 @@ function setNewCreditCardDetails( options ) {
 	replaceData( newTransaction );
 }
 
-TransactionStore.dispatchToken = Dispatcher.register( function( payload ) {
+TransactionStore.dispatchToken = Dispatcher.register( function ( payload ) {
 	const action = payload.action;
 
 	switch ( action.type ) {
-		case UpgradesActionTypes.TRANSACTION_DOMAIN_DETAILS_SET:
+		case TRANSACTION_DOMAIN_DETAILS_SET:
 			setDomainDetails( action.domainDetails );
 			break;
 
-		case UpgradesActionTypes.TRANSACTION_PAYMENT_SET:
+		case TRANSACTION_PAYMENT_SET:
 			setPayment( action.payment );
 			break;
 
-		case UpgradesActionTypes.TRANSACTION_NEW_CREDIT_CARD_DETAILS_SET:
+		case TRANSACTION_STRIPE_SET:
+			setStripeObject( action.stripe, action.stripeConfiguration );
+			break;
+
+		case TRANSACTION_NEW_CREDIT_CARD_DETAILS_SET:
 			setNewCreditCardDetails( {
 				rawDetails: action.rawDetails,
 				maskedDetails: action.maskedDetails,
 			} );
 			break;
 
-		case UpgradesActionTypes.TRANSACTION_STEP_SET:
+		case TRANSACTION_STEP_SET:
 			setStep( action.step );
 			break;
 
-		case UpgradesActionTypes.TRANSACTION_RESET:
+		case TRANSACTION_RESET:
 			reset();
 			break;
 
-		case UpgradesActionTypes.CART_ITEM_REMOVE:
+		case CART_ITEM_REMOVE:
 			Dispatcher.waitFor( [ CartStore.dispatchToken ] );
 
 			if (
-				! cartItems.hasDomainRegistration( CartStore.get() ) &&
+				! hasDomainRegistration( CartStore.get() ) &&
 				hasDomainDetails( TransactionStore.get() )
 			) {
 				setDomainDetails( null );

@@ -1,9 +1,7 @@
-/** @format */
-
 /**
  * Internal dependencies
  */
-import { getProfileLinks } from 'state/selectors';
+import getProfileLinks from 'state/selectors/get-profile-links';
 
 describe( 'getProfileLinks()', () => {
 	const profileLinks = [

@@ -1,23 +1,32 @@
-/** @format */
 /**
  * External dependencies
  */
-import config from 'config';
+import config, { isCalypsoLive } from 'config';
 import makeJsonSchemaParser from 'lib/make-json-schema-parser';
 import PropTypes from 'prop-types';
 import { authorizeQueryDataSchema } from './schema';
 import { head, includes, isEmpty, split } from 'lodash';
+import page from 'page';
+import { urlToSlug } from 'lib/url';
 
 /**
  * Internal dependencies
  */
-import { addQueryArgs, untrailingslashit } from 'lib/route';
+import { addQueryArgs, externalRedirect, untrailingslashit } from 'lib/route';
+import {
+	JPC_PATH_PLANS,
+	JPC_PATH_REMOTE_INSTALL,
+	REMOTE_PATH_AUTH,
+	JPC_PATH_CHECKOUT,
+} from './constants';
 
 export function authQueryTransformer( queryObject ) {
 	return {
 		// Required
 		clientId: parseInt( queryObject.client_id, 10 ),
+		closeWindowAfterLogin: '1' === queryObject.close_window_after_login,
 		homeUrl: queryObject.home_url,
+		isPopup: '1' === queryObject.is_popup,
 		nonce: queryObject._wp_nonce,
 		redirectUri: queryObject.redirect_uri,
 		scope: queryObject.scope,
@@ -28,20 +37,16 @@ export function authQueryTransformer( queryObject ) {
 		// Optional
 		// TODO: verify
 		authApproved: !! queryObject.auth_approved,
-
-		// TODO: disabled to mitigate https://github.com/Automattic/jetpack/issues/8783
-		// remove when fixed
-		// alreadyAuthorized: !! queryObject.already_authorized,
-		alreadyAuthorized: false,
-
+		alreadyAuthorized: !! queryObject.already_authorized,
 		blogname: queryObject.blogname || null,
 		from: queryObject.from || '[unknown]',
 		jpVersion: queryObject.jp_version || null,
-		partnerSlug: getPartnerSlugFromId( queryObject.partner_id ),
 		redirectAfterAuth: queryObject.redirect_after_auth || null,
 		siteIcon: queryObject.site_icon || null,
 		siteUrl: queryObject.site_url || null,
 		userEmail: queryObject.user_email || null,
+		woodna_service_name: queryObject.woodna_service_name || null,
+		woodna_help_url: queryObject.woodna_help_url || null,
 	};
 }
 
@@ -54,7 +59,6 @@ export const authQueryPropTypes = PropTypes.shape( {
 	homeUrl: PropTypes.string.isRequired,
 	jpVersion: PropTypes.string,
 	nonce: PropTypes.string.isRequired,
-	partnerSlug: PropTypes.string,
 	redirectAfterAuth: PropTypes.string,
 	redirectUri: PropTypes.string.isRequired,
 	scope: PropTypes.string.isRequired,
@@ -67,14 +71,18 @@ export const authQueryPropTypes = PropTypes.shape( {
 } );
 
 export function addCalypsoEnvQueryArg( url ) {
-	return addQueryArgs( { calypso_env: config( 'env_id' ) }, url );
+	let calypsoEnv = config( 'env_id' );
+	if ( 'object' === typeof window && window.COMMIT_SHA && isCalypsoLive() ) {
+		calypsoEnv = `live-${ COMMIT_SHA }`;
+	}
+	return addQueryArgs( { calypso_env: calypsoEnv }, url );
 }
 
 /**
  * Sanitize a user-supplied URL so we can use it for network requests.
  *
  * @param {string} inputUrl User-supplied URL
- * @return {string} Sanitized URL
+ * @returns {string} Sanitized URL
  */
 export function cleanUrl( inputUrl ) {
 	let url = inputUrl.trim().toLowerCase();
@@ -92,7 +100,7 @@ export function cleanUrl( inputUrl ) {
  * when provided with a scope.
  *
  * @param  {string}  scope From authorization query
- * @return {?string}       Role parsed from scope if found
+ * @returns {?string}       Role parsed from scope if found
  */
 export function getRoleFromScope( scope ) {
 	if ( ! includes( scope, ':' ) ) {
@@ -109,8 +117,8 @@ export function getRoleFromScope( scope ) {
  * Parse an authorization query
  *
  * @property {Function} parser Lazy-instatiated parser
- * @param  {Object}     query  Authorization query
- * @return {?Object}           Query after transformation. Null if invalid or errored during transform.
+ * @param  {object}     query  Authorization query
+ * @returns {?object}           Query after transformation. Null if invalid or errored during transform.
  */
 export function parseAuthorizationQuery( query ) {
 	if ( ! parseAuthorizationQuery.parser ) {
@@ -127,23 +135,42 @@ export function parseAuthorizationQuery( query ) {
 	return null;
 }
 
-export function getPartnerSlugFromId( partnerId ) {
-	switch ( parseInt( partnerId, 10 ) ) {
-		case 51945:
-		case 51946:
-			return 'dreamhost';
-		case 49615:
-		case 49640:
-			return 'pressable';
-		case 57152:
-		case 57733:
-			return 'milesweb';
-		case 41986:
-		case 42000:
-			return 'bluehost';
-		case 51652: // Clients used for testing.
-			return 'dreamhost';
-		default:
-			return null;
+/**
+ * Manage Jetpack Connect redirect after various site states
+ *
+ * @param  {string}     type Redirect type
+ * @param  {string}     url Site url
+ * @param  {?string}    product Product slug
+ * @returns {string}        Redirect url
+ */
+export function redirect( type, url, product = null ) {
+	let urlRedirect = '';
+	const instr = '/jetpack/connect/instructions';
+
+	if ( type === 'plans_selection' ) {
+		urlRedirect = JPC_PATH_PLANS + '/' + urlToSlug( url );
+		page.redirect( urlRedirect );
 	}
+
+	if ( type === 'remote_install' ) {
+		urlRedirect = JPC_PATH_REMOTE_INSTALL;
+		page.redirect( urlRedirect );
+	}
+
+	if ( type === 'remote_auth' ) {
+		urlRedirect = addCalypsoEnvQueryArg( url + REMOTE_PATH_AUTH );
+		externalRedirect( urlRedirect );
+	}
+
+	if ( type === 'install_instructions' ) {
+		urlRedirect = addQueryArgs( { url }, instr );
+		page.redirect( urlRedirect );
+	}
+
+	if ( type === 'checkout' ) {
+		urlRedirect = `${ JPC_PATH_CHECKOUT }/${ urlToSlug( url ) }/${ product }`;
+		page.redirect( urlRedirect );
+	}
+
+	return urlRedirect;
 }

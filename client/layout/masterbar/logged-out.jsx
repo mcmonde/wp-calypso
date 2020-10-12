@@ -1,12 +1,8 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import PropTypes from 'prop-types';
-import React, { PureComponent } from 'react';
-import Masterbar from './masterbar';
+import React from 'react';
 import { connect } from 'react-redux';
 import { getLocaleSlug, localize } from 'i18n-calypso';
 import { get, includes, startsWith } from 'lodash';
@@ -15,22 +11,28 @@ import { get, includes, startsWith } from 'lodash';
  * Internal dependencies
  */
 import config from 'config';
+import Masterbar from './masterbar';
 import Item from './item';
 import WordPressLogo from 'components/wordpress-logo';
 import WordPressWordmark from 'components/wordpress-wordmark';
 import { addQueryArgs } from 'lib/route';
-import { getCurrentQueryArguments, getCurrentRoute } from 'state/selectors';
+import getCurrentQueryArguments from 'state/selectors/get-current-query-arguments';
+import getCurrentRoute from 'state/selectors/get-current-route';
 import { login } from 'lib/paths';
+import { isDomainConnectAuthorizePath } from 'lib/domains/utils';
+import { isDefaultLocale, addLocaleToPath } from 'lib/i18n-utils';
+import AsyncLoad from 'components/async-load';
 
-class MasterbarLoggedOut extends PureComponent {
+class MasterbarLoggedOut extends React.Component {
 	static propTypes = {
 		redirectUri: PropTypes.string,
 		sectionName: PropTypes.string,
 		title: PropTypes.string,
 
 		// Connected props
-		currentQuery: PropTypes.object,
+		currentQuery: PropTypes.oneOfType( [ PropTypes.bool, PropTypes.object ] ),
 		currentRoute: PropTypes.string,
+		userSiteCount: PropTypes.number,
 	};
 
 	static defaultProps = {
@@ -40,8 +42,7 @@ class MasterbarLoggedOut extends PureComponent {
 
 	renderLoginItem() {
 		const { currentQuery, currentRoute, sectionName, translate, redirectUri } = this.props;
-
-		if ( includes( [ 'login', 'jetpack-onboarding' ], sectionName ) ) {
+		if ( includes( [ 'login' ], sectionName ) ) {
 			return null;
 		}
 
@@ -54,7 +55,7 @@ class MasterbarLoggedOut extends PureComponent {
 
 		const isJetpack = 'jetpack-connect' === sectionName;
 
-		const loginUrl = login( {
+		let loginUrl = login( {
 			// We may know the email from Jetpack connection details
 			emailAddress: isJetpack && get( currentQuery, 'user_email', false ),
 			isJetpack,
@@ -62,6 +63,10 @@ class MasterbarLoggedOut extends PureComponent {
 			locale: getLocaleSlug(),
 			redirectTo,
 		} );
+
+		if ( currentQuery && currentQuery.partner_id ) {
+			loginUrl = addQueryArgs( { partner_id: currentQuery.partner_id }, loginUrl );
+		}
 
 		return (
 			<Item url={ loginUrl }>
@@ -74,10 +79,10 @@ class MasterbarLoggedOut extends PureComponent {
 	}
 
 	renderSignupItem() {
-		const { currentQuery, currentRoute, sectionName, translate } = this.props;
+		const { currentQuery, currentRoute, locale, sectionName, translate } = this.props;
 
 		// Hide for some sections
-		if ( includes( [ 'signup', 'jetpack-onboarding' ], sectionName ) ) {
+		if ( includes( [ 'signup' ], sectionName ) ) {
 			return null;
 		}
 
@@ -90,10 +95,11 @@ class MasterbarLoggedOut extends PureComponent {
 		}
 
 		/**
-		 * Hide signup from from New Site screen. This allows starting with a new Jetpack or
-		 * WordPress.com site.
+		 * Hide signup from the screen when we have been sent to the login page from a redirect
+		 * by a service provider to authorize a Domain Connect template application.
 		 */
-		if ( startsWith( currentRoute, '/jetpack/new' ) ) {
+		const redirectTo = get( currentQuery, 'redirect_to', '' );
+		if ( isDomainConnectAuthorizePath( redirectTo ) ) {
 			return null;
 		}
 
@@ -115,12 +121,16 @@ class MasterbarLoggedOut extends PureComponent {
 				 */
 				signupUrl = currentQuery.redirect_to;
 			} else {
-				signupUrl = '/jetpack/new';
+				signupUrl = '/jetpack/connect';
 			}
 		} else if ( 'jetpack-connect' === sectionName ) {
-			signupUrl = '/jetpack/new';
+			signupUrl = '/jetpack/connect';
 		} else if ( signupFlow ) {
 			signupUrl += '/' + signupFlow;
+		}
+
+		if ( ! isDefaultLocale( locale ) ) {
+			signupUrl = addLocaleToPath( signupUrl, locale );
 		}
 
 		return (
@@ -134,7 +144,12 @@ class MasterbarLoggedOut extends PureComponent {
 	}
 
 	render() {
-		const { title } = this.props;
+		const { title, isCheckout } = this.props;
+
+		if ( isCheckout ) {
+			return <AsyncLoad require="layout/masterbar/checkout" placeholder={ null } title={ title } />;
+		}
+
 		return (
 			<Masterbar>
 				<Item className="masterbar__item-logo">
@@ -151,7 +166,7 @@ class MasterbarLoggedOut extends PureComponent {
 	}
 }
 
-export default connect( state => ( {
+export default connect( ( state ) => ( {
 	currentQuery: getCurrentQueryArguments( state ),
 	currentRoute: getCurrentRoute( state ),
 } ) )( localize( MasterbarLoggedOut ) );

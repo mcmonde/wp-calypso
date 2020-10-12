@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -34,13 +32,25 @@ class RecommendationSelect extends PureComponent {
 	render() {
 		const { translate } = this.props;
 		const values = range( 0, 11 );
-		const options = values.map( value => this.renderOption( value ) );
+		const options = values.map( ( value ) => this.renderOption( value ) );
 
 		return (
 			<div className="nps-survey__recommendation-select">
 				<div className="nps-survey__scale-labels">
-					<span>{ translate( 'Unlikely' ) }</span>
-					<span className="nps-survey__very-likely-label">{ translate( 'Very likely' ) }</span>
+					<span>
+						{ translate( 'Unlikely', {
+							context: 'NPS',
+							comment:
+								'Answer to the question: How likely are you to recommend WordPress.com to your friends, family, or colleagues?',
+						} ) }
+					</span>
+					<span className="nps-survey__very-likely-label">
+						{ translate( 'Very likely', {
+							context: 'NPS',
+							comment:
+								'Answer to the question: How likely are you to recommend WordPress.com to your friends, family, or colleagues?',
+						} ) }
+					</span>
 				</div>
 				<div className="nps-survey__options">{ options }</div>
 			</div>

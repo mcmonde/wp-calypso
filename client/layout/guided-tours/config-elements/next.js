@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -11,8 +9,8 @@ import { translate } from 'i18n-calypso';
 /**
  * Internal dependencies
  */
-import Button from 'components/button';
-import contextTypes from '../context-types';
+import { Button } from '@automattic/components';
+import { contextTypes } from '../context-types';
 
 export default class Next extends Component {
 	static displayName = 'Next';

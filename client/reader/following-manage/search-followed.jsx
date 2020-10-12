@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External Dependencies
  */
@@ -27,10 +26,9 @@ class FollowingManageSearchFollowed extends Component {
 			<SearchCard
 				compact={ true }
 				pinned={ false }
-				autoFocus={ false }
 				className="following-manage__search-followed"
 				additionalClasses="following-manage__search-followed-input"
-				placeholder={ this.props.translate( 'Search Followed Sites…' ) }
+				placeholder={ this.props.translate( 'Search followed sites…' ) }
 				onSearch={ this.props.onSearch }
 				initialValue={ this.props.initialValue }
 				delaySearch={ true }

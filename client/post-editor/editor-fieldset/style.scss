@@ -11,13 +11,14 @@
 }
 
 .editor-fieldset__legend,
-.editor-fieldset__option {
+.editor-fieldset__option,
+.editor-fieldset__option .form-label {
 	margin: 4px 0;
-	font-size: 12px;
+	font-size: $font-body-extra-small;
 }
 
 .editor-fieldset__legend {
-	color: $gray-text;
+	color: var( --color-text );
 	display: block;
-	font-size: 12px;
+	font-size: $font-body-extra-small;
 }

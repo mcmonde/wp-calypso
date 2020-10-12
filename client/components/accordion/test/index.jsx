@@ -1,12 +1,11 @@
 /**
- * @format
  * @jest-environment jsdom
  */
 
 /**
  * External dependencies
  */
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 import React from 'react';
 import { shallow } from 'enzyme';
 
@@ -18,7 +17,7 @@ describe( 'Accordion', () => {
 		AccordionStatus = require( '../status' );
 	} );
 
-	test( 'should render as expected with a title and content', () => {
+	test( 'should render as expected with a title but no content when initially closed', () => {
 		const wrapper = shallow( <Accordion title="Section">Content</Accordion> );
 
 		expect( wrapper.hasClass( 'accordion' ) ).toBe( true );
@@ -29,7 +28,8 @@ describe( 'Accordion', () => {
 		expect( wrapper.find( '.accordion__title' ).text() ).toBe( 'Section' );
 		expect( wrapper.find( '.accordion__subtitle' ) ).toHaveLength( 0 );
 		expect( wrapper.find( '.accordion__icon' ) ).toHaveLength( 0 );
-		expect( wrapper.find( '.accordion__content' ).text() ).toBe( 'Content' );
+		expect( wrapper.state( 'hasExpanded' ) ).toBe( false );
+		expect( wrapper.find( '.accordion__content' ) ).toHaveLength( 0 );
 	} );
 
 	test( 'should accept an icon prop to be rendered', () => {
@@ -83,6 +83,8 @@ describe( 'Accordion', () => {
 			simulateClick( wrapper );
 
 			expect( wrapper.state( 'isExpanded' ) ).toBe( true );
+			expect( wrapper.state( 'hasExpanded' ) ).toBe( true );
+			expect( wrapper.find( '.accordion__content' ).text() ).toBe( 'Content' );
 		} );
 
 		test( 'should accept an onToggle function handler to be invoked when toggled', () => {
@@ -113,6 +115,29 @@ describe( 'Accordion', () => {
 			expect( toggleSpy ).toHaveBeenCalledTimes( 1 );
 			expect( toggleSpy ).toHaveBeenCalledWith( false );
 			expect( wrapper.state( 'isExpanded' ) ).toBe( false );
+		} );
+
+		test( 'should render content when initially open', () => {
+			const wrapper = shallow(
+				<Accordion initialExpanded={ true } title="Section">
+					Content
+				</Accordion>
+			);
+			expect( wrapper.state( 'isExpanded' ) ).toBe( true );
+			expect( wrapper.state( 'hasExpanded' ) ).toBe( true );
+			expect( wrapper.find( '.accordion__content' ).text() ).toBe( 'Content' );
+		} );
+
+		test( 'should render content when forced', () => {
+			const wrapper = shallow( <Accordion title="Section">Content</Accordion> );
+			expect( wrapper.state( 'isExpanded' ) ).toBe( false );
+			expect( wrapper.state( 'hasExpanded' ) ).toBe( false );
+			expect( wrapper.find( '.accordion__content' ) ).toHaveLength( 0 );
+
+			wrapper.setProps( { forceExpand: true } );
+			expect( wrapper.state( 'isExpanded' ) ).toBe( false );
+			expect( wrapper.state( 'hasExpanded' ) ).toBe( true );
+			expect( wrapper.find( '.accordion__content' ).text() ).toBe( 'Content' );
 		} );
 	} );
 } );

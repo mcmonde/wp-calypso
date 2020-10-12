@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -8,7 +6,7 @@ import { expect } from 'chai';
 /**
  * Internal dependencies
  */
-import { isRequestingJetpackConnectionStatus } from 'state/selectors';
+import isRequestingJetpackConnectionStatus from 'state/selectors/is-requesting-jetpack-connection-status';
 import { requests as REQUESTS_FIXTURE } from './fixtures/jetpack-connection';
 
 describe( 'isRequestingJetpackConnectionStatus()', () => {

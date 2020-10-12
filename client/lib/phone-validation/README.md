@@ -1,5 +1,4 @@
-Phone-Validation
-======
+# Phone-Validation
 
-This module validates phone numbers. It handles both numbers with and without
+This module validates _mobile_ phone numbers. It handles both numbers with and without
 country codes prepended.

@@ -1,8 +1,6 @@
-/** @format */
 /**
  * External Dependencies
  */
-import url from 'url';
 import { translate } from 'i18n-calypso';
 import { trim } from 'lodash';
 
@@ -10,7 +8,8 @@ import { trim } from 'lodash';
  * Internal Dependencies
  */
 import { decodeEntities } from 'lib/formatting';
-import { isSiteDescriptionBlacklisted } from 'reader/lib/site-description-blacklist';
+import { isSiteDescriptionBlocked } from 'reader/lib/site-description-blocklist';
+import { getUrlParts } from 'lib/url';
 
 /**
  * Given a feed, site, or post: return the site url. return false if one could not be found.
@@ -64,13 +63,13 @@ export const getSiteName = ( { feed, site, post } = {} ) => {
 		siteName = feed.name || feed.title;
 	} else if ( ! isDefaultSiteTitle && post && post.site_name ) {
 		siteName = post.site_name;
-	} else if ( site && site.is_error && ( feed && feed.is_error && ! post ) ) {
+	} else if ( site && site.is_error && feed && feed.is_error && ! post ) {
 		siteName = translate( 'Error fetching feed' );
 	} else if ( site && site.domain ) {
 		siteName = site.domain;
 	} else {
 		const siteUrl = getSiteUrl( { feed, site, post } );
-		siteName = !! siteUrl ? url.parse( siteUrl ).hostname : null;
+		siteName = siteUrl ? getUrlParts( siteUrl ).hostname : null;
 	}
 
 	return decodeEntities( siteName );
@@ -78,13 +77,13 @@ export const getSiteName = ( { feed, site, post } = {} ) => {
 
 export const getSiteDescription = ( { site, feed } ) => {
 	const description = ( site && site.description ) || ( feed && feed.description );
-	if ( isSiteDescriptionBlacklisted( description ) ) {
+	if ( isSiteDescriptionBlocked( description ) ) {
 		return null;
 	}
 	return description;
 };
 
-export const getSiteAuthorName = site => {
+export const getSiteAuthorName = ( site ) => {
 	const siteAuthor = site && site.owner;
 	const authorFullName =
 		siteAuthor &&

@@ -7,7 +7,7 @@
 	0%,
 	20% {
 		transform: scale( 0, 0 );
-	},
+	}
 	100% {
 		transform: scale( 1, 1 );
 	}
@@ -21,10 +21,10 @@
 @keyframes fade-in {
 	from {
 		opacity: 0;
-		transform: scale( 0.92 )
+		transform: scale( 0.92 );
 	}
 	to {
 		opacity: 1;
-		transform: scale( 1 )
+		transform: scale( 1 );
 	}
 }

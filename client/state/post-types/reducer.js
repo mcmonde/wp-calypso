@@ -1,15 +1,12 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import { keyBy } from 'lodash';
 
 /**
  * Internal dependencies
  */
-import { combineReducers, keyedReducer, withSchemaValidation } from 'state/utils';
+import { combineReducers, keyedReducer, withSchemaValidation, withStorageKey } from 'state/utils';
 import { items as itemsSchema } from './schema';
 import taxonomies from './taxonomies/reducer';
 import { POST_TYPES_RECEIVE } from 'state/action-types';
@@ -19,9 +16,9 @@ import { POST_TYPES_RECEIVE } from 'state/action-types';
  * state maps site ID keys to an object of post type name to post type for all
  * supported post types on the site.
  *
- * @param  {Object} state  Current state
- * @param  {Object} action Action payload
- * @return {Object}        Updated state
+ * @param  {object} state  Current state
+ * @param  {object} action Action payload
+ * @returns {object}        Updated state
  */
 export const items = withSchemaValidation(
 	itemsSchema,
@@ -35,7 +32,9 @@ export const items = withSchemaValidation(
 	} )
 );
 
-export default combineReducers( {
+const combinedReducer = combineReducers( {
 	items,
 	taxonomies,
 } );
+
+export default withStorageKey( 'postTypes', combinedReducer );

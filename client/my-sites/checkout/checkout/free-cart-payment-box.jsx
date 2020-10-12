@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -13,8 +11,11 @@ import React from 'react';
  */
 import PayButton from './pay-button';
 import PaymentBox from './payment-box';
-import TermsOfService from './terms-of-service';
 import CartToggle from './cart-toggle';
+import CartCoupon from 'my-sites/checkout/cart/cart-coupon';
+import { hasOnlyProductsOf } from 'lib/cart-values/cart-items';
+import { isBlogger } from 'lib/products-values';
+import CheckoutTerms from './checkout-terms';
 
 class FreeCartPaymentBox extends React.Component {
 	static propTypes = {
@@ -22,64 +23,97 @@ class FreeCartPaymentBox extends React.Component {
 	};
 
 	content = () => {
-		var cart = this.props.cart;
+		const { cart, onSubmit, translate } = this.props;
+
+		const isUsingDomainCredit = cart.has_bundle_credit && ! hasOnlyProductsOf( cart, 'domain_map' );
 
 		return (
-			<form onSubmit={ this.props.onSubmit }>
-				<div className="payment-box-section">
-					<div className="checkout__payment-box-section-content">
-						<h6>
-							{ cart.has_bundle_credit
-								? this.props.translate( 'You have a free domain credit!' )
-								: this.props.translate( "Woohoo! You don't owe us anything!" ) }
-						</h6>
+			<React.Fragment>
+				<form onSubmit={ onSubmit }>
+					{ /* eslint-disable-next-line wpcalypso/jsx-classname-namespace */ }
+					<div className="payment-box-section checkout__free-cart-payment-box">
+						<div className="checkout__payment-box-section-content">
+							{ this.getDomainCreditIllustration() }
 
-						<span>
-							{ cart.has_bundle_credit
-								? this.props.translate(
-										'You get one free domain with your subscription to %(productName)s. Time to celebrate!',
-										{ args: { productName: this.getProductName() } }
-									)
-								: this.props.translate(
-										'Just complete checkout to add these upgrades to your site.'
-									) }
-						</span>
+							<h6>
+								{ isUsingDomainCredit
+									? translate( 'You have a free domain credit!' )
+									: translate( "Woohoo! You don't owe us anything!" ) }
+							</h6>
+
+							<span>
+								{ isUsingDomainCredit
+									? translate(
+											'You get a free domain for one year with your subscription to %(productName)s. Time to celebrate!',
+											{ args: { productName: this.getProductName() } }
+									  )
+									: translate( 'Just complete checkout to add these upgrades to your site.' ) }
+							</span>
+						</div>
 					</div>
-				</div>
 
-				<TermsOfService />
+					<CheckoutTerms cart={ cart } />
 
+					{ /* eslint-disable-next-line wpcalypso/jsx-classname-namespace */ }
+					<div className="payment-box-actions">
+						<PayButton
+							cart={ cart }
+							transactionStep={ this.props.transactionStep }
+							beforeSubmitText={ translate( 'Complete Checkout' ) }
+						/>
+					</div>
+				</form>
+				<CartCoupon cart={ cart } />
 				<CartToggle />
-
-				<div className="payment-box-actions">
-					<PayButton
-						cart={ cart }
-						transactionStep={ this.props.transactionStep }
-						beforeSubmitText={ this.props.translate( 'Complete Checkout' ) }
-					/>
-				</div>
-			</form>
+			</React.Fragment>
 		);
 	};
 
 	getProductName = () => {
-		var cart = this.props.cart,
-			product;
+		const cart = this.props.cart;
+		let product;
 
 		if ( cart.has_bundle_credit && this.props.selectedSite.plan ) {
 			product = this.props.products[ this.props.selectedSite.plan.product_slug ];
 		}
 
-		if ( product ) {
-			return product.product_name;
-		} else {
-			return '';
+		return product ? product.product_name : '';
+	};
+
+	getDomainCreditIllustration = () => {
+		const cart = this.props.cart;
+
+		if ( ! cart.has_bundle_credit ) {
+			return (
+				<span className="checkout__free-stand-alone-domain-mapping-illustration">
+					<img src={ '/calypso/images/upgrades/custom-domain.svg' } alt="" />
+				</span>
+			);
 		}
+
+		const isRestrictedToBlogDomains = isBlogger( this.props.selectedSite.plan );
+
+		return (
+			<span className="checkout__free-domain-credit-illustration">
+				<img
+					src={
+						isRestrictedToBlogDomains
+							? '/calypso/images/illustrations/custom-domain-blogger.svg'
+							: '/calypso/images/upgrades/custom-domain.svg'
+					}
+					alt=""
+				/>
+			</span>
+		);
 	};
 
 	render() {
 		return (
-			<PaymentBox classSet="credits-payment-box" title={ this.props.translate( 'Secure Payment' ) }>
+			<PaymentBox
+				classSet="credits-payment-box"
+				title={ this.props.translate( 'Secure payment' ) }
+				infoMessage={ this.props.infoMessage }
+			>
 				{ this.content() }
 			</PaymentBox>
 		);

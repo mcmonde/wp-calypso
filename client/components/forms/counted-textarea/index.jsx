@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -14,6 +12,11 @@ import { omit, noop } from 'lodash';
  * Internal dependencies
  */
 import FormTextarea from 'components/forms/form-textarea';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 export class CountedTextarea extends React.Component {
 	static propTypes = {

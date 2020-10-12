@@ -1,9 +1,6 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import React from 'react';
 import ReactDom from 'react-dom';
 import PropTypes from 'prop-types';
@@ -14,42 +11,35 @@ import { localize } from 'i18n-calypso';
 /**
  * Internal dependencies
  */
-import { getEditorPath } from 'state/ui/editor/selectors';
+import getEditorUrl from 'state/selectors/get-editor-url';
 import { getSelectedSiteId } from 'state/ui/selectors';
 import { getNormalizedPost } from 'state/posts/selectors';
 import { isSingleUserSite } from 'state/sites/selectors';
-import { areAllSitesSingleUser, canCurrentUserEditPost } from 'state/selectors';
-import {
-	isSharePanelOpen,
-	isMultiSelectEnabled,
-	isPostSelected,
-} from 'state/ui/post-type-list/selectors';
-import { hideActiveSharePanel, togglePostSelection } from 'state/ui/post-type-list/actions';
+import areAllSitesSingleUser from 'state/selectors/are-all-sites-single-user';
+import { canCurrentUserEditPost } from 'state/posts/selectors/can-current-user-edit-post';
+import { isSharePanelOpen } from 'state/ui/post-type-list/selectors';
+import { hideActiveSharePanel } from 'state/ui/post-type-list/actions';
 import { bumpStat } from 'state/analytics/actions';
 import ExternalLink from 'components/external-link';
-import FormInputCheckbox from 'components/forms/form-checkbox';
-import PostTime from 'blocks/post-time';
-import PostStatus from 'blocks/post-status';
 import PostShare from 'blocks/post-share';
 import PostTypeListPostThumbnail from 'my-sites/post-type-list/post-thumbnail';
 import PostActionCounts from 'my-sites/post-type-list/post-action-counts';
 import PostActionsEllipsisMenu from 'my-sites/post-type-list/post-actions-ellipsis-menu';
+import PostActionsEllipsisMenuEdit from 'my-sites/post-type-list/post-actions-ellipsis-menu/edit';
+import PostActionsEllipsisMenuTrash from 'my-sites/post-type-list/post-actions-ellipsis-menu/trash';
 import PostTypeSiteInfo from 'my-sites/post-type-list/post-type-site-info';
 import PostTypePostAuthor from 'my-sites/post-type-list/post-type-post-author';
-import { preload } from 'sections-helper';
+import { preloadEditor } from 'sections-preloaders';
+import PostRelativeTimeStatus from 'my-sites/post-relative-time-status';
 
-function preloadEditor() {
-	preload( 'post-editor' );
-}
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class PostItem extends React.Component {
-	clickHandler = clickTarget => () => {
+	clickHandler = ( clickTarget ) => () => {
 		this.props.bumpStat( 'calypso_post_item_click', clickTarget );
-	};
-
-	toggleCurrentPostSelection = event => {
-		this.props.togglePostSelection( this.props.globalId );
-		event.stopPropagation();
 	};
 
 	inAllSitesModeWithMultipleUsers() {
@@ -92,20 +82,6 @@ class PostItem extends React.Component {
 		}
 	}
 
-	renderSelectionCheckbox() {
-		const { multiSelectEnabled, isCurrentPostSelected } = this.props;
-		return (
-			multiSelectEnabled && (
-				<div className="post-item__select" onClick={ this.toggleCurrentPostSelection }>
-					<FormInputCheckbox
-						checked={ isCurrentPostSelected }
-						onClick={ this.toggleCurrentPostSelection }
-					/>
-				</div>
-			)
-		);
-	}
-
 	renderExpandedContent() {
 		const { post, hasExpandedContent } = this.props;
 
@@ -132,13 +108,17 @@ class PostItem extends React.Component {
 			globalId,
 			isAllSitesModeSelected,
 			translate,
-			multiSelectEnabled,
+			showPublishedStatus,
 			hasExpandedContent,
+			isTypeWpBlock,
 		} = this.props;
+
+		const ICON_SIZE = 12;
 
 		const title = post ? post.title : null;
 		const isPlaceholder = ! globalId;
-		const enabledPostLink = isPlaceholder || multiSelectEnabled ? null : postUrl;
+		const isTrashed = post && 'trash' === post.status;
+		const enabledPostLink = isPlaceholder || isTrashed ? null : postUrl;
 
 		const panelClasses = classnames( 'post-item__panel', className, {
 			'is-untitled': ! title,
@@ -154,7 +134,6 @@ class PostItem extends React.Component {
 		return (
 			<div className={ rootClasses } ref={ this.setDomNode }>
 				<div className={ panelClasses }>
-					{ this.renderSelectionCheckbox() }
 					<div className="post-item__detail">
 						<div className="post-item__info">
 							{ isAllSitesModeSelected && (
@@ -168,34 +147,50 @@ class PostItem extends React.Component {
 								</a>
 							) }
 						</div>
-						<h1
+						<h1 //eslint-disable-line
 							className="post-item__title"
 							onClick={ this.clickHandler( 'title' ) }
 							onMouseOver={ preloadEditor }
 						>
-							{ ! externalPostLink && (
-								<a href={ enabledPostLink } className="post-item__title-link">
+							{ ! externalPostLink && ! isTrashed && (
+								<a
+									href={ enabledPostLink }
+									className="post-item__title-link"
+									data-e2e-title={ title }
+								>
 									{ title || translate( 'Untitled' ) }
 								</a>
 							) }
-							{ ! isPlaceholder &&
-								externalPostLink && (
-									<ExternalLink
-										icon={ true }
-										href={ multiSelectEnabled ? null : postUrl }
-										target="_blank"
-										className="post-item__title-link"
-									>
-										{ title || translate( 'Untitled' ) }
-									</ExternalLink>
-								) }
+
+							{ ! externalPostLink && isTrashed && (
+								<span className="post-item__title-link" data-e2e-title={ title }>
+									{ title || translate( 'Untitled' ) }
+								</span>
+							) }
+
+							{ ! isPlaceholder && externalPostLink && (
+								<ExternalLink
+									icon={ true }
+									href={ postUrl }
+									target="_blank"
+									className="post-item__title-link"
+								>
+									{ title || translate( 'Untitled' ) }
+								</ExternalLink>
+							) }
 						</h1>
 						<div className="post-item__meta">
 							<span className="post-item__meta-time-status">
-								<a href={ enabledPostLink } className="post-item__time-status-link">
-									<PostTime globalId={ globalId } />
-									<PostStatus globalId={ globalId } />
-								</a>
+								{ post && (
+									<PostRelativeTimeStatus
+										post={ post }
+										link={ enabledPostLink }
+										target={ null }
+										gridiconSize={ ICON_SIZE }
+										includeBasicStatus={ true }
+										showPublishedStatus={ showPublishedStatus }
+									/>
+								) }
 							</span>
 							<PostActionCounts globalId={ globalId } />
 						</div>
@@ -204,7 +199,14 @@ class PostItem extends React.Component {
 						globalId={ globalId }
 						onClick={ this.clickHandler( 'image' ) }
 					/>
-					{ ! multiSelectEnabled && <PostActionsEllipsisMenu globalId={ globalId } /> }
+					{ isTypeWpBlock ? (
+						<PostActionsEllipsisMenu globalId={ globalId } includeDefaultActions={ false }>
+							<PostActionsEllipsisMenuEdit key="edit" />
+							<PostActionsEllipsisMenuTrash key="trash" />
+						</PostActionsEllipsisMenu>
+					) : (
+						<PostActionsEllipsisMenu globalId={ globalId } />
+					) }
 				</div>
 				{ hasExpandedContent && this.renderExpandedContent() }
 			</div>
@@ -224,8 +226,10 @@ PostItem.propTypes = {
 	singleUserQuery: PropTypes.bool,
 	className: PropTypes.string,
 	compact: PropTypes.bool,
+	showPublishedStatus: PropTypes.bool,
 	hideActiveSharePanel: PropTypes.func,
 	hasExpandedContent: PropTypes.bool,
+	isTypeWpBlock: PropTypes.bool,
 };
 
 export default connect(
@@ -239,7 +243,7 @@ export default connect(
 
 		// Avoid rendering an external link while loading.
 		const externalPostLink = false === canCurrentUserEditPost( state, globalId );
-		const postUrl = externalPostLink ? post.URL : getEditorPath( state, siteId, post.ID );
+		const postUrl = externalPostLink ? post.URL : getEditorUrl( state, siteId, post.ID, post.type );
 
 		const hasExpandedContent = isSharePanelOpen( state, globalId ) || false;
 
@@ -251,13 +255,11 @@ export default connect(
 			allSitesSingleUser: areAllSitesSingleUser( state ),
 			singleUserSite: isSingleUserSite( state, siteId ),
 			hasExpandedContent,
-			isCurrentPostSelected: isPostSelected( state, globalId ),
-			multiSelectEnabled: isMultiSelectEnabled( state ),
+			isTypeWpBlock: 'wp_block' === post.type,
 		};
 	},
 	{
 		bumpStat,
 		hideActiveSharePanel,
-		togglePostSelection,
 	}
 )( localize( PostItem ) );

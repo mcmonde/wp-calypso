@@ -1,9 +1,7 @@
-/** @format */
-
 /**
  * External dependencies
  */
-import deterministicStringify from 'json-stable-stringify';
+import deterministicStringify from 'fast-json-stable-stringify';
 import { get, identity, merge, noop } from 'lodash';
 
 /**
@@ -15,29 +13,29 @@ import warn from 'lib/warn';
 /**
  * Returns response data from an HTTP request success action if available
  *
- * @param {Object} action may contain HTTP response data
+ * @param {object} action may contain HTTP response data
  * @returns {*|undefined} response data if available
  */
-export const getData = action => get( action, 'meta.dataLayer.data', undefined );
+export const getData = ( action ) => get( action, 'meta.dataLayer.data', undefined );
 
 /**
  * Returns error data from an HTTP request failure action if available
  *
- * @param {Object} action may contain HTTP response error data
+ * @param {object} action may contain HTTP response error data
  * @returns {*|undefined} error data if available
  */
-export const getError = action => get( action, 'meta.dataLayer.error', undefined );
+export const getError = ( action ) => get( action, 'meta.dataLayer.error', undefined );
 
 /**
  * Returns (response) headers data from an HTTP request action if available
  *
- * @param   {Object}      action Request action for which to retrieve HTTP response headers
+ * @param   {object}      action Request action for which to retrieve HTTP response headers
  * @returns {*|undefined}        Headers data if available
  */
-export const getHeaders = action => get( action, 'meta.dataLayer.headers', undefined );
+export const getHeaders = ( action ) => get( action, 'meta.dataLayer.headers', undefined );
 
 /**
- * @typedef {Object} ProgressData
+ * @typedef {object} ProgressData
  * @property {number} loaded Number of bytes already transferred
  * @property {number} total  Total number of bytes to transfer
  */
@@ -45,12 +43,12 @@ export const getHeaders = action => get( action, 'meta.dataLayer.headers', undef
 /**
  * Returns progress data from an HTTP request progress action if available
  *
- * @param  {Object} action          may contain HTTP progress data
- * @return {ProgressData|undefined} Progress data if available
+ * @param  {object} action          may contain HTTP progress data
+ * @returns {ProgressData|undefined} Progress data if available
  */
-export const getProgress = action => get( action, 'meta.dataLayer.progress', undefined );
+export const getProgress = ( action ) => get( action, 'meta.dataLayer.progress', undefined );
 
-const getRequestStatus = action => {
+const getRequestStatus = ( action ) => {
 	if ( undefined !== getError( action ) ) {
 		return 'failure';
 	}
@@ -62,8 +60,8 @@ const getRequestStatus = action => {
 	return 'pending';
 };
 
-export const getRequestKey = fullAction => {
-	const { meta, ...action } = fullAction; // eslint-disable-line no-unused-vars
+export const getRequestKey = ( fullAction ) => {
+	const { meta, ...action } = fullAction;
 	const requestKey = get( meta, 'dataLayer.requestKey' );
 
 	return requestKey ? requestKey : deterministicStringify( action );
@@ -72,13 +70,17 @@ export const getRequestKey = fullAction => {
 export const requestsReducerItem = (
 	state = null,
 	{ meta: { dataLayer: { lastUpdated, pendingSince, status } = {} } = {} }
-) =>
-	Object.assign(
+) => {
+	if ( status === undefined ) {
+		return state;
+	}
+	return Object.assign(
 		{ ...state },
 		{ status },
 		lastUpdated && { lastUpdated },
 		pendingSince && { pendingSince }
 	);
+};
 
 export const reducer = keyedReducer( 'meta.dataLayer.requestKey', requestsReducerItem );
 
@@ -102,7 +104,7 @@ export const reducer = keyedReducer( 'meta.dataLayer.requestKey', requestsReduce
  * @param {Function} next next link in HTTP middleware chain
  * @returns {Function} middleware function to track requests
  */
-export const trackRequests = next => ( store, action ) => {
+export const trackRequests = ( next ) => ( store, action ) => {
 	// progress events don't affect
 	// any tracking meta at the moment
 	if ( true !== get( action, 'meta.dataLayer.trackRequest' ) || getProgress( action ) ) {
@@ -116,85 +118,10 @@ export const trackRequests = next => ( store, action ) => {
 		status === 'pending' ? { pendingSince: Date.now() } : { lastUpdated: Date.now() }
 	);
 
-	const dispatch = response => store.dispatch( merge( response, { meta: { dataLayer } } ) );
+	const dispatch = ( response ) => store.dispatch( merge( response, { meta: { dataLayer } } ) );
 
 	next( { ...store, dispatch }, action );
 };
-
-/**
- * @type Object default dispatchRequest options
- * @property {Function} fromApi validates and transforms API response data
- * @property {Function} middleware chain of functions to process before dispatch
- * @property {Function} onProgress called on progress events
- */
-const defaultOptions = {
-	fromApi: identity,
-	onProgress: noop,
-};
-
-/**
- * Dispatches to appropriate function based on HTTP request meta
- *
- * @see state/data-layer/wpcom-http/actions#fetch creates HTTP requests
- *
- * When the WPCOM HTTP data layer handles requests it will add
- * response data and errors to a meta property on the given success
- * error, and progress handling actions.
- *
- * This function accepts three functions as the initiator, success,
- * and error handlers for actions and it will call the appropriate
- * one based on the stored meta. It accepts an optional fourth
- * function which will be called for progress events on upload.
- *
- * If both error and response data is available this will call the
- * error handler in preference over the success handler, but the
- * response data will also still be available through the action meta.
- *
- * The functions should conform to the following type signatures:
- *   initiator  :: ReduxStore -> Action -> Dispatcher (middleware signature)
- *   onSuccess  :: ReduxStore -> Action -> Dispatcher -> ResponseData
- *   onError    :: ReduxStore -> Action -> Dispatcher -> ErrorData
- *   onProgress :: ReduxStore -> Action -> Dispatcher -> ProgressData
- *   fromApi    :: ResponseData -> [ Boolean, Data ]
- *
- * @param {Function} middleware intercepts requests moving through the system
- * @param {Function} initiator called if action lacks response meta; should create HTTP request
- * @param {Function} onSuccess called if the action meta includes response data
- * @param {Function} onError called if the action meta includes error data
- * @param {Object} options configures additional dispatching behaviors
- + @param {Function} [options.fromApi] maps between API data and Calypso data
- + @param {Function} [options.onProgress] called on progress events when uploading
- * @param {Function} [options.middleware] runs before the dispatch itself
- * @returns {?*} please ignore return values, they are undefined
- */
-export const requestDispatcher = middleware => ( initiator, onSuccess, onError, options = {} ) => {
-	const { fromApi, onProgress } = { ...defaultOptions, ...options };
-
-	return middleware( ( store, action ) => {
-		const error = getError( action );
-		if ( undefined !== error ) {
-			return onError( store, action, error );
-		}
-
-		const data = getData( action );
-		if ( undefined !== data ) {
-			try {
-				return onSuccess( store, action, fromApi( data ) );
-			} catch ( err ) {
-				return onError( store, action, err );
-			}
-		}
-
-		const progress = getProgress( action );
-		if ( undefined !== progress ) {
-			return onProgress( store, action, progress );
-		}
-
-		return initiator( store, action );
-	} );
-};
-
-export const dispatchRequest = requestDispatcher( trackRequests );
 
 /**
  * Dispatches to appropriate function based on HTTP request meta
@@ -225,15 +152,15 @@ export const dispatchRequest = requestDispatcher( trackRequests );
  *   fromApi    :: ResponseData -> TransformedData throws TransformerError|SchemaError
  *
  * @param {Function} middleware intercepts requests moving through the system
- * @param {Object} options object with named parameters:
- * @param {Function} options.fetch called if action lacks response meta; should create HTTP request
- * @param {Function} options.onSuccess called if the action meta includes response data
- * @param {Function} options.onError called if the action meta includes error data
- * @param {Function} options.onProgress called on progress events when uploading
- * @param {Function} options.fromApi maps between API data and Calypso data
- * @returns {Action} action or action thunk to be executed in response to HTTP event
+ * object - options object with named parameters:
+ * function - options.fetch called if action lacks response meta; should create HTTP request
+ * function - options.onSuccess called if the action meta includes response data
+ * function - options.onError called if the action meta includes error data
+ * function - options.onProgress called on progress events when uploading
+ * function - options.fromApi maps between API data and Calypso data
+ * @returns {object} action or action thunk to be executed in response to HTTP event
  */
-export const exRequestDispatcher = middleware => options => {
+export const requestDispatcher = ( middleware ) => ( options ) => {
 	if ( ! options.fetch ) {
 		warn( 'fetch handler is not defined: no request will ever be issued' );
 	}
@@ -262,7 +189,7 @@ export const exRequestDispatcher = middleware => options => {
 		return store.dispatch( requestAction );
 	} );
 };
-export const dispatchRequestEx = exRequestDispatcher( trackRequests );
+export const dispatchRequest = requestDispatcher( trackRequests );
 
 /*
  * Converts an application-level Calypso action that's handled by the data-layer middleware
@@ -297,10 +224,5 @@ function createRequestAction( options, action ) {
 		return onProgress( action, progress );
 	}
 
-	const fetchAction = fetch( action );
-	if ( ! fetchAction ) {
-		warn( "The `fetch` handler didn't return any action: no request will be issued" );
-	}
-
-	return fetchAction;
+	return fetch( action );
 }

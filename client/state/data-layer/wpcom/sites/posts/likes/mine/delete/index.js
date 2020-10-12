@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External Dependencies
  */
@@ -8,10 +6,12 @@
  * Internal Dependencies
  */
 import { like, removeLiker } from 'state/posts/likes/actions';
-import { dispatchRequestEx } from 'state/data-layer/wpcom-http/utils';
+import { dispatchRequest } from 'state/data-layer/wpcom-http/utils';
 import { http } from 'state/data-layer/wpcom-http/actions';
 import { POST_UNLIKE } from 'state/action-types';
 import { bypassDataLayer } from 'state/data-layer/utils';
+
+import { registerHandlers } from 'state/data-layer/handler-registry';
 
 export function fromApi( response ) {
 	if ( ! response.success ) {
@@ -23,7 +23,7 @@ export function fromApi( response ) {
 	};
 }
 
-export const fetch = action => {
+export const fetch = ( action ) => {
 	const query = {};
 	if ( action.source ) {
 		query.source = action.source;
@@ -46,13 +46,15 @@ export const onSuccess = ( { siteId, postId }, { likeCount, liker } ) =>
 
 export const onError = ( { siteId, postId } ) => bypassDataLayer( like( siteId, postId ) );
 
-export default {
+registerHandlers( 'state/data-layer/wpcom/sites/posts/likes/mine/delete/index.js', {
 	[ POST_UNLIKE ]: [
-		dispatchRequestEx( {
+		dispatchRequest( {
 			fetch,
 			onSuccess,
 			onError,
 			fromApi,
 		} ),
 	],
-};
+} );
+
+export default {};

@@ -1,10 +1,8 @@
-/** @format */
-
 /**
  * External dependencies
  */
 import classNames from 'classnames';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 import PropTypes from 'prop-types';
 import React from 'react';
 import { localize } from 'i18n-calypso';
@@ -13,8 +11,12 @@ import { get } from 'lodash';
 /**
  * Internal dependencies
  */
-import Card from 'components/card';
-import GoogleMyBusinessLogo from 'my-sites/google-my-business/logo';
+import { Card } from '@automattic/components';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 function GoogleMyBusinessLocationPlaceholder( { isCompact } ) {
 	const classes = classNames( 'gmb-location', 'is-loading', { 'is-compact': isCompact } );
@@ -22,9 +24,7 @@ function GoogleMyBusinessLocationPlaceholder( { isCompact } ) {
 	return (
 		<Card className={ classes }>
 			<div className="gmb-location__content">
-				<div className="gmb-location__logo">
-					<GoogleMyBusinessLogo height="30" width="30" />
-				</div>
+				<Gridicon icon="institution" height="60px" width="60px" />
 				<div className="gmb-location__description">
 					<div className="gmb-location__name" />
 					<div className="gmb-location__address" />
@@ -53,18 +53,16 @@ function GoogleMyBusinessLocation( { children, isCompact, location, translate } 
 						src={ location.picture }
 					/>
 				) : (
-					<div className="gmb-location__logo">
-						<GoogleMyBusinessLogo height="30" width="30" />
-					</div>
+					<Gridicon icon="institution" height="60px" width="60px" />
 				) }
 
 				<div className="gmb-location__description">
 					<h2 className="gmb-location__name">{ location.name }</h2>
 
 					<div className="gmb-location__address">
-						{ location.description
-							.split( '\n' )
-							.map( ( line, index ) => <p key={ index }>{ line }</p> ) }
+						{ location.description.split( '\n' ).map( ( line, index ) => (
+							<p key={ index }>{ line }</p>
+						) ) }
 					</div>
 
 					{ isLocationVerified && (
@@ -73,7 +71,7 @@ function GoogleMyBusinessLocation( { children, isCompact, location, translate } 
 								className="gmb-location__verified-icon"
 								icon="checkmark-circle"
 								size={ 18 }
-							/>{' '}
+							/>{ ' ' }
 							{ translate( 'Verified' ) }
 						</div>
 					) }

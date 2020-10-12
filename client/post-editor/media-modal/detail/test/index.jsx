@@ -1,5 +1,4 @@
 /**
- * @format
  * @jest-environment jsdom
  */
 
@@ -14,7 +13,7 @@ import React from 'react';
  * Internal dependencies
  */
 import { EditorMediaModalDetailItem as DetailItem } from '../detail-item';
-import { useSandbox } from 'test/helpers/use-sinon';
+import { useSandbox } from 'test-helpers/use-sinon';
 
 jest.mock( 'post-editor/media-modal/detail/detail-fields', () =>
 	require( 'components/empty-component' )
@@ -48,13 +47,13 @@ const DUMMY_VIDEO_MEDIA = {
 const SHARED_PROPS = {
 	site: DUMMY_SITE,
 	canUserUploadFiles: true,
-	translate: str => str,
+	translate: ( str ) => str,
 };
 
 describe( 'EditorMediaModalDetailItem', () => {
 	let isVideoPressEnabled;
 
-	useSandbox( sandbox => {
+	useSandbox( ( sandbox ) => {
 		isVideoPressEnabled = sandbox.stub().returns( true );
 	} );
 

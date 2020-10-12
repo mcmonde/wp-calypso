@@ -1,12 +1,14 @@
 /**
- * @format
  * @jest-environment jsdom
  */
+
+/* eslint jest/expect-expect: ["error", { "assertFunctionNames": ["assertPasses", "assertFails"] }] */
 
 /**
  * External dependencies
  */
 import React from 'react';
+import { localize } from 'i18n-calypso';
 
 /**
  * Internal dependencies
@@ -23,6 +25,7 @@ function assertFails( validator, { props }, propName = 'translatableString' ) {
 }
 
 const Translatable = () => <span />;
+const LocalizedTranslatable = localize( Translatable );
 
 describe( 'translatable proptype', () => {
 	test( 'should pass when no propType Name declared', () => {
@@ -49,7 +52,7 @@ describe( 'translatable proptype', () => {
 	} );
 
 	test( 'should fail on unexpected functions', () =>
-		assertFails( translatableString, <legend translatableString={ function() {} } /> ) );
+		assertFails( translatableString, <legend translatableString={ function () {} } /> ) );
 
 	test( 'should fail on unexpected objects', () =>
 		assertFails( translatableString, <legend translatableString={ {} } /> ) );
@@ -66,4 +69,10 @@ describe( 'translatable proptype', () => {
 	} );
 
 	it( 'should fail when required', () => assertFails( translatableString.isRequired, <legend /> ) );
+
+	it( 'should pass with <Translatable> component run through i18n-calypso.localize()', () =>
+		assertPasses(
+			translatableString.isRequired,
+			<legend translatableString={ <LocalizedTranslatable /> } />
+		) );
 } );

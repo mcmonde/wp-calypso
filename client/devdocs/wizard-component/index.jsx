@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -13,7 +11,7 @@ import page from 'page';
 import HeaderCake from 'components/header-cake';
 import Main from 'components/main';
 import Wizard from 'components/wizard/docs/example';
-import ReadmeViewer from 'devdocs/docs-example/readme-viewer';
+import ReadmeViewer from 'components/readme-viewer';
 
 class WizardComponent extends Component {
 	backToComponents = () => page( '/devdocs/design/' );
@@ -27,7 +25,7 @@ class WizardComponent extends Component {
 					Wizard
 				</HeaderCake>
 				<Wizard stepName={ stepName } />
-				<ReadmeViewer section="design" readmeFilePath="wizard" />
+				<ReadmeViewer section="design" readmeFilePath="/client/components/wizard/README.md" />
 			</Main>
 		);
 	}

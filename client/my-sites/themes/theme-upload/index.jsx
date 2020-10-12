@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -7,27 +5,27 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 import { connect } from 'react-redux';
-import { includes, find, isEmpty } from 'lodash';
+import { includes, find, isEmpty, flowRight } from 'lodash';
 
 /**
  * Internal dependencies
  */
 import Main from 'components/main';
 import HeaderCake from 'components/header-cake';
-import Card from 'components/card';
+import { Card, ProgressBar, Button } from '@automattic/components';
 import UploadDropZone from 'blocks/upload-drop-zone';
 import EmptyContent from 'components/empty-content';
-import ProgressBar from 'components/progress-bar';
-import Button from 'components/button';
 import ThanksModal from 'my-sites/themes/thanks-modal';
+import AutoLoadingHomepageModal from 'my-sites/themes/auto-loading-homepage-modal';
 import QueryCanonicalTheme from 'components/data/query-canonical-theme';
+import PageViewTracker from 'lib/analytics/page-view-tracker';
 // Necessary for ThanksModal
 import QueryActiveTheme from 'components/data/query-active-theme';
 import { localize } from 'i18n-calypso';
 import notices from 'notices';
 import debugFactory from 'debug';
 import { uploadTheme, clearThemeUpload, initiateThemeTransfer } from 'state/themes/actions';
-import { getSelectedSiteId, getSelectedSite } from 'state/ui/selectors';
+import { getSelectedSiteId, getSelectedSite, getSelectedSiteSlug } from 'state/ui/selectors';
 import {
 	getSiteAdminUrl,
 	isJetpackSite,
@@ -56,12 +54,18 @@ import { getEligibility, isEligibleForAutomatedTransfer } from 'state/automated-
 import isSiteAutomatedTransfer from 'state/selectors/is-site-automated-transfer';
 import WpAdminAutoLogin from 'components/wpadmin-auto-login';
 
+/**
+ * Style dependencies
+ */
+import './style.scss';
+
 const debug = debugFactory( 'calypso:themes:theme-upload' );
 
 class Upload extends React.Component {
 	static propTypes = {
 		siteId: PropTypes.number,
 		selectedSite: PropTypes.object,
+		useUpsellPage: PropTypes.bool,
 		inProgress: PropTypes.bool,
 		complete: PropTypes.bool,
 		failed: PropTypes.bool,
@@ -85,7 +89,7 @@ class Upload extends React.Component {
 		! inProgress && this.props.clearThemeUpload( siteId );
 	}
 
-	componentWillReceiveProps( nextProps ) {
+	UNSAFE_componentWillReceiveProps( nextProps ) {
 		if ( nextProps.siteId !== this.props.siteId ) {
 			const { siteId, inProgress } = nextProps;
 			! inProgress && this.props.clearThemeUpload( siteId );
@@ -127,14 +131,14 @@ class Upload extends React.Component {
 		debug( 'Error', { error } );
 
 		const errorCauses = {
-			exists: translate( 'Upload problem: Theme already installed on site.' ),
-			already_installed: translate( 'Upload problem: Theme already installed on site.' ),
-			'too large': translate( 'Upload problem: Theme zip must be under 10MB.' ),
-			incompatible: translate( 'Upload problem: Incompatible theme.' ),
-			unsupported_mime_type: translate( 'Upload problem: Not a valid zip file' ),
+			exists: translate( 'Install problem: Theme already installed on site.' ),
+			already_installed: translate( 'Install problem: Theme already installed on site.' ),
+			'too large': translate( 'Install problem: Theme zip must be under 10MB.' ),
+			incompatible: translate( 'Install problem: Incompatible theme.' ),
+			unsupported_mime_type: translate( 'Install problem: Not a valid zip file' ),
 			initiate_failure: translate(
-				'Upload problem: Theme may not be valid. Check that your zip file contains only the theme ' +
-					'you are trying to upload.'
+				'Install problem: Theme may not be valid. Check that your zip file contains only the theme ' +
+					'you are trying to install.'
 			),
 		};
 
@@ -144,7 +148,7 @@ class Upload extends React.Component {
 		} );
 
 		const unknownCause = error.error ? `: ${ error.error }` : '';
-		notices.error( cause || translate( 'Problem uploading theme' ) + unknownCause );
+		notices.error( cause || translate( 'Problem installing theme' ) + unknownCause );
 	}
 
 	renderProgressBar() {
@@ -186,7 +190,7 @@ class Upload extends React.Component {
 
 		return (
 			<div className="theme-upload__theme-sheet">
-				<img className="theme-upload__screenshot" src={ theme.screenshot } />
+				<img className="theme-upload__screenshot" src={ theme.screenshot } alt="" />
 				<h2 className="theme-upload__theme-name">{ theme.name }</h2>
 				<div className="theme-upload__author">
 					{ translate( 'by ' ) }
@@ -211,14 +215,14 @@ class Upload extends React.Component {
 
 		return (
 			<Card>
-				{ ! inProgress &&
-					! complete && <UploadDropZone doUpload={ uploadAction } disabled={ disabled } /> }
+				{ ! inProgress && ! complete && (
+					<UploadDropZone doUpload={ uploadAction } disabled={ disabled } />
+				) }
 				{ inProgress && this.renderProgressBar() }
 				{ complete && ! failed && uploadedTheme && this.renderTheme() }
-				{ complete &&
-					this.props.isSiteAutomatedTransfer && (
-						<WpAdminAutoLogin site={ this.props.selectedSite } />
-					) }
+				{ complete && this.props.isSiteAutomatedTransfer && (
+					<WpAdminAutoLogin site={ this.props.selectedSite } />
+				) }
 			</Card>
 		);
 	}
@@ -254,11 +258,13 @@ class Upload extends React.Component {
 
 		return (
 			<Main>
+				<PageViewTracker path="/themes/upload/:site" title="Themes > Install" />
 				<QueryEligibility siteId={ siteId } />
 				<QueryActiveTheme siteId={ siteId } />
 				{ themeId && complete && <QueryCanonicalTheme siteId={ siteId } themeId={ themeId } /> }
 				<ThanksModal source="upload" />
-				<HeaderCake backHref={ backPath }>{ translate( 'Upload theme' ) }</HeaderCake>
+				<AutoLoadingHomepageModal source="upload" />
+				<HeaderCake backHref={ backPath }>{ translate( 'Install theme' ) }</HeaderCake>
 				{ upgradeJetpack && (
 					<JetpackManageErrorPage
 						template="updateJetpack"
@@ -278,45 +284,51 @@ class Upload extends React.Component {
 
 const ConnectedUpload = connectOptions( Upload );
 
-const UploadWithOptions = props => {
+const UploadWithOptions = ( props ) => {
 	const { siteId, uploadedTheme } = props;
 	return <ConnectedUpload { ...props } siteId={ siteId } theme={ uploadedTheme } />;
 };
 
-export default connect(
-	state => {
-		const siteId = getSelectedSiteId( state );
-		const site = getSelectedSite( state );
-		const themeId = getUploadedThemeId( state, siteId );
-		const isJetpack = isJetpackSite( state, siteId );
-		const { eligibilityHolds, eligibilityWarnings } = getEligibility( state, siteId );
-		// Use this selector to take advantage of eligibility card placeholders
-		// before data has loaded.
-		const isEligible = isEligibleForAutomatedTransfer( state, siteId );
-		const hasEligibilityMessages = ! (
-			isEmpty( eligibilityHolds ) && isEmpty( eligibilityWarnings )
-		);
-		return {
-			siteId,
-			isBusiness: hasFeature( state, siteId, FEATURE_UNLIMITED_PREMIUM_THEMES ),
-			selectedSite: site,
-			isJetpack,
-			inProgress: isUploadInProgress( state, siteId ),
-			complete: isUploadComplete( state, siteId ),
-			failed: hasUploadFailed( state, siteId ),
-			themeId,
-			isMultisite: isJetpackSiteMultiSite( state, siteId ),
-			uploadedTheme: getCanonicalTheme( state, siteId, themeId ),
-			error: getUploadError( state, siteId ),
-			progressTotal: getUploadProgressTotal( state, siteId ),
-			progressLoaded: getUploadProgressLoaded( state, siteId ),
-			installing: isInstallInProgress( state, siteId ),
-			upgradeJetpack: isJetpack && ! hasJetpackSiteJetpackThemesExtendedFeatures( state, siteId ),
-			backPath: getBackPath( state ),
-			showEligibility: ! isJetpack && ( hasEligibilityMessages || ! isEligible ),
-			isSiteAutomatedTransfer: isSiteAutomatedTransfer( state, siteId ),
-			siteAdminUrl: getSiteAdminUrl( state, siteId ),
-		};
-	},
-	{ uploadTheme, clearThemeUpload, initiateThemeTransfer }
-)( localize( UploadWithOptions ) );
+const mapStateToProps = ( state ) => {
+	const siteId = getSelectedSiteId( state );
+	const site = getSelectedSite( state );
+	const themeId = getUploadedThemeId( state, siteId );
+	const isJetpack = isJetpackSite( state, siteId );
+	const { eligibilityHolds, eligibilityWarnings } = getEligibility( state, siteId );
+	// Use this selector to take advantage of eligibility card placeholders
+	// before data has loaded.
+	const isEligible = isEligibleForAutomatedTransfer( state, siteId );
+	const hasEligibilityMessages = ! (
+		isEmpty( eligibilityHolds ) && isEmpty( eligibilityWarnings )
+	);
+
+	return {
+		siteId,
+		siteSlug: getSelectedSiteSlug( state ),
+		isBusiness: hasFeature( state, siteId, FEATURE_UNLIMITED_PREMIUM_THEMES ),
+		selectedSite: site,
+		isJetpack,
+		inProgress: isUploadInProgress( state, siteId ),
+		complete: isUploadComplete( state, siteId ),
+		failed: hasUploadFailed( state, siteId ),
+		themeId,
+		isMultisite: isJetpackSiteMultiSite( state, siteId ),
+		uploadedTheme: getCanonicalTheme( state, siteId, themeId ),
+		error: getUploadError( state, siteId ),
+		progressTotal: getUploadProgressTotal( state, siteId ),
+		progressLoaded: getUploadProgressLoaded( state, siteId ),
+		installing: isInstallInProgress( state, siteId ),
+		upgradeJetpack: isJetpack && ! hasJetpackSiteJetpackThemesExtendedFeatures( state, siteId ),
+		backPath: getBackPath( state ),
+		showEligibility: ! isJetpack && ( hasEligibilityMessages || ! isEligible ),
+		isSiteAutomatedTransfer: isSiteAutomatedTransfer( state, siteId ),
+		siteAdminUrl: getSiteAdminUrl( state, siteId ),
+	};
+};
+
+const flowRightArgs = [
+	connect( mapStateToProps, { uploadTheme, clearThemeUpload, initiateThemeTransfer } ),
+	localize,
+];
+
+export default flowRight( ...flowRightArgs )( UploadWithOptions );

@@ -4,19 +4,20 @@
 	padding-top: 16px;
 	padding-right: 348px;
 	max-width: 600px;
-	margin: 0 auto 60px auto;
+	margin: 0 auto 60px;
 
 	p {
-		color: $gray-darken-20;
+		color: var( --color-text-inverted );
 		text-align: right;
 		margin-bottom: 8px;
 	}
 
 	a {
 		text-decoration: underline;
+		color: var( --color-text-inverted );
 	}
 
-	@include breakpoint( "<660px" ) {
+	@include breakpoint-deprecated( '<660px' ) {
 		max-width: 100%;
 		padding: 16px;
 		margin: 0 auto;
@@ -28,37 +29,31 @@
 }
 
 .example-domain-suggestions__browser {
-	pointer-events: none;
 	position: absolute;
 		top: 0;
 		right: 0;
 	width: 300px;
 
-	&:before {
-		display: block;
-		content: '';
-		position: absolute;
-			right: 0;
-			bottom: 0;
-			left: 0;
-		height: 30px;
-		background: linear-gradient( to bottom, rgba( $gray-light, 0 ) 0%, rgba( $gray-light, 1 ) 100% );
-	}
-
-	&:after {
-		display: block;
-		content: '';
-		position: absolute;
-			top: 0;
-			right: 0;
-			bottom: 0;
-		width: 80px;
-		background: linear-gradient( to right, rgba( $gray-light, 0 ) 0%, rgba( $gray-light, 1 ) 100% );
-	}
-
-	@include breakpoint( "<660px" ) {
-		padding-top: 24px;
+	@include breakpoint-deprecated( '<660px' ) {
 		position: relative;
 		margin: 0 auto;
+	}
+}
+
+body.is-section-signup.is-white-signup {
+	.example-domain-suggestions {
+		max-width: 678px;
+
+		p {
+			text-align: left;
+		}
+		.example-domain-suggestions__explanation {
+			color: var( --color-neutral-40 );
+		}
+		.example-domain-suggestions__mapping-information {
+			a {
+				color: var( --color-neutral-60 );
+			}
+		}
 	}
 }

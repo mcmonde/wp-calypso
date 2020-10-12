@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -15,7 +13,7 @@ import {
 	changeSettingsProductsSetting,
 	saveWeightAndDimensionsUnits,
 } from '../actions';
-import useNock from 'test/helpers/use-nock';
+import useNock from 'test-helpers/use-nock';
 import {
 	WOOCOMMERCE_SETTINGS_PRODUCTS_CHANGE_SETTING,
 	WOOCOMMERCE_SETTINGS_PRODUCTS_UPDATE_REQUEST,
@@ -39,14 +37,13 @@ describe( 'actions', () => {
 			},
 		];
 
-		useNock( nock => {
+		useNock( ( nock ) => {
 			nock( 'https://public-api.wordpress.com:443' )
 				.persist()
-				.post( '/rest/v1.1/jetpack-blogs/123/rest-api/' )
-				.query( {
+				.post( '/rest/v1.1/jetpack-blogs/123/rest-api/', {
 					path: '/wc/v3/settings/products/batch&_via_calypso&_method=post',
+					body: JSON.stringify( { update: settingsPayload } ),
 					json: true,
-					body: { update: settingsPayload },
 				} )
 				.reply( 200, {
 					data: {
@@ -98,7 +95,7 @@ describe( 'actions', () => {
 	describe( '#fetchSettingsProducts()', () => {
 		const siteId = '123';
 
-		useNock( nock => {
+		useNock( ( nock ) => {
 			nock( 'https://public-api.wordpress.com:443' )
 				.persist()
 				.get( '/rest/v1.1/jetpack-blogs/123/rest-api/' )
@@ -170,7 +167,7 @@ describe( 'actions', () => {
 			} );
 			const dispatch = spy();
 			fetchSettingsProducts( siteId )( dispatch, getState );
-			expect( dispatch ).to.not.have.beenCalled;
+			expect( dispatch ).to.not.have.been.called;
 		} );
 	} );
 
@@ -212,14 +209,13 @@ describe( 'actions', () => {
 
 		const settingsPayload = [ weight, dimensions ];
 
-		useNock( nock => {
+		useNock( ( nock ) => {
 			nock( 'https://public-api.wordpress.com:443' )
 				.persist()
-				.post( '/rest/v1.1/jetpack-blogs/123/rest-api/' )
-				.query( {
+				.post( '/rest/v1.1/jetpack-blogs/123/rest-api/', {
 					path: '/wc/v3/settings/products/batch&_via_calypso&_method=post',
 					json: true,
-					body: { update: settingsPayload },
+					body: JSON.stringify( { update: settingsPayload } ),
 				} )
 				.reply( 200, {
 					data: {
@@ -244,7 +240,7 @@ describe( 'actions', () => {
 			} );
 			const dispatch = spy();
 			saveWeightAndDimensionsUnits( siteId )( dispatch, getState );
-			expect( dispatch ).to.not.have.beenCalled;
+			expect( dispatch ).to.not.have.been.called;
 		} );
 
 		const getState = () => ( {

@@ -1,32 +1,29 @@
-/** @format */
 /**
  * External Dependencies
  */
 import PropTypes from 'prop-types';
 import React from 'react';
-import { localize } from 'i18n-calypso';
-import { noop } from 'lodash';
+import { flowRight as compose, noop } from 'lodash';
 import { connect } from 'react-redux';
 
 /**
  * Internal Dependencies
  */
 import connectSite from 'lib/reader-connect-site';
-import userSettings from 'lib/user-settings';
-import SubscriptionListItem from 'blocks/reader-subscription-list-item';
-import { isFollowing as isFollowingSelector } from 'state/selectors';
+import SubscriptionListItem from '.';
+import { isFollowing as isFollowingSelector } from 'state/reader/follows/selectors';
 
 class ConnectedSubscriptionListItem extends React.Component {
 	static propTypes = {
 		feed: PropTypes.object,
 		site: PropTypes.object,
-		translate: PropTypes.func,
 		feedId: PropTypes.number,
 		siteId: PropTypes.number,
 		onShouldMeasure: PropTypes.func,
 		onComponentMountWithNewRailcar: PropTypes.func,
 		showNotificationSettings: PropTypes.bool,
 		showLastUpdatedDate: PropTypes.bool,
+		isEmailBlocked: PropTypes.bool,
 		isFollowing: PropTypes.bool,
 		followSource: PropTypes.string,
 		railcar: PropTypes.object,
@@ -59,7 +56,6 @@ class ConnectedSubscriptionListItem extends React.Component {
 		const {
 			feed,
 			site,
-			translate,
 			url,
 			feedId,
 			siteId,
@@ -69,17 +65,15 @@ class ConnectedSubscriptionListItem extends React.Component {
 			followSource,
 			railcar,
 		} = this.props;
-		const isEmailBlocked = userSettings.getSetting( 'subscription_delivery_email_blocked' );
 
 		return (
 			<SubscriptionListItem
-				translate={ translate }
 				feedId={ feedId }
 				siteId={ siteId }
 				site={ site }
 				feed={ feed }
 				url={ url }
-				showNotificationSettings={ showNotificationSettings && ! isEmailBlocked }
+				showNotificationSettings={ showNotificationSettings }
 				showLastUpdatedDate={ showLastUpdatedDate }
 				isFollowing={ isFollowing }
 				followSource={ followSource }
@@ -89,6 +83,9 @@ class ConnectedSubscriptionListItem extends React.Component {
 	}
 }
 
-export default connect( ( state, ownProps ) => ( {
-	isFollowing: isFollowingSelector( state, { feedId: ownProps.feedId, blogId: ownProps.siteId } ),
-} ) )( localize( connectSite( ConnectedSubscriptionListItem ) ) );
+export default compose(
+	connect( ( state, ownProps ) => ( {
+		isFollowing: isFollowingSelector( state, { feedId: ownProps.feedId, blogId: ownProps.siteId } ),
+	} ) ),
+	connectSite
+)( ConnectedSubscriptionListItem );

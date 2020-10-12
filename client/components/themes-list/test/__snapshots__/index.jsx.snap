@@ -4,12 +4,10 @@ exports[`ThemesList should render a div with a className of "themes-list" 1`] = 
 <div
   className="themes-list"
 >
-  <InfiniteScroll
-    nextPageMethod={[Function]}
-  />
   <Connect(Localized(Theme))
     actionLabel=""
     active={false}
+    bookmarkRef={null}
     index={0}
     installing={false}
     key="theme-1"
@@ -26,6 +24,7 @@ exports[`ThemesList should render a div with a className of "themes-list" 1`] = 
   <Connect(Localized(Theme))
     actionLabel=""
     active={false}
+    bookmarkRef={null}
     index={1}
     installing={false}
     key="theme-2"
@@ -82,6 +81,9 @@ exports[`ThemesList should render a div with a className of "themes-list" 1`] = 
   <div
     className="themes-list__spacer"
     key="themes-list__spacer-10"
+  />
+  <InfiniteScroll
+    nextPageMethod={[Function]}
   />
 </div>
 `;

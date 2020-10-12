@@ -1,11 +1,10 @@
-/** @format */
-
 /**
  * External dependencies
  */
 
 import React from 'react';
 import PropTypes from 'prop-types';
+import { unescape } from 'lodash';
 
 /**
  * Internal dependencies
@@ -21,8 +20,8 @@ const ProductsListRow = ( { site, product } ) => {
 
 	const categoryNames =
 		product.categories &&
-		product.categories.map( function( category ) {
-			return category.name;
+		product.categories.map( function ( category ) {
+			return unescape( category.name );
 		} );
 
 	const renderCategories = () => (
@@ -33,8 +32,9 @@ const ProductsListRow = ( { site, product } ) => {
 
 	const renderStock = () => (
 		<div>
-			{ ( product.manage_stock &&
-				'simple' === product.type && <span>{ product.stock_quantity }</span> ) || <span>-</span> }
+			{ ( product.manage_stock && 'simple' === product.type && (
+				<span>{ product.stock_quantity }</span>
+			) ) || <span>-</span> }
 		</div>
 	);
 

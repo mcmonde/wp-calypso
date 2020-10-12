@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -8,13 +6,15 @@ import { noop } from 'lodash';
 /**
  * Internal dependencies
  */
-import { dispatchRequestEx } from 'state/data-layer/wpcom-http/utils';
+import { dispatchRequest } from 'state/data-layer/wpcom-http/utils';
 import { http } from 'state/data-layer/wpcom-http/actions';
 import { POST_TYPES_REQUEST } from 'state/action-types';
 import { receivePostTypes } from 'state/post-types/actions';
 
-const handlePostTypesRequest = dispatchRequestEx( {
-	fetch: action =>
+import { registerHandlers } from 'state/data-layer/handler-registry';
+
+const handlePostTypesRequest = dispatchRequest( {
+	fetch: ( action ) =>
 		http(
 			{
 				method: 'GET',
@@ -26,6 +26,6 @@ const handlePostTypesRequest = dispatchRequestEx( {
 	onError: noop,
 } );
 
-export default {
+registerHandlers( 'state/data-layer/wpcom/sites/post-types/index.js', {
 	[ POST_TYPES_REQUEST ]: [ handlePostTypesRequest ],
-};
+} );

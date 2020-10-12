@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -15,13 +13,9 @@ import PopoverMenuItem from 'components/popover/menu-item';
 import { bumpStat as bumpAnalyticsStat } from 'state/analytics/actions';
 import { bumpStatGenerator } from './utils';
 import { getPost } from 'state/posts/selectors';
-import { canCurrentUserEditPost } from 'state/selectors';
-import { getEditorPath } from 'state/ui/editor/selectors';
-import { preload } from 'sections-helper';
-
-function preloadEditor() {
-	preload( 'post-editor' );
-}
+import { canCurrentUserEditPost } from 'state/posts/selectors/can-current-user-edit-post';
+import getEditorUrl from 'state/selectors/get-editor-url';
+import { preloadEditor } from 'sections-preloaders';
 
 function PostActionsEllipsisMenuEdit( { translate, canEdit, status, editUrl, bumpStat } ) {
 	if ( 'trash' === status || ! canEdit ) {
@@ -34,6 +28,7 @@ function PostActionsEllipsisMenuEdit( { translate, canEdit, status, editUrl, bum
 			onClick={ bumpStat }
 			icon="pencil"
 			onMouseOver={ preloadEditor }
+			onFocus={ preloadEditor }
 		>
 			{ translate( 'Edit', { context: 'verb' } ) }
 		</PopoverMenuItem>
@@ -59,7 +54,7 @@ const mapStateToProps = ( state, { globalId } ) => {
 		canEdit: canCurrentUserEditPost( state, globalId ),
 		status: post.status,
 		type: post.type,
-		editUrl: getEditorPath( state, post.site_ID, post.ID ),
+		editUrl: getEditorUrl( state, post.site_ID, post.ID, post.type ),
 	};
 };
 
@@ -70,6 +65,8 @@ const mergeProps = ( stateProps, dispatchProps, ownProps ) => {
 	return Object.assign( {}, ownProps, stateProps, dispatchProps, { bumpStat } );
 };
 
-export default connect( mapStateToProps, mapDispatchToProps, mergeProps )(
-	localize( PostActionsEllipsisMenuEdit )
-);
+export default connect(
+	mapStateToProps,
+	mapDispatchToProps,
+	mergeProps
+)( localize( PostActionsEllipsisMenuEdit ) );

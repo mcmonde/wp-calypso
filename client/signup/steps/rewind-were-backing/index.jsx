@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -12,16 +11,19 @@ import { get } from 'lodash';
  * Internal dependencies
  */
 import StepWrapper from 'signup/step-wrapper';
-import Card from 'components/card';
-import Button from 'components/button';
+import { Card, Button } from '@automattic/components';
 import { getSignupDependencyStore } from 'state/signup/dependency-store/selectors';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class RewindWereBacking extends Component {
 	static propTypes = {
 		flowName: PropTypes.string,
 		goToNextStep: PropTypes.func.isRequired,
 		positionInFlow: PropTypes.number,
-		signupProgress: PropTypes.array,
 		stepName: PropTypes.string,
 
 		// Connected props
@@ -49,7 +51,7 @@ class RewindWereBacking extends Component {
 							'transformed into the site of your dreams.'
 					) }
 				</p>
-				<Button primary href={ `/stats/activity/${ siteSlug }` }>
+				<Button primary href={ `/activity-log/${ siteSlug }` }>
 					{ translate( 'View your activity' ) }
 				</Button>
 			</Card>
@@ -62,7 +64,6 @@ class RewindWereBacking extends Component {
 				flowName={ this.props.flowName }
 				stepName={ this.props.stepName }
 				positionInFlow={ this.props.positionInFlow }
-				signupProgress={ this.props.signupProgress }
 				stepContent={ this.stepContent() }
 				hideFormattedHeader={ true }
 				hideSkip={ true }

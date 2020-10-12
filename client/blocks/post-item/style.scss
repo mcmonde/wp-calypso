@@ -1,10 +1,9 @@
-$post-item-background-color: $white;
 
-$post-item-border-color: darken( $sidebar-bg-color, 5% );
-$expanded-post-item-outline-color: $sidebar-selected-color;
 
+$post-item-background-color: var( --color-surface );
+$post-item-border-color: var( --color-neutral-5 );
 $post-item-border: solid 1px $post-item-border-color;
-$expanded-post-item-border: 1px solid $expanded-post-item-outline-color;
+$expanded-post-item-border: 1px solid var( --color-neutral );
 $expanded-post-item-outline: 4px solid $post-item-border-color;
 
 .post-item {
@@ -38,25 +37,6 @@ $expanded-post-item-outline: 4px solid $post-item-border-color;
 	background: $post-item-background-color;
 }
 
-.post-item__select {
-	align-self: stretch;
-	display: flex;
-	align-items: start;
-	cursor: pointer;
-
-	&:hover .form-checkbox {
-		border-color: $gray-lighten-10;
-	}
-
-	padding: 16px 16px 0;
-	margin-left: -16px;
-
-	@include breakpoint( ">480px" ) {
-		padding-left: 24px;
-		margin-left: -24px;
-	}
-}
-
 .post-item__site-info-link,
 .post-item__post-author-link {
 	display: block;
@@ -76,39 +56,38 @@ $expanded-post-item-outline: 4px solid $post-item-border-color;
 }
 
 .post-item__title {
-	@extend %content-font;
 	margin: 0;
 	padding: 0;
-	font-weight: 700;
-	font-size: 18px;
+	font-weight: 600;
+	font-size: $font-title-small;
 	line-height: 1.2;
 }
 
 a.post-item__title-link,
 a.post-item__title-link:visited {
-	color: $gray-dark;
+	color: var( --color-neutral-70 );
 	display: block;
 	padding-bottom: 2px;
 	padding-right: 8px;
 
 	&:hover {
-		color: $gray-darken-20;
+		color: var( --color-neutral-50 );
 	}
 
 	.post-item__panel.is-untitled & {
-		color: $gray;
+		color: var( --color-text-subtle );
 		font-style: italic;
 	}
 
 	.post-item__panel.is-placeholder & {
-		@include placeholder;
+		@include placeholder();
 		display: inline-block;
 	}
 }
 
 .post-item__meta {
-	font-size: 12px;
-	color: $gray-text-min;
+	font-size: $font-body-extra-small;
+	color: var( --color-text-subtle );
 }
 
 .post-item__meta .post-time,
@@ -135,7 +114,7 @@ a.post-item__title-link:visited {
 .post-item__time-status-link,
 .post-item__time-status-link:active,
 .post-item__time-status-link:visited {
-	color: $gray-text-min;
+	color: var( --color-text-subtle );
 	display: block;
 }
 
@@ -157,7 +136,7 @@ a.post-item__title-link:visited {
 	}
 
 	.post-item__card.is-placeholder & {
-		@include placeholder;
+		@include placeholder();
 	}
 }
 

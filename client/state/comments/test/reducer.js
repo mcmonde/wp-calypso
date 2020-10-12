@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -16,6 +15,7 @@ import {
 	COMMENTS_COUNT_INCREMENT,
 	COMMENTS_COUNT_RECEIVE,
 	COMMENTS_RECEIVE,
+	COMMENTS_UPDATES_RECEIVE,
 	COMMENTS_DELETE,
 	COMMENTS_TREE_SITE_ADD,
 	COMMENTS_EDIT,
@@ -26,6 +26,7 @@ import { PLACEHOLDER_STATE } from '../constants';
 import {
 	counts,
 	items,
+	pendingItems,
 	expansions,
 	totalCommentsCount,
 	fetchStatus,
@@ -84,7 +85,7 @@ describe( 'reducer', () => {
 			} );
 
 			expect( result[ '1-1' ] ).toHaveLength( commentsNestedTree.length - 1 );
-			forEach( result, c => expect( c.ID ).not.toEqual( removedCommentId ) );
+			forEach( result, ( c ) => expect( c.ID ).not.toEqual( removedCommentId ) );
 		} );
 
 		test( 'should increase like counts and set i_like', () => {
@@ -198,6 +199,51 @@ describe( 'reducer', () => {
 				],
 			} );
 			expect( result[ '1-1' ] ).toHaveLength( 1 );
+		} );
+	} );
+
+	describe( '#pendingItems', () => {
+		test( 'should build an ordered by date list', () => {
+			const response = pendingItems( undefined, {
+				type: COMMENTS_UPDATES_RECEIVE,
+				siteId: 1,
+				postId: 1,
+				comments: [ ...commentsNestedTree ].sort( () => ( ( Math.random() * 2 ) % 2 ? -1 : 1 ) ),
+			} );
+			const ids = map( response[ '1-1' ], 'ID' );
+
+			expect( response[ '1-1' ] ).toHaveLength( 6 );
+			expect( ids ).toEqual( [ 11, 10, 9, 8, 7, 6 ] );
+		} );
+
+		test( 'should build correct items list on consecutive calls', () => {
+			const state = deepFreeze( {
+				'1-1': commentsNestedTree.slice( 0, 2 ),
+			} );
+
+			const response = pendingItems( state, {
+				type: COMMENTS_UPDATES_RECEIVE,
+				siteId: 1,
+				postId: 1,
+				comments: commentsNestedTree.slice( 1, commentsNestedTree.length ),
+			} );
+
+			expect( response[ '1-1' ] ).toHaveLength( 6 );
+		} );
+
+		test( 'should remove pending comments when they are received in items', () => {
+			const state = deepFreeze( {
+				'1-1': [ { ID: 1 }, { ID: 2 }, { ID: 3 } ],
+			} );
+
+			const response = pendingItems( state, {
+				type: COMMENTS_RECEIVE,
+				siteId: 1,
+				postId: 1,
+				comments: [ { ID: 1 }, { ID: 2 } ],
+			} );
+
+			expect( response[ '1-1' ] ).toEqual( [ { ID: 3 } ] );
 		} );
 	} );
 

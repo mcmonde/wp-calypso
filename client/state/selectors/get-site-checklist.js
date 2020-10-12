@@ -1,18 +1,20 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import { get } from 'lodash';
+
+/**
+ * Internal dependencies
+ */
+import 'state/checklist/init';
 
 /**
  * Returns the checklist for the specified site ID
  *
- * @param  {Object}  state  Global state tree
- * @param  {Number}  siteId Site ID
- * @return {Object}        Site settings
+ * @param  {object}  state  Global state tree
+ * @param  {number}  siteId Site ID
+ * @returns {object}        Site settings
  */
 export default function getSiteChecklist( state, siteId ) {
-	return get( state.checklist.items, [ siteId ], null );
+	return get( state.checklist, [ siteId, 'items' ], null );
 }

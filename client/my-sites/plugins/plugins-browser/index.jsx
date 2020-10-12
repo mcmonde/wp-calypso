@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -7,11 +6,13 @@ import { connect } from 'react-redux';
 import { localize } from 'i18n-calypso';
 import { concat, find, flow, get, flatMap, includes } from 'lodash';
 import PropTypes from 'prop-types';
+import Gridicon from 'components/gridicon';
 
 /**
  * Internal dependencies
  */
 import SidebarNavigation from 'my-sites/sidebar-navigation';
+import FormattedHeader from 'components/formatted-header';
 import DocumentHead from 'components/data/document-head';
 import Search from 'components/search';
 import SectionNav from 'components/section-nav';
@@ -25,40 +26,43 @@ import PluginsBrowserList from 'my-sites/plugins/plugins-browser-list';
 import PluginsListStore from 'lib/plugins/wporg-data/list-store';
 import PluginsActions from 'lib/plugins/wporg-data/actions';
 import urlSearch from 'lib/url-search';
-import JetpackManageErrorPage from 'my-sites/jetpack-manage-error-page';
 import { recordTracksEvent, recordGoogleEvent } from 'state/analytics/actions';
-import {
-	canCurrentUser,
-	getSelectedOrAllSitesJetpackCanManage,
-	hasJetpackSites,
-} from 'state/selectors';
+import canCurrentUser from 'state/selectors/can-current-user';
+import getSelectedOrAllSitesJetpackCanManage from 'state/selectors/get-selected-or-all-sites-jetpack-can-manage';
+import getRecommendedPlugins from 'state/selectors/get-recommended-plugins';
+import hasJetpackSites from 'state/selectors/has-jetpack-sites';
 import { getSelectedSite, getSelectedSiteId, getSelectedSiteSlug } from 'state/ui/selectors';
-import {
-	getSitePlan,
-	isJetpackSite,
-	isRequestingSites,
-	canJetpackSiteManage,
-} from 'state/sites/selectors';
-import NonSupportedJetpackVersionNotice from 'my-sites/plugins/not-supported-jetpack-version';
+import { getSitePlan, isJetpackSite, isRequestingSites } from 'state/sites/selectors';
+import isVipSite from 'state/selectors/is-vip-site';
 import NoPermissionsError from 'my-sites/plugins/no-permissions-error';
-import HeaderButton from 'components/header-button';
-import { isBusiness, isEnterprise, isPremium } from 'lib/products-values';
-import { TYPE_BUSINESS, FEATURE_UPLOAD_PLUGINS } from 'lib/plans/constants';
+import { Button } from '@automattic/components';
+import { isBusiness, isEcommerce, isEnterprise, isPremium } from 'lib/products-values';
+import { FEATURE_UPLOAD_PLUGINS, TYPE_BUSINESS } from 'lib/plans/constants';
 import { findFirstSimilarPlanKey } from 'lib/plans';
-import Banner from 'components/banner';
+import UpsellNudge from 'blocks/upsell-nudge';
 import { isEnabled } from 'config';
 import wpcomFeaturesAsPlugins from './wpcom-features-as-plugins';
+import QuerySiteRecommendedPlugins from 'components/data/query-site-recommended-plugins';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 /**
  * Module variables
  */
 const SHORT_LIST_LENGTH = 6;
-const visibleCategories = [ 'new', 'popular', 'featured' ];
+const VISIBLE_CATEGORIES = [ 'new', 'popular', 'featured' ];
+const VISIBLE_CATEGORIES_FOR_RECOMMENDATIONS = [ 'new', 'popular' ];
 
 export class PluginsBrowser extends Component {
 	static displayName = 'PluginsBrowser';
 
 	static propTypes = {
+		isRequestingRecommendedPlugins: PropTypes.bool.isRequired,
+		recommendedPlugins: PropTypes.arrayOf( PropTypes.object ),
+		selectedSite: PropTypes.object,
 		trackPageView: PropTypes.bool,
 	};
 
@@ -69,10 +73,10 @@ export class PluginsBrowser extends Component {
 	state = this.getPluginsLists( this.props.search );
 
 	reinitializeSearch() {
-		this.WrappedSearch = props => <Search { ...props } />;
+		this.WrappedSearch = ( props ) => <Search { ...props } />;
 	}
 
-	componentWillMount() {
+	UNSAFE_componentWillMount() {
 		this.reinitializeSearch();
 	}
 
@@ -90,11 +94,26 @@ export class PluginsBrowser extends Component {
 		PluginsListStore.removeListener( 'change', this.refreshLists );
 	}
 
-	componentWillReceiveProps( newProps ) {
+	UNSAFE_componentWillReceiveProps( newProps ) {
 		this.refreshLists( newProps.search );
 	}
 
-	refreshLists = search => {
+	getVisibleCategories() {
+		if ( ! this.isRecommendedPluginsEnabled() ) {
+			return VISIBLE_CATEGORIES;
+		}
+		return VISIBLE_CATEGORIES_FOR_RECOMMENDATIONS;
+	}
+
+	isRecommendedPluginsEnabled() {
+		return (
+			isEnabled( 'recommend-plugins' ) &&
+			!! this.props.selectedSiteId &&
+			get( this.props.selectedSite, 'jetpack' )
+		);
+	}
+
+	refreshLists = ( search ) => {
 		this.setState( this.getPluginsLists( search || this.props.search ) );
 	};
 
@@ -125,16 +144,13 @@ export class PluginsBrowser extends Component {
 		const shortLists = {};
 		const fullLists = {};
 
-		visibleCategories.forEach( category => {
+		this.getVisibleCategories().forEach( ( category ) => {
 			shortLists[ category ] = PluginsListStore.getShortList( category );
 			fullLists[ category ] = PluginsListStore.getFullList( category );
 		} );
 
 		fullLists.search = PluginsListStore.getSearchList( search );
-		return {
-			shortLists: shortLists,
-			fullLists: fullLists,
-		};
+		return { shortLists, fullLists };
 	}
 
 	getPluginsShortList( listName ) {
@@ -156,19 +172,27 @@ export class PluginsBrowser extends Component {
 	}
 
 	translateCategory( category ) {
+		const { translate } = this.props;
+
+		const recommendedText = translate( 'Recommended', {
+			context: 'Category description for the plugin browser.',
+		} );
+
 		switch ( category ) {
 			case 'new':
-				return this.props.translate( 'New', {
+				return translate( 'New', {
 					context: 'Category description for the plugin browser.',
 				} );
 			case 'popular':
-				return this.props.translate( 'Popular', {
+				return translate( 'Popular', {
 					context: 'Category description for the plugin browser.',
 				} );
 			case 'featured':
-				return this.props.translate( 'Featured', {
+				return translate( 'Featured', {
 					context: 'Category description for the plugin browser.',
 				} );
+			case 'recommended':
+				return recommendedText;
 		}
 	}
 
@@ -243,6 +267,21 @@ export class PluginsBrowser extends Component {
 		);
 	}
 
+	getRecommendedPluginListView() {
+		return (
+			<PluginsBrowserList
+				currentSites={ this.props.sites }
+				expandedListLink={ false }
+				listName="recommended"
+				plugins={ this.props.recommendedPlugins }
+				showPlaceholders={ this.props.isRequestingRecommendedPlugins }
+				site={ this.props.siteSlug }
+				size={ SHORT_LIST_LENGTH }
+				title={ this.translateCategory( 'recommended' ) }
+			/>
+		);
+	}
+
 	isWpcomPluginActive( plugin ) {
 		return (
 			'standard' === plugin.plan ||
@@ -270,20 +309,20 @@ export class PluginsBrowser extends Component {
 		// Is the search term exactly equal to one of group category names (Engagement, Writing, ...)?
 		// Then return the whole group as search results.
 		// Otherwise, search plugin names and descriptions for the search term.
-		const matchingGroup = find( plugins, group => group.category === searchTerm );
+		const matchingGroup = find( plugins, ( group ) => group.category === searchTerm );
 		if ( matchingGroup ) {
 			matchingPlugins = matchingGroup.plugins;
 		} else {
 			// Flatten plugins from all groups into one long list and the filter it
-			const allPlugins = flatMap( plugins, group => group.plugins );
-			const includesSearchTerm = s => includes( s.toLocaleLowerCase(), searchTerm );
+			const allPlugins = flatMap( plugins, ( group ) => group.plugins );
+			const includesSearchTerm = ( s ) => includes( s.toLocaleLowerCase(), searchTerm );
 			matchingPlugins = allPlugins.filter(
-				plugin => includesSearchTerm( plugin.name ) || includesSearchTerm( plugin.description )
+				( plugin ) => includesSearchTerm( plugin.name ) || includesSearchTerm( plugin.description )
 			);
 		}
 
 		// Convert the list members into shapes expected by PluginsBrowserItem
-		return matchingPlugins.map( plugin => ( {
+		return matchingPlugins.map( ( plugin ) => ( {
 			name: translate( '%(feature)s by Jetpack', {
 				args: { feature: plugin.name },
 				context: 'Presenting WordPress.com feature as a Jetpack pseudo-plugin',
@@ -300,7 +339,10 @@ export class PluginsBrowser extends Component {
 	getShortListsView() {
 		return (
 			<span>
-				{ this.getPluginSingleListView( 'featured' ) }
+				{ this.isRecommendedPluginsEnabled()
+					? this.getRecommendedPluginListView()
+					: this.getPluginSingleListView( 'featured' ) }
+
 				{ this.getPluginSingleListView( 'popular' ) }
 				{ this.getPluginSingleListView( 'new' ) }
 			</span>
@@ -359,7 +401,7 @@ export class PluginsBrowser extends Component {
 		);
 	}
 
-	handleSuggestedSearch = term => () => {
+	handleSuggestedSearch = ( term ) => () => {
 		this.reinitializeSearch();
 		this.props.doSearch( term );
 	};
@@ -379,7 +421,7 @@ export class PluginsBrowser extends Component {
 				} ) }
 			>
 				<NavTabs label="Suggested Searches">
-					{ suggestedSearches.map( term => (
+					{ suggestedSearches.map( ( term ) => (
 						<NavItem key={ term } onClick={ this.handleSuggestedSearch( term ) }>
 							{ term }
 						</NavItem>
@@ -402,17 +444,19 @@ export class PluginsBrowser extends Component {
 			return null;
 		}
 
-		const site = this.props.siteSlug ? '/' + this.props.siteSlug : '';
+		const { siteSlug, translate } = this.props;
+		const site = siteSlug ? '/' + siteSlug : '';
+
 		return (
-			<HeaderButton
-				icon="cog"
-				label={ this.props.translate( 'Manage Plugins' ) }
-				href={ '/plugins/manage' + site }
-			/>
+			<Button className="plugins-browser__button" compact href={ '/plugins/manage' + site }>
+				<Gridicon icon="cog" />
+				<span className="plugins-browser__button-text">{ translate( 'Manage plugins' ) }</span>
+			</Button>
 		);
 	}
 
 	handleUploadPluginButtonClick = () => {
+		this.props.recordTracksEvent( 'calypso_click_plugin_upload' );
 		this.props.recordGoogleEvent( 'Plugins', 'Clicked Plugin Upload Link' );
 	};
 
@@ -425,13 +469,15 @@ export class PluginsBrowser extends Component {
 		const uploadUrl = '/plugins/upload' + ( siteSlug ? '/' + siteSlug : '' );
 
 		return (
-			<HeaderButton
-				icon="cloud-upload"
-				label={ translate( 'Upload Plugin' ) }
-				aria-label={ translate( 'Upload Plugin' ) }
-				href={ uploadUrl }
+			<Button
+				className="plugins-browser__button"
+				compact
 				onClick={ this.handleUploadPluginButtonClick }
-			/>
+				href={ uploadUrl }
+			>
+				<Gridicon icon="cloud-upload" />
+				<span className="plugins-browser__button-text">{ translate( 'Install plugin' ) }</span>
+			</Button>
 		);
 	}
 
@@ -444,9 +490,11 @@ export class PluginsBrowser extends Component {
 
 		/* eslint-disable wpcalypso/jsx-classname-namespace */
 		return (
-			<div className="plugins-browser__main-header">
-				{ navigation }
-				<div className="plugins__header-buttons">
+			<div className="plugins-browser__main">
+				<div className="plugins-browser__main-header">
+					<div className="plugins__header-navigation">{ navigation }</div>
+				</div>
+				<div className="plugins-browser__main-buttons">
 					{ this.renderManageButton() }
 					{ this.renderUploadPluginButton() }
 				</div>
@@ -455,58 +503,32 @@ export class PluginsBrowser extends Component {
 		/* eslint-enable wpcalypso/jsx-classname-namespace */
 	}
 
-	getMockPluginItems() {
-		return (
-			<PluginsBrowserList
-				plugins={ this.getPluginsShortList( 'popular' ) }
-				listName={ 'Plugins' }
-				title={ this.props.translate( 'Popular Plugins' ) }
-				size={ 12 }
-			/>
-		);
-	}
-
-	renderDocumentHead() {
-		return <DocumentHead title={ this.props.translate( 'Plugin Browser', { textOnly: true } ) } />;
-	}
-
-	renderJetpackManageError() {
-		const { selectedSiteId } = this.props;
-
-		return (
-			<MainComponent>
-				{ this.renderDocumentHead() }
-				<SidebarNavigation />
-				<JetpackManageErrorPage
-					template="optInManage"
-					title={ this.props.translate( "Looking to manage this site's plugins?" ) }
-					siteId={ selectedSiteId }
-					section="plugins"
-					illustration="/calypso/images/jetpack/jetpack-manage.svg"
-					featureExample={ this.getMockPluginItems() }
-				/>
-			</MainComponent>
-		);
-	}
-
 	renderUpgradeNudge() {
 		if (
 			! this.props.selectedSiteId ||
 			! this.props.sitePlan ||
+			this.props.isVipSite ||
 			this.props.isJetpackSite ||
 			this.props.hasBusinessPlan
 		) {
 			return null;
 		}
 
+		const { translate, siteSlug } = this.props;
+		const bannerURL = `/checkout/${ siteSlug }/business`;
+		const plan = findFirstSimilarPlanKey( this.props.sitePlan.product_slug, {
+			type: TYPE_BUSINESS,
+		} );
+		const title = translate( 'Upgrade to the Business plan to install plugins.' );
+
 		return (
-			<Banner
+			<UpsellNudge
+				event="calypso_plugins_browser_upgrade_nudge"
+				showIcon={ true }
+				href={ bannerURL }
 				feature={ FEATURE_UPLOAD_PLUGINS }
-				event={ 'calypso_plugins_browser_upgrade_nudge' }
-				plan={ findFirstSimilarPlanKey( this.props.sitePlan.product_slug, {
-					type: TYPE_BUSINESS,
-				} ) }
-				title={ this.props.translate( 'Upgrade to the Business plan to install plugins.' ) }
+				plan={ plan }
+				title={ title }
 			/>
 		);
 	}
@@ -537,20 +559,24 @@ export class PluginsBrowser extends Component {
 			);
 		}
 
-		if ( this.props.jetpackManageError ) {
-			return this.renderJetpackManageError();
-		}
-
 		return (
 			<MainComponent wideLayout>
+				{ this.isRecommendedPluginsEnabled() && (
+					<QuerySiteRecommendedPlugins siteId={ this.props.selectedSiteId } />
+				) }
 				{ this.renderPageViewTracker() }
-				<InfiniteScroll nextPageMethod={ this.fetchNextPagePlugins } />
-				<NonSupportedJetpackVersionNotice />
-				{ this.renderDocumentHead() }
+				<DocumentHead title={ this.props.translate( 'Plugin Browser', { textOnly: true } ) } />
 				<SidebarNavigation />
+				<FormattedHeader
+					brandFont
+					className="plugins-browser__page-heading"
+					headerText={ this.props.translate( 'Plugin Browser' ) }
+					align="left"
+				/>
 				{ this.renderUpgradeNudge() }
 				{ this.getPageHeaderView() }
 				{ this.getPluginBrowserContent() }
+				<InfiniteScroll nextPageMethod={ this.fetchNextPagePlugins } />
 			</MainComponent>
 		);
 	}
@@ -560,12 +586,15 @@ export default flow(
 	localize,
 	urlSearch,
 	connect(
-		state => {
+		( state ) => {
 			const selectedSiteId = getSelectedSiteId( state );
 			const sitePlan = getSitePlan( state, selectedSiteId );
 
-			const hasBusinessPlan = sitePlan && ( isBusiness( sitePlan ) || isEnterprise( sitePlan ) );
+			const hasBusinessPlan =
+				sitePlan &&
+				( isBusiness( sitePlan ) || isEnterprise( sitePlan ) || isEcommerce( sitePlan ) );
 			const hasPremiumPlan = sitePlan && ( hasBusinessPlan || isPremium( sitePlan ) );
+			const recommendedPlugins = getRecommendedPlugins( state, selectedSiteId );
 
 			return {
 				selectedSiteId,
@@ -573,16 +602,16 @@ export default flow(
 				hasPremiumPlan,
 				hasBusinessPlan,
 				isJetpackSite: isJetpackSite( state, selectedSiteId ),
+				isVipSite: isVipSite( state, selectedSiteId ),
 				hasJetpackSites: hasJetpackSites( state ),
-				jetpackManageError:
-					!! isJetpackSite( state, selectedSiteId ) &&
-					! canJetpackSiteManage( state, selectedSiteId ),
 				isRequestingSites: isRequestingSites( state ),
 				noPermissionsError:
 					!! selectedSiteId && ! canCurrentUser( state, selectedSiteId, 'manage_options' ),
 				selectedSite: getSelectedSite( state ),
 				siteSlug: getSelectedSiteSlug( state ),
 				sites: getSelectedOrAllSitesJetpackCanManage( state ),
+				isRequestingRecommendedPlugins: ! Array.isArray( recommendedPlugins ),
+				recommendedPlugins: recommendedPlugins || [],
 			};
 		},
 		{

@@ -1,9 +1,7 @@
-/** @format */
 /**
  * External dependencies
  */
 import page from 'page';
-import { stringify } from 'qs';
 import { translate } from 'i18n-calypso';
 import React from 'react';
 import { get, includes, map, noop } from 'lodash';
@@ -14,9 +12,7 @@ import { get, includes, map, noop } from 'lodash';
 import DocumentHead from 'components/data/document-head';
 import { sectionify } from 'lib/route';
 import Main from 'components/main';
-import { addItem } from 'lib/upgrades/actions';
-import productsFactory from 'lib/products-list';
-import { getSites } from 'state/selectors';
+import getSites from 'state/selectors/get-sites';
 import { getSelectedSiteId, getSelectedSite, getSelectedSiteSlug } from 'state/ui/selectors';
 import { getCurrentUser } from 'state/current-user/selectors';
 import CartData from 'components/data/cart';
@@ -25,22 +21,24 @@ import SiteRedirect from './domain-search/site-redirect';
 import MapDomain from 'my-sites/domains/map-domain';
 import TransferDomain from 'my-sites/domains/transfer-domain';
 import TransferDomainStep from 'components/domains/transfer-domain-step';
-import GoogleApps from 'components/upgrades/google-apps';
+import UseYourDomainStep from 'components/domains/use-your-domain-step';
+import GSuiteUpgrade from 'components/upgrades/gsuite';
 import {
 	domainManagementTransferIn,
 	domainManagementTransferInPrecheck,
 	domainMapping,
 	domainTransferIn,
+	domainUseYourDomain,
 } from 'my-sites/domains/paths';
 import { isATEnabled } from 'lib/automated-transfer';
 import JetpackManageErrorPage from 'my-sites/jetpack-manage-error-page';
 import { makeLayout, render as clientRender } from 'controller';
 import PageViewTracker from 'lib/analytics/page-view-tracker';
-
-/**
- * Module variables
- */
-const productsList = productsFactory();
+import { canUserPurchaseGSuite } from 'lib/gsuite';
+import { addItem } from 'lib/cart/actions';
+import { planItem } from 'lib/cart-values/cart-items';
+import { PLAN_PERSONAL } from 'lib/plans/constants';
+import isSiteWPForTeams from 'state/selectors/is-site-wpforteams';
 
 const domainsAddHeader = ( context, next ) => {
 	context.getSiteSelectionHeaderText = () => {
@@ -58,7 +56,7 @@ const domainsAddRedirectHeader = ( context, next ) => {
 	next();
 };
 
-const redirectToDomainSearchSuggestion = context => {
+const redirectToDomainSearchSuggestion = ( context ) => {
 	return page.redirect(
 		`/domains/add/${ context.params.domain }?suggestion=${ context.params.suggestion }`
 	);
@@ -68,6 +66,11 @@ const domainSearch = ( context, next ) => {
 	// Scroll to the top
 	if ( typeof window !== 'undefined' ) {
 		window.scrollTo( 0, 0 );
+	}
+
+	if ( 'upgrade' === context.query.ref ) {
+		addItem( planItem( PLAN_PERSONAL, {} ) );
+		return page.replace( context.pathname );
 	}
 
 	context.primary = (
@@ -112,6 +115,9 @@ const mapDomain = ( context, next ) => {
 };
 
 const transferDomain = ( context, next ) => {
+	const useStandardBack =
+		context.query.useStandardBack === 'true' || context.query.useStandardBack === '1';
+
 	context.primary = (
 		<Main wideLayout>
 			<PageViewTracker
@@ -123,6 +129,35 @@ const transferDomain = ( context, next ) => {
 				<TransferDomain
 					basePath={ sectionify( context.path ) }
 					initialQuery={ context.query.initialQuery }
+					useStandardBack={ useStandardBack }
+				/>
+			</CartData>
+		</Main>
+	);
+	next();
+};
+
+const useYourDomain = ( context, next ) => {
+	const handleGoBack = () => {
+		let path = `/domains/add/${ context.params.site }`;
+		if ( context.query.initialQuery ) {
+			path += `?suggestion=${ context.query.initialQuery }`;
+		}
+
+		page( path );
+	};
+	context.primary = (
+		<Main>
+			<PageViewTracker
+				path={ domainUseYourDomain( ':site' ) }
+				title="Domain Search > Use Your Own Domain"
+			/>
+			<DocumentHead title={ translate( 'Use Your Own Domain' ) } />
+			<CartData>
+				<UseYourDomainStep
+					basePath={ sectionify( context.path ) }
+					initialQuery={ context.query.initialQuery }
+					goBack={ handleGoBack }
 				/>
 			</CartData>
 		</Main>
@@ -159,48 +194,29 @@ const transferDomainPrecheck = ( context, next ) => {
 };
 
 const googleAppsWithRegistration = ( context, next ) => {
-	const state = context.store.getState();
-	const siteSlug = getSelectedSiteSlug( state ) || '';
-
-	const handleAddGoogleApps = googleAppsCartItem => {
-		addItem( googleAppsCartItem );
-		page( '/checkout/' + siteSlug );
-	};
-
-	const handleGoBack = () => {
-		page( '/domains/add/' + siteSlug );
-	};
-
-	const handleClickSkip = () => {
-		page( '/checkout/' + siteSlug );
-	};
-
-	context.primary = (
-		<Main>
-			<PageViewTracker
-				path="/domains/add/:domain/google-apps/:site"
-				title="Domain Search > Domain Registration > Google Apps"
-			/>
-			<DocumentHead
-				title={ translate( 'Register %(domain)s', {
-					args: { domain: context.params.registerDomain },
-				} ) }
-			/>
-			<CartData>
-				<GoogleApps
-					productsList={ productsList }
-					domain={ context.params.registerDomain }
-					onGoBack={ handleGoBack }
-					onAddGoogleApps={ handleAddGoogleApps }
-					onClickSkip={ handleClickSkip }
+	if ( canUserPurchaseGSuite() ) {
+		context.primary = (
+			<Main>
+				<PageViewTracker
+					path="/domains/add/:domain/google-apps/:site"
+					title="Domain Search > Domain Registration > Google Apps"
 				/>
-			</CartData>
-		</Main>
-	);
+				<DocumentHead
+					title={ translate( 'Register %(domain)s', {
+						args: { domain: context.params.registerDomain },
+					} ) }
+				/>
+				<CartData>
+					<GSuiteUpgrade domain={ context.params.registerDomain } />
+				</CartData>
+			</Main>
+		);
+	}
+
 	next();
 };
 
-const redirectIfNoSite = redirectTo => {
+const redirectIfNoSite = ( redirectTo ) => {
 	return ( context, next ) => {
 		const state = context.store.getState();
 		const siteId = getSelectedSiteId( state );
@@ -218,15 +234,15 @@ const redirectIfNoSite = redirectTo => {
 	};
 };
 
-const redirectToAddMappingIfVipSite = () => {
+const redirectToUseYourDomainIfVipSite = () => {
 	return ( context, next ) => {
 		const state = context.store.getState();
 		const selectedSite = getSelectedSite( state );
-		const domain = context.params.domain ? `/${ context.params.domain }` : '';
-		const query = stringify( { initialQuery: context.params.suggestion } );
 
 		if ( selectedSite && selectedSite.is_vip ) {
-			return page.redirect( `/domains/add/mapping${ domain }?${ query }` );
+			return page.redirect(
+				domainUseYourDomain( selectedSite.slug, get( context, 'params.suggestion', '' ) )
+			);
 		}
 
 		next();
@@ -255,17 +271,30 @@ const jetpackNoDomainsWarning = ( context, next ) => {
 	}
 };
 
+const wpForTeamsNoDomainsRedirect = ( context, next ) => {
+	const state = context.store.getState();
+	const selectedSite = getSelectedSite( state );
+
+	if ( selectedSite && isSiteWPForTeams( state, selectedSite.ID ) ) {
+		return page.redirect( '/' );
+	}
+
+	next();
+};
+
 export default {
 	domainsAddHeader,
 	domainsAddRedirectHeader,
 	domainSearch,
 	jetpackNoDomainsWarning,
+	wpForTeamsNoDomainsRedirect,
 	siteRedirect,
 	mapDomain,
 	googleAppsWithRegistration,
-	redirectIfNoSite,
-	redirectToAddMappingIfVipSite,
 	redirectToDomainSearchSuggestion,
+	redirectIfNoSite,
+	redirectToUseYourDomainIfVipSite,
 	transferDomain,
 	transferDomainPrecheck,
+	useYourDomain,
 };

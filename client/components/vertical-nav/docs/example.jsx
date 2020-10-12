@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -12,6 +10,8 @@ import { noop } from 'lodash';
 import VerticalNav from '../index';
 import VerticalNavItem from '../item/index';
 
+VerticalNav.displayName = 'VerticalNav';
+VerticalNavItem.displayName = 'VerticalNavItem';
 VerticalNavExample.displayName = 'VerticalNav';
 
 function VerticalNavExample( props ) {

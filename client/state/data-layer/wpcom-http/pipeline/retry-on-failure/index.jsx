@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -8,10 +6,14 @@ import { get, merge } from 'lodash';
 import { decorrelatedJitter as defaultDelay } from './delays';
 import { default as defaultPolicy } from './policies';
 
-const isGetRequest = request => 'GET' === get( request, 'method', '' ).toUpperCase();
+const isGetRequest = ( request ) => 'GET' === get( request, 'method', '' ).toUpperCase();
 
-export const retryOnFailure = ( getDelay = defaultDelay ) => inboundData => {
-	const { nextError, originalRequest, store: { dispatch } } = inboundData;
+export const retryOnFailure = ( getDelay = defaultDelay ) => ( inboundData ) => {
+	const {
+		nextError,
+		originalRequest,
+		store: { dispatch },
+	} = inboundData;
 
 	// if the request came back successfully
 	// then we have no need to intercept it

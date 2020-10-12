@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -29,6 +27,8 @@ import { WOOCOMMERCE_SERVICES_SHIPPING_ZONE_METHOD_UPDATE } from 'woocommerce/wo
 import { shippingZoneMethodUpdated } from 'woocommerce/state/sites/shipping-zone-methods/actions';
 import * as api from 'woocommerce/woocommerce-services/api';
 import { dispatchWithProps } from 'woocommerce/state/helpers';
+import { getShippingMethodSchema } from 'woocommerce/woocommerce-services/state/shipping-method-schemas/selectors';
+import coerceFormValues from 'woocommerce/woocommerce-services/lib/utils/coerce-values';
 
 const getSaveLabelSettingsActionListSteps = ( state, siteId ) => {
 	const labelFormMeta = getLabelSettingsFormMeta( state, siteId );
@@ -78,7 +78,7 @@ const getSavePackagesActionListSteps = ( state, siteId ) => {
 	];
 };
 
-const getSaveSettingsActionListSteps = state => {
+const getSaveSettingsActionListSteps = ( state ) => {
 	const siteId = getSelectedSiteId( state );
 
 	return [
@@ -91,8 +91,9 @@ export default {
 	[ WOOCOMMERCE_SERVICES_SHIPPING_ACTION_LIST_CREATE ]: [
 		/**
 		 * Creates and executes a WCS shipping settings action list
-		 * @param {Object} store -
-		 * @param {Object} action - an action containing successAction and failureAction
+		 *
+		 * @param {object} store -
+		 * @param {object} action - an action containing successAction and failureAction
 		 */
 		( store, action ) => {
 			const { successAction, failureAction, noLabelsPaymentAction } = action;
@@ -105,17 +106,19 @@ export default {
 
 			/**
 			 * A callback issued after a successful request
+			 *
 			 * @param {Function} dispatch - dispatch function
 			 */
-			const onSuccess = dispatch => {
+			const onSuccess = ( dispatch ) => {
 				dispatch( successAction );
 				dispatch( actionListClear() );
 			};
 			/**
 			 * A callback issued after a failed request
+			 *
 			 * @param {Function} dispatch - dispatch function
 			 */
-			const onFailure = dispatch => {
+			const onFailure = ( dispatch ) => {
 				dispatch( failureAction );
 				dispatch( actionListClear() );
 			};
@@ -130,17 +133,23 @@ export default {
 	[ WOOCOMMERCE_SERVICES_SHIPPING_ZONE_METHOD_UPDATE ]: [
 		( { dispatch, getState }, action ) => {
 			const { siteId, methodId, methodType, method, successAction, failureAction } = action;
-			const updatedAction = data => {
+			const methodSchema = getShippingMethodSchema( getState(), methodType, siteId ).formSchema;
+			const methodValues = coerceFormValues( methodSchema, method );
+
+			const updatedAction = ( data ) => {
 				dispatch( shippingZoneMethodUpdated( siteId, data, action ) );
 
-				const props = { sentData: method, receivedData: data };
+				const props = {
+					sentData: methodValues,
+					receivedData: data,
+				};
 				dispatchWithProps( dispatch, getState, successAction, props );
 			};
 
 			api
-				.post( siteId, api.url.serviceSettings( methodType, methodId ), method )
+				.post( siteId, api.url.serviceSettings( methodType, methodId ), methodValues )
 				.then( updatedAction )
-				.catch( error => dispatchWithProps( dispatch, getState, failureAction, { error } ) );
+				.catch( ( error ) => dispatchWithProps( dispatch, getState, failureAction, { error } ) );
 		},
 	],
 };

@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -10,7 +8,7 @@ import { localize } from 'i18n-calypso';
 /**
  * Internal dependencies
  */
-import * as utils from 'lib/posts/utils';
+import * as utils from 'state/posts/utils';
 
 class EditorConfirmationSidebarHeader extends PureComponent {
 	static propTypes = {
@@ -25,7 +23,7 @@ class EditorConfirmationSidebarHeader extends PureComponent {
 				{ translate(
 					'{{strong}}Almost there!{{/strong}} ' +
 						'Double-check your settings, then ' +
-						'use the big green button to publish!',
+						'press the "Publish!" button.',
 					{
 						comment:
 							'This string appears as the header for the confirmation sidebar ' +
@@ -47,7 +45,7 @@ class EditorConfirmationSidebarHeader extends PureComponent {
 				{ translate(
 					'{{strong}}Almost there!{{/strong}} ' +
 						'Double-check your settings below, then ' +
-						'use the big green button to schedule!',
+						'press the "Schedule!" button.',
 					{
 						comment:
 							'This string appears as the header for the confirmation sidebar ' +

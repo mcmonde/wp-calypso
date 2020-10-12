@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -8,7 +6,7 @@ import { expect } from 'chai';
 /**
  * Internal dependencies
  */
-import { isDirectlyReady } from 'state/selectors';
+import isDirectlyReady from 'state/selectors/is-directly-ready';
 import {
 	STATUS_ERROR,
 	STATUS_INITIALIZING,

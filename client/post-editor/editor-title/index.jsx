@@ -1,9 +1,7 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
+import { isMobile } from '@automattic/viewport';
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
@@ -14,17 +12,21 @@ import { localize } from 'i18n-calypso';
 /**
  * Internal dependencies
  */
-import * as PostUtils from 'lib/posts/utils';
+import * as PostUtils from 'state/posts/utils';
 import EditorPermalink from 'post-editor/editor-permalink';
 import TrackInputChanges from 'components/track-input-changes';
 import TextareaAutosize from 'components/textarea-autosize';
-import { isMobile } from 'lib/viewport';
-import * as stats from 'lib/posts/stats';
+import { recordEditorStat, recordEditorEvent } from 'state/posts/stats';
 import { getSelectedSiteId } from 'state/ui/selectors';
-import { areSitePermalinksEditable } from 'state/selectors';
-import { isEditorNewPost, getEditorPostId } from 'state/ui/editor/selectors';
+import areSitePermalinksEditable from 'state/selectors/are-site-permalinks-editable';
+import { isEditorNewPost, getEditorPostId } from 'state/editor/selectors';
 import { getEditedPost } from 'state/posts/selectors';
 import { editPost } from 'state/posts/actions';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 /**
  * Constants
@@ -61,7 +63,7 @@ class EditorTitle extends Component {
 		}
 	}
 
-	onChange = event => {
+	onChange = ( event ) => {
 		const { siteId, editedPostId } = this.props;
 		const newTitle = event.target.value.replace( REGEXP_NEWLINES, ' ' );
 		this.props.editPost( siteId, editedPostId, {
@@ -70,7 +72,7 @@ class EditorTitle extends Component {
 		this.props.onChange( newTitle );
 	};
 
-	resizeAfterNewlineInput = event => {
+	resizeAfterNewlineInput = ( event ) => {
 		const title = event.target.value;
 		if ( REGEXP_NEWLINES.test( title ) ) {
 			event.target.value = title.replace( REGEXP_NEWLINES, ' ' );
@@ -80,8 +82,8 @@ class EditorTitle extends Component {
 
 	recordChangeStats = () => {
 		const isPage = PostUtils.isPage( this.props.post );
-		stats.recordStat( isPage ? 'page_title_changed' : 'post_title_changed' );
-		stats.recordEvent( isPage ? 'Changed Page Title' : 'Changed Post Title' );
+		this.props.recordEditorStat( isPage ? 'page_title_changed' : 'post_title_changed' );
+		this.props.recordEditorEvent( isPage ? 'Changed Page Title' : 'Changed Post Title' );
 	};
 
 	render() {
@@ -93,14 +95,12 @@ class EditorTitle extends Component {
 
 		return (
 			<div className={ classes }>
-				{ post &&
-					post.ID &&
-					! PostUtils.isPage( post ) && (
-						<EditorPermalink
-							path={ isPermalinkEditable ? PostUtils.getPermalinkBasePath( post ) : post.URL }
-							isEditable={ isPermalinkEditable }
-						/>
-					) }
+				{ post && post.ID && ! PostUtils.isPage( post ) && (
+					<EditorPermalink
+						path={ isPermalinkEditable ? PostUtils.getPermalinkBasePath( post ) : post.URL }
+						isEditable={ isPermalinkEditable }
+					/>
+				) }
 				<TrackInputChanges onNewValue={ this.recordChangeStats }>
 					<TextareaAutosize
 						tabIndex={ tabIndex }
@@ -122,7 +122,7 @@ class EditorTitle extends Component {
 }
 
 export default connect(
-	state => {
+	( state ) => {
 		const siteId = getSelectedSiteId( state );
 		const isPermalinkEditable = areSitePermalinksEditable( state, siteId );
 		const editedPostId = getEditorPostId( state );
@@ -137,5 +137,5 @@ export default connect(
 			siteId,
 		};
 	},
-	{ editPost }
+	{ editPost, recordEditorStat, recordEditorEvent }
 )( localize( EditorTitle ) );

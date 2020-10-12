@@ -7,15 +7,15 @@
 	background-position: center;
 }
 
-.media-library__list-item-video:before {
+.media-library__list-item-video::before {
 	position: absolute;
 	display: block;
 	top: 0;
 	bottom: 0;
 	left: 0;
 	right: 0;
-	content: "";
-	background: rgba( 135, 166, 188, 0.25 ); // $gray at 25% opacity
+	content: '';
+	background: rgba( var( --color-netural-30-rgb ), 0.25 );
 }
 
 .media-library__list-item-video .media-library__list-item-icon {

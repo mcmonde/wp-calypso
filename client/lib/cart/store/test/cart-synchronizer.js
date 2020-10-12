@@ -1,9 +1,7 @@
-/** @format */
-
 /**
  * External dependencies
  */
-import assert from 'assert'; // eslint-disable-line import/no-nodejs-modules
+import assert from 'assert';
 
 /**
  * Internal dependencies
@@ -11,10 +9,13 @@ import assert from 'assert'; // eslint-disable-line import/no-nodejs-modules
 import CartSynchronizer from '../cart-synchronizer';
 import FakeWPCOM from './fake-wpcom';
 
+// Gets rid of warnings such as 'UnhandledPromiseRejectionWarning: Error: No available storage method found.'
+jest.mock( 'lib/user', () => () => {} );
+
 const TEST_CART_KEY = 91234567890;
 
 const poller = {
-	add: function() {},
+	add: function () {},
 };
 
 describe( 'cart-synchronizer', () => {
@@ -25,11 +26,13 @@ describe( 'cart-synchronizer', () => {
 
 		applyCoupon = cartValues.applyCoupon;
 		emptyCart = cartValues.emptyCart;
+
+		global.window = { location: { href: 'http://example.com' } };
 	} );
 
 	describe( '*before* the first fetch from the server', () => {
 		test( 'should *not* allow the value to be read', () => {
-			let wpcom = FakeWPCOM(),
+			const wpcom = FakeWPCOM(),
 				synchronizer = CartSynchronizer( TEST_CART_KEY, wpcom, poller );
 
 			assert.throws( () => {
@@ -38,7 +41,7 @@ describe( 'cart-synchronizer', () => {
 		} );
 
 		test( 'should enqueue local changes and POST them after fetching', () => {
-			let wpcom = FakeWPCOM(),
+			const wpcom = FakeWPCOM(),
 				synchronizer = CartSynchronizer( TEST_CART_KEY, wpcom, poller ),
 				serverCart = emptyCart( TEST_CART_KEY );
 
@@ -61,7 +64,7 @@ describe( 'cart-synchronizer', () => {
 
 	describe( '*after* the first fetch from the server', () => {
 		test( 'should allow the value to be read', () => {
-			let wpcom = FakeWPCOM(),
+			const wpcom = FakeWPCOM(),
 				synchronizer = CartSynchronizer( TEST_CART_KEY, wpcom, poller ),
 				serverCart = emptyCart( TEST_CART_KEY );
 
@@ -73,7 +76,7 @@ describe( 'cart-synchronizer', () => {
 	} );
 
 	test( 'should make local changes visible immediately', () => {
-		let wpcom = FakeWPCOM(),
+		const wpcom = FakeWPCOM(),
 			synchronizer = CartSynchronizer( TEST_CART_KEY, wpcom, poller ),
 			serverCart = emptyCart( TEST_CART_KEY );
 

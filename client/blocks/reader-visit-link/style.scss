@@ -1,19 +1,19 @@
 .reader-visit-link__icon {
-	fill: $gray;
+	fill: var( --color-neutral-light );
 }
 
 .reader-visit-link__label {
-	color: $gray;
+	color: var( --color-text-subtle );
 }
 
 .reader-visit-link:hover,
 .reader-visit-link:active {
 	.reader-visit-link__icon {
-		fill: $blue-medium;
+		fill: var( --color-primary );
 	}
 
 	.reader-visit-link__label {
-		color: $blue-medium;
+		color: var( --color-primary );
 		cursor: pointer;
 	}
 }

@@ -1,9 +1,6 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import PropTypes from 'prop-types';
 import React from 'react';
 import { connect } from 'react-redux';
@@ -27,16 +24,21 @@ import {
 	resetAllImageEditorState,
 	setImageEditorFileInfo,
 	setImageEditorDefaultAspectRatio,
-} from 'state/ui/editor/image-editor/actions';
+} from 'state/editor/image-editor/actions';
 import {
 	getImageEditorFileInfo,
 	isImageEditorImageLoaded,
-} from 'state/ui/editor/image-editor/selectors';
+} from 'state/editor/image-editor/selectors';
 import { getSelectedSiteId } from 'state/ui/selectors';
 import { getSite } from 'state/sites/selectors';
 import QuerySites from 'components/data/query-sites';
-import { AspectRatios, AspectRatiosValues } from 'state/ui/editor/image-editor/constants';
+import { AspectRatios, AspectRatiosValues } from 'state/editor/image-editor/constants';
 import { getDefaultAspectRatio } from './utils';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class ImageEditor extends React.Component {
 	static propTypes = {
@@ -75,7 +77,9 @@ class ImageEditor extends React.Component {
 		noticeStatus: 'is-info',
 	};
 
-	componentWillReceiveProps( newProps ) {
+	editCanvasRef = React.createRef();
+
+	UNSAFE_componentWillReceiveProps( newProps ) {
 		const { media: currentMedia } = this.props;
 
 		if ( newProps.media && ! isEqual( newProps.media, currentMedia ) ) {
@@ -101,7 +105,7 @@ class ImageEditor extends React.Component {
 		);
 	};
 
-	updateFileInfo = media => {
+	updateFileInfo = ( media ) => {
 		const { site } = this.props;
 
 		let src,
@@ -127,7 +131,7 @@ class ImageEditor extends React.Component {
 		this.props.setImageEditorFileInfo( src, fileName, mimeType, title );
 	};
 
-	convertBlobToImage = blob => {
+	convertBlobToImage = ( blob ) => {
 		const { onDone } = this.props;
 
 		// Create a new image from the canvas blob
@@ -164,9 +168,7 @@ class ImageEditor extends React.Component {
 			return;
 		}
 
-		const canvasComponent = this.refs.editCanvas.getWrappedInstance();
-
-		canvasComponent.toBlob( this.convertBlobToImage );
+		this.editCanvasRef.current.toBlob( this.convertBlobToImage );
 	};
 
 	onCancel = () => {
@@ -250,14 +252,12 @@ class ImageEditor extends React.Component {
 
 		return (
 			<div className={ classes }>
-				{ noticeText && this.renderNotice() }
-
 				<CloseOnEscape onEscape={ this.onCancel } />
 				<QuerySites siteId={ siteId } />
 
 				<figure>
 					<div className="image-editor__content">
-						<ImageEditorCanvas ref="editCanvas" onLoadError={ this.onLoadCanvasError } />
+						<ImageEditorCanvas ref={ this.editCanvasRef } onLoadError={ this.onLoadCanvasError } />
 						<ImageEditorToolbar
 							onShowNotice={ this.showNotice }
 							allowedAspectRatios={ allowedAspectRatios }
@@ -270,6 +270,8 @@ class ImageEditor extends React.Component {
 						/>
 					</div>
 				</figure>
+
+				{ noticeText && this.renderNotice() }
 			</div>
 		);
 	}

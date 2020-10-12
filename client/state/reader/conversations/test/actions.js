@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * Internal dependencies
  */
@@ -7,7 +5,7 @@ import {
 	READER_CONVERSATION_FOLLOW,
 	READER_CONVERSATION_MUTE,
 	READER_CONVERSATION_UPDATE_FOLLOW_STATUS,
-} from 'state/action-types';
+} from 'state/reader/action-types';
 import {
 	followConversation,
 	muteConversation,
@@ -18,20 +16,30 @@ import { CONVERSATION_FOLLOW_STATUS } from 'state/reader/conversations/follow-st
 describe( 'actions', () => {
 	describe( '#followConversation', () => {
 		test( 'should return an action when a conversation is followed', () => {
-			const action = followConversation( { siteId: 123, postId: 456 } );
-			expect( action ).toEqual( {
+			const dispatch = jest.fn();
+			const getState = () => ( {} );
+			followConversation( { siteId: 123, postId: 456 } )( dispatch, getState );
+			expect( dispatch ).toHaveBeenCalledWith( {
 				type: READER_CONVERSATION_FOLLOW,
 				payload: { siteId: 123, postId: 456 },
+				meta: {
+					previousState: null,
+				},
 			} );
 		} );
 	} );
 
 	describe( '#muteConversation', () => {
 		test( 'should return an action when a conversation is muted', () => {
-			const action = muteConversation( { siteId: 123, postId: 456 } );
-			expect( action ).toEqual( {
+			const dispatch = jest.fn();
+			const getState = () => ( {} );
+			muteConversation( { siteId: 123, postId: 456 } )( dispatch, getState );
+			expect( dispatch ).toHaveBeenCalledWith( {
 				type: READER_CONVERSATION_MUTE,
 				payload: { siteId: 123, postId: 456 },
+				meta: {
+					previousState: null,
+				},
 			} );
 		} );
 	} );

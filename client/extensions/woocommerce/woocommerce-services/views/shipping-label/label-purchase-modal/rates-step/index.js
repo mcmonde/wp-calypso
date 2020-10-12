@@ -6,16 +6,19 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 import { localize } from 'i18n-calypso';
-import { find, get, isEmpty } from 'lodash';
+import { find, get, isEmpty, mapValues, some } from 'lodash';
+import formatCurrency from '@automattic/format-currency';
 
 /**
  * Internal dependencies
  */
 import ShippingRates from './list';
 import StepContainer from '../step-container';
-import formatCurrency from 'lib/format-currency';
 import { hasNonEmptyLeaves } from 'woocommerce/woocommerce-services/lib/utils/tree';
-import { toggleStep, updateRate } from 'woocommerce/woocommerce-services/state/shipping-label/actions';
+import {
+	toggleStep,
+	updateRate,
+} from 'woocommerce/woocommerce-services/state/shipping-label/actions';
 import {
 	getShippingLabel,
 	isLoaded,
@@ -23,7 +26,6 @@ import {
 	getTotalPriceBreakdown,
 } from 'woocommerce/woocommerce-services/state/shipping-label/selectors';
 import { getAllPackageDefinitions } from 'woocommerce/woocommerce-services/state/packages/selectors';
-import { getPaymentCurrencySettings } from 'woocommerce/state/sites/settings/general/selectors';
 import { getOrderShippingTotal } from 'woocommerce/lib/order-values/totals';
 import { getOrderShippingMethod } from 'woocommerce/lib/order-values';
 import { getOrder } from 'woocommerce/state/sites/orders/selectors';
@@ -32,6 +34,10 @@ import Notice from 'components/notice';
 const ratesSummary = ( selectedRates, availableRates, total, packagesSaved, translate ) => {
 	if ( ! packagesSaved ) {
 		return translate( 'Unsaved changes made to packages' );
+	}
+
+	if ( some( mapValues( availableRates, ( rateObject ) => isEmpty( rateObject.rates ) ) ) ) {
+		return translate( 'No rates found' );
 	}
 
 	if ( ! total ) {
@@ -88,12 +94,12 @@ const getRatesStatus = ( { retrievalInProgress, errors, available, form } ) => {
 };
 
 const showCheckoutShippingInfo = ( props ) => {
-	const {
-		shippingMethod,
-		shippingCost,
-		currency,
-		translate,
-	} = props;
+	const { shippingMethod, shippingCost, translate } = props;
+
+	// Use a temporary HTML element in order to let the DOM API convert HTML entities into text
+	const shippingMethodDiv = document.createElement( 'div' );
+	shippingMethodDiv.innerHTML = shippingMethod;
+	const decodedShippingMethod = shippingMethodDiv.textContent;
 
 	if ( shippingMethod ) {
 		let shippingInfo;
@@ -103,20 +109,25 @@ const showCheckoutShippingInfo = ( props ) => {
 				'Your customer selected {{shippingMethod/}} and paid {{shippingCost/}}',
 				{
 					components: {
-						shippingMethod: <span className="rates-step__shipping-info-method">{ shippingMethod }</span>,
-						shippingCost: <span className="rates-step__shipping-info-cost">{ formatCurrency( shippingCost, currency ) }</span>,
+						shippingMethod: (
+							<span className="rates-step__shipping-info-method">{ decodedShippingMethod }</span>
+						),
+						shippingCost: (
+							<span className="rates-step__shipping-info-cost">
+								{ formatCurrency( shippingCost, 'USD' ) }
+							</span>
+						),
 					},
 				}
 			);
 		} else {
-			shippingInfo = translate(
-				'Your customer selected {{shippingMethod/}}',
-				{
-					components: {
-						shippingMethod: <span className="rates-step__shipping-info-method">{ shippingMethod }</span>,
-					},
-				}
-			);
+			shippingInfo = translate( 'Your customer selected {{shippingMethod/}}', {
+				components: {
+					shippingMethod: (
+						<span className="rates-step__shipping-info-method">{ decodedShippingMethod }</span>
+					),
+				},
+			} );
 		}
 
 		return (
@@ -142,7 +153,8 @@ const RatesStep = ( props ) => {
 	} = props;
 	const summary = ratesSummary( values, available, ratesTotal, form.packages.saved, translate );
 	const toggleStepHandler = () => props.toggleStep( orderId, siteId, 'rates' );
-	const updateRateHandler = ( packageId, value ) => props.updateRate( orderId, siteId, packageId, value );
+	const updateRateHandler = ( packageId, value ) =>
+		props.updateRate( orderId, siteId, packageId, value );
 
 	return (
 		<StepContainer
@@ -150,7 +162,8 @@ const RatesStep = ( props ) => {
 			summary={ summary }
 			expanded={ expanded }
 			toggleStep={ toggleStepHandler }
-			{ ...getRatesStatus( props ) } >
+			{ ...getRatesStatus( props ) }
+		>
 			{ ! isEmpty( available ) && showCheckoutShippingInfo( props ) }
 			<ShippingRates
 				id="rates"
@@ -160,7 +173,8 @@ const RatesStep = ( props ) => {
 				selectedRates={ values }
 				availableRates={ available }
 				updateRate={ updateRateHandler }
-				errors={ errors } />
+				errors={ errors }
+			/>
 		</StepContainer>
 	);
 };
@@ -188,7 +202,6 @@ const mapStateToProps = ( state, { orderId, siteId } ) => {
 		errors: loaded && getFormErrors( state, orderId, siteId ).rates,
 		ratesTotal: priceBreakdown ? priceBreakdown.total : 0,
 		allPackages: getAllPackageDefinitions( state, siteId ),
-		currency: getPaymentCurrencySettings( state, siteId ),
 		shippingCost: getOrderShippingTotal( order ),
 		shippingMethod: getOrderShippingMethod( order ),
 	};

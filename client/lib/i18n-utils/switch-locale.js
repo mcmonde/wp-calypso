@@ -1,41 +1,253 @@
-/** @format */
-
 /**
  * External dependencies
  */
-import request from 'superagent';
 import i18n from 'i18n-calypso';
 import debugFactory from 'debug';
-import { noop } from 'lodash';
+import { forEach, includes } from 'lodash';
 
 /**
  * Internal dependencies
  */
+import config from 'config';
 import { isDefaultLocale, getLanguage } from './utils';
+import { getUrlFromParts, getUrlParts } from 'lib/url/url-parts';
 
 const debug = debugFactory( 'calypso:i18n' );
 
-function languageFileUrl( localeSlug ) {
-	const protocol = typeof window === 'undefined' ? 'https://' : '//'; // use a protocol-relative path in the browser
+const getPromises = {};
 
-	return `${ protocol }widgets.wp.com/languages/calypso/${ localeSlug }.json`;
+/**
+ * De-duplicates repeated GET fetches of the same URL while one is taking place.
+ * Once it's finished, it'll allow for the same request to be done again.
+ *
+ * @param {string} url The URL to fetch
+ *
+ * @returns {Promise} The fetch promise.
+ */
+function dedupedGet( url ) {
+	if ( ! ( url in getPromises ) ) {
+		getPromises[ url ] = globalThis.fetch( url ).finally( () => delete getPromises[ url ] );
+	}
+
+	return getPromises[ url ];
 }
 
-function setLocaleInDOM( localeSlug, isRTL ) {
-	document.documentElement.lang = localeSlug;
+/**
+ * Get the protocol, domain, and path part of the language file URL.
+ * Normally it should only serve as a helper function for `getLanguageFileUrl`,
+ * but we export it here still in help with the test suite.
+ *
+ * @returns {string} The path URL to the language files.
+ */
+export function getLanguageFilePathUrl() {
+	const protocol = typeof window === 'undefined' ? 'https://' : '//'; // use a protocol-relative path in the browser
+
+	return `${ protocol }widgets.wp.com/languages/calypso/`;
+}
+
+/**
+ * Get the base path for language related files that are served from within Calypso.
+ *
+ * @param {string} targetBuild The build target. e.g. fallback, evergreen, etc.
+ * @returns {string} The internal base file path for language files.
+ */
+export function getLanguagesInternalBasePath( targetBuild = 'evergreen' ) {
+	return `/calypso/${ targetBuild }/languages`;
+}
+
+/**
+ * Get the language file URL for the given locale and file type, js or json.
+ * A revision cache buster will be appended automatically if `setLangRevisions` has been called beforehand.
+ *
+ * @param {string} localeSlug A locale slug. e.g. fr, jp, zh-tw
+ * @param {string} fileType The desired file type, js or json. Default to json.
+ * @param {object} languageRevisions An optional language revisions map. If it exists, the function will append the revision within as cache buster.
+ *
+ * @returns {string} A language file URL.
+ */
+export function getLanguageFileUrl( localeSlug, fileType = 'json', languageRevisions = {} ) {
+	if ( ! includes( [ 'js', 'json' ], fileType ) ) {
+		fileType = 'json';
+	}
+
+	const revision = languageRevisions[ localeSlug ];
+	const fileUrl = `${ getLanguageFilePathUrl() }${ localeSlug }-v1.1.${ fileType }`;
+
+	return typeof revision === 'number' ? fileUrl + `?v=${ revision }` : fileUrl;
+}
+
+function getHtmlLangAttribute() {
+	// translation of this string contains the desired HTML attribute value
+	const slug = i18n.translate( 'html_lang_attribute' );
+
+	// Hasn't been translated? Some languages don't have the translation for this string,
+	// or maybe we are dealing with the default `en` locale. Return the general purpose locale slug
+	// -- there's no special one available for `<html lang>`.
+	if ( slug === 'html_lang_attribute' ) {
+		return i18n.getLocaleSlug();
+	}
+
+	return slug;
+}
+
+function setLocaleInDOM() {
+	const htmlLangAttribute = getHtmlLangAttribute();
+	const isRTL = i18n.isRtl();
+	document.documentElement.lang = htmlLangAttribute;
 	document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
+	document.body.classList[ isRTL ? 'add' : 'remove' ]( 'rtl' );
 
-	const directionFlag = isRTL ? '-rtl' : '';
-	const debugFlag = process.env.NODE_ENV === 'development' ? '-debug' : '';
-	const cssUrl = window.app.staticUrls[ `style${ debugFlag }${ directionFlag }.css` ];
+	switchWebpackCSS( isRTL );
+}
 
-	switchCSS( 'main-css', cssUrl );
+export async function getFile( url ) {
+	const response = await dedupedGet( url );
+	if ( response.ok ) {
+		if ( response.bodyUsed ) {
+			// If the body was already used, we assume that we already parsed the
+			// response and set the locale in the DOM, so we don't need to do anything
+			// else here.
+			return;
+		}
+		return await response.json();
+	}
+
+	// Invalid response.
+	throw new Error();
+}
+
+export function getLanguageFile( targetLocaleSlug ) {
+	const url = getLanguageFileUrl( targetLocaleSlug, 'json', window.languageRevisions || {} );
+
+	return getFile( url );
+}
+
+/**
+ * Get the language manifest file URL for the given locale.
+ * A revision cache buster will be appended automatically if `setLangRevisions` has been called beforehand.
+ *
+ * @param {string} options Funciton options object
+ * @param {string} options.localeSlug A locale slug. e.g. fr, jp, zh-tw
+ * @param {string} options.fileType The desired file type, js or json. Default to json.
+ * @param {string} options.targetBuild The build target. e.g. fallback, evergreen, etc.
+ * @param {string} options.hash Build hash string that will be used as cache buster.
+ *
+ * @returns {string} A language manifest file URL.
+ */
+
+export function getLanguageManifestFileUrl( {
+	localeSlug,
+	fileType = 'json',
+	targetBuild = 'evergreen',
+	hash = null,
+} = {} ) {
+	if ( ! includes( [ 'js', 'json' ], fileType ) ) {
+		fileType = 'json';
+	}
+
+	if ( typeof hash === 'number' ) {
+		hash = hash.toString();
+	}
+
+	const fileBasePath = getLanguagesInternalBasePath( targetBuild );
+	const fileUrl = `${ fileBasePath }/${ localeSlug }-language-manifest.${ fileType }`;
+
+	return typeof hash === 'string' ? fileUrl + `?v=${ hash }` : fileUrl;
+}
+
+/**
+ * Get the language manifest file for the given locale.
+ *
+ * @param  {string} localeSlug A locale slug. e.g. fr, jp, zh-tw
+ * @param  {string} targetBuild The build target. e.g. fallback, evergreen, etc.
+ *
+ * @returns {Promise} Language manifest json content
+ */
+export function getLanguageManifestFile( localeSlug, targetBuild = 'evergreen' ) {
+	if (
+		window?.i18nLanguageManifest &&
+		window?.i18nLanguageManifest?.locale?.[ '' ]?.localeSlug === localeSlug
+	) {
+		return Promise.resolve( window.i18nLanguageManifest );
+	}
+
+	const url = getLanguageManifestFileUrl( {
+		localeSlug,
+		fileType: 'json',
+		targetBuild,
+		hash: window?.languageRevisions?.hashes?.[ localeSlug ] || null,
+	} );
+
+	return getFile( url );
+}
+
+/**
+ * Get the translation chunk file URL for the given chunk id and locale.
+ * A revision cache buster will be appended automatically if `setLangRevisions` has been called beforehand.
+ *
+ * @param {string} options Funciton options object
+ * @param {string} options.chunkId A chunk id. e.g. chunk-abc.min
+ * @param {string} options.localeSlug A locale slug. e.g. fr, jp, zh-tw
+ * @param {string} options.fileType The desired file type, js or json. Default to json.
+ * @param {string} options.buildTarget The build target. e.g. fallback, evergreen, etc.
+ * @param {string} options.hash Build hash string that will be used as cache buster.
+ *
+ * @returns {string} A translation chunk file URL.
+ */
+export function getTranslationChunkFileUrl( {
+	chunkId,
+	localeSlug,
+	fileType = 'json',
+	targetBuild = 'evergreen',
+	hash = null,
+} = {} ) {
+	if ( ! includes( [ 'js', 'json' ], fileType ) ) {
+		fileType = 'json';
+	}
+
+	if ( typeof hash === 'number' ) {
+		hash = hash.toString();
+	}
+
+	const fileBasePath = getLanguagesInternalBasePath( targetBuild );
+	const fileName = `${ localeSlug }-${ chunkId }.${ fileType }`;
+	const fileUrl = `${ fileBasePath }/${ fileName }`;
+
+	return typeof hash === 'string' ? fileUrl + `?v=${ hash }` : fileUrl;
+}
+
+/**
+ * Get the translation chunk file for the given chunk id and locale.
+ *
+ * @param {string} chunkId A chunk id. e.g. chunk-abc.min
+ * @param {string} localeSlug A locale slug. e.g. fr, jp, zh-tw
+ * @param {string} targetBuild The build target. e.g. fallback, evergreen, etc.
+ *
+ * @returns {Promise} Translation chunk json content
+ */
+export function getTranslationChunkFile( chunkId, localeSlug, targetBuild = 'evergreen' ) {
+	if (
+		window?.i18nLanguageManifest?.locale?.[ '' ]?.localeSlug === localeSlug &&
+		window?.i18nTranslationChunks?.[ chunkId ]
+	) {
+		return Promise.resolve( window.i18nTranslationChunks[ chunkId ] );
+	}
+
+	const url = getTranslationChunkFileUrl( {
+		chunkId,
+		localeSlug,
+		fileType: 'json',
+		targetBuild,
+		hash: window?.languageRevisions?.[ localeSlug ] || null,
+	} );
+
+	return getFile( url );
 }
 
 let lastRequestedLocale = null;
-export default function switchLocale( localeSlug, localeVariant ) {
+export default function switchLocale( localeSlug ) {
 	// check if the language exists in config.languages
-	const language = getLanguage( localeSlug, localeVariant );
+	const language = getLanguage( localeSlug );
 
 	if ( ! language ) {
 		return;
@@ -47,97 +259,212 @@ export default function switchLocale( localeSlug, localeVariant ) {
 		return;
 	}
 
-	const { langSlug: targetLocaleSlug, parentLangSlug } = language;
+	lastRequestedLocale = localeSlug;
 
-	// variant lang objects contain references to their parent lang, which is what we want to tell the browser we're running
-	const domLocaleSlug = parentLangSlug || targetLocaleSlug;
+	const useTranslationChunks =
+		config.isEnabled( 'use-translation-chunks' ) ||
+		getUrlParts( document.location.href ).searchParams.has( 'useTranslationChunks' );
 
-	lastRequestedLocale = targetLocaleSlug;
+	if ( isDefaultLocale( localeSlug ) ) {
+		i18n.configure( { defaultLocaleSlug: localeSlug } );
+		setLocaleInDOM();
+	} else if ( useTranslationChunks ) {
+		// If requested locale is same as current locale, we don't need to
+		// re-fetch the manifest and translation chunks.
+		if ( localeSlug === i18n.getLocaleSlug() ) {
+			setLocaleInDOM();
+			return;
+		}
 
-	if ( isDefaultLocale( targetLocaleSlug ) ) {
-		i18n.configure( { defaultLocaleSlug: targetLocaleSlug } );
-		setLocaleInDOM( domLocaleSlug, !! language.rtl );
-	} else {
-		request.get( languageFileUrl( targetLocaleSlug ) ).end( function( error, response ) {
-			if ( error ) {
-				debug(
-					'Encountered an error loading locale file for ' +
-						localeSlug +
-						'. Falling back to English.'
+		// Switching locale with translation chunks will require to fetch
+		// the manifest and all installed translation chunks for
+		// the requested locale
+		getLanguageManifestFile( localeSlug, window.BUILD_TARGET )
+			.then( ( { translatedChunks, locale } = {} ) => {
+				if ( ! locale ) {
+					return;
+				}
+
+				const installedChunks = new Set(
+					( window.installedChunks || [] )
+						.concat( window.__requireChunkCallback__.getInstalledChunks() )
+						.filter( ( chunkId ) => translatedChunks.includes( chunkId ) )
 				);
-				return;
+				const chunksPromises = [ ...installedChunks ].map( ( chunkId ) =>
+					getTranslationChunkFile( chunkId, localeSlug, window.BUILD_TARGET )
+				);
+
+				return Promise.all( [ Promise.resolve( locale ), ...chunksPromises ] );
+			} )
+			.then( ( localeArray ) => {
+				if ( ! localeArray ) {
+					return;
+				}
+
+				const body = localeArray.reduce( ( acc, item ) => ( { ...acc, ...item } ), {} );
+
+				i18n.setLocale( body );
+				setLocaleInDOM();
+				loadUserUndeployedTranslations( localeSlug );
+			} )
+			.catch( () => {
+				debug(
+					`Encountered an error loading language manifest and/or translation chunks for ${ localeSlug }. Falling back to English.`
+				);
+			} );
+	} else {
+		getLanguageFile( localeSlug ).then(
+			// Success.
+			( body ) => {
+				if ( body ) {
+					// Handle race condition when we're requested to switch to a different
+					// locale while we're in the middle of request, we should abandon result
+					if ( localeSlug !== lastRequestedLocale ) {
+						return;
+					}
+
+					i18n.setLocale( body );
+					setLocaleInDOM();
+					loadUserUndeployedTranslations( localeSlug );
+				}
+			},
+			// Failure.
+			() => {
+				debug(
+					`Encountered an error loading locale file for ${ localeSlug }. Falling back to English.`
+				);
 			}
-
-			// Handle race condition when we're requested to switch to a different
-			// locale while we're in the middle of request, we should abondon result
-			if ( targetLocaleSlug !== lastRequestedLocale ) {
-				return;
-			}
-
-			i18n.setLocale( response.body );
-
-			setLocaleInDOM( domLocaleSlug, !! language.rtl );
-		} );
+		);
 	}
 }
 
-const bundles = {};
-
-export function switchCSS( elementId, cssUrl, callback = noop ) {
-	if ( bundles.hasOwnProperty( elementId ) && bundles[ elementId ] === cssUrl ) {
-		callback();
-
+export function loadUserUndeployedTranslations( currentLocaleSlug ) {
+	if ( typeof window === 'undefined' || ! window.location || ! window.location.search ) {
 		return;
 	}
 
-	bundles[ elementId ] = cssUrl;
+	const search = new URLSearchParams( window.location.search );
+	const params = Object.fromEntries( search.entries() );
 
-	const currentLink = document.getElementById( elementId );
+	const {
+		'load-user-translations': username,
+		project = 'wpcom',
+		translationSet = 'default',
+		translationStatus = 'current',
+		locale = currentLocaleSlug,
+	} = params;
 
-	if ( currentLink && currentLink.getAttribute( 'href' ) === cssUrl ) {
-		callback();
-
+	if ( ! username ) {
 		return;
 	}
 
-	loadCSS( cssUrl, currentLink, ( error, newLink ) => {
-		if ( currentLink && currentLink.parentElement ) {
-			currentLink.parentElement.removeChild( currentLink );
+	if ( ! includes( [ 'current', 'waiting' ], translationStatus ) ) {
+		return;
+	}
+
+	if ( 'waiting' === translationStatus ) {
+		// TODO only allow loading your own waiting translations. Disallow loading them for now.
+		return;
+	}
+
+	const pathname = [
+		'api',
+		'projects',
+		project,
+		locale,
+		translationSet,
+		'export-translations',
+	].join( '/' );
+
+	const searchParams = new URLSearchParams( {
+		'filters[user_login]': username,
+		'filters[status]': translationStatus,
+		format: 'json',
+	} );
+
+	const requestUrl = getUrlFromParts( {
+		protocol: 'https:',
+		host: 'translate.wordpress.com',
+		pathname,
+		searchParams,
+	} );
+
+	return window
+		.fetch( requestUrl.href, {
+			headers: { Accept: 'application/json' },
+			credentials: 'include',
+		} )
+		.then( ( res ) => res.json() )
+		.then( ( translations ) => {
+			i18n.addTranslations( translations );
+
+			return translations;
+		} );
+}
+
+/*
+ * CSS links come in two flavors: either RTL stylesheets with `.rtl.css` suffix, or LTR ones
+ * with `.css` suffix. This function sets a desired `isRTL` flag on the supplied URL, i.e., it
+ * changes the extension if necessary.
+ */
+function setRTLFlagOnCSSLink( url, isRTL ) {
+	if ( isRTL ) {
+		return url.endsWith( '.rtl.css' ) ? url : url.replace( /\.css$/, '.rtl.css' );
+	}
+
+	return ! url.endsWith( '.rtl.css' ) ? url : url.replace( /\.rtl.css$/, '.css' );
+}
+
+/**
+ * Switch the Calypso CSS between RTL and LTR versions.
+ *
+ * @param {boolean} isRTL True to use RTL css.
+ */
+export function switchWebpackCSS( isRTL ) {
+	const currentLinks = document.querySelectorAll( 'link[rel="stylesheet"][data-webpack]' );
+
+	forEach( currentLinks, async ( currentLink ) => {
+		const currentHref = currentLink.getAttribute( 'href' );
+		const newHref = setRTLFlagOnCSSLink( currentHref, isRTL );
+		if ( currentHref === newHref ) {
+			return;
 		}
 
-		newLink.id = elementId;
+		const newLink = await loadCSS( newHref, currentLink );
+		newLink.setAttribute( 'data-webpack', true );
 
-		callback();
+		if ( currentLink.parentElement ) {
+			currentLink.parentElement.removeChild( currentLink );
+		}
 	} );
 }
 
 /**
- * Loads a css stylesheet into the page.
+ * Loads a CSS stylesheet into the page.
  *
- * @param {string} cssUrl - a url to a css resource to be inserted into the page
- * @param {Element} currentLink - a <link> DOM element that we want to use as a reference for stylesheet order
- * @param {Function} callback - a callback function to be called when the CSS has been loaded (after 500ms have passed).
+ * @param {string} cssUrl URL of a CSS stylesheet to be loaded into the page
+ * @param {window.Element} currentLink an existing <link> DOM element before which we want to insert the new one
+ * @returns {Promise<string>} the new <link> DOM element after the CSS has been loaded
  */
-function loadCSS( cssUrl, currentLink, callback = noop ) {
-	const link = Object.assign( document.createElement( 'link' ), {
-		rel: 'stylesheet',
-		type: 'text/css',
-		href: cssUrl,
-	} );
+function loadCSS( cssUrl, currentLink ) {
+	return new Promise( ( resolve ) => {
+		const link = document.createElement( 'link' );
+		link.rel = 'stylesheet';
+		link.type = 'text/css';
+		link.href = cssUrl;
 
-	const onload = () => {
 		if ( 'onload' in link ) {
-			link.onload = null;
+			link.onload = () => {
+				link.onload = null;
+				resolve( link );
+			};
+		} else {
+			// just wait 500ms if the browser doesn't support link.onload
+			// https://pie.gd/test/script-link-events/
+			// https://github.com/ariya/phantomjs/issues/12332
+			setTimeout( () => resolve( link ), 500 );
 		}
 
-		callback( null, link );
-	};
-
-	if ( 'onload' in link ) {
-		link.onload = onload;
-	} else {
-		setTimeout( onload, 500 );
-	}
-
-	document.head.insertBefore( link, currentLink ? currentLink.nextSibling : null );
+		document.head.insertBefore( link, currentLink ? currentLink.nextSibling : null );
+	} );
 }

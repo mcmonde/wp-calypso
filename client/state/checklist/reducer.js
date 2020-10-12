@@ -1,37 +1,63 @@
 /**
- * External dependencies
- *
- * @format
- */
-
-import { assign } from 'lodash';
-
-/**
  * Internal dependencies
  */
-import { combineReducers, createReducer } from 'state/utils';
-import { SITE_CHECKLIST_RECEIVE, SITE_CHECKLIST_TASK_UPDATE } from 'state/action-types';
+import { combineReducers, keyedReducer, withSchemaValidation, withStorageKey } from 'state/utils';
+import {
+	JETPACK_MODULE_ACTIVATE_SUCCESS,
+	JETPACK_MODULE_DEACTIVATE_SUCCESS,
+	SITE_CHECKLIST_RECEIVE,
+	SITE_CHECKLIST_TASK_UPDATE,
+} from 'state/action-types';
 import { items as itemSchemas } from './schema';
+import { CHECKLIST_KNOWN_TASKS } from 'state/data-layer/wpcom/checklist/index.js';
 
-export const items = createReducer(
-	{},
-	{
-		[ SITE_CHECKLIST_RECEIVE ]: ( state, { siteId, checklist } ) => ( {
-			...state,
-			[ siteId ]: checklist,
-		} ),
-		[ SITE_CHECKLIST_TASK_UPDATE ]: ( state, { siteId, taskId } ) => {
-			const siteState = state[ siteId ];
-			const tasks = assign( {}, siteState.tasks, { [ taskId ]: true } );
-			return {
-				...state,
-				[ siteId ]: assign( {}, siteState, { tasks } ),
-			};
-		},
-	},
-	itemSchemas
-);
+const setChecklistTaskCompletion = ( state, taskId, completed ) => ( {
+	...state,
+	tasks: state.tasks?.map( ( task ) =>
+		task.id === taskId ? { ...task, isCompleted: completed } : task
+	),
+} );
 
-export default combineReducers( {
+const moduleTaskMap = {
+	'lazy-images': CHECKLIST_KNOWN_TASKS.JETPACK_LAZY_IMAGES,
+	monitor: CHECKLIST_KNOWN_TASKS.JETPACK_MONITOR,
+	// Both photon and photon-cdn mark the Site Accelerator Task as completed
+	photon: CHECKLIST_KNOWN_TASKS.JETPACK_SITE_ACCELERATOR,
+	'photon-cdn': CHECKLIST_KNOWN_TASKS.JETPACK_SITE_ACCELERATOR,
+	search: CHECKLIST_KNOWN_TASKS.JETPACK_SEARCH,
+	videopress: CHECKLIST_KNOWN_TASKS.JETPACK_VIDEO_HOSTING,
+};
+
+const items = withSchemaValidation( itemSchemas, ( state = {}, action ) => {
+	switch ( action.type ) {
+		case SITE_CHECKLIST_RECEIVE:
+			return action.checklist;
+		case SITE_CHECKLIST_TASK_UPDATE:
+			return setChecklistTaskCompletion( state, action.taskId, true );
+		case JETPACK_MODULE_ACTIVATE_SUCCESS:
+			if ( moduleTaskMap.hasOwnProperty( action.moduleSlug ) ) {
+				return setChecklistTaskCompletion( state, moduleTaskMap[ action.moduleSlug ], true );
+			}
+			break;
+		case JETPACK_MODULE_DEACTIVATE_SUCCESS:
+			if ( action.moduleSlug === 'photon' || action.moduleSlug === 'photon-cdn' ) {
+				// We can't know if the other module is still active, so we don't change
+				// Site Accelerator task completion state.
+				return state;
+			}
+
+			if ( moduleTaskMap.hasOwnProperty( action.moduleSlug ) ) {
+				return setChecklistTaskCompletion( state, moduleTaskMap[ action.moduleSlug ], false );
+			}
+			break;
+	}
+	return state;
+} );
+
+const reducer = combineReducers( {
 	items,
 } );
+
+const checklistReducer = keyedReducer( 'siteId', reducer );
+
+export default withStorageKey( 'checklist', checklistReducer );

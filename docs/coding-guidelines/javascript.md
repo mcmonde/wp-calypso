@@ -235,7 +235,7 @@ if ( typeof window !== 'undefined' ) {
 }
 ```
 
-Note that because parts of our application are [rendered on the server](https://github.com/Automattic/wp-calypso/blob/master/docs/server-side-rendering.md), we cannot always assume that a `window` global is present. Therefore, if you must reference a `window` global, always perform a `typeof` check to verify that it exists.
+Note that because parts of our application are [rendered on the server](https://github.com/Automattic/wp-calypso/blob/HEAD/docs/server-side-rendering.md), we cannot always assume that a `window` global is present. Therefore, if you must reference a `window` global, always perform a `typeof` check to verify that it exists.
 
 ## Naming Conventions
 
@@ -594,7 +594,7 @@ We encourage you to make use of these methods in favor of traditional `for` and 
 - [`Array#some`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/some)
 - [`Array#every`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/every)
 
-While ES2015 and beyond include many more Array prototype methods, these cannot be used due to complications with polyfills. Instead, you are encouraged to use their [Lodash](https://lodash.com/) equivalents, among many other Lodash methods:
+Calypso [includes polyfills](https://github.com/Automattic/wp-calypso/pull/25419) for many more Array prototype methods that were added in ES2015 and beyond. You can safely use them without fear of breaking older browsers. If it's more convenient you can also use their [Lodash](https://lodash.com/) equivalents. For example:
 
 - [`_.find`](https://lodash.com/docs/#find) ([`Array#find`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/find))
 - [`_.findIndex`](https://lodash.com/docs/#findIndex) ([`Array#findIndex`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/findIndex))
@@ -721,7 +721,7 @@ If ESLint encounters any issues inside any .jsx or .js files you have updated, a
 To lint the entire project, from the root of your working directory run:
 
 ```bash
-npm run lint:js
+yarn run lint:js
 ```
 
 
@@ -734,7 +734,7 @@ If you are using Sublime Text, you can use the `SublimeLinter-eslint` plugin to 
 Before following these instructions, you'll want to globally install ESLint and related dependencies by running the following command in your terminal:
 
 ```bash
-npm install -g eslint babel-eslint eslint-plugin-react eslint-plugin-wpcalypso eslint-config-wpcalypso
+yarn global add eslint babel-eslint eslint-plugin-react eslint-plugin-wpcalypso eslint-config-wpcalypso
 ```
 
 #### Identifying Spaces with Sublime Text

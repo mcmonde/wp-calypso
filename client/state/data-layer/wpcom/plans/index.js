@@ -1,11 +1,9 @@
-/** @format */
-
 /**
  * Internal dependencies
  */
-import config from 'config';
+import { registerHandlers } from 'state/data-layer/handler-registry';
 import { http } from 'state/data-layer/wpcom-http/actions';
-import { dispatchRequestEx } from 'state/data-layer/wpcom-http/utils';
+import { dispatchRequest } from 'state/data-layer/wpcom-http/utils';
 import { PLANS_REQUEST } from 'state/action-types';
 import {
 	plansReceiveAction,
@@ -20,13 +18,13 @@ import {
 /**
  * Dispatches a request to fetch all available WordPress.com plans
  *
- * @param {Object} action Redux action
- * @returns {Object} original action
+ * @param {object} action Redux action
+ * @returns {object} original action
  */
-export const requestPlans = action =>
+export const requestPlans = ( action ) =>
 	http(
 		{
-			apiVersion: config.isEnabled( 'upgrades/2-year-plans' ) ? '1.5' : '1.4',
+			apiVersion: '1.5',
 			method: 'GET',
 			path: '/plans',
 		},
@@ -36,9 +34,9 @@ export const requestPlans = action =>
 /**
  * Dispatches returned WordPress.com plan data
  *
- * @param {Object} action Redux action
+ * @param {object} action Redux action
  * @param {Array} plans raw data from plans API
- * @returns {Array<Object>} Redux actions
+ * @returns {Array<object>} Redux actions
  */
 export const receivePlans = ( action, plans ) => [
 	plansRequestSuccessAction(),
@@ -48,19 +46,19 @@ export const receivePlans = ( action, plans ) => [
 /**
  * Dispatches returned error from plans request
  *
- * @param {Object} action Redux action
- * @param {Object} rawError raw error from HTTP request
- * @returns {Object} Redux action
+ * @param {object} action Redux action
+ * @param {object} rawError raw error from HTTP request
+ * @returns {object} Redux action
  */
 export const receiveError = ( action, rawError ) =>
 	plansRequestFailureAction( rawError instanceof Error ? rawError.message : rawError );
 
-export const dispatchPlansRequest = dispatchRequestEx( {
+export const dispatchPlansRequest = dispatchRequest( {
 	fetch: requestPlans,
 	onSuccess: receivePlans,
 	onError: receiveError,
 } );
 
-export default {
+registerHandlers( 'state/data-layer/wpcom/plans', {
 	[ PLANS_REQUEST ]: [ dispatchPlansRequest ],
-};
+} );

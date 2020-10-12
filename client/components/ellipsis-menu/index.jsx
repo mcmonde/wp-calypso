@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -9,13 +7,18 @@ import React, { Component } from 'react';
 import classnames from 'classnames';
 import { localize } from 'i18n-calypso';
 import { noop } from 'lodash';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 
 /**
  * Internal dependencies
  */
-import Button from 'components/button';
+import { Button } from '@automattic/components';
 import PopoverMenu from 'components/popover/menu';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class EllipsisMenu extends Component {
 	static propTypes = {
@@ -33,21 +36,13 @@ class EllipsisMenu extends Component {
 		onToggle: noop,
 	};
 
-	constructor() {
-		super( ...arguments );
+	state = {
+		isMenuVisible: false,
+	};
 
-		this.state = {
-			isMenuVisible: false,
-			popoverContext: null,
-		};
+	popoverContext = React.createRef();
 
-		this.showMenu = this.toggleMenu.bind( this, true );
-		this.hideMenu = this.toggleMenu.bind( this, false );
-
-		this.setPopoverContext = this.setPopoverContext.bind( this );
-	}
-
-	handleClick = event => {
+	handleClick = ( event ) => {
 		const { onClick } = this.props;
 		const { isMenuVisible } = this.state;
 
@@ -60,11 +55,9 @@ class EllipsisMenu extends Component {
 		}
 	};
 
-	setPopoverContext( popoverContext ) {
-		if ( popoverContext ) {
-			this.setState( { popoverContext } );
-		}
-	}
+	hideMenu = () => this.toggleMenu( false );
+
+	showMenu = () => this.toggleMenu( true );
 
 	toggleMenu( isMenuVisible ) {
 		if ( ! this.props.disabled ) {
@@ -83,7 +76,7 @@ class EllipsisMenu extends Component {
 			className,
 			popoverClassName,
 		} = this.props;
-		const { isMenuVisible, popoverContext } = this.state;
+		const { isMenuVisible } = this.state;
 		const classes = classnames( 'ellipsis-menu', className, {
 			'is-menu-visible': isMenuVisible,
 			'is-disabled': disabled,
@@ -93,7 +86,7 @@ class EllipsisMenu extends Component {
 		return (
 			<span className={ classes }>
 				<Button
-					ref={ this.setPopoverContext }
+					ref={ this.popoverContext }
 					onClick={ this.handleClick }
 					title={ toggleTitle || translate( 'Toggle menu' ) }
 					borderless
@@ -102,15 +95,17 @@ class EllipsisMenu extends Component {
 				>
 					<Gridicon icon="ellipsis" className="ellipsis-menu__toggle-icon" />
 				</Button>
-				<PopoverMenu
-					isVisible={ isMenuVisible }
-					onClose={ this.hideMenu }
-					position={ position }
-					context={ popoverContext }
-					className={ popoverClasses }
-				>
-					{ children }
-				</PopoverMenu>
+				{ isMenuVisible && (
+					<PopoverMenu
+						isVisible
+						onClose={ this.hideMenu }
+						position={ position }
+						context={ this.popoverContext.current }
+						className={ popoverClasses }
+					>
+						{ children }
+					</PopoverMenu>
+				) }
 			</span>
 		);
 	}

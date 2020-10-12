@@ -1,9 +1,8 @@
-/** @format */
 /**
  * External dependencies
  */
 import { translate } from 'i18n-calypso';
-import { get, isDate, startsWith, pickBy, map } from 'lodash';
+import { compact, get, isDate, startsWith, pickBy, map } from 'lodash';
 
 /**
  * Internal dependencies
@@ -11,60 +10,47 @@ import { get, isDate, startsWith, pickBy, map } from 'lodash';
 import {
 	COMMENTS_REQUEST,
 	COMMENTS_RECEIVE,
-	COMMENTS_COUNT_INCREMENT,
+	COMMENTS_UPDATES_RECEIVE,
 	COMMENTS_COUNT_RECEIVE,
 	COMMENTS_DELETE,
-} from 'state/action-types';
-import { http } from 'state/data-layer/wpcom-http/actions';
-import { dispatchRequest } from 'state/data-layer/wpcom-http/utils';
-import { errorNotice, successNotice } from 'state/notices/actions';
-import { getSitePost } from 'state/posts/selectors';
-import { requestCommentsList } from 'state/comments/actions';
-import { getPostOldestCommentDate, getPostNewestCommentDate } from 'state/comments/selectors';
-import getSiteComment from 'state/selectors/get-site-comment';
-import { decodeEntities } from 'lib/formatting';
+} from 'calypso/state/action-types';
+import { http } from 'calypso/state/data-layer/wpcom-http/actions';
+import { dispatchRequest } from 'calypso/state/data-layer/wpcom-http/utils';
+import { errorNotice, successNotice } from 'calypso/state/notices/actions';
+import { getSitePost } from 'calypso/state/posts/selectors';
+import { requestCommentsList } from 'calypso/state/comments/actions';
+import {
+	getPostOldestCommentDate,
+	getPostNewestCommentDate,
+	getPostCommentsCountAtDate,
+	getSiteComment,
+} from 'calypso/state/comments/selectors';
+import { decodeEntities } from 'calypso/lib/formatting';
+import { registerHandlers } from 'calypso/state/data-layer/handler-registry';
 
-export const commentsFromApi = comments =>
-	map( comments, comment => ( {
-		...comment,
-		...( comment.author && {
-			author: {
-				...comment.author,
-				name: decodeEntities( get( comment, [ 'author', 'name' ] ) ),
-			},
-		} ),
-	} ) );
-
-/***
- * Creates a placeholder comment for a given text and postId
- * @param {String} commentText text of the comment
- * @param {Number} postId post identifier
- * @param {Number|undefined} parentCommentId parent comment identifier
- * @returns {Object} comment placeholder
- */
-export function createPlaceholderComment( commentText, postId, parentCommentId ) {
-	// We need placehodler id to be unique in the context of siteId, postId for that specific user,
-	// date milliseconds will do for that purpose.
-	return {
-		ID: 'placeholder-' + new Date().getTime(),
-		parent: parentCommentId ? { ID: parentCommentId } : false,
-		date: new Date().toISOString(),
-		content: commentText,
-		status: 'pending',
-		type: 'comment',
-		post: {
-			ID: postId,
-		},
-		isPlaceholder: true,
-		placeholderState: 'PENDING',
-	};
-}
+export const commentsFromApi = ( comments ) =>
+	map( comments, ( comment ) =>
+		comment.author
+			? {
+					...comment,
+					author: {
+						...comment.author,
+						name: decodeEntities( get( comment, [ 'author', 'name' ] ) ),
+					},
+			  }
+			: comment
+	);
 
 // @see https://developer.wordpress.com/docs/api/1.1/get/sites/%24site/posts/%24post_ID/replies/
-export const fetchPostComments = ( { dispatch, getState }, action ) => {
-	const { siteId, postId, query, direction } = action;
-	const oldestDate = getPostOldestCommentDate( getState(), siteId, postId );
-	const newestDate = getPostNewestCommentDate( getState(), siteId, postId );
+export const fetchPostComments = ( action ) => ( dispatch, getState ) => {
+	const { siteId, postId, query, direction, isPoll } = action;
+	const state = getState();
+	const oldestDate = getPostOldestCommentDate( state, siteId, postId );
+	const newestDate = getPostNewestCommentDate( state, siteId, postId );
+
+	// If we're polling for new comments, we query using after= which returns all comments *on or after* the provided date.
+	// To offset by the right number, we count the number of comments we already know about on the same second.
+	const offset = isPoll ? getPostCommentsCountAtDate( state, siteId, postId, newestDate ) : 0;
 
 	const before =
 		direction === 'before' &&
@@ -88,6 +74,7 @@ export const fetchPostComments = ( { dispatch, getState }, action ) => {
 					...query,
 					after,
 					before,
+					offset,
 				} ),
 			},
 			action
@@ -95,102 +82,49 @@ export const fetchPostComments = ( { dispatch, getState }, action ) => {
 	);
 };
 
-export const writePostComment = ( { dispatch }, action ) => {
-	const { siteId, postId, parentCommentId, commentText } = action;
-	const placeholder = createPlaceholderComment( commentText, postId, parentCommentId );
+export const addComments = ( action, { comments, found } ) => {
+	const { siteId, postId, direction, isPoll } = action;
 
-	// Insert a placeholder
-	dispatch( {
-		type: COMMENTS_RECEIVE,
-		siteId,
-		postId,
-		comments: [ placeholder ],
-		skipSort: !! parentCommentId,
-	} );
-
-	const path = !! parentCommentId
-		? `/sites/${ siteId }/comments/${ parentCommentId }/replies/new`
-		: `/sites/${ siteId }/posts/${ postId }/replies/new`;
-
-	dispatch(
-		http( {
-			method: 'POST',
-			apiVersion: '1.1',
-			path,
-			body: {
-				content: commentText,
-			},
-			onSuccess: {
-				...action,
-				placeholderId: placeholder.ID,
-			},
-			onFailure: action,
-		} )
-	);
-};
-
-export const addComments = ( { dispatch }, action, { comments, found } ) => {
-	const { siteId, postId, direction } = action;
-	dispatch( {
-		type: COMMENTS_RECEIVE,
+	const type = isPoll ? COMMENTS_UPDATES_RECEIVE : COMMENTS_RECEIVE;
+	const receiveAction = {
+		type,
 		siteId,
 		postId,
 		comments: commentsFromApi( comments ),
 		direction,
-	} );
+	};
 
 	// if the api have returned comments count, dispatch it
 	// the api will produce a count only when the request has no
 	// query modifiers such as 'before', 'after', 'type' and more.
 	// in our case it'll be only on the first request
 	if ( found > -1 ) {
-		dispatch( {
-			type: COMMENTS_COUNT_RECEIVE,
-			siteId,
-			postId,
-			totalCommentsCount: found,
-		} );
+		return [
+			receiveAction,
+			{
+				type: COMMENTS_COUNT_RECEIVE,
+				siteId,
+				postId,
+				totalCommentsCount: found,
+			},
+		];
 	}
+
+	return receiveAction;
 };
 
-export const writePostCommentSuccess = (
-	{ dispatch },
-	{ siteId, postId, parentCommentId, placeholderId },
-	comment
-) => {
-	// remove placeholder from state
-	dispatch( { type: COMMENTS_DELETE, siteId, postId, commentId: placeholderId } );
-	// add new comment to state with updated values from server
-	dispatch( {
-		type: COMMENTS_RECEIVE,
-		siteId,
-		postId,
-		comments: commentsFromApi( [ comment ] ),
-		skipSort: !! parentCommentId,
-	} );
-	// increment comments count
-	dispatch( { type: COMMENTS_COUNT_INCREMENT, siteId, postId } );
-};
-
-export const announceFailure = ( { dispatch, getState }, { siteId, postId } ) => {
+export const announceFailure = ( { siteId, postId } ) => ( dispatch, getState ) => {
 	const post = getSitePost( getState(), siteId, postId );
-	const postTitle =
-		post &&
-		post.title &&
-		post.title
-			.trim()
-			.slice( 0, 20 )
-			.trim()
-			.concat( '…' );
+	const postTitle = post && post.title && post.title.trim().slice( 0, 20 ).trim().concat( '…' );
 	const error = postTitle
 		? translate( 'Could not retrieve comments for “%(postTitle)s”', { args: { postTitle } } )
-		: translate( 'Could not retrieve comments for requested post' );
+		: translate( 'Could not retrieve comments for post' );
 
-	dispatch( errorNotice( error ) );
+	dispatch( errorNotice( error, { duration: 5000 } ) );
 };
 
 // @see https://developer.wordpress.com/docs/api/1.1/post/sites/%24site/comments/%24comment_ID/delete/
-export const deleteComment = ( { dispatch, getState }, action ) => {
+export const deleteComment = ( action ) => ( dispatch, getState ) => {
 	const { siteId, commentId } = action;
 
 	if ( startsWith( commentId, 'placeholder' ) ) {
@@ -214,35 +148,35 @@ export const deleteComment = ( { dispatch, getState }, action ) => {
 	);
 };
 
-export const handleDeleteSuccess = ( { dispatch }, { options, refreshCommentListQuery } ) => {
+export const handleDeleteSuccess = ( { options, refreshCommentListQuery } ) => {
 	const showSuccessNotice = get( options, 'showSuccessNotice', false );
-	if ( showSuccessNotice ) {
-		dispatch(
+
+	return compact( [
+		showSuccessNotice &&
 			successNotice( translate( 'Comment deleted permanently.' ), {
 				duration: 5000,
 				id: 'comment-notice',
 				isPersistent: true,
-			} )
-		);
-	}
-
-	if ( !! refreshCommentListQuery ) {
-		dispatch( requestCommentsList( refreshCommentListQuery ) );
-	}
+			} ),
+		!! refreshCommentListQuery && requestCommentsList( refreshCommentListQuery ),
+	] );
 };
 
-export const announceDeleteFailure = ( { dispatch }, action ) => {
+export const announceDeleteFailure = ( action ) => {
 	const { siteId, postId, comment } = action;
 
-	dispatch(
-		errorNotice( translate( 'Could not delete the comment.' ), {
-			duration: 5000,
-			isPersistent: true,
-		} )
-	);
+	const error = errorNotice( translate( 'Could not delete the comment.' ), {
+		duration: 5000,
+		isPersistent: true,
+	} );
 
-	if ( comment ) {
-		dispatch( {
+	if ( ! comment ) {
+		return error;
+	}
+
+	return [
+		error,
+		{
 			type: COMMENTS_RECEIVE,
 			siteId,
 			postId,
@@ -253,13 +187,24 @@ export const announceDeleteFailure = ( { dispatch }, action ) => {
 					context: 'add', //adds a hint for the counts reducer.
 				},
 			},
-		} );
-	}
+		},
+	];
 };
 
-export default {
-	[ COMMENTS_REQUEST ]: [ dispatchRequest( fetchPostComments, addComments, announceFailure ) ],
-	[ COMMENTS_DELETE ]: [
-		dispatchRequest( deleteComment, handleDeleteSuccess, announceDeleteFailure ),
+registerHandlers( 'state/data-layer/wpcom/comments/index.js', {
+	[ COMMENTS_REQUEST ]: [
+		dispatchRequest( {
+			fetch: fetchPostComments,
+			onSuccess: addComments,
+			onError: announceFailure,
+		} ),
 	],
-};
+
+	[ COMMENTS_DELETE ]: [
+		dispatchRequest( {
+			fetch: deleteComment,
+			onSuccess: handleDeleteSuccess,
+			onError: announceDeleteFailure,
+		} ),
+	],
+} );

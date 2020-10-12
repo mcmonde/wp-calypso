@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -81,14 +79,15 @@ describe( 'connection', () => {
 
 			test( 'unauthorized event', () => {
 				socket.close = jest.fn();
-				openSocket.catch( () => {
+				expect.assertions( 3 );
+				socket.emit( 'unauthorized' );
+				return openSocket.catch( () => {
 					expect( dispatch ).toHaveBeenCalledTimes( 1 );
 					expect( dispatch ).toHaveBeenCalledWith(
 						receiveUnauthorized( 'User is not authorized' )
 					);
 					expect( socket.close ).toHaveBeenCalled();
 				} );
-				socket.emit( 'unauthorized' );
 			} );
 
 			test( 'disconnect event', () => {
@@ -260,7 +259,7 @@ describe( 'connection', () => {
 
 				const action = requestTranscript( null );
 				socket.emit = jest.fn();
-				return connection.request( action, 100 ).catch( error => {
+				return connection.request( action, 100 ).catch( ( error ) => {
 					expect( socket.emit ).toHaveBeenCalled();
 					expect( socket.emit.mock.calls[ 0 ][ 0 ] ).toBe( action.event );
 					expect( socket.emit.mock.calls[ 0 ][ 1 ] ).toBe( action.payload );
@@ -280,7 +279,7 @@ describe( 'connection', () => {
 					};
 					callback( null, result ); // fake server responded ok
 				} );
-				return connection.request( action, 100 ).then( result => {
+				return connection.request( action, 100 ).then( ( result ) => {
 					expect( dispatch ).toHaveBeenCalledWith( receiveTranscript( result ) );
 				} );
 			} );
@@ -292,7 +291,7 @@ describe( 'connection', () => {
 				socket.on( action.event, ( payload, callback ) => {
 					callback( 'no data', null ); // fake server responded with error
 				} );
-				return connection.request( action, 100 ).catch( error => {
+				return connection.request( action, 100 ).catch( ( error ) => {
 					expect( error.message ).toBe( 'no data' );
 					expect( dispatch ).toHaveBeenCalledWith(
 						receiveError( action.event + ' request failed: ' + error.message )
@@ -315,7 +314,7 @@ describe( 'connection', () => {
 		test( 'connection.send should dispatch receiveError action', () => {
 			socket.emit = jest.fn();
 			const action = sendTyping( 'content' );
-			return connection.send( action ).catch( e => {
+			return connection.send( action ).catch( ( e ) => {
 				expect( dispatch ).toHaveBeenCalledWith(
 					receiveError( 'failed to send ' + action.event + ': ' + e )
 				);
@@ -325,7 +324,7 @@ describe( 'connection', () => {
 		test( 'connection.request should dispatch receiveError action', () => {
 			socket.emit = jest.fn();
 			const action = requestTranscript( null );
-			return connection.request( action, 100 ).catch( e => {
+			return connection.request( action, 100 ).catch( ( e ) => {
 				expect( dispatch ).toHaveBeenCalledWith(
 					receiveError( 'failed to send ' + action.event + ': ' + e )
 				);

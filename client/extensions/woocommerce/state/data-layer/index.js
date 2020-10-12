@@ -1,11 +1,9 @@
-/** @format */
-
 /**
  * Internal dependencies
  */
 
 import { mergeHandlers } from 'state/action-watchers/utils';
-import { addHandlers } from 'state/data-layer/extensions-middleware';
+import { registerHandlers } from 'state/data-layer/handler-registry';
 import actionList from './action-list';
 import coupons from '../sites/coupons/handlers';
 import customers from './customers';
@@ -27,6 +25,7 @@ import sendInvoice from './orders/send-invoice';
 import settingsGeneral from '../sites/settings/general/handlers';
 import shippingZoneLocations from './shipping-zone-locations';
 import shippingZoneMethods from './shipping-zone-methods';
+import shippingClasses from './shipping-classes';
 import shippingZones from './shipping-zones';
 import ui from './ui';
 import debugFactory from 'debug';
@@ -56,11 +55,12 @@ const handlers = mergeHandlers(
 	shippingZoneLocations,
 	shippingZoneMethods,
 	shippingZones,
+	shippingClasses,
 	ui
 );
 
 export default function installActionHandlers() {
-	const added = addHandlers( 'woocommerce', handlers );
+	const added = registerHandlers( 'woocommerce', handlers );
 	if ( ! added ) {
 		debug( 'Failed to add action handlers for "woocommerce"' );
 	}

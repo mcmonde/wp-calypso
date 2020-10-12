@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -12,6 +11,11 @@ import classNames from 'classnames';
  */
 import { recordPermalinkClick } from 'reader/stats';
 
+/**
+ * Style dependencies
+ */
+import './style.scss';
+
 class PostExcerptLink extends React.Component {
 	static propTypes = {
 		siteName: PropTypes.string,
@@ -22,7 +26,7 @@ class PostExcerptLink extends React.Component {
 		isShowingNotice: false,
 	};
 
-	toggleNotice = event => {
+	toggleNotice = ( event ) => {
 		event.preventDefault();
 		this.setState( {
 			isShowingNotice: ! this.state.isShowingNotice,
@@ -38,6 +42,8 @@ class PostExcerptLink extends React.Component {
 			return null;
 		}
 
+		/*eslint-disable wpcalypso/jsx-classname-namespace*/
+
 		const siteName = (
 			<a
 				onClick={ this.recordClick }
@@ -52,8 +58,7 @@ class PostExcerptLink extends React.Component {
 			'post-excerpt-link': true,
 			'is-showing-notice': this.state.isShowingNotice,
 		} );
-		/*eslint-disable wpcalypso/jsx-classname-namespace*/
-		/*eslint-disable max-len*/
+
 		return (
 			<div className={ classes }>
 				{ this.props.translate( 'Visit {{siteName/}} for the full post.', {

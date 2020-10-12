@@ -1,4 +1,6 @@
-/** @format */
+/**
+ * External dependencies
+ */
 import i18n from 'i18n-calypso';
 
 const labels = {
@@ -28,6 +30,6 @@ const labels = {
 	},
 };
 
-export default function( type ) {
+export default function ( type ) {
 	return labels.hasOwnProperty( type ) ? labels[ type ].call() : null;
 }

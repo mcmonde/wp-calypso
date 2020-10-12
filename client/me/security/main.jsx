@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -12,17 +10,24 @@ import { localize } from 'i18n-calypso';
 /**
  * Internal dependencies
  */
-import AccountPassword from 'me/account-password';
-import Card from 'components/card';
-import DocumentHead from 'components/data/document-head';
-import Main from 'components/main';
-import MeSidebarNavigation from 'me/sidebar-navigation';
-import ReauthRequired from 'me/reauth-required';
-import SecuritySectionNav from 'me/security-section-nav';
-import twoStepAuthorization from 'lib/two-step-authorization';
-import PageViewTracker from 'lib/analytics/page-view-tracker';
+import AccountPassword from 'calypso/me/account-password';
+import { Card } from '@automattic/components';
+import config from 'calypso/config';
+import DocumentHead from 'calypso/components/data/document-head';
+import HeaderCake from 'calypso/components/header-cake';
+import Main from 'calypso/components/main';
+import MeSidebarNavigation from 'calypso/me/sidebar-navigation';
+import ReauthRequired from 'calypso/me/reauth-required';
+import SecuritySectionNav from 'calypso/me/security-section-nav';
+import twoStepAuthorization from 'calypso/lib/two-step-authorization';
+import PageViewTracker from 'calypso/lib/analytics/page-view-tracker';
 
 const debug = debugFactory( 'calypso:me:security:password' );
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class Security extends React.Component {
 	static displayName = 'Security';
@@ -40,28 +45,37 @@ class Security extends React.Component {
 	}
 
 	render() {
-		const { translate } = this.props;
+		const { path, translate } = this.props;
+		const useCheckupMenu = config.isEnabled( 'security/security-checkup' );
 
 		return (
 			<Main className="security">
-				<PageViewTracker path="/me/security" title="Me > Password" />
+				<PageViewTracker path={ path } title="Me > Password" />
 				<DocumentHead title={ translate( 'Password' ) } />
 				<MeSidebarNavigation />
 
-				<SecuritySectionNav path={ this.props.path } />
+				{ ! useCheckupMenu && <SecuritySectionNav path={ path } /> }
+				{ useCheckupMenu && (
+					<HeaderCake backText={ translate( 'Back' ) } backHref="/me/security">
+						{ translate( 'Password' ) }
+					</HeaderCake>
+				) }
 
 				<ReauthRequired twoStepAuthorization={ twoStepAuthorization } />
 				<Card className="me-security-settings security__settings">
 					<p>
 						{ translate(
-							'To update your password enter a new one below. Your password should be at least six characters long. ' +
-								'To make it stronger, use upper and lower case letters, numbers and symbols like ! " ? $ % ^ & ).'
+							'To update your password enter a new one below. ' +
+								'Strong passwords have at least six characters, and use upper and lower case letters, numbers, and symbols like ! ” ? $ % ^ & ).'
 						) }
 					</p>
 
 					<AccountPassword
-						userSettings={ this.props.userSettings }
 						accountPasswordData={ this.props.accountPasswordData }
+						autocomplete="new-password"
+						// Hint to LastPass not to attempt autofill
+						data-lpignore="true"
+						userSettings={ this.props.userSettings }
 					/>
 				</Card>
 			</Main>

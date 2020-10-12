@@ -1,19 +1,20 @@
-/** @format */
 /**
  * External dependencies
  */
 import { localize } from 'i18n-calypso';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
+import formatCurrency from '@automattic/format-currency';
 
 /**
  * Internal dependencies
  */
 import { EVENT_TYPES } from 'woocommerce/state/sites/orders/activity-log/selectors';
 import LabelItem from 'woocommerce/woocommerce-services/views/shipping-label/label-item';
+import LabelItemInProgress from 'woocommerce/woocommerce-services/views/shipping-label/label-item-in-progress';
 import { decodeEntities, stripHTML } from 'lib/formatting';
-import formatCurrency from 'lib/format-currency';
+import { withLocalizedMoment } from 'components/localized-moment';
 
 class OrderEvent extends Component {
 	static propTypes = {
@@ -31,7 +32,7 @@ class OrderEvent extends Component {
 	};
 
 	eventPropsByType = {
-		[ EVENT_TYPES.INTERNAL_NOTE ]: event => {
+		[ EVENT_TYPES.INTERNAL_NOTE ]: ( event ) => {
 			const { translate } = this.props;
 			return {
 				icon: 'aside',
@@ -41,7 +42,7 @@ class OrderEvent extends Component {
 			};
 		},
 
-		[ EVENT_TYPES.CUSTOMER_NOTE ]: event => {
+		[ EVENT_TYPES.CUSTOMER_NOTE ]: ( event ) => {
 			const { translate } = this.props;
 			return {
 				icon: 'mail',
@@ -51,7 +52,20 @@ class OrderEvent extends Component {
 			};
 		},
 
-		[ EVENT_TYPES.LABEL_PURCHASED ]: event => {
+		[ EVENT_TYPES.LABEL_PURCHASING ]: ( event ) => {
+			return {
+				icon: 'sync',
+				content: (
+					<LabelItemInProgress
+						label={ event }
+						orderId={ this.props.orderId }
+						siteId={ this.props.siteId }
+					/>
+				),
+			};
+		},
+
+		[ EVENT_TYPES.LABEL_PURCHASED ]: ( event ) => {
 			return {
 				icon: 'print',
 				content: (
@@ -60,14 +74,15 @@ class OrderEvent extends Component {
 			};
 		},
 
-		[ EVENT_TYPES.LABEL_REFUND_REQUESTED ]: event => {
+		[ EVENT_TYPES.LABEL_REFUND_REQUESTED ]: ( event ) => {
 			const { translate } = this.props;
 			return {
 				icon: 'time',
 				content: (
 					<div>
-						{ translate( 'Label #%(labelNum)d refund requested (%(amount)s)', {
+						{ translate( '%(service)s label (#%(labelNum)d) refund requested (%(amount)s)', {
 							args: {
+								service: event.serviceName,
 								labelNum: event.labelIndex + 1,
 								amount: formatCurrency( event.amount, event.currency ),
 							},
@@ -77,14 +92,15 @@ class OrderEvent extends Component {
 			};
 		},
 
-		[ EVENT_TYPES.LABEL_REFUND_COMPLETED ]: event => {
+		[ EVENT_TYPES.LABEL_REFUND_COMPLETED ]: ( event ) => {
 			const { translate } = this.props;
 			return {
 				icon: 'refund',
 				content: (
 					<div>
-						{ translate( 'Label #%(labelNum)d refunded (%(amount)s)', {
+						{ translate( '%(service)s label (#%(labelNum)d) refunded (%(amount)s)', {
 							args: {
+								service: event.serviceName,
 								labelNum: event.labelIndex + 1,
 								amount: formatCurrency( event.amount, event.currency ),
 							},
@@ -94,13 +110,14 @@ class OrderEvent extends Component {
 			};
 		},
 
-		[ EVENT_TYPES.LABEL_REFUND_REJECTED ]: event => {
+		[ EVENT_TYPES.LABEL_REFUND_REJECTED ]: ( event ) => {
 			const { translate } = this.props;
 			return {
 				icon: 'cross-small',
 				content: (
 					<div>
-						{ translate( 'Label #%(labelNum)d refund rejected', {
+						{ translate( '%(service)s label (#%(labelNum)d) refund rejected', {
+							service: event.serviceName,
 							args: { labelNum: event.labelIndex + 1 },
 						} ) }
 					</div>
@@ -108,7 +125,7 @@ class OrderEvent extends Component {
 			};
 		},
 
-		[ EVENT_TYPES.REFUND_NOTE ]: event => {
+		[ EVENT_TYPES.REFUND_NOTE ]: ( event ) => {
 			const { translate } = this.props;
 			return {
 				icon: 'credit-card',
@@ -131,7 +148,7 @@ class OrderEvent extends Component {
 		[ undefined ]: () => ( {} ),
 	};
 
-	renderDefaultEvent = event => {
+	renderDefaultEvent = ( event ) => {
 		const { translate } = this.props;
 		return {
 			icon: 'aside',
@@ -162,4 +179,4 @@ class OrderEvent extends Component {
 	}
 }
 
-export default localize( OrderEvent );
+export default localize( withLocalizedMoment( OrderEvent ) );

@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -11,12 +10,11 @@ import { find, get } from 'lodash';
  * Internal dependencies
  */
 import { localize } from 'i18n-calypso';
-import Gridicon from 'gridicons';
-import ReaderPopover from 'components/reader-popover';
+import Gridicon from 'components/gridicon';
+import ReaderPopover from 'reader/components/reader-popover';
 import SegmentedControl from 'components/segmented-control';
-import ControlItem from 'components/segmented-control/item';
-import FormToggle from 'components/forms/form-toggle';
-import { getReaderFollows } from 'state/selectors';
+import CompactFormToggle from 'components/forms/form-toggle/compact';
+import { getReaderFollows } from 'state/reader/follows/selectors';
 import {
 	subscribeToNewPostEmail,
 	updateNewPostEmailSubscription,
@@ -27,6 +25,13 @@ import {
 	unsubscribeToNewPostNotifications,
 } from 'state/reader/follows/actions';
 import { recordTracksEvent } from 'state/analytics/actions';
+import QueryUserSettings from 'components/data/query-user-settings';
+import getUserSetting from 'state/selectors/get-user-setting';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class ReaderSiteNotificationSettings extends Component {
 	static displayName = 'ReaderSiteNotificationSettings';
@@ -39,7 +44,10 @@ class ReaderSiteNotificationSettings extends Component {
 		selected: this.props.emailDeliveryFrequency,
 	};
 
-	componentWillReceiveProps( nextProps ) {
+	iconRef = React.createRef();
+	spanRef = React.createRef();
+
+	UNSAFE_componentWillReceiveProps( nextProps ) {
 		if ( nextProps.emailDeliveryFrequency !== this.props.emailDeliveryFrequency ) {
 			this.setState( { selected: nextProps.emailDeliveryFrequency } );
 		}
@@ -53,10 +61,7 @@ class ReaderSiteNotificationSettings extends Component {
 		this.setState( { showPopover: false } );
 	};
 
-	saveIconRef = ref => ( this.iconRef = ref );
-	saveSpanRef = ref => ( this.spanRef = ref );
-
-	setSelected = text => () => {
+	setSelected = ( text ) => () => {
 		const { siteId } = this.props;
 		this.setState( { selected: text } );
 		this.props.updateNewPostEmailSubscription( siteId, text );
@@ -116,6 +121,7 @@ class ReaderSiteNotificationSettings extends Component {
 			sendNewCommentsByEmail,
 			sendNewPostsByEmail,
 			sendNewPostsByNotification,
+			isEmailBlocked,
 		} = this.props;
 
 		if ( ! this.props.siteId ) {
@@ -124,74 +130,109 @@ class ReaderSiteNotificationSettings extends Component {
 
 		return (
 			<div className="reader-site-notification-settings">
-				<span
+				<QueryUserSettings />
+				<button
 					className="reader-site-notification-settings__button"
 					onClick={ this.togglePopoverVisibility }
-					ref={ this.saveSpanRef }
+					ref={ this.spanRef }
 				>
-					<Gridicon icon="cog" size={ 24 } ref={ this.saveIconRef } />
+					<Gridicon icon="cog" size={ 24 } ref={ this.iconRef } />
 					<span
 						className="reader-site-notification-settings__button-label"
-						title={ translate( 'Email settings' ) }
+						title={ translate( 'Notification settings' ) }
 					>
 						{ translate( 'Settings' ) }
 					</span>
-				</span>
+				</button>
 
 				<ReaderPopover
 					onClose={ this.closePopover }
 					isVisible={ this.state.showPopover }
-					context={ this.iconRef }
-					ignoreContext={ this.spanRef }
+					context={ this.iconRef.current }
+					ignoreContext={ this.spanRef.current }
 					position={ 'bottom left' }
 					className="reader-site-notification-settings__popout"
 				>
 					<div className="reader-site-notification-settings__popout-toggle">
-						{ translate( 'Notify me of new posts' ) }
-						<Gridicon icon="bell" size={ 18 } />
-						<FormToggle
+						<CompactFormToggle
 							onChange={ this.toggleNewPostNotification }
 							checked={ sendNewPostsByNotification }
 							wrapperClassName="reader-site-notification-settings__popout-form-toggle"
-						/>
+							id="reader-site-notification-settings__notifications"
+						>
+							{ translate( 'Notify me of new posts' ) }
+						</CompactFormToggle>
 						<p className="reader-site-notification-settings__popout-hint">
 							{ translate( 'Receive web and mobile notifications for new posts from this site.' ) }
 						</p>
 					</div>
+					<div
+						className={
+							isEmailBlocked
+								? 'reader-site-notification-settings__popout-instructions'
+								: 'reader-site-notification-settings__popout-toggle'
+						}
+					>
+						{ ! isEmailBlocked && (
+							<CompactFormToggle
+								onChange={ this.toggleNewPostEmail }
+								checked={ sendNewPostsByEmail }
+								id={ 'reader-site-notification-settings__email-posts' }
+							>
+								{ translate( 'Email me new posts' ) }
+							</CompactFormToggle>
+						) }
 
-					<div className="reader-site-notification-settings__popout-toggle">
-						{ translate( 'Email me new posts' ) }
-						<FormToggle onChange={ this.toggleNewPostEmail } checked={ sendNewPostsByEmail } />
+						{ isEmailBlocked && (
+							<div>
+								{ translate( 'Email me new posts' ) }
+								<p className="reader-site-notification-settings__popout-instructions-hint">
+									{ translate(
+										'You currently have email delivery turned off. Visit your {{a}}Notification Settings{{/a}} to turn it back on.',
+										{
+											components: {
+												a: <a href="/me/notifications/subscriptions" />,
+											},
+										}
+									) }
+								</p>
+							</div>
+						) }
 					</div>
-					{ sendNewPostsByEmail && (
+
+					{ ! isEmailBlocked && sendNewPostsByEmail && (
 						<SegmentedControl>
-							<ControlItem
+							<SegmentedControl.Item
 								selected={ this.state.selected === 'instantly' }
 								onClick={ this.setSelected( 'instantly' ) }
 							>
 								{ translate( 'Instantly' ) }
-							</ControlItem>
-							<ControlItem
+							</SegmentedControl.Item>
+							<SegmentedControl.Item
 								selected={ this.state.selected === 'daily' }
 								onClick={ this.setSelected( 'daily' ) }
 							>
 								{ translate( 'Daily' ) }
-							</ControlItem>
-							<ControlItem
+							</SegmentedControl.Item>
+							<SegmentedControl.Item
 								selected={ this.state.selected === 'weekly' }
 								onClick={ this.setSelected( 'weekly' ) }
 							>
 								{ translate( 'Weekly' ) }
-							</ControlItem>
+							</SegmentedControl.Item>
 						</SegmentedControl>
 					) }
-					<div className="reader-site-notification-settings__popout-toggle">
-						{ translate( 'Email me new comments' ) }
-						<FormToggle
-							onChange={ this.toggleNewCommentEmail }
-							checked={ sendNewCommentsByEmail }
-						/>
-					</div>
+					{ ! isEmailBlocked && (
+						<div className="reader-site-notification-settings__popout-toggle">
+							<CompactFormToggle
+								onChange={ this.toggleNewCommentEmail }
+								checked={ sendNewCommentsByEmail }
+								id="reader-site-notification-settings__email-comments"
+							>
+								{ translate( 'Email me new comments' ) }
+							</CompactFormToggle>
+						</div>
+					) }
 				</ReaderPopover>
 			</div>
 		);
@@ -215,6 +256,7 @@ const mapStateToProps = ( state, ownProps ) => {
 			[ 'delivery_methods', 'notification', 'send_posts' ],
 			false
 		),
+		isEmailBlocked: getUserSetting( state, 'subscription_delivery_email_blocked' ),
 	};
 };
 

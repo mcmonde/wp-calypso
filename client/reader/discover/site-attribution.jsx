@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -20,6 +19,11 @@ import SiteIcon from 'blocks/site-icon';
 import { getSite } from 'state/reader/sites/selectors';
 import QueryReaderSite from 'components/data/query-reader-site';
 
+/**
+ * Style dependencies
+ */
+import './site-attribution.scss';
+
 class DiscoverSiteAttribution extends React.Component {
 	static propTypes = {
 		post: PropTypes.object.isRequired,
@@ -27,7 +31,7 @@ class DiscoverSiteAttribution extends React.Component {
 
 	onSiteClick = () => recordSiteClick( this.props.siteUrl );
 
-	onFollowToggle = isFollowing => recordFollowToggle( isFollowing, this.props.siteUrl );
+	onFollowToggle = ( isFollowing ) => recordFollowToggle( isFollowing, this.props.siteUrl );
 
 	render() {
 		const { post, site } = this.props;

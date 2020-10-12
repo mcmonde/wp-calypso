@@ -31,10 +31,7 @@ describe( '#coerceValue', () => {
 					},
 					adjustment_type: {
 						type: 'string',
-						enum: [
-							'flat',
-							'percentage',
-						],
+						enum: [ 'flat', 'percentage' ],
 						default: 'flat',
 					},
 				},

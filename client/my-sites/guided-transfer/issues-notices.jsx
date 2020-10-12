@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -25,31 +23,23 @@ class IssuesNotices extends Component {
 
 		return (
 			<div className="guided-transfer__issues-notices">
-				{ premiumThemeIssue &&
-					! premiumThemeIssue.prevents_transfer && (
-						<Notice status="is-warning" showDismiss={ false }>
-							{ translate(
-								`Your site uses a Premium Theme that can't be
-						transferred. Continuing will automatically activate the
-						default theme, or you can
-						{{a}}choose a free theme{{/a}}.`,
-								{ components: { a: <a href={ `/themes/free/${ siteSlug }` } /> } }
-							) }
-						</Notice>
-					) }
+				{ premiumThemeIssue && ! premiumThemeIssue.prevents_transfer && (
+					<Notice status="is-warning" showDismiss={ false }>
+						{ translate(
+							"Your site uses a Premium Theme that can't be transferred. Continuing will automatically activate the default theme, or you can {{a}}choose a free theme{{/a}}.",
+							{ components: { a: <a href={ `/themes/free/${ siteSlug }` } /> } }
+						) }
+					</Notice>
+				) }
 
-				{ customFontIssue &&
-					! customFontIssue.prevents_transfer && (
-						<Notice status="is-warning" showDismiss={ false }>
-							{ translate(
-								`Your site uses a custom font that can't be
-						transferred. Continuing will automatically activate the
-						default font, or you can
-						{{a}}choose a free theme{{/a}}.`,
-								{ components: { a: <a href={ `/themes/free/${ siteSlug }` } /> } }
-							) }
-						</Notice>
-					) }
+				{ customFontIssue && ! customFontIssue.prevents_transfer && (
+					<Notice status="is-warning" showDismiss={ false }>
+						{ translate(
+							"Your site uses a custom font that can't be transferred. Continuing will automatically activate the default font, or you can {{a}}choose a free theme{{/a}}.",
+							{ components: { a: <a href={ `/themes/free/${ siteSlug }` } /> } }
+						) }
+					</Notice>
+				) }
 			</div>
 		);
 	}

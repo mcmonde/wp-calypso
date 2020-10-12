@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -15,7 +13,6 @@ import EmbedViewManager from './views/embed';
 import * as ContactFormView from './views/contact-form';
 import * as VideoView from './views/video';
 import SimplePaymentsView from './views/simple-payments';
-import { isEnabled } from 'config';
 
 /**
  * Module variables
@@ -25,13 +22,10 @@ const views = {
 	embed: new EmbedViewManager(),
 	contactForm: ContactFormView,
 	video: VideoView,
+	simplePayments: SimplePaymentsView,
 };
 
-if ( isEnabled( 'simple-payments' ) ) {
-	views.simplePayments = SimplePaymentsView;
-}
-
-const components = mapValues( views, view => {
+const components = mapValues( views, ( view ) => {
 	if ( 'function' === typeof view.getComponent ) {
 		return view.getComponent();
 	}
@@ -39,7 +33,7 @@ const components = mapValues( views, view => {
 	return view;
 } );
 
-const emitters = values( views ).filter( view => view instanceof EventEmitter );
+const emitters = values( views ).filter( ( view ) => view instanceof EventEmitter );
 
 export default {
 	/**
@@ -47,19 +41,18 @@ export default {
 	 * replacing any matches with markers,
 	 * and creates a new instance for every match.
 	 *
-	 * @param {String} content The string to scan.
-	 *
-	 * @return {String} The string with markers.
+	 * @param   {string} content The string to scan.
+	 * @returns {string}         The string with markers.
 	 */
 	setMarkers( content ) {
 		let pieces = [ { content: content } ],
 			current;
 
-		forEach( views, function( view, type ) {
+		forEach( views, function ( view, type ) {
 			current = pieces.slice();
 			pieces = [];
 
-			forEach( current, function( piece ) {
+			forEach( current, function ( piece ) {
 				let remaining = piece.content,
 					result;
 

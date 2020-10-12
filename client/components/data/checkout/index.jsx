@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -13,7 +11,7 @@ import StoreConnection from 'components/data/store-connection';
 import CartStore from 'lib/cart/store';
 import TransactionStore from 'lib/transaction/store';
 
-var stores = [ TransactionStore, CartStore ];
+const stores = [ TransactionStore, CartStore ];
 
 function getStateFromStores() {
 	return {

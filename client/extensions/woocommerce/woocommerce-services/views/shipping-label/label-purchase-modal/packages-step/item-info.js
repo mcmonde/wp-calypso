@@ -10,7 +10,7 @@ import { localize } from 'i18n-calypso';
 /**
  * Internal dependencies
  */
-import Button from 'components/button';
+import { Button } from '@automattic/components';
 import getProductLink from 'woocommerce/woocommerce-services/lib/utils/get-product-link';
 import { getSite } from 'state/sites/selectors';
 import { openItemMove } from 'woocommerce/woocommerce-services/state/shipping-label/actions';
@@ -27,14 +27,13 @@ const ItemInfo = ( props ) => {
 		);
 	};
 
-	const productLink = item.url
-		? <a
-			href={ getProductLink( item.product_id, site ) }
-			target="_blank"
-			rel="noopener noreferrer">
+	const productLink = item.url ? (
+		<a href={ getProductLink( item.product_id, site ) } target="_blank" rel="noopener noreferrer">
 			{ item.name }
 		</a>
-		: item.name;
+	) : (
+		item.name
+	);
 
 	return (
 		<div key={ itemIndex } className="packages-step__item">
@@ -42,9 +41,7 @@ const ItemInfo = ( props ) => {
 				<span>{ productLink }</span>
 				{ item.attributes && <p>{ item.attributes }</p> }
 			</div>
-			<div>
-				{ renderMoveToPackage() }
-			</div>
+			<div>{ renderMoveToPackage() }</div>
 		</div>
 	);
 };
@@ -61,7 +58,11 @@ export default connect(
 	( state, { siteId } ) => ( {
 		site: getSite( state, siteId ),
 	} ),
-	( dispatch ) => bindActionCreators( {
-		openItemMove,
-	}, dispatch )
+	( dispatch ) =>
+		bindActionCreators(
+			{
+				openItemMove,
+			},
+			dispatch
+		)
 )( localize( ItemInfo ) );

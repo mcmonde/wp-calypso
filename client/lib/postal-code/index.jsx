@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -13,7 +11,7 @@ function defaultFormatter( postalCode, delimiter, partLength ) {
  * Tries to convert given postal code based on the country code into a standardised format
  *
  * @param {string} postalCode user inputted postal code
- * @param {string} countryCode user selected country
+ * @param {string|null|undefined} countryCode user selected country
  * @returns {string} formatted postal code
  */
 export function tryToGuessPostalCodeFormat( postalCode, countryCode ) {
@@ -100,4 +98,22 @@ export function tryToGuessPostalCodeFormat( postalCode, countryCode ) {
 	}
 
 	return postalCode;
+}
+
+export const postalCodePatterns = {
+	US: /^\d{5}$/,
+};
+
+export function isValidPostalCode( postalCode, countryCode = 'US' ) {
+	// TODO - every other country
+	if ( ! postalCode ) {
+		return false;
+	}
+
+	const pattern = postalCodePatterns[ countryCode ];
+	if ( ! pattern ) {
+		return true;
+	}
+
+	return pattern.test( postalCode );
 }

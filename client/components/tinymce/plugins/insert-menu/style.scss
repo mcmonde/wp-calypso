@@ -11,7 +11,7 @@
 
 		&:hover .wpcom-insert-menu__menu-label,
 		&:focus .wpcom-insert-menu__menu-label {
-			color: $gray-dark;
+			color: var( --color-neutral-70 );
 		}
 	}
 }
@@ -27,7 +27,7 @@
 }
 
 .mce-splitbtn.mce-insert-menu .mce-open.mce-active {
-	background-color: $white;
+	background-color: var( --color-surface );
 	outline: 0;
 }
 
@@ -40,16 +40,16 @@
 }
 
 .mce-container .wpcom-insert-menu__menu-label {
-	color: $gray-darken-20;
+	color: var( --color-neutral-50 );
 	display: inline-block;
 	font-family: $sans;
-	font-size: 13px;
+	font-size: $font-body-small;
 	margin-left: 4px;
 	margin-top: 3px;
 }
 
 .wpcom-insert-menu__menu-icon {
-	fill: $gray;
+	fill: var( --color-neutral-50 );
 }
 
 .mce-container.mce-menu .mce-container-body .mce-wpcom-insert-menu__menu-item {
@@ -61,17 +61,17 @@
 	&:focus {
 
 		.wpcom-insert-menu__menu-label {
-			color: $blue-medium;
+			color: var( --color-accent );
 		}
 
 		.wpcom-insert-menu__menu-icon {
-			fill: $blue-medium;
+			fill: var( --color-accent );
 		}
 	}
 }
 
 .mce-container .mce-wpcom-insert-menu .wpcom-insert-menu__menu-label {
-	@include breakpoint( '<660px' ) {
+	@include breakpoint-deprecated( '<660px' ) {
 		display: none;
 	}
 }

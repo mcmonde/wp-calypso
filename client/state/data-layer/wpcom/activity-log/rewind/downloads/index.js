@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -10,49 +8,55 @@ import { pick } from 'lodash';
  * Internal dependencies
  */
 import { REWIND_BACKUP } from 'state/action-types';
-import { rewindBackupUpdateError, getRewindBackupProgress } from 'state/activity-log/actions';
+import {
+	rewindBackupUpdateError,
+	updateRewindBackupProgress,
+	getRewindBackupProgress,
+} from 'state/activity-log/actions';
 import { dispatchRequest } from 'state/data-layer/wpcom-http/utils';
 import { http } from 'state/data-layer/wpcom-http/actions';
 
-const createBackup = ( { dispatch }, action ) => {
-	dispatch(
-		http(
-			{
-				method: 'POST',
-				apiNamespace: 'wpcom/v2',
-				path: `/sites/${ action.siteId }/rewind/downloads`,
-				body: {
-					rewindId: action.rewindId,
-				},
+import { registerHandlers } from 'state/data-layer/handler-registry';
+
+const createBackup = ( action ) =>
+	http(
+		{
+			method: 'POST',
+			apiNamespace: 'wpcom/v2',
+			path: `/sites/${ action.siteId }/rewind/downloads`,
+			body: {
+				rewindId: action.rewindId,
+				types: action.args,
 			},
-			action
-		)
+		},
+		action
 	);
-};
 
-const fromApi = data => ( {
-	downloadId: +data.downloadId,
-} );
-
-export const receiveBackupSuccess = ( { dispatch }, { siteId }, apiData ) => {
-	const { downloadId } = fromApi( apiData );
-	if ( downloadId ) {
-		dispatch( getRewindBackupProgress( siteId ) );
-	} else {
-		dispatch(
-			rewindBackupUpdateError( siteId, {
-				status: 'finished',
-				error: 'missing_download_id',
-				message: 'Bad response. No download ID provided.',
-			} )
-		);
+const fromApi = ( data ) => {
+	if ( ! data.hasOwnProperty( 'downloadId' ) ) {
+		throw new Error( 'Missing downloadId field in response' );
 	}
+
+	return data;
 };
 
-export const receiveBackupError = ( { dispatch }, { siteId }, error ) => {
-	dispatch( rewindBackupUpdateError( siteId, pick( error, [ 'error', 'status', 'message' ] ) ) );
+export const receiveBackupSuccess = ( { siteId }, data ) => {
+	return [
+		getRewindBackupProgress( siteId ),
+		updateRewindBackupProgress( siteId, data.downloadId, data ),
+	];
 };
 
-export default {
-	[ REWIND_BACKUP ]: [ dispatchRequest( createBackup, receiveBackupSuccess, receiveBackupError ) ],
-};
+export const receiveBackupError = ( { siteId }, error ) =>
+	rewindBackupUpdateError( siteId, pick( error, [ 'error', 'status', 'message' ] ) );
+
+registerHandlers( 'state/data-layer/wpcom/activity-log/rewind/downloads/index.js', {
+	[ REWIND_BACKUP ]: [
+		dispatchRequest( {
+			fetch: createBackup,
+			onSuccess: receiveBackupSuccess,
+			onError: receiveBackupError,
+			fromApi,
+		} ),
+	],
+} );

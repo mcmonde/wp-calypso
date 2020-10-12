@@ -1,4 +1,3 @@
-/** @format */
 /**
  * Internal dependencies
  */
@@ -8,7 +7,7 @@ import {
 	JETPACK_CONNECT_COMPLETE_FLOW,
 	JETPACK_CONNECT_CONFIRM_JETPACK_STATUS,
 	JETPACK_CONNECT_DISMISS_URL_STATUS,
-} from 'state/action-types';
+} from 'state/jetpack-connect/action-types';
 
 export default function jetpackConnectSite( state = {}, action ) {
 	switch ( action.type ) {
@@ -20,6 +19,7 @@ export default function jetpackConnectSite( state = {}, action ) {
 				isDismissed: false,
 				installConfirmedByUser: null,
 				data: {},
+				error: null,
 			};
 
 		case JETPACK_CONNECT_CHECK_URL_RECEIVE:
@@ -28,6 +28,7 @@ export default function jetpackConnectSite( state = {}, action ) {
 					isFetching: false,
 					isFetched: true,
 					data: action.data,
+					error: action.error,
 				} );
 			}
 			return state;

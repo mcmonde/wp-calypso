@@ -1,23 +1,24 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import React from 'react';
-
 import { localize } from 'i18n-calypso';
 
 /**
  * Internal dependencies
  */
-import analytics from 'lib/analytics';
+import { recordTracksEvent } from 'lib/analytics/tracks';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class InviteFormHeader extends React.Component {
 	static displayName = 'InviteFormHeader';
 
 	clickedSiteLink = () => {
-		analytics.tracks.recordEvent( 'calypso_invite_accept_form_header_site_link_click' );
+		recordTracksEvent( 'calypso_invite_accept_form_header_site_link_click' );
 	};
 
 	getSiteLink = () => {
@@ -28,7 +29,7 @@ class InviteFormHeader extends React.Component {
 		}
 
 		return (
-			<a href={ site.URL } onClick={ this.clickedSiteLink } className="invite-header__site-link">
+			<a href={ site.URL } onClick={ this.clickedSiteLink }>
 				{ site.title }
 			</a>
 		);
@@ -260,7 +261,7 @@ class InviteFormHeader extends React.Component {
 	};
 
 	render() {
-		let roleExplanation = this.getExplanationForInvite();
+		const roleExplanation = this.getExplanationForInvite();
 		return (
 			<div className="invite-form-header">
 				<h3 className="invite-form-header__title">

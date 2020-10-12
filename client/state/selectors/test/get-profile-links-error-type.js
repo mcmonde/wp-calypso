@@ -1,8 +1,7 @@
-/** @format */
 /**
  * Internal dependencies
  */
-import { getProfileLinksErrorType } from 'state/selectors';
+import getProfileLinksErrorType from 'state/selectors/get-profile-links-error-type';
 
 describe( 'getProfileLinksErrorType()', () => {
 	const profileLinks = [

@@ -1,19 +1,16 @@
-/** @format */
-
 /**
  * External dependencies
  */
-import React, { Component } from 'react';
+import React from 'react';
 
 /**
  * Internal dependencies
  */
-import ExampleInput from './example-input';
 import addUserMentions from '../add';
+import FormTextarea from 'components/forms/form-textarea';
 
-// @todo Move ref forwarding to the HOC
 const UserMentionsExampleInput = React.forwardRef( ( props, ref ) => (
-	<textarea ref={ ref } onKeyUp={ props.onKeyUp } onKeyDown={ props.onKeyDown } />
+	<FormTextarea forwardedRef={ ref } onKeyUp={ props.onKeyUp } onKeyDown={ props.onKeyDown } />
 ) );
 
 export default addUserMentions( UserMentionsExampleInput );

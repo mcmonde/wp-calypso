@@ -1,17 +1,12 @@
-/** @format */
 /**
  * External Dependencies
  */
 import page from 'page';
-import { every } from 'lodash';
 
 /**
  * Internal Dependencies
  */
 import XPostHelper, { isXPost } from 'reader/xpost-helper';
-import { setLastStoreId } from 'reader/controller-helper';
-import { fillGap } from 'lib/feed-stream-store/actions';
-import { recordAction, recordGaEvent, recordTrack } from 'reader/stats';
 import { reduxGetState } from 'lib/redux-bridge';
 import { getPostByKey } from 'state/reader/posts/selectors';
 
@@ -27,15 +22,9 @@ export function isPostNotFound( post ) {
 	return post.statusCode === 404;
 }
 
-export function showSelectedPost( { store, replaceHistory, postKey, comments } ) {
+export function showSelectedPost( { replaceHistory, postKey, comments } ) {
 	if ( ! postKey ) {
 		return;
-	}
-
-	setLastStoreId( store && store.id );
-
-	if ( postKey.isGap === true ) {
-		return handleGapClicked( postKey, store.id );
 	}
 
 	// rec block
@@ -51,7 +40,7 @@ export function showSelectedPost( { store, replaceHistory, postKey, comments } )
 
 	// normal
 	let mappedPost;
-	if ( !! postKey.feedId ) {
+	if ( postKey.feedId ) {
 		mappedPost = {
 			feed_ID: postKey.feedId,
 			feed_item_ID: postKey.postId,
@@ -85,17 +74,6 @@ export function showFullXPost( xMetadata ) {
 	}
 }
 
-export function handleGapClicked( postKey, storeId ) {
-	if ( ! postKey || ! postKey.isGap || ! storeId ) {
-		return;
-	}
-
-	fillGap( storeId, postKey );
-	recordAction( 'fill_gap' );
-	recordGaEvent( 'Clicked Fill Gap' );
-	recordTrack( 'calypso_reader_filled_gap', { stream: storeId } );
-}
-
 export function showFullPost( { post, replaceHistory, comments } ) {
 	const hashtag = comments ? '#comments' : '';
 	let query = '';
@@ -114,5 +92,8 @@ export function showFullPost( { post, replaceHistory, comments } ) {
 	}
 }
 
-export const shallowEquals = ( o1, o2 ) =>
-	every( Object.keys( o1 ), key => o1[ key ] === o2[ key ] );
+export function getStreamType( streamKey ) {
+	const indexOfColon = streamKey.indexOf( ':' );
+	const streamType = indexOfColon === -1 ? streamKey : streamKey.substring( 0, indexOfColon );
+	return streamType;
+}

@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -11,19 +10,22 @@ import { flow, get } from 'lodash';
 /**
  * Internal dependencies
  */
-import { getEditorPostId } from 'state/ui/editor/selectors';
-import {
-	getPostRevisions,
-	getPostRevisionsComparisons,
-	getPostRevisionsAuthorsId,
-	getPostRevisionsSelectedRevisionId,
-} from 'state/selectors';
+import { getEditorPostId } from 'state/editor/selectors';
+import { getPostRevisions } from 'state/posts/selectors/get-post-revisions';
+import { getPostRevisionsAuthorsId } from 'state/posts/selectors/get-post-revisions-authors-id';
+import { getPostRevisionsComparisons } from 'state/posts/selectors/get-post-revisions-comparisons';
+import { getPostRevisionsSelectedRevisionId } from 'state/posts/selectors/get-post-revisions-selected-revision-id';
 import { getSelectedSiteId } from 'state/ui/selectors';
 import { recordTracksEvent } from 'state/analytics/actions';
 import EditorDiffViewer from 'post-editor/editor-diff-viewer';
 import EditorRevisionsList from 'post-editor/editor-revisions-list';
 import QueryPostRevisions from 'components/data/query-post-revisions';
-import QueryUsers from 'components/data/query-users';
+import QueryPostRevisionAuthors from 'components/data/query-post-revision-authors';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class EditorRevisions extends Component {
 	componentDidMount() {
@@ -42,13 +44,13 @@ class EditorRevisions extends Component {
 		} = this.props;
 
 		return (
-			<div className="editor-revisions__wrapper">
+			<div className="editor-revisions">
 				<QueryPostRevisions
 					postId={ postId }
 					siteId={ siteId }
 					selectedRevisionId={ selectedRevisionId }
 				/>
-				<QueryUsers siteId={ siteId } userIds={ authorsIds } />
+				<QueryPostRevisionAuthors siteId={ siteId } userIds={ authorsIds } />
 				<EditorDiffViewer
 					diff={ selectedDiff }
 					postId={ postId }
@@ -87,7 +89,7 @@ EditorRevisions.propTypes = {
 export default flow(
 	localize,
 	connect(
-		state => {
+		( state ) => {
 			const postId = getEditorPostId( state );
 			const siteId = getSelectedSiteId( state );
 

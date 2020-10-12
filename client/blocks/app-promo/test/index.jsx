@@ -1,5 +1,4 @@
 /**
- * @format
  * @jest-environment jsdom
  */
 
@@ -7,7 +6,7 @@
  * External dependencies
  */
 import { expect } from 'chai';
-import { shallow } from 'enzyme';
+import { shallow, mount } from 'enzyme';
 import React from 'react';
 
 describe( 'AppPromo', () => {
@@ -39,12 +38,11 @@ describe( 'AppPromo', () => {
 
 			expect( wrapper ).to.have.descendants( '.app-promo' );
 			expect( wrapper ).to.have.descendants( '.app-promo__dismiss' );
-			expect( wrapper ).to.have.descendants( '.app-promo__screen-reader-text' );
 			expect( wrapper ).to.have.descendants( '.app-promo__icon' );
 		} );
 
 		test( 'should render the promo text', () => {
-			const wrapper = shallow( AppPromoComponent );
+			const wrapper = mount( AppPromoComponent );
 
 			expect( wrapper.text() ).to.contain( appPromoDetails.message );
 		} );
@@ -54,9 +52,7 @@ describe( 'AppPromo', () => {
 
 			const promoLink = wrapper.find( '.app-promo__link' );
 			expect( promoLink ).to.have.lengthOf( 1 );
-			expect( promoLink )
-				.to.have.prop( 'href' )
-				.equal( appPromoLink );
+			expect( promoLink ).to.have.prop( 'href' ).equal( appPromoLink );
 		} );
 	} );
 

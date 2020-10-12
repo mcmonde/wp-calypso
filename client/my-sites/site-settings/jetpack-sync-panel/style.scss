@@ -8,6 +8,6 @@
 }
 
 .jetpack-sync-panel__status-notice {
-	color: $gray-text-min;
-	font-size: 12px;
+	color: var( --color-text-subtle );
+	font-size: $font-body-extra-small;
 }

@@ -1,9 +1,6 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
@@ -13,14 +10,13 @@ import { bindActionCreators } from 'redux';
 /**
  * Internal dependencies
  */
-import CompactFormToggle from 'components/forms/form-toggle/compact';
-import FormFieldset from 'components/forms/form-fieldset';
-import FormSettingExplanation from 'components/forms/form-setting-explanation';
-import QueryPreferences from 'components/data/query-preferences';
-import { isFetchingPreferences } from 'state/preferences/selectors';
-import { getSelectedSiteId } from 'state/ui/selectors';
-import { isConfirmationSidebarEnabled } from 'state/ui/editor/selectors';
-import { saveConfirmationSidebarPreference } from 'state/ui/editor/actions';
+import FormFieldset from 'calypso/components/forms/form-fieldset';
+import FormLabel from 'calypso/components/forms/form-label';
+import FormSettingExplanation from 'calypso/components/forms/form-setting-explanation';
+import { isFetchingPreferences } from 'calypso/state/preferences/selectors';
+import { getSelectedSiteId } from 'calypso/state/ui/selectors';
+import { isConfirmationSidebarEnabled } from 'calypso/state/editor/selectors';
+import { saveConfirmationSidebarPreference } from 'calypso/state/editor/actions';
 
 class PublishConfirmation extends Component {
 	constructor( props ) {
@@ -29,7 +25,7 @@ class PublishConfirmation extends Component {
 		this.handleToggle = this.handleToggle.bind( this );
 	}
 
-	componentWillReceiveProps( nextProps ) {
+	UNSAFE_componentWillReceiveProps( nextProps ) {
 		if ( nextProps.publishConfirmationEnabled !== this.state.isToggleOn ) {
 			this.setState( { isToggleOn: nextProps.publishConfirmationEnabled } );
 		}
@@ -43,23 +39,16 @@ class PublishConfirmation extends Component {
 	}
 
 	render() {
-		const { fetchingPreferences, translate } = this.props;
+		const { translate } = this.props;
 
 		return (
-			<FormFieldset className="composing__publish-confirmation has-divider is-bottom-only">
-				<QueryPreferences />
-				<CompactFormToggle
-					checked={ this.state.isToggleOn }
-					disabled={ fetchingPreferences }
-					onChange={ this.handleToggle }
-				>
-					{ translate( 'Show publish confirmation' ) }
-				</CompactFormToggle>
-
+			<FormFieldset>
+				<FormLabel>{ translate( 'Show publish confirmation' ) }</FormLabel>
 				<FormSettingExplanation isIndented>
 					{ translate(
-						'This adds a confirmation step with helpful settings and tips ' +
-							'for double-checking your content before publishing.'
+						'The Block Editor handles the Publish confirmation setting. ' +
+							'To enable it, go to Options under the Ellipses menu in the Editor ' +
+							'and check "Enable Pre-publish checks."'
 					) }
 				</FormSettingExplanation>
 			</FormFieldset>
@@ -80,7 +69,7 @@ PublishConfirmation.propTypes = {
 };
 
 export default connect(
-	state => {
+	( state ) => {
 		const siteId = getSelectedSiteId( state );
 
 		return {
@@ -89,7 +78,7 @@ export default connect(
 			publishConfirmationEnabled: isConfirmationSidebarEnabled( state, siteId ),
 		};
 	},
-	dispatch => {
+	( dispatch ) => {
 		return bindActionCreators(
 			{
 				savePublishConfirmationPreference: saveConfirmationSidebarPreference,

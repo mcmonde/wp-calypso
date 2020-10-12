@@ -1,12 +1,12 @@
 .reader-author-link {
-	color: $gray;
+	color: var( --color-primary );
 }
 
 .reader-author-link:hover,
 .reader-author-link:active {
-	color: $blue-medium;
+	color: var( --color-accent );
 }
 
 .reader-author-link:focus {
-	color: $gray;
+	color: var( --color-text-subtle );
 }

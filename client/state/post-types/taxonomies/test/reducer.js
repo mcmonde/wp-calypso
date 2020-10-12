@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -19,10 +17,10 @@ import {
 	SERIALIZE,
 	DESERIALIZE,
 } from 'state/action-types';
-import { useSandbox } from 'test/helpers/use-sinon';
+import { useSandbox } from 'test-helpers/use-sinon';
 
 describe( 'reducer', () => {
-	useSandbox( sandbox => {
+	useSandbox( ( sandbox ) => {
 		sandbox.stub( console, 'warn' );
 	} );
 
@@ -170,7 +168,10 @@ describe( 'reducer', () => {
 
 			expect( state ).to.eql( {
 				2916284: {
-					post: [ { name: 'category', label: 'Categories' }, { name: 'post_tag', label: 'Tags' } ],
+					post: [
+						{ name: 'category', label: 'Categories' },
+						{ name: 'post_tag', label: 'Tags' },
+					],
 				},
 			} );
 		} );

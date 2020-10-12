@@ -1,16 +1,18 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import { get } from 'lodash';
+
+/**
+ * Internal dependencies
+ */
+import 'state/domains/init';
 
 /**
  * Returns cached domain contact details if we've successfully requested them.
  *
- * @param  {Object}  state       Global state tree
- * @return {Object}              Contact details
+ * @param  {object}  state       Global state tree
+ * @returns {object}              Contact details
  */
 export default function getContactDetailsCache( state ) {
 	return get( state, 'domains.management.items._contactDetailsCache', null );

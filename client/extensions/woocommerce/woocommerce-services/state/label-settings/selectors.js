@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -91,7 +89,7 @@ export const getPaymentMethods = ( state, siteId = getSelectedSiteId( state ) ) 
 	}
 
 	return getStoredCards( state )
-		.map( card => ( {
+		.map( ( card ) => ( {
 			payment_method_id: Number( card.stored_details_id ),
 			card_type: card.card_type,
 			name: card.name,
@@ -112,5 +110,6 @@ export const getMasterUserInfo = ( state, siteId = getSelectedSiteId( state ) ) 
 		masterUserName: meta && meta.master_user_name,
 		masterUserLogin: meta && meta.master_user_login,
 		masterUserEmail: meta && meta.master_user_email,
+		masterUserWpcomLogin: meta && meta.master_user_wpcom_login,
 	};
 };

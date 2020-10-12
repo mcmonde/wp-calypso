@@ -1,22 +1,23 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import PropTypes from 'prop-types';
 import React from 'react';
+import { connect } from 'react-redux';
 import { noop } from 'lodash';
+import Gridicon from 'components/gridicon';
+import { localize } from 'i18n-calypso';
 
 /**
  * Internal dependencies
  */
-import analytics from 'lib/analytics';
+import { bumpStat } from 'lib/analytics/mc';
 import DropZone from 'components/drop-zone';
-import MediaActions from 'lib/media/actions';
 import { userCan } from 'lib/site/utils';
+import { clearMediaItemErrors } from 'state/media/actions';
+import { addMedia } from 'state/media/thunks';
 
-export default class extends React.Component {
+class MediaLibraryDropZone extends React.Component {
 	static displayName = 'MediaLibraryDropZone';
 
 	static propTypes = {
@@ -24,6 +25,7 @@ export default class extends React.Component {
 		fullScreen: PropTypes.bool,
 		onAddMedia: PropTypes.func,
 		trackStats: PropTypes.bool,
+		addMedia: PropTypes.func,
 	};
 
 	static defaultProps = {
@@ -32,21 +34,21 @@ export default class extends React.Component {
 		trackStats: true,
 	};
 
-	uploadFiles = files => {
-		if ( ! this.props.site ) {
+	uploadFiles = ( files ) => {
+		if ( ! this.props.site || ! userCan( 'upload_files', this.props.site ) ) {
 			return;
 		}
 
-		MediaActions.clearValidationErrors( this.props.site.ID );
-		MediaActions.add( this.props.site, files );
+		this.props.clearMediaItemErrors( this.props.site.ID );
+		this.props.addMedia( files, this.props.site );
 		this.props.onAddMedia();
 
 		if ( this.props.trackStats ) {
-			analytics.mc.bumpStat( 'editor_upload_via', 'drop' );
+			bumpStat( 'editor_upload_via', 'drop' );
 		}
 	};
 
-	isValidTransfer = transfer => {
+	isValidTransfer = ( transfer ) => {
 		if ( ! transfer ) {
 			return false;
 		}
@@ -65,21 +67,33 @@ export default class extends React.Component {
 		// using the Array prototype. Safari may pass types as `null` which
 		// makes detection impossible, so we err on allowing the transfer.
 		//
-		// See: http://www.w3.org/html/wg/drafts/html/master/editing.html#the-datatransfer-interface
+		// See: https://html.spec.whatwg.org/multipage/dnd.html#the-datatransfer-interface
 		return ! transfer.types || -1 !== Array.prototype.indexOf.call( transfer.types, 'Files' );
 	};
 
 	render() {
-		if ( ! userCan( 'upload_files', this.props.site ) ) {
-			return null;
-		}
-
+		const { site, fullScreen, translate } = this.props;
+		const canUploadFiles = userCan( 'upload_files', site );
+		const textLabel = ! canUploadFiles
+			? translate( 'You are not authorized to upload files to this site' )
+			: null;
+		const icon = ! canUploadFiles ? (
+			<Gridicon icon="cross" size={ 48 } />
+		) : (
+			<Gridicon icon="cloud-upload" size={ 48 } />
+		);
 		return (
 			<DropZone
-				fullScreen={ this.props.fullScreen }
+				fullScreen={ fullScreen }
 				onVerifyValidTransfer={ this.isValidTransfer }
 				onFilesDrop={ this.uploadFiles }
+				textLabel={ textLabel }
+				icon={ icon }
 			/>
 		);
 	}
 }
+
+export default connect( null, { addMedia, clearMediaItemErrors } )(
+	localize( MediaLibraryDropZone )
+);

@@ -1,7 +1,6 @@
 /**
  * /* eslint-disable no-multi-spaces
  *
- * @format
  */
 
 /**
@@ -15,7 +14,7 @@ import React from 'react';
 /**
  * Internal dependencies
  */
-import Dialog from 'components/dialog';
+import { Dialog } from '@automattic/components';
 import FormButton from 'components/forms/form-button';
 
 class HelpModal extends React.Component {
@@ -132,9 +131,9 @@ class HelpModal extends React.Component {
 	};
 
 	renderRow = ( row, rowIndex ) => {
-		let columns = [];
+		const columns = [];
 
-		forEach( row, cellPair => {
+		forEach( row, ( cellPair ) => {
 			columns.push(
 				<th className="wpcom-help__key" key={ cellPair.shortcut }>
 					<kbd>{ cellPair.shortcut }</kbd>
@@ -191,10 +190,10 @@ class HelpModal extends React.Component {
 		const additionalText = this.props.macosx
 			? translate( 'Additional shortcuts. Control + Option + key:', {
 					context: 'Mac shortcuts',
-				} )
+			  } )
 			: translate( 'Additional shortcuts. Shift + Alt + key:', {
 					context: 'Windows shortcuts',
-				} );
+			  } );
 
 		const tableHead = this.getTableHead();
 

@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -11,7 +9,7 @@ import { localize } from 'i18n-calypso';
 /**
  * Internal dependencies
  */
-import CompactCard from 'components/card/compact';
+import { CompactCard } from '@automattic/components';
 import Main from 'components/main';
 import Notice from 'components/notice';
 import DomainConnectAuthorizeDescription from './domain-connect-authorize-description';
@@ -19,6 +17,11 @@ import DomainConnectAuthorizeRecords from './domain-connect-authorize-records';
 import DomainConnectAuthorizeFooter from './domain-connect-authorize-footer';
 import { actionType, noticeType } from './constants';
 import wp from 'lib/wp';
+
+/**
+ * Style dependencies
+ */
+import './domain-connect-authorize.scss';
 
 const wpcom = wp.undocumented();
 
@@ -42,14 +45,14 @@ class DomainConnectAuthorize extends Component {
 		wpcom
 			.getDnsTemplateRecords( domain, providerId, serviceId, params )
 			.then(
-				data => {
+				( data ) => {
 					this.setState( {
 						action: actionType.READY_TO_SUBMIT,
 						dnsTemplateConflicts: data && data.conflicting_records,
 						dnsTemplateRecords: data && data.new_records,
 					} );
 				},
-				error => {
+				( error ) => {
 					const errorMessage =
 						error.message ||
 						translate(
@@ -82,14 +85,23 @@ class DomainConnectAuthorize extends Component {
 		} );
 
 		wpcom.applyDnsTemplateSyncFlow( domain, providerId, serviceId, params ).then(
-			() => {
+			( result ) => {
+				let action = actionType.CLOSE;
+				let noticeMessage = translate( 'Hurray! Your new service is now all set up.' );
+				if ( result.redirect_uri ) {
+					action = actionType.REDIRECTING;
+					noticeMessage = translate(
+						"Please wait while we redirect you back to the service provider's site to finalize this update."
+					);
+					window.location.assign( result.redirect_uri );
+				}
 				this.setState( {
-					action: actionType.CLOSE,
-					noticeMessage: translate( 'Hurray! Your new service is now all set up.' ),
+					action,
+					noticeMessage,
 					noticeType: noticeType.SUCCESS,
 				} );
 			},
-			error => {
+			( error ) => {
 				const errorMessage =
 					error.message ||
 					translate(
@@ -143,6 +155,7 @@ class DomainConnectAuthorize extends Component {
 						dnsTemplateError={ this.state.dnsTemplateError }
 					/>
 					<DomainConnectAuthorizeRecords
+						domain={ domain }
 						dnsTemplateRecords={ this.state.dnsTemplateRecords }
 						dnsTemplateConflicts={ this.state.dnsTemplateConflicts }
 						isPlaceholder={ ! this.state.dnsTemplateRecordsRetrieved }

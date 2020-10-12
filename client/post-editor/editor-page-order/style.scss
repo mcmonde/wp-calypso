@@ -3,16 +3,17 @@
 }
 
 .editor-page-order__label-text {
-	color: $gray;
+	color: var( --color-neutral-light );
 	display: block;
-	font-size: 11px;
+	font-size: $font-body-extra-small;
+	font-weight: 400;
 	margin-bottom: 4px;
 	text-transform: uppercase;
 }
 
-input[type="number"].editor-page-order__input {
+input[type='number'].form-text-input.editor-page-order__input {
 	-moz-appearance: textfield;
-	font-size: 13px;
+	font-size: $font-body-small;
 	width: 50px;
 
 	&::-webkit-outer-spin-button,

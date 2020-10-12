@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -13,10 +11,16 @@ import React from 'react';
 import { connect } from 'react-redux';
 import QueryReaderTeams from 'components/data/query-reader-teams';
 import QueryBlogStickers from 'components/data/query-blog-stickers';
-import { getReaderTeams, getBlogStickers } from 'state/selectors';
+import getBlogStickers from 'state/selectors/get-blog-stickers';
+import { getReaderTeams } from 'state/reader/teams/selectors';
 import BlogStickersList from 'blocks/blog-stickers/list';
 import InfoPopover from 'components/info-popover';
 import { isAutomatticTeamMember } from 'reader/lib/teams';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 const BlogStickers = ( { blogId, teams, stickers } ) => {
 	const isTeamMember = isAutomatticTeamMember( teams );
@@ -26,14 +30,12 @@ const BlogStickers = ( { blogId, teams, stickers } ) => {
 
 	return (
 		<div className="blog-stickers">
-			{ isTeamMember &&
-				stickers &&
-				stickers.length > 0 && (
-					<InfoPopover rootClassName="blog-stickers__popover">
-						<BlogStickersList stickers={ stickers } />
-					</InfoPopover>
-				) }
-			{ ! stickers && <QueryBlogStickers blogId={ blogId } /> }
+			<QueryBlogStickers blogId={ blogId } />
+			{ isTeamMember && stickers && stickers.length > 0 && (
+				<InfoPopover>
+					<BlogStickersList stickers={ stickers } />
+				</InfoPopover>
+			) }
 			{ ! teams && <QueryReaderTeams /> }
 		</div>
 	);
@@ -43,9 +45,7 @@ BlogStickers.propTypes = {
 	blogId: PropTypes.number.isRequired,
 };
 
-export default connect( ( state, ownProps ) => {
-	return {
-		teams: getReaderTeams( state ),
-		stickers: getBlogStickers( state, ownProps.blogId ),
-	};
-} )( BlogStickers );
+export default connect( ( state, { blogId } ) => ( {
+	teams: getReaderTeams( state ),
+	stickers: getBlogStickers( state, blogId ),
+} ) )( BlogStickers );

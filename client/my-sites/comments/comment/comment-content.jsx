@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -6,7 +5,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { localize } from 'i18n-calypso';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 import { get } from 'lodash';
 
 /**
@@ -18,7 +17,7 @@ import CommentPostLink from 'my-sites/comments/comment/comment-post-link';
 import Emojify from 'components/emojify';
 import QueryComment from 'components/data/query-comment';
 import { stripHTML, decodeEntities } from 'lib/formatting';
-import { getParentComment, getSiteComment } from 'state/selectors';
+import { getParentComment, getSiteComment } from 'state/comments/selectors';
 import { isJetpackSite } from 'state/sites/selectors';
 import { getSelectedSiteId, getSelectedSiteSlug } from 'state/ui/selectors';
 

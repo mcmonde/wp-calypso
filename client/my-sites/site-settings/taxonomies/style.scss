@@ -1,23 +1,23 @@
 .taxonomies__card-title {
-	font-size: 16px;
+	font-size: $font-body;
 	line-height: 24px;
-	color: $gray-dark;
+	color: var( --color-neutral-70 );
 	padding-bottom: 10px;
 
 	&.is-loading {
-		@include placeholder;
+		@include placeholder();
 		width: 80px;
 		display: inline-block;
 	}
 }
 
 .taxonomies__card-content {
-	color: $gray-text-min;
-	font-size: 13px;
+	color: var( --color-text-subtle );
+	font-size: $font-body-small;
 	white-space: nowrap;
 	overflow: hidden;
 
-	&:after {
+	&::after {
 		@include long-content-fade( $size: 40% );
 	}
 

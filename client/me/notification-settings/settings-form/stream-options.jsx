@@ -1,18 +1,16 @@
-/** @format */
-
 /**
  * External dependencies
  */
 
 import PropTypes from 'prop-types';
 import React from 'react';
-import Immutable from 'immutable';
+import { get } from 'lodash';
 
 /**
  * Internal dependencies
  */
 import { NOTIFICATIONS_EXCEPTIONS } from './constants';
-import FormCheckbox from 'components/forms/form-checkbox';
+import FormCheckbox from 'calypso/components/forms/form-checkbox';
 
 export default class extends React.PureComponent {
 	static displayName = 'NotificationSettingsFormStreamOptions';
@@ -21,7 +19,7 @@ export default class extends React.PureComponent {
 		blogId: PropTypes.oneOfType( [ PropTypes.string, PropTypes.number ] ).isRequired,
 		stream: PropTypes.oneOfType( [ PropTypes.string, PropTypes.number ] ).isRequired,
 		settingKeys: PropTypes.arrayOf( PropTypes.string ).isRequired,
-		settings: PropTypes.instanceOf( Immutable.Map ).isRequired,
+		settings: PropTypes.object.isRequired,
 		onToggle: PropTypes.func.isRequired,
 	};
 
@@ -37,7 +35,7 @@ export default class extends React.PureComponent {
 						<li className="notification-settings-form-stream-options__item" key={ index }>
 							{ isException ? null : (
 								<FormCheckbox
-									checked={ this.props.settings.get( setting ) }
+									checked={ get( this.props.settings, setting ) }
 									onChange={ () => {
 										this.props.onToggle( this.props.blogId, this.props.stream, setting );
 									} }

@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -30,7 +28,7 @@ describe( 'reducer', () => {
 		test( 'should default to empty object', () => {
 			const state = items( undefined, {} );
 
-			expect( state._contactDetailsCache ).to.be.empty;
+			expect( state._contactDetailsCache ).to.be.undefined;
 		} );
 
 		describe( 'Receive extra', () => {
@@ -122,7 +120,7 @@ describe( 'reducer', () => {
 					data: secondData,
 				} );
 
-				expect( finalState._contactDetailsCache ).to.have.deep.property(
+				expect( finalState._contactDetailsCache ).to.have.nested.property(
 					'extra.testPreserve',
 					"I'm still here"
 				);
@@ -153,7 +151,7 @@ describe( 'reducer', () => {
 					data: secondData,
 				} );
 
-				expect( finalState._contactDetailsCache ).to.have.deep.property(
+				expect( finalState._contactDetailsCache ).to.have.nested.property(
 					'extra.testUpdate',
 					'new'
 				);
@@ -205,11 +203,9 @@ describe( 'reducer', () => {
 					data: newData,
 				} );
 
-				expect( result._contactDetailsCache )
-					.to.have.property( 'extra' )
-					.that.is.not.an( 'array' );
+				expect( result._contactDetailsCache ).to.have.property( 'extra' ).that.is.not.an( 'array' );
 
-				expect( result._contactDetailsCache ).to.have.deep.property( 'extra.newData', 'exists' );
+				expect( result._contactDetailsCache ).to.have.nested.property( 'extra.newData', 'exists' );
 			} );
 		} );
 	} );

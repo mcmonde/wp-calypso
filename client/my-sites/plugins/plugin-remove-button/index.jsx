@@ -1,21 +1,30 @@
-/** @format */
+/* eslint-disable jsx-a11y/anchor-is-valid */
+/* eslint-disable jsx-a11y/click-events-have-key-events */
+/* eslint-disable jsx-a11y/no-static-element-interactions */
+
 /**
  * External dependencies
  */
 import React from 'react';
 import { localize } from 'i18n-calypso';
-import Gridicon from 'gridicons';
 
 /**
  * Internal dependencies
  */
-import analytics from 'lib/analytics';
+import Gridicon from 'components/gridicon';
+import { recordTracksEvent } from 'lib/analytics/tracks';
+import { gaRecordEvent } from 'lib/analytics/ga';
 import accept from 'lib/accept';
 import PluginsLog from 'lib/plugins/log-store';
 import PluginAction from 'my-sites/plugins/plugin-action/plugin-action';
 import PluginsActions from 'lib/plugins/actions';
 import ExternalLink from 'components/external-link';
 import { getSiteFileModDisableReason, isMainNetworkSite } from 'lib/site/utils';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class PluginRemoveButton extends React.Component {
 	static displayName = 'PluginRemoveButton';
@@ -43,30 +52,30 @@ class PluginRemoveButton extends React.Component {
 		);
 	};
 
-	processRemovalConfirmation = accepted => {
+	processRemovalConfirmation = ( accepted ) => {
 		if ( accepted ) {
 			PluginsActions.removePluginsNotices( 'completed', 'error' );
 			PluginsActions.removePlugin( this.props.site, this.props.plugin );
 
 			if ( this.props.isEmbed ) {
-				analytics.ga.recordEvent(
+				gaRecordEvent(
 					'Plugins',
 					'Remove plugin with no selected site',
 					'Plugin Name',
 					this.props.plugin.slug
 				);
-				analytics.tracks.recordEvent( 'calypso_plugin_remove_click_from_sites_list', {
+				recordTracksEvent( 'calypso_plugin_remove_click_from_sites_list', {
 					site: this.props.site.ID,
 					plugin: this.props.plugin.slug,
 				} );
 			} else {
-				analytics.ga.recordEvent(
+				gaRecordEvent(
 					'Plugins',
 					'Remove plugin on selected Site',
 					'Plugin Name',
 					this.props.plugin.slug
 				);
-				analytics.tracks.recordEvent( 'calypso_plugin_remove_click_from_plugin_info', {
+				recordTracksEvent( 'calypso_plugin_remove_click_from_plugin_info', {
 					site: this.props.site.ID,
 					plugin: this.props.plugin.slug,
 				} );
@@ -78,12 +87,6 @@ class PluginRemoveButton extends React.Component {
 		if ( ! this.props.site ) {
 			// we don't have enough info
 			return null;
-		}
-
-		if ( ! this.props.site.hasMinimumJetpackVersion ) {
-			return this.props.translate( '%(site)s is not running an up to date version of Jetpack', {
-				args: { site: this.props.site.title },
-			} );
 		}
 
 		if ( this.props.site.options.is_multi_network ) {
@@ -153,7 +156,7 @@ class PluginRemoveButton extends React.Component {
 	};
 
 	handleHowDoIFixThisButtonClick = () => {
-		analytics.ga.recordEvent( 'Plugins', 'Clicked How do I fix disabled plugin removal.' );
+		gaRecordEvent( 'Plugins', 'Clicked How do I fix disabled plugin removal.' );
 	};
 
 	renderButton = () => {
@@ -166,10 +169,10 @@ class PluginRemoveButton extends React.Component {
 			? this.props.translate( 'Removal Disabled', {
 					context:
 						'this goes next to an icon that displays if site is in a state where it can\'t modify has "Removal Disabled" ',
-				} )
+			  } )
 			: this.props.translate( 'Remove', {
 					context: 'Verb. Presented to user as a label for a button.',
-				} );
+			  } );
 		if ( inProgress ) {
 			return (
 				<span className="plugin-action plugin-remove-button__remove">

@@ -11,12 +11,16 @@ import { includes, size, some } from 'lodash';
 /**
  * Internal dependencies
  */
-import Dialog from 'components/dialog';
+import { Dialog } from '@automattic/components';
 import FormCheckbox from 'components/forms/form-checkbox';
 import FormLabel from 'components/forms/form-label';
 import getPackageDescriptions from './get-package-descriptions';
 import FormSectionHeading from 'components/forms/form-section-heading';
-import { closeAddItem, setAddedItem, addItems } from 'woocommerce/woocommerce-services/state/shipping-label/actions';
+import {
+	closeAddItem,
+	setAddedItem,
+	addItems,
+} from 'woocommerce/woocommerce-services/state/shipping-label/actions';
 import { getShippingLabel } from 'woocommerce/woocommerce-services/state/shipping-label/selectors';
 import { getAllPackageDefinitions } from 'woocommerce/woocommerce-services/state/packages/selectors';
 
@@ -43,16 +47,20 @@ const AddItemDialog = ( props ) => {
 
 	const renderCheckbox = ( pckgId, itemIdx, item ) => {
 		const itemLabel = packageLabels[ pckgId ]
-			? translate( '%(item)s from {{pckg/}}', { args: { item: item.name }, components: { pckg: getPackageNameElement( pckgId ) } } )
+			? translate( '%(item)s from {{pckg/}}', {
+					args: { item: item.name },
+					components: { pckg: getPackageNameElement( pckgId ) },
+			  } )
 			: item;
 
-		const onChange = ( event ) => props.setAddedItem( orderId, siteId, pckgId, itemIdx, event.target.checked );
+		const onChange = ( event ) =>
+			props.setAddedItem( orderId, siteId, pckgId, itemIdx, event.target.checked );
 		return (
 			<FormLabel
 				key={ `${ pckgId }-${ itemIdx }` }
-				className="packages-step__dialog-package-option">
-				<FormCheckbox checked={ includes( addedItems[ pckgId ], itemIdx ) }
-					onChange={ onChange } />
+				className="packages-step__dialog-package-option"
+			>
+				<FormCheckbox checked={ includes( addedItems[ pckgId ], itemIdx ) } onChange={ onChange } />
 				<span>{ itemLabel }</span>
 			</FormLabel>
 		);
@@ -85,12 +93,14 @@ const AddItemDialog = ( props ) => {
 	];
 
 	return (
-		<Dialog isVisible={ showAddItemDialog }
+		<Dialog
+			isVisible={ showAddItemDialog }
 			isFullScreen={ false }
 			onClickOutside={ onClose }
 			onClose={ onClose }
 			buttons={ buttons }
-			additionalClassNames="wcc-root woocommerce packages-step__dialog" >
+			additionalClassNames="wcc-root woocommerce packages-step__dialog"
+		>
 			<FormSectionHeading>{ translate( 'Add item' ) }</FormSectionHeading>
 			<div className="packages-step__dialog-body">
 				<p>

@@ -1,23 +1,19 @@
-/** @format */
 /**
  * External dependencies
  */
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { localize } from 'i18n-calypso';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 
 /**
  * Internal dependencies
  */
-import Button from 'components/button';
+import config from 'config';
+import { Button } from '@automattic/components';
 import { recordTracksEvent } from 'state/analytics/actions';
 
 class SiteSelectorAddSite extends Component {
-	getAddNewSiteUrl() {
-		return '/jetpack/new/?ref=calypso-selector';
-	}
-
 	recordAddNewSite = () => {
 		this.props.recordTracksEvent( 'calypso_add_new_wordpress_click' );
 	};
@@ -26,8 +22,12 @@ class SiteSelectorAddSite extends Component {
 		const { translate } = this.props;
 		return (
 			<span className="site-selector__add-new-site">
-				<Button borderless href={ this.getAddNewSiteUrl() } onClick={ this.recordAddNewSite }>
-					<Gridicon icon="add-outline" /> { translate( 'Add New Site' ) }
+				<Button
+					borderless
+					href={ `${ config( 'signup_url' ) }?ref=calypso-selector` }
+					onClick={ this.recordAddNewSite }
+				>
+					<Gridicon icon="add-outline" /> { translate( 'Add new site' ) }
 				</Button>
 			</span>
 		);

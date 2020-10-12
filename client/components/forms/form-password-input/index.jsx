@@ -1,11 +1,9 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
+import { isMobile } from '@automattic/viewport';
 import React from 'react';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 import classNames from 'classnames';
 import { omit } from 'lodash';
 
@@ -13,7 +11,11 @@ import { omit } from 'lodash';
  * Internal dependencies
  */
 import FormTextInput from 'components/forms/form-text-input';
-import { isMobile } from 'lib/viewport';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 export default class extends React.Component {
 	static displayName = 'FormPasswordInput';
@@ -22,14 +24,15 @@ export default class extends React.Component {
 		hidePassword: true,
 	};
 
+	textFieldRef = React.createRef();
+
 	componentDidMount() {
 		if ( isMobile() ) {
 			this.state = { hidePassword: false };
 			return;
-		} else {
-			this.state = { hidePassword: true };
-			return;
 		}
+		this.state = { hidePassword: true };
+		return;
 	}
 
 	togglePasswordVisibility = () => {
@@ -44,21 +47,22 @@ export default class extends React.Component {
 	}
 
 	focus = () => {
-		this.refs.textField.focus();
+		this.textFieldRef.current.focus();
 	};
 
 	render() {
-		var toggleVisibilityClasses = classNames( {
+		const toggleVisibilityClasses = classNames( {
 			'form-password-input__toggle': true,
 			'form-password-input__toggle-visibility': ! this.props.hideToggle,
 		} );
 
+		/* eslint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */
 		return (
 			<div className="form-password-input">
 				<FormTextInput
 					{ ...omit( this.props, 'hideToggle', 'submitting' ) }
 					autoComplete="off"
-					ref="textField"
+					ref={ this.textFieldRef }
 					type={ this.hidden() ? 'password' : 'text' }
 				/>
 

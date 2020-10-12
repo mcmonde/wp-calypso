@@ -1,9 +1,6 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import React from 'react';
 import { noop } from 'lodash';
 
@@ -11,12 +8,10 @@ import { noop } from 'lodash';
  * Internal dependencies
  */
 import config from 'config';
-import { switchCSS } from 'lib/i18n-utils/switch-locale';
 import { getCurrentUser } from 'state/current-user/selectors';
-import { setSection as setSectionAction } from 'state/ui/actions';
-import { getSection } from 'state/ui/selectors';
+import { setSection } from 'state/ui/actions';
 import { setLocale } from 'state/ui/language/actions';
-import isRTL from 'state/selectors/is-rtl';
+import { isTranslatedIncompletely } from 'lib/i18n-utils/utils';
 
 export function makeLayoutMiddleware( LayoutComponent ) {
 	return ( context, next ) => {
@@ -37,38 +32,32 @@ export function makeLayoutMiddleware( LayoutComponent ) {
 	};
 }
 
-export function setSection( section ) {
+export function setSectionMiddleware( section ) {
 	return ( context, next = noop ) => {
-		context.store.dispatch( setSectionAction( section ) );
+		// save the section in context
+		context.section = section;
 
-		loadSectionCSS( context, next );
+		// save the section to Redux, too (poised to become legacy)
+		context.store.dispatch( setSection( section ) );
+		next();
 	};
 }
 
-function loadSectionCSS( context, next ) {
-	const section = getSection( context.store.getState() );
-
-	if ( section.css && typeof document !== 'undefined' ) {
-		const url = isRTL( context.store.getState() ) ? section.css.urls.rtl : section.css.urls.ltr;
-
-		switchCSS( 'section-css-' + section.css.id, url, next );
-
-		return;
-	}
-
-	next();
-}
-
-export function setUpLocale( context, next ) {
+export function setLocaleMiddleware( context, next ) {
 	const currentUser = getCurrentUser( context.store.getState() );
 
 	if ( context.params.lang ) {
 		context.lang = context.params.lang;
 	} else if ( currentUser ) {
-		context.lang = currentUser.localeSlug;
+		const shouldFallbackToDefaultLocale =
+			currentUser.use_fallback_for_incomplete_languages &&
+			isTranslatedIncompletely( currentUser.localeSlug );
+
+		context.lang = shouldFallbackToDefaultLocale
+			? config( 'i18n_default_locale_slug' )
+			: currentUser.localeSlug;
 	}
 
 	context.store.dispatch( setLocale( context.lang || config( 'i18n_default_locale_slug' ) ) );
-
-	loadSectionCSS( context, next );
+	next();
 }

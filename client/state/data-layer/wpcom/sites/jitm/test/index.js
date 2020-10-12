@@ -1,116 +1,63 @@
-/** @format */
-
-/**
- * External dependencies
- */
-import { expect } from 'chai';
-import { spy } from 'sinon';
-import noop from 'lodash';
-
 /**
  * Internal dependencies
  */
-import { fetchJITM, handleSiteSelection, handleRouteChange } from '..';
+import { doFetchJITM, doDismissJITM } from '..';
+import { fetchJITM, dismissJITM } from 'state/jitm/actions';
 import { http } from 'state/data-layer/wpcom-http/actions';
 
 describe( 'jitms', () => {
-	describe( 'fetchJITM', () => {
-		test( 'should not dispatch', () => {
-			const dispatch = spy();
-			const state = {};
-			const action = noop;
+	describe( '#doFetchJITM', () => {
+		test( 'should dispatch a get action with the site id and the message path', () => {
+			const siteId = 123;
+			const messagePath = 'test:foo:bar';
+			const action = fetchJITM( siteId, messagePath );
 
-			fetchJITM( state, dispatch, action );
-			expect( dispatch ).to.not.have.been.called;
-		} );
-
-		test( 'should dispatch', () => {
-			const dispatch = spy(),
-				state = {
-					sites: {
-						items: {
-							100: {
-								jetpack: true,
-							},
-						},
-					},
-					currentUser: {
-						id: 1000,
-					},
-					ui: {
-						section: {
-							name: 'test',
-						},
-					},
-				},
-				action_site_selected = {
-					siteId: 100,
-				},
-				getState = () => state,
-				action_loading = {
-					isLoading: true,
-				},
-				action_loaded = {
-					isLoading: false,
-				},
-				action_transition = {
-					section: {
-						name: 'test',
-					},
-				};
-
-			// walk through the happy case of the process
-
-			handleSiteSelection( { getState, dispatch }, action_site_selected );
-			expect( dispatch ).to.not.have.been.called;
-
-			handleRouteChange( { getState, dispatch }, action_loading );
-			expect( dispatch ).to.not.have.been.called;
-
-			handleRouteChange( { getState, dispatch }, action_loaded );
-			expect( dispatch ).to.not.have.been.called;
-
-			handleRouteChange( { getState, dispatch }, action_transition );
-			expect( dispatch ).to.have.been.calledWithMatch(
+			expect( doFetchJITM( action ) ).toEqual(
 				http(
 					{
 						apiNamespace: 'rest',
 						method: 'GET',
-						path: '/v1.1/jetpack-blogs/100/rest-api/',
+						path: `/v1.1/jetpack-blogs/${ siteId }/rest-api/`,
 						query: {
 							path: '/jetpack/v4/jitm',
-							query: JSON.stringify( { message_path: 'calypso:test:admin_notices' } ),
+							query: JSON.stringify( {
+								message_path: messagePath,
+							} ),
 							http_envelope: 1,
 						},
 					},
-					action_transition
+					action
 				)
 			);
 		} );
+	} );
 
-		test( 'should be not set a jitm if not a jetpack site', () => {
-			const dispatch = spy(),
-				state = {
-					sites: {
-						items: {
-							100: {
-								jetpack: false,
-							},
+	describe( '#doDismissJITM', () => {
+		test( 'should dispatch a post action with the message id and the feature class', () => {
+			const siteId = 123;
+			const messageId = 'upsell-nudge-testing';
+			const featureClass = 'retention-marketing';
+			const action = dismissJITM( siteId, messageId, featureClass );
+
+			expect( doDismissJITM( action ) ).toEqual(
+				http(
+					{
+						apiNamespace: 'rest',
+						method: 'POST',
+						path: `/jetpack-blogs/${ siteId }/rest-api/`,
+						query: {
+							path: '/jetpack/v4/jitm',
+							body: JSON.stringify( {
+								feature_class: featureClass,
+								id: messageId,
+							} ),
+							http_envelope: 1,
+							json: false,
 						},
 					},
-					currentUser: {
-						id: 1000,
-					},
-				},
-				getState = () => state,
-				action_transition = {
-					section: {
-						name: 'test',
-					},
-				};
-
-			handleRouteChange( { getState, dispatch }, action_transition );
-			expect( dispatch ).to.have.not.been.called;
+					action
+				)
+			);
 		} );
 	} );
 } );

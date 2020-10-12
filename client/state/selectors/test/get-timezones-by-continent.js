@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -8,7 +6,7 @@ import { expect } from 'chai';
 /**
  * Internal dependencies
  */
-import { getTimezonesByContinent } from 'state/selectors';
+import getTimezonesByContinent from 'state/selectors/get-timezones-by-continent';
 
 describe( 'getTimezonesByContinent()', () => {
 	test( "should return null if `timezones` aren't synced", () => {

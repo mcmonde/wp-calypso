@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -10,20 +8,18 @@ import React from 'react';
 /**
  * Internal dependencies
  */
-import Button from 'components/button';
-import Card from 'components/card';
-import CompactCard from 'components/card/compact';
-import LoadingPlaceholder from 'me/purchases/components/loading-placeholder';
-import { managePurchase } from 'me/purchases/paths';
-import titles from 'me/purchases/titles';
+import { Button, Card, CompactCard } from '@automattic/components';
+import LoadingPlaceholder from 'calypso/me/purchases/components/loading-placeholder';
+import titles from 'calypso/me/purchases/titles';
 
-const CancelPurchaseLoadingPlaceholder = ( { purchaseId, selectedSite } ) => {
+const CancelPurchaseLoadingPlaceholder = ( { purchaseId, siteSlug, getManagePurchaseUrlFor } ) => {
 	let path;
 
-	if ( selectedSite ) {
-		path = managePurchase( selectedSite.slug, purchaseId );
+	if ( siteSlug ) {
+		path = getManagePurchaseUrlFor( siteSlug, purchaseId );
 	}
 
+	/* eslint-disable wpcalypso/jsx-classname-namespace, jsx-a11y/heading-has-content */
 	return (
 		<LoadingPlaceholder title={ titles.cancelPurchase } path={ path }>
 			<Card className="cancel-purchase-loading-placeholder__card">
@@ -39,10 +35,12 @@ const CancelPurchaseLoadingPlaceholder = ( { purchaseId, selectedSite } ) => {
 		</LoadingPlaceholder>
 	);
 };
+/* eslint-enable wpcalypso/jsx-classname-namespace, jsx-a11y/heading-has-content */
 
 CancelPurchaseLoadingPlaceholder.propTypes = {
 	purchaseId: PropTypes.number.isRequired,
-	selectedSite: PropTypes.oneOfType( [ PropTypes.bool, PropTypes.object ] ),
+	siteSlug: PropTypes.string.isRequired,
+	getManagePurchaseUrlFor: PropTypes.func.isRequired,
 };
 
 export default CancelPurchaseLoadingPlaceholder;

@@ -1,12 +1,9 @@
-/** @format */
-
 /**
  * External dependencies
  */
 
 import React from 'react';
 import { map, chunk } from 'lodash';
-import jsxToString from 'jsx-to-string';
 
 /**
  * Internal dependencies
@@ -15,8 +12,9 @@ import ComponentPlayground from 'devdocs/design/component-playground';
 import LazyRender from 'react-lazily-render';
 import DocsExampleWrapper from 'devdocs/docs-example/wrapper';
 import { camelCaseToSlug, getComponentName } from 'devdocs/docs-example/util';
-import ReadmeViewer from 'devdocs/docs-example/readme-viewer';
+import ReadmeViewer from 'components/readme-viewer';
 import Placeholder from 'devdocs/devdocs-async-load/placeholder';
+import { getExampleCodeFromComponent } from './playground-utils';
 
 const shouldShowInstance = ( example, filter, component ) => {
 	const name = getComponentName( example );
@@ -36,6 +34,24 @@ const shouldShowInstance = ( example, filter, component ) => {
 	return ! filter || searchPattern.toLowerCase().indexOf( filter ) > -1;
 };
 
+const getReadmeFilePath = ( section, example ) => {
+	let path = example.props.readmeFilePath;
+
+	if ( ! path ) {
+		return null;
+	}
+
+	if ( ! path.startsWith( '/' ) ) {
+		path = `/client/${ section === 'design' ? 'components' : section }/${ path }`;
+	}
+
+	if ( ! path.endsWith( 'README.md' ) ) {
+		path = `${ path }/README.md`;
+	}
+
+	return path;
+};
+
 const Collection = ( {
 	children,
 	component,
@@ -46,13 +62,20 @@ const Collection = ( {
 	let showCounter = 0;
 	const summary = [];
 
-	const examples = React.Children.map( children, example => {
+	const scroll = () => {
+		window.scrollTo( 0, 0 );
+	};
+
+	const examples = React.Children.map( children, ( example ) => {
 		if ( ! example || ! shouldShowInstance( example, filter, component ) ) {
 			return null;
 		}
 
 		const exampleName = getComponentName( example );
-		const exampleLink = `/devdocs/${ section }/${ camelCaseToSlug( exampleName ) }`;
+		const exampleLink = `/devdocs/${ section }/${ encodeURIComponent(
+			camelCaseToSlug( exampleName )
+		) }`;
+		const readmeFilePath = getReadmeFilePath( section, example );
 
 		showCounter++;
 
@@ -64,57 +87,56 @@ const Collection = ( {
 			);
 		}
 
-		if ( example.props.exampleCode ) {
-			const code =
-				typeof example.props.exampleCode === 'string'
-					? example.props.exampleCode
-					: jsxToString( example.props.exampleCode );
+		const exampleCode = getExampleCodeFromComponent( example );
+		if ( exampleCode ) {
 			return (
 				<div>
 					<ComponentPlayground
-						code={ code }
+						code={ exampleCode }
 						name={ exampleName }
 						unique={ !! component }
 						url={ exampleLink }
 						component={ component }
+						section={ section }
 					/>
-					{ component && (
-						<ReadmeViewer section={ section } readmeFilePath={ example.props.readmeFilePath } />
-					) }
+					{ component && <ReadmeViewer readmeFilePath={ readmeFilePath } /> }
 				</div>
 			);
 		}
 
 		return (
 			<div>
-				<DocsExampleWrapper name={ exampleName } unique={ !! component } url={ exampleLink }>
+				<DocsExampleWrapper
+					name={ exampleName }
+					unique={ !! component }
+					url={ exampleLink }
+					onTitleClick={ scroll }
+				>
 					{ example }
 				</DocsExampleWrapper>
-				{ component && (
-					<ReadmeViewer section={ section } readmeFilePath={ example.props.readmeFilePath } />
-				) }
+				{ component && <ReadmeViewer readmeFilePath={ readmeFilePath } /> }
 			</div>
 		);
 	} );
 
 	return (
 		<div className="design__collection">
-			{ showCounter > 1 &&
-				filter && (
-					<div className="design__instance-links">
-						<span className="design__instance-links-label">Results:</span>
-						{ summary }
-					</div>
-				) }
+			{ showCounter > 1 && filter && (
+				<div className="design__instance-links">
+					<span className="design__instance-links-label">Results:</span>
+					{ summary }
+				</div>
+			) }
 
 			{ /* Load first chunk, lazy load all others as needed. */ }
 
 			{ examples.slice( 0, examplesToMount ) }
 
-			{ map( chunk( examples.slice( examplesToMount ), examplesToMount ), exampleGroup => {
+			{ map( chunk( examples.slice( examplesToMount ), examplesToMount ), ( exampleGroup ) => {
+				const groupKey = map( exampleGroup, ( example ) => example.key ).join( '_' );
 				return (
-					<LazyRender>
-						{ shouldRender =>
+					<LazyRender key={ groupKey }>
+						{ ( shouldRender ) =>
 							shouldRender ? exampleGroup : <Placeholder count={ examplesToMount } />
 						}
 					</LazyRender>

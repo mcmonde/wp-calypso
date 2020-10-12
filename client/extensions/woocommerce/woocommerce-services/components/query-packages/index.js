@@ -24,11 +24,11 @@ class QueryPackages extends Component {
 		}
 	}
 
-	componentWillMount() {
+	UNSAFE_componentWillMount() {
 		this.fetch( this.props );
 	}
 
-	componentWillReceiveProps( nextProps ) {
+	UNSAFE_componentWillReceiveProps( nextProps ) {
 		this.fetch( nextProps );
 	}
 
@@ -47,7 +47,11 @@ export default connect(
 		fetching: isFetching( state ),
 		error: isFetchError( state ),
 	} ),
-	( dispatch ) => bindActionCreators( {
-		fetchSettings,
-	}, dispatch )
+	( dispatch ) =>
+		bindActionCreators(
+			{
+				fetchSettings,
+			},
+			dispatch
+		)
 )( QueryPackages );

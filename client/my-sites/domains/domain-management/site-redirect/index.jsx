@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -22,33 +21,45 @@ import FormTextInputWithAffixes from 'components/forms/form-text-input-with-affi
 import Main from 'components/main';
 import Notice from 'components/notice';
 import notices from 'notices';
-import { domainManagementEdit, domainManagementRedirectSettings } from 'my-sites/domains/paths';
+import {
+	domainManagementSiteRedirect,
+	domainManagementRedirectSettings,
+} from 'my-sites/domains/paths';
 import {
 	closeSiteRedirectNotice,
 	fetchSiteRedirect,
 	updateSiteRedirect,
-} from 'lib/upgrades/actions';
-import Card from 'components/card/compact';
+} from 'state/domains/site-redirect/actions';
+import { CompactCard as Card } from '@automattic/components';
 import SectionHeader from 'components/section-header';
 import { composeAnalytics, recordGoogleEvent, recordTracksEvent } from 'state/analytics/actions';
+import { getSelectedSite } from 'state/ui/selectors';
+import { getSiteRedirectLocation } from 'state/domains/site-redirect/selectors';
 import { withoutHttp } from 'lib/url';
+import getCurrentRoute from 'state/selectors/get-current-route';
+import { SITE_REDIRECT } from 'lib/url/support';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class SiteRedirect extends React.Component {
 	static propTypes = {
 		location: PropTypes.object.isRequired,
 		selectedDomainName: PropTypes.string.isRequired,
-		selectedSite: PropTypes.oneOfType( [ PropTypes.object, PropTypes.bool ] ).isRequired,
+		selectedSite: PropTypes.object.isRequired,
 	};
 
 	state = {
-		redirectUrl: this.props.location.value || '',
+		redirectUrl: this.props.location.value,
 	};
 
-	componentWillMount() {
-		fetchSiteRedirect( this.props.selectedSite.domain );
+	componentDidMount() {
+		this.props.fetchSiteRedirect( this.props.selectedSite.domain );
 	}
 
-	componentWillReceiveProps( nextProps ) {
+	UNSAFE_componentWillReceiveProps( nextProps ) {
 		if ( this.props.location.value !== nextProps.location.value ) {
 			this.setState( {
 				redirectUrl: nextProps.location.value,
@@ -61,38 +72,39 @@ class SiteRedirect extends React.Component {
 	}
 
 	closeRedirectNotice = () => {
-		closeSiteRedirectNotice( this.props.selectedSite.domain );
+		this.props.closeSiteRedirectNotice( this.props.selectedSite.domain );
 	};
 
-	handleChange = event => {
+	handleChange = ( event ) => {
 		const redirectUrl = withoutHttp( event.target.value );
 
 		this.setState( { redirectUrl } );
 	};
 
-	handleClick = event => {
-		event.preventDefault();
-
-		updateSiteRedirect( this.props.selectedSite.domain, this.state.redirectUrl, success => {
-			this.props.updateSiteRedirectClick(
-				this.props.selectedDomainName,
-				this.state.redirectUrl,
-				success
-			);
-
-			if ( success ) {
-				page(
-					domainManagementRedirectSettings(
-						this.props.selectedSite.slug,
-						trim( trimEnd( this.state.redirectUrl, '/' ) )
-					)
+	handleClick = () => {
+		this.props
+			.updateSiteRedirect( this.props.selectedSite.domain, this.state.redirectUrl )
+			.then( ( success ) => {
+				this.props.recordUpdateSiteRedirectClick(
+					this.props.selectedDomainName,
+					this.state.redirectUrl,
+					success
 				);
-			}
-		} );
+
+				if ( success ) {
+					page(
+						domainManagementRedirectSettings(
+							this.props.selectedSite.slug,
+							trim( trimEnd( this.state.redirectUrl, '/' ) ),
+							this.props.currentRoute
+						)
+					);
+				}
+			} );
 	};
 
 	handleFocus = () => {
-		this.props.locationFocus( this.props.selectedDomainName );
+		this.props.recordLocationFocus( this.props.selectedDomainName );
 	};
 
 	render() {
@@ -122,7 +134,7 @@ class SiteRedirect extends React.Component {
 					<Card className={ classes }>
 						<form>
 							<FormFieldset>
-								<FormLabel>{ translate( 'Redirect To' ) }</FormLabel>
+								<FormLabel htmlFor="site-redirect__input">{ translate( 'Redirect To' ) }</FormLabel>
 
 								<FormTextInputWithAffixes
 									disabled={ isFetching || isUpdating }
@@ -131,12 +143,22 @@ class SiteRedirect extends React.Component {
 									onChange={ this.handleChange }
 									onFocus={ this.handleFocus }
 									prefix="http://"
-									type="text"
 									value={ this.state.redirectUrl }
+									id="site-redirect__input"
 								/>
 
 								<p className="site-redirect__explanation">
-									{ translate( 'All domains on this site will redirect here.' ) }
+									{ translate(
+										'All domains on this site will redirect here as long as this domain is set as your primary domain. ' +
+											'{{learnMoreLink}}Learn more{{/learnMoreLink}}',
+										{
+											components: {
+												learnMoreLink: (
+													<a href={ SITE_REDIRECT } target="_blank" rel="noopener noreferrer" />
+												),
+											},
+										}
+									) }
 								</p>
 							</FormFieldset>
 
@@ -162,14 +184,14 @@ class SiteRedirect extends React.Component {
 	}
 
 	goToEdit = () => {
-		const { selectedDomainName, selectedSite } = this.props;
+		const { selectedDomainName, selectedSite, currentRoute } = this.props;
 
-		this.props.cancelClick( selectedDomainName );
-		page( domainManagementEdit( selectedSite.slug, selectedDomainName ) );
+		this.props.recordCancelClick( selectedDomainName );
+		page( domainManagementSiteRedirect( selectedSite.slug, selectedDomainName, currentRoute ) );
 	};
 }
 
-const cancelClick = domainName =>
+const recordCancelClick = ( domainName ) =>
 	composeAnalytics(
 		recordGoogleEvent(
 			'Domain Management',
@@ -182,7 +204,7 @@ const cancelClick = domainName =>
 		} )
 	);
 
-const locationFocus = domainName =>
+const recordLocationFocus = ( domainName ) =>
 	composeAnalytics(
 		recordGoogleEvent(
 			'Domain Management',
@@ -195,7 +217,7 @@ const locationFocus = domainName =>
 		} )
 	);
 
-const updateSiteRedirectClick = ( domainName, location, success ) =>
+const recordUpdateSiteRedirectClick = ( domainName, location, success ) =>
 	composeAnalytics(
 		recordGoogleEvent(
 			'Domain Management',
@@ -210,8 +232,19 @@ const updateSiteRedirectClick = ( domainName, location, success ) =>
 		} )
 	);
 
-export default connect( null, {
-	cancelClick,
-	locationFocus,
-	updateSiteRedirectClick,
-} )( localize( SiteRedirect ) );
+export default connect(
+	( state ) => {
+		const selectedSite = getSelectedSite( state );
+		const location = getSiteRedirectLocation( state, selectedSite.domain );
+		const currentRoute = getCurrentRoute( state );
+		return { selectedSite, location, currentRoute };
+	},
+	{
+		fetchSiteRedirect,
+		updateSiteRedirect,
+		closeSiteRedirectNotice,
+		recordCancelClick,
+		recordLocationFocus,
+		recordUpdateSiteRedirectClick,
+	}
+)( localize( SiteRedirect ) );

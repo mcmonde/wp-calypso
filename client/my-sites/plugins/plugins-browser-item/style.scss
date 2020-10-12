@@ -1,5 +1,5 @@
 .plugins-browser-item {
-	border-left: 1px solid $gray-lighten-30;
+	border-left: 1px solid var( --color-neutral-0 );
 	box-sizing: border-box;
 	cursor: pointer;
 	display: block;
@@ -18,7 +18,7 @@
 		display: block;
 	}
 
-	@include breakpoint( ">960px" ) {
+	@include breakpoint-deprecated( '>960px' ) {
 		width: 33.33%;
 
 		&:nth-child( 3n + 1 ) {
@@ -26,15 +26,15 @@
 		}
 
 		&:nth-child( n + 4 ) {
-			border-top: 1px solid $gray-lighten-30;
+			border-top: 1px solid var( --color-neutral-0 );
 		}
 	}
 
-	@include breakpoint( "<960px" ) {
+	@include breakpoint-deprecated( '<960px' ) {
 		width: 100%;
 
 		&:nth-child( n + 2 ) {
-			border-top: 1px solid $gray-lighten-30;
+			border-top: 1px solid var( --color-neutral-0 );
 		}
 
 		&.is-empty {
@@ -67,21 +67,21 @@
 
 	.is-placeholder & {
 		color: transparent;
-		background-color: $gray-lighten-30;
+		background-color: var( --color-neutral-0 );
 		animation: loading-fade 1.6s ease-in-out infinite;
 	}
 }
 
 .plugins-browser-item__title {
-	color: $gray-dark;
+	color: var( --color-neutral-70 );
 	font-weight: 600;
-	font-size: 15px;
+	font-size: $font-body;
 	margin-top: 3px;
 }
 
 .plugins-browser-item__author {
-	color: $gray-text-min;
-	font-size: 13px;
+	color: var( --color-text-subtle );
+	font-size: $font-body-small;
 }
 
 .plugins-browser-item .plugin-icon {
@@ -99,10 +99,10 @@
 	position: absolute;
 		bottom: 16px;
 		right: 16px;
-	color: $alert-green;
-	font-size: 12px;
-	font-weight: 500;
-	animation: appear .15s ease-in;
+	color: var( --color-success );
+	font-size: $font-body-extra-small;
+	font-weight: 600;
+	animation: appear 0.15s ease-in;
 
 	.gridicon {
 		margin-right: 3px;

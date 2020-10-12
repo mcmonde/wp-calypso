@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External Dependencies
  */
@@ -8,55 +7,60 @@ import { localize } from 'i18n-calypso';
 import { connect } from 'react-redux';
 import { noop, filter, get, flatMap } from 'lodash';
 import classnames from 'classnames';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 
 /**
  * Internal dependencies
  */
 import DocumentHead from 'components/data/document-head';
-import { getDocumentHeadCappedUnreadCount } from 'state/document-head/selectors';
+import { getDocumentHeadCappedUnreadCount } from 'state/document-head/selectors/get-document-head-capped-unread-count';
 import { getCommentById } from 'state/comments/selectors';
+import { getStream } from 'state/reader/streams/selectors';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class UpdateNotice extends React.PureComponent {
 	static propTypes = {
-		count: PropTypes.number.isRequired,
+		streamKey: PropTypes.string,
 		onClick: PropTypes.func,
-		pendingPostKeys: PropTypes.array,
-		// connected props
 		cappedUnreadCount: PropTypes.string,
 	};
 
 	static defaultProps = { onClick: noop };
 
 	render() {
-		const { count } = this.props;
+		const { count, cappedUnreadCount, translate } = this.props;
 
 		const counterClasses = classnames( {
 			'reader-update-notice': true,
-			'is-active': this.props.count > 0,
+			'is-active': count > 0,
 		} );
 
 		return (
-			<div className={ counterClasses } onClick={ this.handleClick }>
+			<button className={ counterClasses } onClick={ this.handleClick }>
 				<DocumentHead unreadCount={ count } />
 				<Gridicon icon="arrow-up" size={ 18 } />
-				{ this.props.translate( '%s new post', '%s new posts', {
-					args: [ this.props.cappedUnreadCount ],
+				{ translate( '%s new post', '%s new posts', {
+					args: [ cappedUnreadCount ],
 					count,
+					comment: '%s is the number of new posts. For example: "1" or "40+"',
 				} ) }
-			</div>
+			</button>
 		);
 	}
 
-	handleClick = event => {
+	handleClick = ( event ) => {
 		event.preventDefault();
 		this.props.onClick();
 	};
 }
 
 const countNewComments = ( state, postKeys ) => {
-	const newComments = flatMap( postKeys, postKey => {
-		return filter( postKey.comments, commentId => {
+	const newComments = flatMap( postKeys, ( postKey ) => {
+		return filter( postKey.comments, ( commentId ) => {
 			return ! getCommentById( {
 				state,
 				siteId: postKey.blogId,
@@ -68,11 +72,13 @@ const countNewComments = ( state, postKeys ) => {
 };
 
 const mapStateToProps = ( state, ownProps ) => {
+	const stream = getStream( state, ownProps.streamKey );
+	const pendingItems = stream.pendingItems.items;
+	const updateCount = stream.pendingItems.items.length;
+
 	// ugly hack for convos
-	const isConversations = !! get( ownProps.pendingPostKeys, [ 0, 'comments' ] );
-	const count = isConversations
-		? countNewComments( state, ownProps.pendingPostKeys )
-		: ownProps.count;
+	const isConversations = !! get( pendingItems, [ 0, 'comments' ] );
+	const count = isConversations ? countNewComments( state, pendingItems ) : updateCount;
 
 	return {
 		cappedUnreadCount: getDocumentHeadCappedUnreadCount( state ),

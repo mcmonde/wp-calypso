@@ -1,9 +1,7 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
+import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
@@ -13,97 +11,117 @@ import { times } from 'lodash';
 /**
  * Internal Dependencies
  */
+import { shouldShowOfferResetFlow } from 'calypso/lib/plans/config';
 import {
 	getName,
-	creditCardExpiresBeforeSubscription,
 	isExpired,
 	isExpiring,
 	isIncludedWithPlan,
 	isOneTimePurchase,
 	isPaidWithCreditCard,
+	isPaidWithCredits,
 	cardProcessorSupportsUpdates,
 	isPaidWithPayPalDirect,
 	isRenewing,
 	isSubscription,
+	isCloseToExpiration,
 	paymentLogoType,
-} from 'lib/purchases';
-import { isMonthly } from 'lib/plans/constants';
-import { isDomainRegistration, isDomainTransfer } from 'lib/products-values';
-import { getByPurchaseId, hasLoadedUserPurchasesFromServer } from 'state/purchases/selectors';
-import { isRequestingSites } from 'state/sites/selectors';
-import { getSelectedSite as getSelectedSiteSelector } from 'state/ui/selectors';
-import { getUser } from 'state/users/selectors';
-import { managePurchase } from '../paths';
-import PaymentLogo from 'components/payment-logo';
-import { CALYPSO_CONTACT } from 'lib/url/support';
-import UserItem from 'components/user';
+	hasPaymentMethod,
+	isRenewable,
+} from 'calypso/lib/purchases';
 import {
-	canEditPaymentDetails,
-	isDataLoading,
-	getEditCardDetailsPath,
-	getPurchase,
-	getSelectedSite,
-} from '../utils';
+	isDomainRegistration,
+	isDomainTransfer,
+	isGoogleApps,
+	isConciergeSession,
+	isJetpackPlan,
+	isJetpackProduct,
+	isPlan,
+	getProductFromSlug,
+} from 'calypso/lib/products-values';
+import { getPlan } from 'calypso/lib/plans';
+import {
+	getByPurchaseId,
+	hasLoadedUserPurchasesFromServer,
+} from 'calypso/state/purchases/selectors';
+import { getSite, isRequestingSites } from 'calypso/state/sites/selectors';
+import { getUser } from 'calypso/state/users/selectors';
+import { managePurchase } from '../paths';
+import AutoRenewToggle from './auto-renew-toggle';
+import PaymentLogo from 'calypso/components/payment-logo';
+import { CALYPSO_CONTACT, JETPACK_SUPPORT } from 'calypso/lib/url/support';
+import UserItem from 'calypso/components/user';
+import { withLocalizedMoment } from 'calypso/components/localized-moment';
+import { canEditPaymentDetails, isDataLoading } from '../utils';
+import { TERM_BIENNIALLY, TERM_MONTHLY, JETPACK_LEGACY_PLANS } from 'calypso/lib/plans/constants';
+import { getCurrentUserId } from 'calypso/state/current-user/selectors';
 
 class PurchaseMeta extends Component {
 	static propTypes = {
 		hasLoadedSites: PropTypes.bool.isRequired,
 		hasLoadedUserPurchasesFromServer: PropTypes.bool.isRequired,
 		purchaseId: PropTypes.oneOfType( [ PropTypes.number, PropTypes.bool ] ).isRequired,
-		selectedPurchase: PropTypes.object,
-		selectedSite: PropTypes.oneOfType( [ PropTypes.object, PropTypes.bool ] ),
+		purchase: PropTypes.object,
+		site: PropTypes.object,
+		siteSlug: PropTypes.string.isRequired,
+		getManagePurchaseUrlFor: PropTypes.func,
+		getEditPaymentMethodUrlFor: PropTypes.func,
 	};
 
 	static defaultProps = {
 		hasLoadedSites: false,
 		hasLoadedUserPurchasesFromServer: false,
 		purchaseId: false,
+		getManagePurchaseUrlFor: managePurchase,
 	};
 
 	renderPrice() {
-		const { translate } = this.props;
-		const purchase = getPurchase( this.props );
-		const { amount, currencyCode, currencySymbol, productSlug } = purchase;
-		const period =
-			productSlug && isMonthly( productSlug ) ? translate( 'month' ) : translate( 'year' );
+		const { purchase, translate } = this.props;
+		const { priceText, currencyCode, productSlug } = purchase;
+		const plan = getPlan( productSlug ) || getProductFromSlug( productSlug );
+		let period = translate( 'year' );
 
 		if ( isOneTimePurchase( purchase ) || isDomainTransfer( purchase ) ) {
-			return translate(
-				'%(currencySymbol)s%(amount)f %(currencyCode)s {{period}}(one-time){{/period}}',
-				{
-					args: { amount, currencyCode, currencySymbol },
-					components: {
-						period: <span className="manage-purchase__time-period" />,
-					},
-				}
-			);
+			return translate( '%(priceText)s %(currencyCode)s {{period}}(one-time){{/period}}', {
+				args: { priceText, currencyCode },
+				components: {
+					period: <span className="manage-purchase__time-period" />,
+				},
+			} );
 		}
 
 		if ( isIncludedWithPlan( purchase ) ) {
 			return translate( 'Free with Plan' );
 		}
 
-		return translate(
-			'%(currencySymbol)s%(amount)f %(currencyCode)s {{period}}/ %(period)s{{/period}}',
-			{
-				args: {
-					amount,
-					currencyCode,
-					currencySymbol,
-					period,
-				},
-				components: {
-					period: <span className="manage-purchase__time-period" />,
-				},
+		if ( plan && plan.term ) {
+			switch ( plan.term ) {
+				case TERM_BIENNIALLY:
+					period = translate( 'two years' );
+					break;
+
+				case TERM_MONTHLY:
+					period = translate( 'month' );
+					break;
 			}
-		);
+		}
+
+		return translate( '%(priceText)s %(currencyCode)s {{period}}/ %(period)s{{/period}}', {
+			args: {
+				priceText,
+				currencyCode,
+				period,
+			},
+			components: {
+				period: <span className="manage-purchase__time-period" />,
+			},
+		} );
 	}
 
 	renderRenewsOrExpiresOnLabel() {
-		const purchase = getPurchase( this.props );
-		const { translate } = this.props;
+		const { purchase, translate } = this.props;
 
-		if ( isExpiring( purchase ) || creditCardExpiresBeforeSubscription( purchase ) ) {
+		if ( isExpiring( purchase ) ) {
 			if ( isDomainRegistration( purchase ) ) {
 				return translate( 'Domain expires on' );
 			}
@@ -120,6 +138,10 @@ class PurchaseMeta extends Component {
 		if ( isExpired( purchase ) ) {
 			if ( isDomainRegistration( purchase ) ) {
 				return translate( 'Domain expired on' );
+			}
+
+			if ( isConciergeSession( purchase ) ) {
+				return translate( 'Session used on' );
 			}
 
 			if ( isSubscription( purchase ) ) {
@@ -147,14 +169,10 @@ class PurchaseMeta extends Component {
 	}
 
 	renderRenewsOrExpiresOn() {
-		const purchase = getPurchase( this.props );
-		const { translate, moment } = this.props;
+		const { moment, purchase, siteSlug, translate, getManagePurchaseUrlFor } = this.props;
 
 		if ( isIncludedWithPlan( purchase ) ) {
-			const attachedPlanUrl = managePurchase(
-				this.props.selectedSite.slug,
-				purchase.attachedToPurchaseId
-			);
+			const attachedPlanUrl = getManagePurchaseUrlFor( siteSlug, purchase.attachedToPurchaseId );
 
 			return (
 				<span>
@@ -163,11 +181,7 @@ class PurchaseMeta extends Component {
 			);
 		}
 
-		if (
-			isExpiring( purchase ) ||
-			isExpired( purchase ) ||
-			creditCardExpiresBeforeSubscription( purchase )
-		) {
+		if ( isExpiring( purchase ) || isExpired( purchase ) ) {
 			return moment( purchase.expiryDate ).format( 'LL' );
 		}
 
@@ -181,40 +195,43 @@ class PurchaseMeta extends Component {
 	}
 
 	renderPaymentInfo() {
-		const purchase = getPurchase( this.props );
-		const { translate } = this.props;
+		const { purchase, translate, moment } = this.props;
+		const payment = purchase?.payment;
 
 		if ( isIncludedWithPlan( purchase ) ) {
-			return <span className="manage-purchase__detail">{ translate( 'Included with plan' ) }</span>;
+			return translate( 'Included with plan' );
 		}
 
-		if ( typeof purchase.payment.type !== 'undefined' ) {
+		if ( hasPaymentMethod( purchase ) ) {
 			let paymentInfo = null;
 
+			if ( isPaidWithCredits( purchase ) ) {
+				return translate( 'Credits' );
+			}
+
 			if ( isPaidWithCreditCard( purchase ) ) {
-				paymentInfo = purchase.payment.creditCard.number;
+				paymentInfo = payment.creditCard.number;
 			} else if ( isPaidWithPayPalDirect( purchase ) ) {
 				paymentInfo = translate( 'expiring %(cardExpiry)s', {
 					args: {
-						cardExpiry: purchase.payment.expiryMoment.format( 'MMMM YYYY' ),
+						cardExpiry: moment( payment.expiryDate, 'MM/YY' ).format( 'MMMM YYYY' ),
 					},
 				} );
 			}
 
 			return (
-				<span className="manage-purchase__detail">
+				<>
 					<PaymentLogo type={ paymentLogoType( purchase ) } />
 					{ paymentInfo }
-				</span>
+				</>
 			);
 		}
 
-		return <span className="manage-purchase__detail">{ translate( 'None' ) }</span>;
+		return translate( 'None' );
 	}
 
 	renderPaymentDetails() {
-		const purchase = getPurchase( this.props );
-		const { translate } = this.props;
+		const { purchase, translate, getEditPaymentMethodUrlFor, siteSlug } = this.props;
 
 		if ( isOneTimePurchase( purchase ) || isDomainTransfer( purchase ) ) {
 			return null;
@@ -223,7 +240,7 @@ class PurchaseMeta extends Component {
 		const paymentDetails = (
 			<span>
 				<em className="manage-purchase__detail-label">{ translate( 'Payment method' ) }</em>
-				{ this.renderPaymentInfo() }
+				<span className="manage-purchase__detail">{ this.renderPaymentInfo() }</span>
 			</span>
 		);
 
@@ -231,30 +248,54 @@ class PurchaseMeta extends Component {
 			! canEditPaymentDetails( purchase ) ||
 			! isPaidWithCreditCard( purchase ) ||
 			! cardProcessorSupportsUpdates( purchase ) ||
-			! getSelectedSite( this.props )
+			! this.props.site
 		) {
 			return <li>{ paymentDetails }</li>;
 		}
 
 		return (
 			<li>
-				<a href={ getEditCardDetailsPath( this.props.selectedSite, purchase ) }>
-					{ paymentDetails }
-				</a>
+				<a href={ getEditPaymentMethodUrlFor( siteSlug, purchase ) }>{ paymentDetails }</a>
 			</li>
 		);
 	}
 
-	renderContactSupportToRenewMessage() {
-		const purchase = getPurchase( this.props );
-		const { translate } = this.props;
+	renderRenewErrorMessage() {
+		const { isJetpack, purchase, translate } = this.props;
 
-		if ( getSelectedSite( this.props ) ) {
+		if ( this.props.site ) {
 			return null;
 		}
 
+		if ( isJetpack ) {
+			return (
+				<div className="manage-purchase__footnotes">
+					{ translate(
+						'%(purchaseName)s expired on %(siteSlug)s, and the site is no longer connected to WordPress.com. ' +
+							'To renew this purchase, please reconnect %(siteSlug)s to your WordPress.com account, then complete your purchase. ' +
+							'Now sure how to reconnect? {{supportPageLink}}Here are the instructions{{/supportPageLink}}.',
+						{
+							args: {
+								purchaseName: getName( purchase ),
+								siteSlug: this.props.purchase.domain,
+							},
+							components: {
+								supportPageLink: (
+									<a
+										href={
+											JETPACK_SUPPORT + 'reconnecting-reinstalling-jetpack/#reconnecting-jetpack'
+										}
+									/>
+								),
+							},
+						}
+					) }
+				</div>
+			);
+		}
+
 		return (
-			<div className="manage-purchase__contact-support">
+			<div className="manage-purchase__footnotes">
 				{ translate(
 					'You are the owner of %(purchaseName)s but because you are no longer a user on %(siteSlug)s, ' +
 						'renewing it will require staff assistance. Please {{contactSupportLink}}contact support{{/contactSupportLink}}, ' +
@@ -262,7 +303,7 @@ class PurchaseMeta extends Component {
 					{
 						args: {
 							purchaseName: getName( purchase ),
-							siteSlug: this.props.selectedPurchase.domain,
+							siteSlug: this.props.purchase.domain,
 						},
 						components: {
 							contactSupportLink: <a href={ CALYPSO_CONTACT } />,
@@ -290,9 +331,72 @@ class PurchaseMeta extends Component {
 	}
 
 	renderExpiration() {
-		const purchase = getPurchase( this.props );
+		const {
+			purchase,
+			site,
+			translate,
+			moment,
+			isAutorenewalEnabled,
+			isProductOwner,
+			hideAutoRenew,
+			getEditPaymentMethodUrlFor,
+		} = this.props;
+
 		if ( isDomainTransfer( purchase ) ) {
 			return null;
+		}
+
+		if (
+			( isDomainRegistration( purchase ) || isPlan( purchase ) || isGoogleApps( purchase ) ) &&
+			! isExpired( purchase )
+		) {
+			const dateSpan = <span className="manage-purchase__detail-date-span" />;
+			const subsRenewText = isAutorenewalEnabled
+				? translate( 'Auto-renew is ON' )
+				: translate( 'Auto-renew is OFF' );
+			const subsBillingText =
+				isAutorenewalEnabled && ! hideAutoRenew
+					? translate( 'You will be billed on {{dateSpan}}%(renewDate)s{{/dateSpan}}', {
+							args: {
+								renewDate: purchase.renewDate && moment( purchase.renewDate ).format( 'LL' ),
+							},
+							components: {
+								dateSpan,
+							},
+					  } )
+					: translate( 'Expires on {{dateSpan}}%(expireDate)s{{/dateSpan}}', {
+							args: {
+								expireDate: moment( purchase.expiryDate ).format( 'LL' ),
+							},
+							components: {
+								dateSpan,
+							},
+					  } );
+			return (
+				<li>
+					<em className="manage-purchase__detail-label">{ translate( 'Subscription Renewal' ) }</em>
+					{ ! hideAutoRenew && <span className="manage-purchase__detail">{ subsRenewText }</span> }
+					<span
+						className={ classNames( 'manage-purchase__detail', {
+							'is-expiring': isCloseToExpiration( purchase ),
+						} ) }
+					>
+						{ subsBillingText }
+					</span>
+					{ site && ! hideAutoRenew && isProductOwner && (
+						<span className="manage-purchase__detail">
+							<AutoRenewToggle
+								planName={ site.plan.product_name_short }
+								siteDomain={ site.domain }
+								siteSlug={ site.slug }
+								purchase={ purchase }
+								toggleSource="manage-purchase"
+								getEditPaymentMethodUrlFor={ getEditPaymentMethodUrlFor }
+							/>
+						</span>
+					) }
+				</li>
+			);
 		}
 
 		return (
@@ -306,7 +410,7 @@ class PurchaseMeta extends Component {
 	renderPlaceholder() {
 		return (
 			<ul className="manage-purchase__meta">
-				{ times( 4, i => (
+				{ times( 4, ( i ) => (
 					<li key={ i }>
 						<em className="manage-purchase__detail-label" />
 						<span className="manage-purchase__detail" />
@@ -324,7 +428,7 @@ class PurchaseMeta extends Component {
 		}
 
 		return (
-			<div>
+			<>
 				<ul className="manage-purchase__meta">
 					{ this.renderOwner() }
 					<li>
@@ -334,20 +438,29 @@ class PurchaseMeta extends Component {
 					{ this.renderExpiration() }
 					{ this.renderPaymentDetails() }
 				</ul>
-				{ this.renderContactSupportToRenewMessage() }
-			</div>
+				{ this.renderRenewErrorMessage() }
+			</>
 		);
 	}
 }
 
-export default connect( ( state, props ) => {
-	const purchase = getByPurchaseId( state, props.purchaseId );
+export default connect( ( state, { purchaseId } ) => {
+	const purchase = getByPurchaseId( state, purchaseId );
+	const isProductOwner = purchase && purchase.userId === getCurrentUserId( state );
 
 	return {
 		hasLoadedSites: ! isRequestingSites( state ),
 		hasLoadedUserPurchasesFromServer: hasLoadedUserPurchasesFromServer( state ),
-		selectedPurchase: purchase,
-		selectedSite: getSelectedSiteSelector( state ),
+		purchase,
+		site: purchase ? getSite( state, purchase.siteId ) : null,
+		isProductOwner,
 		owner: purchase ? getUser( state, purchase.userId ) : null,
+		isAutorenewalEnabled: purchase ? ! isExpiring( purchase ) : null,
+		hideAutoRenew:
+			purchase &&
+			shouldShowOfferResetFlow() &&
+			JETPACK_LEGACY_PLANS.includes( purchase.productSlug ) &&
+			! isRenewable( purchase ),
+		isJetpack: purchase && ( isJetpackPlan( purchase ) || isJetpackProduct( purchase ) ),
 	};
-} )( localize( PurchaseMeta ) );
+} )( localize( withLocalizedMoment( PurchaseMeta ) ) );

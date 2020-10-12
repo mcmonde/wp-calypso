@@ -1,7 +1,18 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`JetpackAuthorize renders as expected 1`] = `
-<Localized(JetpackConnectMainWrapper)>
+<Connect(Localized(JetpackConnectMainWrapper))
+  isWoo={false}
+  pageTitle=""
+  wooDnaConfig={
+    Object {
+      "getFlowName": [Function],
+      "getServiceHelpUrl": [Function],
+      "getServiceName": [Function],
+      "isWooDnaFlow": [Function],
+    }
+  }
+>
   <div
     className="jetpack-connect__authorize-form"
   >
@@ -18,6 +29,7 @@ exports[`JetpackAuthorize renders as expected 1`] = `
             "authApproved": false,
             "blogname": "Example Blog",
             "clientId": 98765,
+            "closeWindowAfterLogin": false,
             "from": "banner-44-slide-1-dashboard",
             "homeUrl": "http://an.example.site",
             "jpVersion": "5.4",
@@ -33,10 +45,18 @@ exports[`JetpackAuthorize renders as expected 1`] = `
             "userEmail": "email@an.example.site",
           }
         }
+        isWoo={false}
+        wooDnaConfig={
+          Object {
+            "getFlowName": [Function],
+            "getServiceHelpUrl": [Function],
+            "getServiceName": [Function],
+            "isWooDnaFlow": [Function],
+          }
+        }
       />
       <Card
-        highlight={false}
-        tagName="div"
+        className="jetpack-connect__logged-in-card"
       >
         <Connect(Gravatar)
           size={64}
@@ -71,7 +91,7 @@ exports[`JetpackAuthorize renders as expected 1`] = `
         <LoggedOutFormLinkItem
           href="http://an.example.site/wp-admin/admin.php?page=jetpack"
         >
-          <t
+          <Memo([object Object])
             icon="arrow-left"
             size={18}
           />
@@ -79,7 +99,8 @@ exports[`JetpackAuthorize renders as expected 1`] = `
           Return to %(sitename)s
         </LoggedOutFormLinkItem>
         <LoggedOutFormLinkItem
-          href="/log-in/jetpack?redirect_to=https%3A%2F%2Fexample.com%2F"
+          href="/log-in/jetpack?redirect_to=https%3A%2F%2Fexample.com%2F&from=banner-44-slide-1-dashboard"
+          onClick={[Function]}
         >
           Sign in as a different user
         </LoggedOutFormLinkItem>
@@ -91,12 +112,10 @@ exports[`JetpackAuthorize renders as expected 1`] = `
         <Connect(Localized(JetpackConnectHappychatButton))
           eventName="calypso_jpc_authorize_chat_initiated"
         >
-          <Localized(JetpackConnectHelpButton)
-            onClick={[Function]}
-          />
+          <JetpackConnectHelpButton />
         </Connect(Localized(JetpackConnectHappychatButton))>
       </LoggedOutFormLinks>
     </div>
   </div>
-</Localized(JetpackConnectMainWrapper)>
+</Connect(Localized(JetpackConnectMainWrapper))>
 `;

@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -9,13 +8,19 @@ import { localize } from 'i18n-calypso';
 /**
  * Internal dependencies
  */
-import Button from 'components/button';
+import { Button } from '@automattic/components';
 import { managePurchase, purchasesRoot } from 'me/purchases/paths';
 import { type as domainTypes } from 'lib/domains/constants';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class SubscriptionSettings extends React.Component {
 	static propTypes = {
 		type: PropTypes.string.isRequired,
+		compact: PropTypes.bool,
 		siteSlug: PropTypes.string,
 		subscriptionId: PropTypes.string,
 		onClick: PropTypes.func.isRequired,
@@ -37,11 +42,12 @@ class SubscriptionSettings extends React.Component {
 	render() {
 		return (
 			<Button
+				compact={ this.props.compact }
 				className="subscription-settings"
 				href={ this.getLink() }
 				onClick={ this.props.onClick }
 			>
-				{ this.props.translate( 'Payment Settings' ) }
+				{ this.props.translate( 'Go to payment settings' ) }
 			</Button>
 		);
 	}

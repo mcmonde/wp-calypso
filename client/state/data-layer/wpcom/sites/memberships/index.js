@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -9,29 +7,38 @@ import { noop } from 'lodash';
 /**
  * Internal dependencies
  */
-import { SIMPLE_PAYMENTS_PRODUCTS_LIST, MEMBERSHIPS_PRODUCTS_RECEIVE } from 'state/action-types';
-
+import {
+	MEMBERSHIPS_PRODUCTS_RECEIVE,
+	MEMBERSHIPS_PRODUCTS_LIST,
+	MEMBERSHIPS_EARNINGS_GET,
+	MEMBERSHIPS_EARNINGS_RECEIVE,
+	MEMBERSHIPS_SUBSCRIBERS_RECEIVE,
+	MEMBERSHIPS_SUBSCRIBERS_LIST,
+	MEMBERSHIPS_SETTINGS,
+	MEMBERSHIPS_SETTINGS_RECEIVE,
+	MEMBERSHIPS_CONNECTED_ACCOUNTS_STRIPE_DISCONNECT_SUCCESS,
+} from 'state/action-types';
 import { http } from 'state/data-layer/wpcom-http/actions';
-import { dispatchRequestEx } from 'state/data-layer/wpcom-http/utils';
-import { TransformerError } from 'lib/make-json-schema-parser';
+import { dispatchRequest } from 'state/data-layer/wpcom-http/utils';
 
-export const membershipProductFromApi = product => ( {
-	ID: product.id || product.connected_account_product_id,
+import { registerHandlers } from 'state/data-layer/handler-registry';
+
+export const membershipProductFromApi = ( product ) => ( {
+	ID: parseInt( product.id || product.connected_account_product_id ),
 	currency: product.currency,
-	description: product.description,
-	email: '',
-	featuredImageId: null,
 	formatted_price: product.price,
-	multiple: false,
 	price: product.price,
 	title: product.title,
-	recurring: true,
 	stripe_account: product.connected_destination_account_id,
 	renewal_schedule: product.interval,
+	buyer_can_change_amount: product.buyer_can_change_amount,
+	multiple_per_user: product.multiple_per_user,
+	subscribe_as_site_subscriber: product.subscribe_as_site_subscriber,
+	welcome_email_content: product.welcome_email_content,
 } );
 
-export const handleMembershipsList = dispatchRequestEx( {
-	fetch: action =>
+export const handleMembershipProductsList = dispatchRequest( {
+	fetch: ( action ) =>
 		http(
 			{
 				method: 'GET',
@@ -39,13 +46,7 @@ export const handleMembershipsList = dispatchRequestEx( {
 			},
 			action
 		),
-	fromApi: function( endpointResponse ) {
-		if ( ! endpointResponse.products ) {
-			throw new TransformerError(
-				'This is from Simple Payments response. We have to disregard it since' +
-					'for some reason data layer does not handle multiple handlers corretly.'
-			);
-		}
+	fromApi: function ( endpointResponse ) {
 		const products = endpointResponse.products.map( membershipProductFromApi );
 		return products;
 	},
@@ -57,6 +58,64 @@ export const handleMembershipsList = dispatchRequestEx( {
 	onError: noop,
 } );
 
-export default {
-	[ SIMPLE_PAYMENTS_PRODUCTS_LIST ]: [ handleMembershipsList ],
-};
+export const handleMembershipGetEarnings = dispatchRequest( {
+	fetch: ( action ) =>
+		http(
+			{
+				method: 'GET',
+				path: `/sites/${ action.siteId }/memberships/earnings`,
+				apiNamespace: 'wpcom/v2',
+			},
+			action
+		),
+	onSuccess: ( { siteId }, earnings ) => ( {
+		type: MEMBERSHIPS_EARNINGS_RECEIVE,
+		siteId,
+		earnings,
+	} ),
+	onError: noop,
+} );
+
+export const handleMembershipGetSubscribers = dispatchRequest( {
+	fetch: ( action ) =>
+		http(
+			{
+				method: 'GET',
+				path: `/sites/${ action.siteId }/memberships/subscribers?offset=${ action.offset }`,
+				apiNamespace: 'wpcom/v2',
+			},
+			action
+		),
+	onSuccess: ( { siteId }, subscribers ) => ( {
+		type: MEMBERSHIPS_SUBSCRIBERS_RECEIVE,
+		siteId,
+		subscribers,
+	} ),
+	onError: noop,
+} );
+
+export const handleMembershipGetSettings = dispatchRequest( {
+	fetch: ( action ) =>
+		http(
+			{
+				method: 'GET',
+				path: `/sites/${ action.siteId }/memberships/status?source=calypso`,
+				apiNamespace: 'wpcom/v2',
+			},
+			action
+		),
+	onSuccess: ( { siteId }, data ) => ( {
+		type: MEMBERSHIPS_SETTINGS_RECEIVE,
+		siteId,
+		data,
+	} ),
+	onError: noop,
+} );
+
+registerHandlers( 'state/data-layer/wpcom/sites/memberships/index.js', {
+	[ MEMBERSHIPS_PRODUCTS_LIST ]: [ handleMembershipProductsList ],
+	[ MEMBERSHIPS_EARNINGS_GET ]: [ handleMembershipGetEarnings ],
+	[ MEMBERSHIPS_SUBSCRIBERS_LIST ]: [ handleMembershipGetSubscribers ],
+	[ MEMBERSHIPS_SETTINGS ]: [ handleMembershipGetSettings ],
+	[ MEMBERSHIPS_CONNECTED_ACCOUNTS_STRIPE_DISCONNECT_SUCCESS ]: [ handleMembershipGetSettings ],
+} );

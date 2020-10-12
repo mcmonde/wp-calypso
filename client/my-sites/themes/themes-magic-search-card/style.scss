@@ -10,24 +10,21 @@
 	display: flex;
 	align-items: center;
 	background: white;
-	box-shadow: 0 0 0 1px transparentize( $gray-lighten-20, .5 ), 0 1px 2px $gray-lighten-30;
+	box-shadow: 0 0 0 1px rgba( var( --color-neutral-10-rgb ), 0.5 ), 0 1px 2px var( --color-neutral-0 );
 	transition: all 0.15s ease-in-out;
 
 	&.has-highlight {
-		box-shadow: 0 0 0 1px $blue-wordpress, 0 0 0 4px $blue-light;
+		box-shadow: 0 0 0 1px var( --color-primary ), 0 0 0 4px var( --color-primary-light );
 	}
 
 	.search {
 		flex: 0 1 auto;
 		margin: 0;
+		height: 58px;
 
-		&.has-focus {
+		&.has-focus, &.has-focus:hover {
 			box-shadow: none;
 		}
-	}
-
-	.search.is-expanded-to-container {
-		height: 58px;
 	}
 
 	.section-nav {
@@ -35,23 +32,23 @@
 	}
 
 	.search .search-open__icon {
-		color: $gray-lighten-10;
+		color: var( --color-neutral-20 );
 	}
 
 	.themes-magic-search-card__icon {
 		margin-left: 8px;
 		display: flex;
-		color: $blue-wordpress;
+		color: var( --color-primary );
 		cursor: pointer;
 		z-index: z-index( '.search', '.search .search__open-icon' );
 
 		.accessible-focus &:focus {
-			outline: dotted 1px $blue-wordpress;
+			outline: dotted 1px var( --color-primary );
 		}
 
 		.themes-magic-search-card__icon-close {
 			flex: 0 0 auto;
-			color: $gray-darken-30;
+			color: var( --color-neutral-60 );
 			align-items: center;
 		}
 	}
@@ -59,7 +56,7 @@
 	.segmented-control {
 		flex: 0 0 auto;
 		min-width: 0;
-		padding: 11px 14px 11px;
+		padding: 11px 14px;
 
 		.segmented-control__item,
 		.segmented-control__link,
@@ -70,7 +67,7 @@
 
 	.more {
 		flex: 0 1 auto;
-		padding: 8px 14px 8px;
+		padding: 8px 14px;
 	}
 }
 
@@ -80,14 +77,15 @@
  */
 .themes-magic-search-card__token {
 	/* These are required to make token alignment work */
+	/* stylelint-disable-next-line */
 	font: inherit;
 	pointer-events: none;
 	position: relative;
 
 	/* These are styling */
 
-	&:before {
-		content: "";
+	&::before {
+		content: '';
 		position: absolute;
 		width: 100%;
 		height: calc( 100% + -3px );
@@ -100,7 +98,7 @@
 		display: inline-block;
 
 		/* These are styling */
-		border-bottom: 3px solid $blue-medium;
+		border-bottom: 3px solid var( --color-accent );
 		opacity: 0.6;
 	}
 
@@ -110,7 +108,7 @@
 		display: inline-block;
 
 		/* These are styling */
-		border-bottom: 3px solid $blue-medium;
+		border-bottom: 3px solid var( --color-accent );
 		opacity: 0.6;
 	}
 
@@ -120,12 +118,13 @@
 		display: inline-block;
 
 		/* These are styling */
-		border-bottom: 3px solid $blue-medium;
+		border-bottom: 3px solid var( --color-accent );
 	}
 }
 
 .themes-magic-search-card__search-text {
 	/* These are required to make token alignment work */
+	/* stylelint-disable-next-line */
 	font: inherit;
 	pointer-events: none;
 	color: transparent;
@@ -133,6 +132,7 @@
 
 .themes-magic-search-card__search-white-space {
 	/* These are required to make token alignment work */
+	/* stylelint-disable-next-line */
 	font: inherit;
 	pointer-events: none;
 	white-space: pre;
@@ -143,29 +143,29 @@
  * Suggestions: Welcome Card
  */
 .themes-magic-search-card__welcome {
-	color: $gray;
-	background-color: $white;
-	box-shadow: 0 0 0 1px transparentize( $gray-lighten-20, .5 ), 0 1px 2px $gray-lighten-30;
+	color: var( --color-neutral-light );
+	background-color: var( --color-surface );
+	box-shadow: 0 0 0 1px rgba( var( --color-neutral-10-rgb ), 0.5 ), 0 1px 2px var( --color-neutral-0 );
 	display: flex;
 	flex-direction: column;
 }
 
 .themes-magic-search-card__welcome-header {
-	background-color: $gray-light;
-	border-bottom: 1px solid darken( $gray-light, 10% );
-	border-top: 0px;
+	background-color: var( --color-neutral-0 );
+	border-bottom: 1px solid var( --color-neutral-5 );
+	border-top: 0;
 	padding: 4px 8px;
-	font-size: 13px;
+	font-size: $font-body-small;
 
 	text-transform: uppercase;
-	color: $gray-dark;
+	color: var( --color-neutral-70 );
 }
 
 .themes-magic-search-card__welcome-taxonomies {
 	display: flex;
 	flex-wrap: wrap;
 
-	@include breakpoint( ">660px" ) {
+	@include breakpoint-deprecated( '>660px' ) {
 		flex-wrap: nowrap;
 	}
 }
@@ -178,34 +178,33 @@
 	overflow: hidden;
 	padding: 10px 6px;
 	margin: 0;
-	font-size: 13px;
+	font-size: $font-body-small;
 	line-height: 16px;
-	text-transform: capitalize;
 	cursor: pointer;
-	color: $gray-dark;
+	color: var( --color-neutral-70 );
 	transition: all 200ms ease-in;
 
-	@include breakpoint( ">660px" ) {
+	@include breakpoint-deprecated( '>660px' ) {
 		width: auto;
 	}
 
 	.gridicon {
-		fill: $gray-dark;
+		fill: var( --color-neutral-70 );
 		margin: 0 auto;
 		transition: fill 200ms ease-in;
 	}
 
 	&.themes-magic-search-card__welcome-taxonomy-highlight,
 	&:hover {
-		color: $blue-medium;
+		color: var( --color-accent );
 
 		.gridicon {
-			fill: $blue-medium;
+			fill: var( --color-accent );
 		}
 
-		@include breakpoint( ">660px" ) {
-			background: lighten( $gray, 35% );
-			box-shadow: inset 0 -3px 0 0 $blue-medium;
+		@include breakpoint-deprecated( '>660px' ) {
+			background: var( --color-neutral-0 );
+			box-shadow: inset 0 -3px 0 0 var( --color-accent );
 		}
 	}
 }

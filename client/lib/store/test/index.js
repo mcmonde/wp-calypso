@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -13,7 +11,7 @@ import { createReducerStore } from './../index';
 import Dispatcher from 'dispatcher';
 
 describe( 'index', () => {
-	const reducer = state => {
+	const reducer = ( state ) => {
 		return state;
 	};
 
@@ -90,7 +88,9 @@ describe( 'index', () => {
 			VALUE = 'value',
 			state = { test: 3 },
 			store = createReducerStore( ( oldState, payload ) => {
-				const { action: { type, key } } = payload;
+				const {
+					action: { type, key },
+				} = payload;
 
 				if ( type === TEST ) {
 					return {

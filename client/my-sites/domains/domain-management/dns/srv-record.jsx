@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -20,16 +18,6 @@ import FormTextInput from 'components/forms/form-text-input';
 import FormTextInputWithAffixes from 'components/forms/form-text-input-with-affixes';
 
 class SrvRecord extends React.Component {
-	static initialFields = {
-		name: '',
-		service: '',
-		aux: 10,
-		weight: 10,
-		target: '',
-		port: '',
-		protocol: 'tcp',
-	};
-
 	static propTypes = {
 		fieldValues: PropTypes.object.isRequired,
 		onChange: PropTypes.func.isRequired,
@@ -40,7 +28,7 @@ class SrvRecord extends React.Component {
 	render() {
 		const { fieldValues, isValid, onChange, selectedDomainName, show, translate } = this.props;
 		const classes = classnames( { 'is-hidden': ! show } );
-		const options = [ 'tcp', 'udp', 'tls' ].map( protocol => {
+		const options = [ 'tcp', 'udp', 'tls' ].map( ( protocol ) => {
 			return (
 				<option key={ protocol } value={ protocol }>
 					{ protocol.toUpperCase() }

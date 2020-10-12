@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -9,21 +7,27 @@ import update from 'immutability-helper';
 /**
  * Internal dependencies
  */
-import { action as UpgradesActionTypes } from 'lib/upgrades/constants';
+import {
+	NAMESERVERS_FETCH,
+	NAMESERVERS_FETCH_COMPLETED,
+	NAMESERVERS_FETCH_FAILED,
+	NAMESERVERS_UPDATE_COMPLETED,
+} from './action-types';
 
 const initialDomainState = {
 	isFetching: false,
 	hasLoadedFromServer: false,
+	error: false,
 	list: null,
 };
 
 /**
- * @desc Updates name servers entry for given domain.
+ * @description Updates name servers entry for given domain.
  *
- * @param {Object} [state] Current state.
+ * @param {object} [state] Current state.
  * @param {string} [domainName] Domain name.
- * @param {Object} [data] Domain name servers data.
- * @return {Object} New state
+ * @param {object} [data] Domain name servers data.
+ * @returns {object} New state
  */
 function updateState( state, domainName, data ) {
 	const command = {
@@ -39,24 +43,26 @@ function reducer( state, payload ) {
 	const { action } = payload;
 
 	switch ( action.type ) {
-		case UpgradesActionTypes.NAMESERVERS_FETCH:
+		case NAMESERVERS_FETCH:
 			state = updateState( state, action.domainName, {
 				isFetching: true,
+				error: false,
 			} );
 			break;
-		case UpgradesActionTypes.NAMESERVERS_FETCH_FAILED:
+		case NAMESERVERS_FETCH_FAILED:
 			state = updateState( state, action.domainName, {
 				isFetching: false,
+				error: true,
 			} );
 			break;
-		case UpgradesActionTypes.NAMESERVERS_FETCH_COMPLETED:
+		case NAMESERVERS_FETCH_COMPLETED:
 			state = updateState( state, action.domainName, {
 				isFetching: false,
 				hasLoadedFromServer: true,
 				list: action.nameservers,
 			} );
 			break;
-		case UpgradesActionTypes.NAMESERVERS_UPDATE_COMPLETED:
+		case NAMESERVERS_UPDATE_COMPLETED:
 			state = updateState( state, action.domainName, {
 				isFetching: false,
 				hasLoadedFromServer: true,

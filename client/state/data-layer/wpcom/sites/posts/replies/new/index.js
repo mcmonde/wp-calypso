@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * Internal dependencies
  */
@@ -12,15 +10,22 @@ import {
 	handleWriteCommentFailure,
 } from 'state/data-layer/wpcom/sites/utils';
 
-export const writePostComment = ( { dispatch }, action ) =>
+import { registerHandlers } from 'state/data-layer/handler-registry';
+
+export const writePostComment = ( action ) =>
 	dispatchNewCommentRequest(
-		dispatch,
 		action,
 		`/sites/${ action.siteId }/posts/${ action.postId }/replies/new`
 	);
 
-export default {
+registerHandlers( 'state/data-layer/wpcom/sites/posts/replies/new/index.js', {
 	[ COMMENTS_WRITE ]: [
-		dispatchRequest( writePostComment, updatePlaceholderComment, handleWriteCommentFailure ),
+		dispatchRequest( {
+			fetch: writePostComment,
+			onSuccess: updatePlaceholderComment,
+			onError: handleWriteCommentFailure,
+		} ),
 	],
-};
+} );
+
+export default {};

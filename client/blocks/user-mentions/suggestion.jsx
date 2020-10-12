@@ -1,12 +1,15 @@
-/** @format */
-
 /**
  * External dependencies
  */
 import PropTypes from 'prop-types';
 import React from 'react';
 
-const UserMentionSuggestion = ( { avatarUrl, fullName, query, username } ) => {
+/**
+ * Style dependencies
+ */
+import './suggestion.scss';
+
+const UserMentionsSuggestion = ( { avatarUrl, fullName, query, username } ) => {
 	const highlight = ( content, type ) => {
 		const expressions = {
 			username: `(^${ query })(\\w*)\\s*`,
@@ -50,18 +53,18 @@ const UserMentionSuggestion = ( { avatarUrl, fullName, query, username } ) => {
 	);
 };
 
-UserMentionSuggestion.propTypes = {
+UserMentionsSuggestion.propTypes = {
 	avatarUrl: PropTypes.string,
 	fullName: PropTypes.string,
 	query: PropTypes.string,
 	username: PropTypes.string,
 };
 
-UserMentionSuggestion.defaultProps = {
+UserMentionsSuggestion.defaultProps = {
 	avatarUrl: '',
 	fullName: '',
 	query: '',
 	username: '',
 };
 
-export default UserMentionSuggestion;
+export default UserMentionsSuggestion;

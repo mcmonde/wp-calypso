@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -13,10 +11,27 @@ import classnames from 'classnames';
  */
 import Popover from 'components/popover';
 import PostLikes from './index';
-import { getPostLikes } from 'state/selectors';
+import { getPostLikes } from 'state/posts/selectors/get-post-likes';
+import { countPostLikes } from 'state/posts/selectors/count-post-likes';
+
+/**
+ * Style dependencies
+ */
+import './popover.scss';
 
 function PostLikesPopover( props ) {
-	const { className, siteId, postId, showDisplayNames, context, onClose, likes } = props;
+	const {
+		className,
+		siteId,
+		postId,
+		showDisplayNames,
+		context,
+		onClose,
+		likes,
+		likeCount,
+		onMouseEnter,
+		onMouseLeave,
+	} = props;
 
 	// Whenever our `Popover` content changes size (loading, complete, siteId,
 	// or postId, for example), we need to force the `Popover` to re-render and
@@ -28,7 +43,8 @@ function PostLikesPopover( props ) {
 		siteId,
 		postId,
 		showDisplayNames ? 'large' : 'small',
-		likes ? likes.length : 'null',
+		likes ? likes.length : 0,
+		likeCount,
 	].join( '-' );
 
 	const popoverProps = omit(
@@ -39,9 +55,12 @@ function PostLikesPopover( props ) {
 		'showDisplayNames',
 		'context',
 		'onClose',
-		'likes'
+		'likes',
+		'onMouseEnter',
+		'onMouseLeave'
 	);
 	const classes = classnames( 'post-likes-popover', className );
+	const postLikesProps = { siteId, postId, showDisplayNames, onMouseEnter, onMouseLeave };
 
 	return (
 		<Popover
@@ -52,7 +71,7 @@ function PostLikesPopover( props ) {
 			onClose={ onClose }
 			key={ popoverKey }
 		>
-			<PostLikes siteId={ siteId } postId={ postId } showDisplayNames={ showDisplayNames } />
+			<PostLikes { ...postLikesProps } />
 		</Popover>
 	);
 }
@@ -61,6 +80,7 @@ export default connect( ( state, ownProps ) => {
 	const { siteId, postId } = ownProps;
 
 	return {
+		likeCount: countPostLikes( state, siteId, postId ),
 		likes: getPostLikes( state, siteId, postId ),
 	};
 } )( PostLikesPopover );

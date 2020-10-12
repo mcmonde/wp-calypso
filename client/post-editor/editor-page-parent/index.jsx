@@ -1,9 +1,6 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 import { localize } from 'i18n-calypso';
@@ -19,10 +16,15 @@ import FormLegend from 'components/forms/form-legend';
 import FormToggle from 'components/forms/form-toggle/compact';
 import AccordionSection from 'components/accordion/section';
 import { getSelectedSiteId } from 'state/ui/selectors';
-import { getEditorPostId } from 'state/ui/editor/selectors';
+import { getEditorPostId } from 'state/editor/selectors';
 import { getEditedPostValue } from 'state/posts/selectors';
 import { editPost } from 'state/posts/actions';
 import { getPostType } from 'state/post-types/selectors';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class EditorPageParent extends Component {
 	static propTypes = {
@@ -38,13 +40,13 @@ class EditorPageParent extends Component {
 		isTopLevel: ! this.props.parentId,
 	};
 
-	componentWillReceiveProps( nextProps ) {
+	UNSAFE_componentWillReceiveProps( nextProps ) {
 		if ( this.props.parentId !== nextProps.parentId ) {
 			this.setState( { isTopLevel: ! nextProps.parentId } );
 		}
 	}
 
-	updatePageParent = item => {
+	updatePageParent = ( item ) => {
 		const { siteId, postId } = this.props;
 		const parentId = get( item, 'ID' );
 
@@ -110,7 +112,7 @@ class EditorPageParent extends Component {
 }
 
 export default connect(
-	state => {
+	( state ) => {
 		const siteId = getSelectedSiteId( state );
 		const postId = getEditorPostId( state );
 		const postType = getEditedPostValue( state, siteId, postId, 'type' );

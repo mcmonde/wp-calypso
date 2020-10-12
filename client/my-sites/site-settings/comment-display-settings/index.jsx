@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -17,10 +15,14 @@ import FormSettingExplanation from 'components/forms/form-setting-explanation';
 import FormSelect from 'components/forms/form-select';
 import FormTextInput from 'components/forms/form-text-input';
 import JetpackModuleToggle from 'my-sites/site-settings/jetpack-module-toggle';
-import InfoPopover from 'components/info-popover';
-import ExternalLink from 'components/external-link';
-import { isJetpackModuleActive } from 'state/selectors';
+import SupportInfo from 'components/support-info';
+import isJetpackModuleActive from 'state/selectors/is-jetpack-module-active';
 import { getSelectedSiteId } from 'state/ui/selectors';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class CommentDisplaySettings extends Component {
 	shouldEnableSettings() {
@@ -33,36 +35,27 @@ class CommentDisplaySettings extends Component {
 
 		return (
 			<FormFieldset className="comment-display-settings">
-				<div className="comment-display-settings__info site-settings__info-link-container">
-					<InfoPopover position="left">
-						{ translate(
-							'Replaces the standard WordPress comment form with a new comment system ' +
-								'that includes social media login options.'
-						) }{' '}
-						<ExternalLink
-							target="_blank"
-							icon={ false }
-							href="https://jetpack.com/support/comments"
-						>
-							{ translate( 'Learn more' ) }
-						</ExternalLink>
-					</InfoPopover>
-				</div>
+				<SupportInfo
+					text={ translate(
+						'Replaces the standard WordPress comment form with a new comment system ' +
+							'that includes social media login options.'
+					) }
+					link="https://jetpack.com/support/comments/"
+				/>
 				<JetpackModuleToggle
 					siteId={ selectedSiteId }
 					moduleSlug="comments"
 					label={ translate(
-						'Allow readers to leave comments using their WordPress.com, Twitter, Facebook, or Google+ accounts'
+						'Let visitors use a WordPress.com, Twitter, Facebook, or Google account to comment.'
 					) }
 					disabled={ !! submittingForm }
 				/>
 				<div className="comment-display-settings__module-setting is-indented">
 					<FormLabel htmlFor="highlander_comment_form_prompt">
-						{ translate( 'Comments Label' ) }
+						{ translate( 'Comment form introduction' ) }
 					</FormLabel>
 					<FormTextInput
 						name="highlander_comment_form_prompt"
-						type="text"
 						id="highlander_comment_form_prompt"
 						value={ fields.highlander_comment_form_prompt || '' }
 						onChange={ onChangeField( 'highlander_comment_form_prompt' ) }
@@ -92,7 +85,7 @@ class CommentDisplaySettings extends Component {
 	}
 }
 
-export default connect( state => {
+export default connect( ( state ) => {
 	const selectedSiteId = getSelectedSiteId( state );
 
 	return {

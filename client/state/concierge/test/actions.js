@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * Internal dependencies
  */
@@ -7,22 +5,22 @@ import {
 	bookConciergeAppointment,
 	cancelConciergeAppointment,
 	rescheduleConciergeAppointment,
-	requestConciergeAvailableTimes,
 	requestConciergeAppointmentDetails,
-	updateConciergeAvailableTimes,
 	updateConciergeAppointmentDetails,
+	requestConciergeInitial,
+	updateConciergeInitial,
 	updateConciergeBookingStatus,
 	updateConciergeSignupForm,
 } from '../actions';
 
 import {
-	CONCIERGE_AVAILABLE_TIMES_REQUEST,
-	CONCIERGE_AVAILABLE_TIMES_UPDATE,
 	CONCIERGE_APPOINTMENT_CANCEL,
 	CONCIERGE_APPOINTMENT_CREATE,
 	CONCIERGE_APPOINTMENT_DETAILS_REQUEST,
 	CONCIERGE_APPOINTMENT_DETAILS_UPDATE,
 	CONCIERGE_APPOINTMENT_RESCHEDULE,
+	CONCIERGE_INITIAL_REQUEST,
+	CONCIERGE_INITIAL_UPDATE,
 	CONCIERGE_SIGNUP_FORM_UPDATE,
 	CONCIERGE_UPDATE_BOOKING_STATUS,
 } from 'state/action-types';
@@ -81,21 +79,24 @@ describe( 'state/concierge', () => {
 			} );
 		} );
 
-		test( 'requestConciergeAvailableTimes()', () => {
-			const scheduleId = 123;
+		test( 'requestConciergeInitial()', () => {
+			const siteId = 456;
 
-			expect( requestConciergeAvailableTimes( scheduleId ) ).toEqual( {
-				type: CONCIERGE_AVAILABLE_TIMES_REQUEST,
-				scheduleId,
+			expect( requestConciergeInitial( siteId ) ).toEqual( {
+				type: CONCIERGE_INITIAL_REQUEST,
+				siteId,
 			} );
 		} );
 
-		test( 'updateConciergeAvailableTimes()', () => {
-			const availableTimes = [ 111, 222, 333 ];
+		test( 'updateConciergeInitial()', () => {
+			const initial = {
+				availableTimes: [ 111, 222, 333 ],
+				scheduleId: 123,
+			};
 
-			expect( updateConciergeAvailableTimes( availableTimes ) ).toEqual( {
-				type: CONCIERGE_AVAILABLE_TIMES_UPDATE,
-				availableTimes,
+			expect( updateConciergeInitial( initial ) ).toEqual( {
+				type: CONCIERGE_INITIAL_UPDATE,
+				initial,
 			} );
 		} );
 

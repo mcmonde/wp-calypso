@@ -1,24 +1,30 @@
-/** @format */
-
 /**
  * External dependencies
  */
 
 import React from 'react';
-import { localize } from 'i18n-calypso';
+import { useTranslate } from 'i18n-calypso';
 
 /**
  * Internal dependencies
  */
-import Card from 'components/card';
+import { Card } from '@automattic/components';
 import Notice from 'components/notice';
 import { CALYPSO_CONTACT } from 'lib/url/support';
+import { localizeUrl } from 'lib/i18n-utils';
 
-function PendingWhoisUpdateCard( { translate } ) {
+/**
+ * Style dependencies
+ */
+import './pending-whois-update-card.scss';
+
+export default function PendingWhoisUpdateCard() {
+	const translate = useTranslate();
+
 	return (
 		<div className="edit-contact-info__pending-whois-update-card">
 			<Notice status="is-warning" showDismiss={ false }>
-				{ translate( 'Domain is pending contact information update' ) }
+				{ translate( 'Domain is pending contact information update.' ) }
 			</Notice>
 			<Card>
 				{ translate(
@@ -31,7 +37,9 @@ function PendingWhoisUpdateCard( { translate } ) {
 							a: <a href={ CALYPSO_CONTACT } rel="noopener noreferrer" />,
 							supporta: (
 								<a
-									href="https://en.support.wordpress.com/update-contact-information/#email-or-name-changes"
+									href={ localizeUrl(
+										'https://wordpress.com/support/update-contact-information/#email-or-name-changes'
+									) }
 									target="_blank"
 									rel="noopener noreferrer"
 								/>
@@ -43,5 +51,3 @@ function PendingWhoisUpdateCard( { translate } ) {
 		</div>
 	);
 }
-
-export default localize( PendingWhoisUpdateCard );

@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -13,11 +11,15 @@ import { connect } from 'react-redux';
 /**
  * Internal dependencies
  */
-import Dialog from 'components/dialog';
-import Button from 'components/button';
+import { Dialog, Button } from '@automattic/components';
 import Spinner from 'components/spinner';
 import { getCurrentUserEmail } from 'state/current-user/selectors';
 import { verifyEmail, resetVerifyEmailState } from 'state/current-user/email-verification/actions';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class VerifyEmailDialog extends Component {
 	getResendButtonLabel() {
@@ -123,7 +125,7 @@ VerifyEmailDialog.defaultProps = {
 };
 
 export default connect(
-	state => ( {
+	( state ) => ( {
 		email: getCurrentUserEmail( state ),
 		emailVerificationStatus: get( state, 'currentUser.emailVerification.status' ),
 	} ),

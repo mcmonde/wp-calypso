@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * Action Log Redux store enhancer
  *
@@ -16,9 +14,10 @@ const state = {
 	actionHistory: [],
 	shouldRecordActions: true,
 	historySize: 100,
+	watchPredicate: null,
 };
 
-export const queryToPredicate = query => {
+export const queryToPredicate = ( query ) => {
 	if ( query instanceof RegExp ) {
 		return ( { type } ) => query.test( type );
 	}
@@ -33,11 +32,13 @@ export const queryToPredicate = query => {
 };
 
 const actionLog = {
-	clear: () => ( state.actionHistory = [] ),
-	filter: query => state.actionHistory.filter( queryToPredicate( query ) ),
-	setSize: size => ( state.historySize = size ),
-	start: () => ( state.shouldRecordActions = true ),
-	stop: () => ( state.shouldRecordActions = false ),
+	clear: () => void ( state.actionHistory = [] ),
+	filter: ( query ) => state.actionHistory.filter( queryToPredicate( query ) ),
+	setSize: ( size ) => void ( state.historySize = size ),
+	start: () => void ( state.shouldRecordActions = true ),
+	stop: () => void ( state.shouldRecordActions = false ),
+	unwatch: () => void ( state.watchPredicate = null ),
+	watch: ( query ) => void ( state.watchPredicate = query ? queryToPredicate( query ) : null ),
 };
 
 Object.defineProperty( actionLog, 'history', {
@@ -45,7 +46,7 @@ Object.defineProperty( actionLog, 'history', {
 	get: () => state.actionHistory,
 } );
 
-const recordAction = action => {
+const recordAction = ( action ) => {
 	const { actionHistory, historySize } = state;
 
 	const thunkDescription = 'function' === typeof action ? { type: 'thunk (hidden)' } : {};
@@ -66,17 +67,27 @@ const recordAction = action => {
 	}
 };
 
-export const actionLogger = next => ( ...args ) => {
+export const actionLogger = ( next ) => ( ...args ) => {
 	const store = next( ...args );
 
 	if ( 'undefined' === typeof window ) {
 		return store;
 	}
 
-	const dispatch = action => {
+	const dispatch = ( action ) => {
 		if ( state.shouldRecordActions ) {
 			recordAction( action );
 		}
+
+		/* eslint-disable no-console */
+		if (
+			'function' === typeof state.watchPredicate &&
+			'function' === typeof console.log &&
+			state.watchPredicate( action )
+		) {
+			console.log( 'Watched action observed:\n%o', action );
+		}
+		/* eslint-enable no-console */
 
 		return store.dispatch( action );
 	};

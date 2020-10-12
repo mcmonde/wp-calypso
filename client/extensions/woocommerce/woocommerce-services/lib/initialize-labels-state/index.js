@@ -1,21 +1,29 @@
 /**
  * External dependencies
  */
-import { isEmpty, mapValues } from 'lodash';
+import { forEach, isEmpty, mapValues } from 'lodash';
 
 /**
  * Checks the address object for the required fields
- * @param {Object} address the address object
- * @returns {Boolean} true if all required fields are not empty
+ *
+ * @param {object} address the address object
+ * @returns {boolean} true if all required fields are not empty
  */
-const addressFilled = ( address ) => Boolean(
-	address && address.name && address.address && address.city && address.postcode && address.country
-);
+const addressFilled = ( address ) =>
+	Boolean(
+		address &&
+			address.name &&
+			address.address &&
+			address.city &&
+			address.postcode &&
+			address.country
+	);
 
 /**
  * Parses the data passed from the backed into a Redux state to be used in the label purchase flow
- * @param {Object} data data to initialize the labels state from
- * @returns {Object} labels Redux state
+ *
+ * @param {object} data data to initialize the labels state from
+ * @returns {object} labels Redux state
  */
 export default ( data ) => {
 	if ( ! data ) {
@@ -26,19 +34,40 @@ export default ( data ) => {
 		};
 	}
 
-	const {
-		formData,
-		labelsData,
-		paperSize,
-		storeOptions,
-		canChangeCountries,
-	} = data;
+	const { formData, labelsData, paperSize, storeOptions, canChangeCountries } = data;
 
 	//old WCS required a phone number and detected normalization status based on the existence of the phone field
 	//newer versions send the normalized flag
 	const originNormalized = Boolean( formData.origin_normalized || formData.origin.phone );
 	const hasOriginAddress = addressFilled( formData.origin );
 	const hasDestinationAddress = addressFilled( formData.destination );
+
+	const customsItemsData = {};
+	forEach( formData.selected_packages, ( { items } ) => {
+		items.map(
+			( {
+				product_id,
+				weight,
+				name,
+				attributes,
+				description,
+				value,
+				hs_tariff_number,
+				origin_country,
+			} ) => {
+				const attributesStr = attributes ? ' (' + attributes + ')' : '';
+				const defaultDescription = name.substring( name.indexOf( '-' ) + 1 ).trim() + attributesStr;
+				customsItemsData[ product_id ] = {
+					defaultDescription,
+					description: description || defaultDescription,
+					weight,
+					value,
+					tariffNumber: hs_tariff_number,
+					originCountry: origin_country || formData.origin.country,
+				};
+			}
+		);
+	} );
 
 	return {
 		loaded: true,
@@ -69,7 +98,9 @@ export default ( data ) => {
 				normalized: formData.destination_normalized ? formData.destination : null,
 				// If no destination address is stored, mark all fields as "ignore validation"
 				// so the UI doesn't immediately show errors
-				ignoreValidation: hasDestinationAddress ? null : mapValues( formData.destination, () => true ),
+				ignoreValidation: hasDestinationAddress
+					? null
+					: mapValues( formData.destination, () => true ),
 				selectNormalized: true,
 				normalizationInProgress: false,
 				allowChangeCountry: Boolean( canChangeCountries ),
@@ -80,6 +111,18 @@ export default ( data ) => {
 				selected: formData.selected_packages,
 				isPacked: formData.is_packed,
 				saved: true,
+			},
+			customs: {
+				items: customsItemsData,
+				// Ignore validation in the weight and value fields that are empty so the user doesn't see everything red from the start
+				ignoreWeightValidation: mapValues(
+					customsItemsData,
+					( { weight } ) => ! weight || ! parseFloat( weight )
+				),
+				ignoreValueValidation: mapValues(
+					customsItemsData,
+					( { value } ) => ! value || ! parseFloat( value )
+				),
 			},
 			rates: {
 				values: isEmpty( formData.rates.selected )

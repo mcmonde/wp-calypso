@@ -1,9 +1,6 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import PropTypes from 'prop-types';
 import React from 'react';
 import { connect } from 'react-redux';
@@ -14,12 +11,16 @@ import { includes } from 'lodash';
  */
 import { localize } from 'i18n-calypso';
 import { getSelectedSiteId } from 'state/ui/selectors';
-import { getEditorPostId, getEditorNewPostPath } from 'state/ui/editor/selectors';
+import { getEditorPostId, getEditorNewPostPath } from 'state/editor/selectors';
 import { getEditedPostValue } from 'state/posts/selectors';
 import { getPostTypes, getPostType } from 'state/post-types/selectors';
 import { getSiteSlug } from 'state/sites/selectors';
-import Button from 'components/button';
-import Dialog from 'components/dialog';
+import { Button, Dialog } from '@automattic/components';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 /**
  * Constants
@@ -100,7 +101,7 @@ function EditorPostTypeUnsupported( {
 					'For more information, visit our {{supportLink}}support page on custom content types{{/supportLink}}.',
 					{
 						components: {
-							supportLink: <a href="https://support.wordpress.com/custom-post-types/" />,
+							supportLink: <a href="https://wordpress.com/support/custom-post-types/" />,
 						},
 					}
 				) }
@@ -118,14 +119,14 @@ EditorPostTypeUnsupported.propTypes = {
 	siteSlug: PropTypes.string,
 };
 
-export default connect( state => {
+export default connect( ( state, { type } ) => {
 	const siteId = getSelectedSiteId( state );
-	const type = getEditedPostValue( state, siteId, getEditorPostId( state ), 'type' );
+	const postType = type || getEditedPostValue( state, siteId, getEditorPostId( state ), 'type' );
 
 	return {
-		type,
+		type: postType,
 		types: getPostTypes( state, siteId ),
-		typeObject: getPostType( state, siteId, type ),
+		typeObject: getPostType( state, siteId, postType ),
 		writePostPath: getEditorNewPostPath( state, siteId ),
 		siteSlug: getSiteSlug( state, siteId ),
 	};

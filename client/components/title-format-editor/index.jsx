@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -12,24 +11,20 @@ import moment from 'moment';
 /**
  * Internal dependencies
  */
-import './draft-js-polyfills';
-// draft-js needs to be loaded *after* the polyfills
-import {
-	CompositeDecorator,
-	Editor,
-	EditorState,
-	Entity,
-	Modifier,
-	SelectionState,
-} from 'draft-js';
-// Parser also requires draft-js. Lets load it after the polyfills are created too.
+import { CompositeDecorator, Editor, EditorState, Modifier, SelectionState } from 'draft-js';
 import { fromEditor, mapTokenTitleForEditor, toEditor } from './parser';
 import Token from './token';
 import { buildSeoTitle } from 'state/sites/selectors';
 import { getSelectedSite } from 'state/ui/selectors';
 import { localize } from 'i18n-calypso';
 
-const Chip = onClick => props => <Token { ...props } onClick={ onClick } />;
+/**
+ * Style dependencies
+ */
+import 'draft-js/dist/Draft.css';
+import './style.scss';
+
+const Chip = ( onClick ) => ( props ) => <Token { ...props } onClick={ onClick } />;
 
 export class TitleFormatEditor extends Component {
 	static propTypes = {
@@ -48,7 +43,7 @@ export class TitleFormatEditor extends Component {
 	constructor( props ) {
 		super( props );
 
-		this.storeEditorReference = r => ( this.editor = r );
+		this.storeEditorReference = ( r ) => ( this.editor = r );
 		this.focusEditor = () => this.editor.focus();
 
 		this.updateEditor = this.updateEditor.bind( this );
@@ -63,7 +58,7 @@ export class TitleFormatEditor extends Component {
 		};
 	}
 
-	componentWillReceiveProps( nextProps ) {
+	UNSAFE_componentWillReceiveProps( nextProps ) {
 		if ( this.props.disabled && ! nextProps.disabled ) {
 			this.setState( {
 				editorState: EditorState.moveSelectionToEnd( this.editorStateFrom( nextProps ) ),
@@ -162,8 +157,10 @@ export class TitleFormatEditor extends Component {
 		return () => {
 			const { editorState } = this.state;
 			const currentSelection = editorState.getSelection();
+			const currentContent = editorState.getCurrentContent();
 
-			const tokenEntity = Entity.create( 'TOKEN', 'IMMUTABLE', { name } );
+			currentContent.createEntity( 'TOKEN', 'IMMUTABLE', { name } );
+			const tokenEntity = currentContent.getLastCreatedEntityKey();
 
 			const contentState = Modifier.replaceText(
 				editorState.getCurrentContent(),
@@ -211,15 +208,14 @@ export class TitleFormatEditor extends Component {
 		};
 	}
 
-	renderTokens( contentBlock, callback ) {
-		contentBlock.findEntityRanges( character => {
+	renderTokens( contentBlock, callback, contentState ) {
+		contentBlock.findEntityRanges( ( character ) => {
 			const entity = character.getEntity();
 
 			if ( null === entity ) {
 				return false;
 			}
-
-			return 'TOKEN' === Entity.get( entity ).getType();
+			return 'TOKEN' === contentState.getEntity( entity ).getType();
 		}, callback );
 	}
 
@@ -233,7 +229,7 @@ export class TitleFormatEditor extends Component {
 						{ [ type.value ]: fromEditor( editorState.getCurrentContent() ) },
 						type.value,
 						titleData
-					)
+				  )
 				: '';
 
 		const formattedPreview = previewText ? `${ translate( 'Preview' ) }: ${ previewText }` : '';
@@ -247,6 +243,7 @@ export class TitleFormatEditor extends Component {
 				<div className="title-format-editor__header">
 					<span className="title-format-editor__title">{ type.label }</span>
 					{ map( tokens, ( title, name ) => (
+						/* eslint-disable jsx-a11y/click-events-have-key-events,jsx-a11y/no-static-element-interactions */
 						<span
 							key={ name }
 							className="title-format-editor__button"
@@ -254,6 +251,7 @@ export class TitleFormatEditor extends Component {
 						>
 							{ title }
 						</span>
+						/* eslint-enable jsx-a11y/click-events-have-key-events,jsx-a11y/no-static-element-interactions */
 					) ) }
 				</div>
 				<div className="title-format-editor__editor-wrapper">
@@ -274,9 +272,7 @@ export class TitleFormatEditor extends Component {
 const mapStateToProps = ( state, ownProps ) => {
 	const site = getSelectedSite( state );
 	const { translate } = ownProps;
-	const formattedDate = moment()
-		.locale( get( site, 'lang', '' ) )
-		.format( 'MMMM YYYY' );
+	const formattedDate = moment().locale( get( site, 'lang', '' ) ).format( 'MMMM YYYY' );
 
 	// Add example content for post/page title, tag name and archive dates
 	return {

@@ -1,9 +1,6 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import { noop } from 'lodash';
 import React from 'react';
 
@@ -12,30 +9,28 @@ import React from 'react';
  */
 import AddCardDetails from './payment/add-card-details';
 import AddCreditCard from './add-credit-card';
-import CancelPrivacyProtection from './cancel-privacy-protection';
 import CancelPurchase from './cancel-purchase';
 import ConfirmCancelDomain from './confirm-cancel-domain';
 import EditCardDetails from './payment/edit-card-details';
-import Main from 'components/main';
+import Main from 'calypso/components/main';
 import ManagePurchase from './manage-purchase';
-import NoSitesMessage from 'components/empty-content/no-sites-message';
+import NoSitesMessage from 'calypso/components/empty-content/no-sites-message';
 import PurchasesHeader from './purchases-list/header';
 import PurchasesList from './purchases-list';
-import { concatTitle } from 'lib/react-helpers';
-import { setDocumentHeadTitle } from 'state/document-head/actions';
+import { concatTitle } from 'calypso/lib/react-helpers';
+import { setDocumentHeadTitle } from 'calypso/state/document-head/actions';
 import titles from './titles';
-import userFactory from 'lib/user';
-import { makeLayout, render as clientRender } from 'controller';
-import PageViewTracker from 'lib/analytics/page-view-tracker';
-
-const user = userFactory();
+import { makeLayout, render as clientRender } from 'calypso/controller';
+import PageViewTracker from 'calypso/lib/analytics/page-view-tracker';
+import { getCurrentUserSiteCount } from 'calypso/state/current-user/selectors';
+import { managePurchase as managePurchaseUrl, purchasesRoot } from 'calypso/me/purchases/paths';
 
 // FIXME: Auto-converted from the Flux setTitle action. Please use <DocumentHead> instead.
 function setTitle( context, ...title ) {
 	context.store.dispatch( setDocumentHeadTitle( concatTitle( titles.purchases, ...title ) ) );
 }
 
-const userHasNoSites = () => user.get().site_count <= 0;
+const userHasNoSites = ( state ) => getCurrentUserSiteCount( state ) <= 0;
 
 function noSites( context, analyticsPath ) {
 	setTitle( context );
@@ -50,100 +45,110 @@ function noSites( context, analyticsPath ) {
 	clientRender( context );
 }
 
-export default {
-	addCardDetails( context, next ) {
-		if ( userHasNoSites() ) {
-			return noSites( context, '/me/purchases/:site/:purchaseId/payment/add' );
-		}
+export function addCardDetails( context, next ) {
+	const state = context.store.getState();
 
-		setTitle( context, titles.addCardDetails );
+	if ( userHasNoSites( state ) ) {
+		return noSites( context, '/me/purchases/:site/:purchaseId/payment/add' );
+	}
 
-		context.primary = <AddCardDetails purchaseId={ parseInt( context.params.purchaseId, 10 ) } />;
-		next();
-	},
+	setTitle( context, titles.addCardDetails );
 
-	addCreditCard( context, next ) {
-		context.primary = <AddCreditCard />;
-		next();
-	},
-
-	cancelPrivacyProtection( context, next ) {
-		if ( userHasNoSites() ) {
-			return noSites( context, '/me/purchases/:site/:purchaseId/cancel-privacy-protection' );
-		}
-
-		setTitle( context, titles.cancelPrivacyProtection );
-
-		context.primary = (
-			<CancelPrivacyProtection purchaseId={ parseInt( context.params.purchaseId, 10 ) } />
-		);
-		next();
-	},
-
-	cancelPurchase( context, next ) {
-		if ( userHasNoSites() ) {
-			return noSites( context, '/me/purchases/:site/:purchaseId/cancel' );
-		}
-
-		setTitle( context, titles.cancelPurchase );
-
-		context.primary = <CancelPurchase purchaseId={ parseInt( context.params.purchaseId, 10 ) } />;
-		next();
-	},
-
-	confirmCancelDomain( context, next ) {
-		if ( userHasNoSites() ) {
-			return noSites( context, '/me/purchases/:site/:purchaseId/confirm-cancel-domain' );
-		}
-
-		setTitle( context, titles.confirmCancelDomain );
-
-		context.primary = (
-			<ConfirmCancelDomain purchaseId={ parseInt( context.params.purchaseId, 10 ) } />
-		);
-		next();
-	},
-
-	editCardDetails( context, next ) {
-		if ( userHasNoSites() ) {
-			return noSites( context, '/me/purchases/:site/:purchaseId/payment/edit/:cardId' );
-		}
-
-		setTitle( context, titles.editCardDetails );
-
-		context.primary = (
-			<EditCardDetails
-				cardId={ context.params.cardId }
+	context.primary = (
+		<Main>
+			<AddCardDetails
 				purchaseId={ parseInt( context.params.purchaseId, 10 ) }
+				siteSlug={ context.params.site }
+				getManagePurchaseUrlFor={ managePurchaseUrl }
+				purchaseListUrl={ purchasesRoot }
+				isFullWidth={ false }
 			/>
-		);
-		next();
-	},
+		</Main>
+	);
+	next();
+}
 
-	list( context, next ) {
-		if ( userHasNoSites() ) {
-			return noSites( context, '/me/purchases' );
-		}
+export function addCreditCard( context, next ) {
+	context.primary = <AddCreditCard />;
+	next();
+}
 
-		setTitle( context );
+export function cancelPurchase( context, next ) {
+	setTitle( context, titles.cancelPurchase );
+	const classes = 'cancel-purchase';
 
-		context.primary = <PurchasesList noticeType={ context.params.noticeType } />;
-		next();
-	},
+	context.primary = (
+		<Main className={ classes }>
+			<CancelPurchase
+				purchaseId={ parseInt( context.params.purchaseId, 10 ) }
+				siteSlug={ context.params.site }
+			/>
+		</Main>
+	);
+	next();
+}
 
-	managePurchase( context, next ) {
-		if ( userHasNoSites() ) {
-			return noSites( context, '/me/purchases/:site/:purchaseId' );
-		}
+export function confirmCancelDomain( context, next ) {
+	const state = context.store.getState();
+	const classes = 'confirm-cancel-domain';
 
-		setTitle( context, titles.managePurchase );
+	if ( userHasNoSites( state ) ) {
+		return noSites( context, '/me/purchases/:site/:purchaseId/confirm-cancel-domain' );
+	}
 
-		context.primary = (
+	setTitle( context, titles.confirmCancelDomain );
+
+	context.primary = (
+		<Main className={ classes }>
+			<ConfirmCancelDomain
+				purchaseId={ parseInt( context.params.purchaseId, 10 ) }
+				siteSlug={ context.params.site }
+			/>
+		</Main>
+	);
+	next();
+}
+
+export function editCardDetails( context, next ) {
+	const state = context.store.getState();
+
+	if ( userHasNoSites( state ) ) {
+		return noSites( context, '/me/purchases/:site/:purchaseId/payment/edit/:cardId' );
+	}
+
+	setTitle( context, titles.editCardDetails );
+
+	context.primary = (
+		<EditCardDetails
+			cardId={ context.params.cardId }
+			purchaseId={ parseInt( context.params.purchaseId, 10 ) }
+			siteSlug={ context.params.site }
+			getManagePurchaseUrlFor={ managePurchaseUrl }
+			purchaseListUrl={ purchasesRoot }
+			isFullWidth={ false }
+		/>
+	);
+	next();
+}
+
+export function list( context, next ) {
+	setTitle( context );
+
+	context.primary = <PurchasesList noticeType={ context.params.noticeType } />;
+	next();
+}
+
+export function managePurchase( context, next ) {
+	setTitle( context, titles.managePurchase );
+	const classes = 'manage-purchase';
+
+	context.primary = (
+		<Main className={ classes }>
 			<ManagePurchase
 				purchaseId={ parseInt( context.params.purchaseId, 10 ) }
-				destinationType={ context.params.destinationType }
+				siteSlug={ context.params.site }
 			/>
-		);
-		next();
-	},
-};
+		</Main>
+	);
+	next();
+}

@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -17,7 +15,7 @@ import { bumpStat, recordTracksEvent } from 'state/analytics/actions';
 import { bumpStatGenerator } from './utils';
 import { getPost } from 'state/posts/selectors';
 import { savePost } from 'state/posts/actions';
-import { canCurrentUser } from 'state/selectors';
+import canCurrentUser from 'state/selectors/can-current-user';
 
 class PostActionsEllipsisMenuPublish extends Component {
 	static propTypes = {
@@ -89,6 +87,8 @@ const mergeProps = ( stateProps, dispatchProps, ownProps ) => {
 	return Object.assign( {}, ownProps, stateProps, dispatchProps, { onPublishPost } );
 };
 
-export default connect( mapStateToProps, mapDispatchToProps, mergeProps )(
-	localize( PostActionsEllipsisMenuPublish )
-);
+export default connect(
+	mapStateToProps,
+	mapDispatchToProps,
+	mergeProps
+)( localize( PostActionsEllipsisMenuPublish ) );

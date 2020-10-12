@@ -1,17 +1,22 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import update from 'immutability-helper';
+import { get } from 'lodash';
 
 /**
  * Internal dependencies
  */
-import { action as UpgradesActionTypes } from 'lib/upgrades/constants';
-import DomainsStore from 'lib/domains/store';
-import { getSelectedDomain } from 'lib/domains';
+import {
+	DOMAIN_TRANSFER_ACCEPT_COMPLETED,
+	DOMAIN_TRANSFER_CANCEL_REQUEST_COMPLETED,
+	DOMAIN_TRANSFER_CODE_REQUEST_COMPLETED,
+	DOMAIN_TRANSFER_DECLINE_COMPLETED,
+	PRIVACY_PROTECTION_ENABLE_COMPLETED,
+	WAPI_DOMAIN_INFO_FETCH,
+	WAPI_DOMAIN_INFO_FETCH_COMPLETED,
+	WAPI_DOMAIN_INFO_FETCH_FAILED,
+} from './action-types';
 
 const initialDomainState = {
 	hasLoadedFromServer: false,
@@ -33,24 +38,24 @@ function reducer( state, payload ) {
 	const { action } = payload;
 
 	switch ( action.type ) {
-		case UpgradesActionTypes.WAPI_DOMAIN_INFO_FETCH:
+		case WAPI_DOMAIN_INFO_FETCH:
 			return updateDomainState( state, action.domainName, {
 				needsUpdate: false,
 			} );
 
-		case UpgradesActionTypes.WAPI_DOMAIN_INFO_FETCH_COMPLETED:
+		case WAPI_DOMAIN_INFO_FETCH_COMPLETED:
 			return updateDomainState( state, action.domainName, {
 				hasLoadedFromServer: true,
 				data: action.status,
 				needsUpdate: false,
 			} );
 
-		case UpgradesActionTypes.WAPI_DOMAIN_INFO_FETCH_FAILED:
+		case WAPI_DOMAIN_INFO_FETCH_FAILED:
 			return updateDomainState( state, action.domainName, {
 				needsUpdate: true,
 			} );
 
-		case UpgradesActionTypes.DOMAIN_TRANSFER_CANCEL_REQUEST_COMPLETED:
+		case DOMAIN_TRANSFER_CANCEL_REQUEST_COMPLETED:
 			return updateDomainState( state, action.domainName, {
 				data: Object.assign( {}, state[ action.domainName ].data, {
 					locked: action.locked,
@@ -58,31 +63,27 @@ function reducer( state, payload ) {
 				} ),
 			} );
 
-		case UpgradesActionTypes.PRIVACY_PROTECTION_ENABLE_COMPLETED:
+		case PRIVACY_PROTECTION_ENABLE_COMPLETED:
 			return updateDomainState( state, action.domainName, {
-				data: Object.assign( {}, state[ action.domainName ].data, {
+				data: Object.assign( {}, get( state[ action.domainName ], 'data', {} ), {
 					pendingTransfer: false,
 				} ),
 			} );
 
-		case UpgradesActionTypes.DOMAIN_TRANSFER_CODE_REQUEST_COMPLETED:
-			const { data } = state[ action.domainName ],
-				domainData = getSelectedDomain( {
-					domains: DomainsStore.getBySite( action.siteId ),
-					selectedDomainName: action.domainName,
-				} ),
-				locked = ! action.unlock && data.locked,
-				pendingTransfer = ! domainData.privateDomain && ! locked;
+		case DOMAIN_TRANSFER_CODE_REQUEST_COMPLETED: {
+			const { data } = state[ action.domainName ];
+			const locked = ! action.unlock && data.locked;
 
 			return updateDomainState( state, action.domainName, {
 				data: Object.assign( {}, state[ action.domainName ].data, {
 					locked,
-					pendingTransfer,
 				} ),
+				needsUpdate: true,
 			} );
+		}
 
-		case UpgradesActionTypes.DOMAIN_TRANSFER_ACCEPT_COMPLETED:
-		case UpgradesActionTypes.DOMAIN_TRANSFER_DECLINE_COMPLETED:
+		case DOMAIN_TRANSFER_ACCEPT_COMPLETED:
+		case DOMAIN_TRANSFER_DECLINE_COMPLETED:
 			return updateDomainState( state, action.domainName, {
 				data: Object.assign( {}, state[ action.domainName ].data, {
 					pendingTransfer: false,

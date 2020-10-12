@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * Internal dependencies
  */
@@ -8,15 +6,14 @@ import {
 	getError,
 	getProgress,
 	dispatchRequest,
-	dispatchRequestEx,
 	reducer,
 	trackRequests,
 } from '../utils.js';
 
 describe( 'WPCOM HTTP Data Layer', () => {
-	const withData = data => ( { type: 'SLUGGER', meta: { dataLayer: { data } } } );
-	const withError = error => ( { type: 'SLUGGER', meta: { dataLayer: { error } } } );
-	const withProgress = progress => ( {
+	const withData = ( data ) => ( { type: 'SLUGGER', meta: { dataLayer: { data } } } );
+	const withError = ( error ) => ( { type: 'SLUGGER', meta: { dataLayer: { error } } } );
+	const withProgress = ( progress ) => ( {
 		type: 'UPLOAD_PROGRESS',
 		meta: { dataLayer: { progress } },
 	} );
@@ -107,8 +104,6 @@ describe( 'WPCOM HTTP Data Layer', () => {
 
 			expect( next ).toMatchObject( { dogs: { lastUpdated: 1000 } } );
 		} );
-
-		test( 'should not care if pending flag is persisted', () => {} );
 	} );
 
 	describe( '#trackRequests', () => {
@@ -144,128 +139,18 @@ describe( 'WPCOM HTTP Data Layer', () => {
 			dispatch( {} );
 
 			const args = store.dispatch.mock.calls[ 0 ];
-			expect( args.length ).toBe( 1 );
+			expect( args ).toHaveLength( 1 );
 			expect( args[ 0 ] ).toMatchObject( { meta: { dataLayer: {} } } );
 		} );
 	} );
 
 	describe( '#dispatchRequest', () => {
-		const data = { count: 5 };
-		const error = { message: 'oh no!' };
-		const empty = { type: 'REFILL' };
-		const progressInfo = { loaded: 45, total: 80 };
-		const success = { type: 'REFILL', meta: { dataLayer: { data } } };
-		const failure = { type: 'REFILL', meta: { dataLayer: { error } } };
-		const progress = { type: 'REFILL', meta: { dataLayer: { progress: progressInfo } } };
-		const both = { type: 'REFILL', meta: { dataLayer: { data, error } } };
-
-		let initiator;
-		let onSuccess;
-		let onFailure;
-		let onProgress;
-		let dispatcher;
-		let store;
-
-		beforeEach( () => {
-			initiator = jest.fn();
-			onSuccess = jest.fn();
-			onFailure = jest.fn();
-			onProgress = jest.fn();
-			dispatcher = dispatchRequest( initiator, onSuccess, onFailure, { onProgress } );
-			store = jest.fn();
-		} );
-
-		test( 'should call the initiator if meta information missing', () => {
-			dispatcher( store, empty );
-
-			expect( initiator ).toHaveBeenCalledWith( store, empty );
-			expect( onSuccess ).not.toHaveBeenCalled();
-			expect( onFailure ).not.toHaveBeenCalled();
-			expect( onProgress ).not.toHaveBeenCalled();
-		} );
-
-		test( 'should call onSuccess if meta includes response data', () => {
-			dispatcher( store, success );
-
-			expect( initiator ).not.toHaveBeenCalled();
-			expect( onSuccess ).toHaveBeenCalledWith( store, success, data );
-			expect( onFailure ).not.toHaveBeenCalled();
-			expect( onProgress ).not.toHaveBeenCalled();
-		} );
-
-		test( 'should call onFailure if meta includes error data', () => {
-			dispatcher( store, failure );
-
-			expect( initiator ).not.toHaveBeenCalled();
-			expect( onSuccess ).not.toHaveBeenCalled();
-			expect( onFailure ).toHaveBeenCalledWith( store, failure, error );
-			expect( onProgress ).not.toHaveBeenCalled();
-		} );
-
-		test( 'should call onFailure if meta includes both response data and error data', () => {
-			dispatcher( store, both );
-
-			expect( initiator ).not.toHaveBeenCalled();
-			expect( onSuccess ).not.toHaveBeenCalled();
-			expect( onFailure ).toHaveBeenCalledWith( store, both, error );
-			expect( onProgress ).not.toHaveBeenCalled();
-		} );
-
-		test( 'should call onProgress if meta includes progress data', () => {
-			dispatcher( store, progress );
-
-			expect( initiator ).not.toHaveBeenCalled();
-			expect( onSuccess ).not.toHaveBeenCalled();
-			expect( onFailure ).not.toHaveBeenCalled();
-			expect( onProgress ).toHaveBeenCalledWith( store, progress, progressInfo );
-		} );
-
-		test( 'should not throw runtime error if onProgress is not specified', () => {
-			dispatcher = dispatchRequest( initiator, onSuccess, onFailure );
-			expect( () => dispatcher( store, progress ) ).not.toThrow( TypeError );
-		} );
-
-		test( 'should validate response data', () => {
-			const fromApi = jest.fn( input => input );
-
-			dispatchRequest( initiator, onSuccess, onFailure, { fromApi } )( store, success, data );
-
-			expect( fromApi ).toHaveBeenCalledWith( data );
-			expect( initiator ).not.toHaveBeenCalled();
-			expect( onSuccess ).toHaveBeenCalled();
-			expect( onFailure ).not.toHaveBeenCalled();
-		} );
-
-		test( 'should fail-over on invalid response data', () => {
-			const fromApi = () => {
-				throw new Error( 'Test schema error' );
-			};
-			dispatchRequest( initiator, onSuccess, onFailure, { fromApi } )( store, success, data );
-
-			expect( initiator ).not.toHaveBeenCalled();
-			expect( onSuccess ).not.toHaveBeenCalled();
-			expect( onFailure ).toHaveBeenCalled();
-		} );
-
-		test( 'should return transformed result of fromApi', () => {
-			const fromApi = input => `Hello, ${ input }!`;
-
-			const action = { type: 'REFILL', meta: { dataLayer: { data: 'world' } } };
-			dispatchRequest( initiator, onSuccess, onFailure, { fromApi } )( store, action, {} );
-
-			expect( initiator ).not.toHaveBeenCalled();
-			expect( onSuccess ).toHaveBeenCalledWith( store, action, 'Hello, world!' );
-			expect( onFailure ).not.toHaveBeenCalled();
-		} );
-	} );
-
-	describe( '#dispatchRequestEx', () => {
 		const fetch = () => ( { type: 'REQUEST' } );
 		const onSuccess = ( action, data ) => ( { type: 'SUCCESS', data } );
 		const onError = ( action, error ) => ( { type: 'FAILURE', error } );
 		const onProgress = ( action, progress ) => ( { type: 'PROGRESS', progress } );
 
-		const dispatcher = dispatchRequestEx( {
+		const dispatcher = dispatchRequest( {
 			fetch,
 			onSuccess,
 			onError,
@@ -322,13 +207,13 @@ describe( 'WPCOM HTTP Data Layer', () => {
 
 		test( 'should not throw runtime error if onProgress is not specified', () => {
 			expect( () => {
-				dispatchRequestEx( { fetch, onSuccess, onError } )( store, progressHttpAction );
+				dispatchRequest( { fetch, onSuccess, onError } )( store, progressHttpAction );
 			} ).not.toThrow( TypeError );
 		} );
 
 		test( 'should pass data to fromApi for validation', () => {
-			const fromApi = jest.fn( input => input );
-			dispatchRequestEx( { fetch, onSuccess, onError, fromApi } )( store, successHttpAction );
+			const fromApi = jest.fn( ( input ) => input );
+			dispatchRequest( { fetch, onSuccess, onError, fromApi } )( store, successHttpAction );
 			expect( fromApi ).toHaveBeenCalledWith( successHttpAction.meta.dataLayer.data );
 			expect( dispatch ).toHaveBeenCalledWith( successAction );
 		} );
@@ -337,22 +222,22 @@ describe( 'WPCOM HTTP Data Layer', () => {
 			const fromApi = () => {
 				throw new Error( 'Test schema error' );
 			};
-			dispatchRequestEx( { fetch, onSuccess, onError, fromApi } )( store, successHttpAction );
+			dispatchRequest( { fetch, onSuccess, onError, fromApi } )( store, successHttpAction );
 
 			const args = dispatch.mock.calls[ 0 ];
 
-			expect( args.length ).toBe( 1 );
+			expect( args ).toHaveLength( 1 );
 			expect( args[ 0 ] ).toMatchObject( { type: 'FAILURE' } );
 		} );
 
 		test( 'should return result of fromApi', () => {
-			const fromApi = input => `Hello, ${ input }!`;
+			const fromApi = ( input ) => `Hello, ${ input }!`;
 			const action = {
 				type: 'REFILL',
 				meta: { dataLayer: { data: 'world' } },
 			};
 
-			dispatchRequestEx( { fetch, onSuccess, onError, fromApi } )( store, action );
+			dispatchRequest( { fetch, onSuccess, onError, fromApi } )( store, action );
 
 			expect( dispatch ).toHaveBeenCalledWith( {
 				type: 'SUCCESS',

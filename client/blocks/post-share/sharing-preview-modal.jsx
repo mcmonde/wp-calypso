@@ -3,25 +3,21 @@
  */
 import PropTypes from 'prop-types';
 import React from 'react';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 
 /**
  * Internal dependencies
  */
-import Dialog from 'components/dialog';
+import { Dialog } from '@automattic/components';
 import SharingPreviewPane from 'blocks/sharing-preview-pane';
 
 const SharingPreviewModal = ( props ) => {
-	const {
-		isVisible,
-		onClose,
-		...previewProps
-	} = props;
+	const { isVisible, onClose, ...previewProps } = props;
 
 	return (
-		<Dialog isVisible={ isVisible } additionalClassNames="post-share__sharing-preview-modal" >
+		<Dialog isVisible={ isVisible } additionalClassNames="post-share__sharing-preview-modal">
 			<header className="post-share__sharing-preview-modal-header">
-				<button onClick={ onClose } className="post-share__sharing-preview-modal-close" >
+				<button onClick={ onClose } className="post-share__sharing-preview-modal-close">
 					<Gridicon icon="cross" />
 				</button>
 			</header>

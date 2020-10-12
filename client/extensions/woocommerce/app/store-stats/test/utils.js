@@ -1,10 +1,8 @@
-/** @format */
-
 /**
  * External dependencies
  */
 import { assert, expect } from 'chai';
-import { moment } from 'i18n-calypso';
+import moment from 'moment';
 
 /**
  * Internal dependencies
@@ -109,9 +107,7 @@ describe( 'getQueryDate', () => {
 	test( 'should return a value going back only in multiples of the specified quantity', () => {
 		const quantity = UNITS.day.quantity;
 		const daysBack = Math.floor( quantity * 2.5 ); // 75
-		const startDate = moment()
-			.subtract( daysBack, 'days' )
-			.format( 'YYYY-MM-DD' );
+		const startDate = moment().subtract( daysBack, 'days' ).format( 'YYYY-MM-DD' );
 		const context = {
 			params: { unit: 'day' },
 			query: { startDate },
@@ -126,9 +122,7 @@ describe( 'getQueryDate', () => {
 	test( 'should work in weeks as well', () => {
 		const quantity = UNITS.week.quantity;
 		const weeksBack = Math.floor( quantity * 2.5 ); // 75
-		const startDate = moment()
-			.subtract( weeksBack, 'weeks' )
-			.format( 'YYYY-MM-DD' );
+		const startDate = moment().subtract( weeksBack, 'weeks' ).format( 'YYYY-MM-DD' );
 		const context = {
 			params: { unit: 'week' },
 			query: { startDate },
@@ -166,9 +160,7 @@ describe( 'getStartDate', () => {
 	test( 'should return a value going back only in multiples of the specified quantity', () => {
 		const quantity = UNITS.day.quantity;
 		const daysBack = Math.floor( quantity * 2.5 ); // 75
-		const startDate = moment()
-			.subtract( daysBack, 'days' )
-			.format( 'YYYY-MM-DD' );
+		const startDate = moment().subtract( daysBack, 'days' ).format( 'YYYY-MM-DD' );
 		const queryDate = getStartDate( startDate, 'day' );
 		const todayShouldBe = moment()
 			.subtract( quantity * 2, 'days' )
@@ -179,9 +171,7 @@ describe( 'getStartDate', () => {
 	test( 'should calculate with weeks', () => {
 		const quantity = UNITS.week.quantity;
 		const weeksBack = Math.floor( quantity * 2.5 ); // 75
-		const startDate = moment()
-			.subtract( weeksBack, 'weeks' )
-			.format( 'YYYY-MM-DD' );
+		const startDate = moment().subtract( weeksBack, 'weeks' ).format( 'YYYY-MM-DD' );
 		const queryDate = getStartDate( startDate, 'week' );
 		const todayShouldBe = moment()
 			.subtract( quantity * 2, 'weeks' )
@@ -192,9 +182,7 @@ describe( 'getStartDate', () => {
 	test( 'should calculate with months', () => {
 		const quantity = UNITS.month.quantity;
 		const weeksBack = Math.floor( quantity * 2.5 );
-		const startDate = moment()
-			.subtract( weeksBack, 'months' )
-			.format( 'YYYY-MM-DD' );
+		const startDate = moment().subtract( weeksBack, 'months' ).format( 'YYYY-MM-DD' );
 		const queryDate = getStartDate( startDate, 'month' );
 		const todayShouldBe = moment()
 			.subtract( quantity * 2, 'months' )
@@ -299,9 +287,9 @@ describe( 'formatValue', () => {
 		assert.strictEqual( response, '$12.34' );
 	} );
 	test( 'should return a correctly formatted number to 2 decimals', () => {
-		const response = formatValue( 12.3456, 'number' );
-		assert.isNumber( response );
-		assert.strictEqual( response, 12.35 );
+		const response = formatValue( 12.3456, 'number', null, 2 );
+		// assert.isNumber( response );
+		assert.strictEqual( response, '12.35' );
 	} );
 	test( 'should return a correctly formatted string', () => {
 		const response = formatValue( 'string', 'text' );

@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -77,6 +75,8 @@ const mergeProps = ( stateProps, dispatchProps, ownProps ) => {
 	return Object.assign( {}, ownProps, stateProps, dispatchProps, { bumpStat } );
 };
 
-export default connect( mapStateToProps, mapDispatchToProps, mergeProps )(
-	localize( PostActionsEllipsisMenuStats )
-);
+export default connect(
+	mapStateToProps,
+	mapDispatchToProps,
+	mergeProps
+)( localize( PostActionsEllipsisMenuStats ) );

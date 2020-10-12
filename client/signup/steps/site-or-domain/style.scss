@@ -18,11 +18,11 @@
 	}
 
 	&:hover {
-		box-shadow: 0 0 0 1px $gray, 0 2px 4px lighten( $gray, 20 );
+		box-shadow: 0 0 0 1px var( --color-neutral-light ), 0 2px 4px var( --color-neutral-10 );
 	}
 
 	h2 {
-		border-top: solid 1px $gray-light;
+		border-top: solid 1px var( --color-neutral-0 );
 		padding: 10px 15px;
 	}
 }
@@ -38,12 +38,8 @@
 .site-or-domain__choice-button {
 	text-align: center;
 
-	.button {
-		text-transform: uppercase;
-
-		&.site-or-domain__is-placeholder {
-			width: 90%;
-		}
+	.site-or-domain__is-placeholder {
+		width: 90%;
 	}
 }
 
@@ -52,10 +48,10 @@
 }
 
 .site-or-domain__choice-text {
-	color: $gray-dark;
+	color: var( --color-neutral-70 );
 }
 
-@include breakpoint( ">480px" ) {
+@include breakpoint-deprecated( '>480px' ) {
 	.site-or-domain__choice-button {
 		margin-bottom: 1.5em;
 	}
@@ -71,7 +67,7 @@
 	}
 }
 
-@include breakpoint( "<480px" ) {
+@include breakpoint-deprecated( '<480px' ) {
 	.site-or-domain__choice-text {
 		display: flex;
 		flex-direction: column-reverse;
@@ -79,5 +75,5 @@
 }
 
 .site-or-domain__is-placeholder {
-	@include placeholder(23%);
+	@include placeholder( --color-neutral-10 );
 }

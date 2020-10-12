@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -11,6 +9,7 @@ import React from 'react';
  * Internal dependencies
  */
 import DocService from './service';
+import Error from './error';
 import DocumentHead from 'components/data/document-head';
 import highlight from 'lib/highlight';
 
@@ -25,6 +24,7 @@ export default class extends React.Component {
 
 	state = {
 		body: '',
+		error: null,
 	};
 
 	timeoutID = null;
@@ -49,13 +49,15 @@ export default class extends React.Component {
 	fetch = () => {
 		this.setState( {
 			body: '',
+			error: null,
 		} );
 		this.delayLoadingMessage();
 		DocService.fetch(
 			this.props.path,
-			function( err, body ) {
+			function ( error, body ) {
 				this.setState( {
-					body: err || body,
+					body,
+					error,
 				} );
 			}.bind( this )
 		);
@@ -74,7 +76,7 @@ export default class extends React.Component {
 	delayLoadingMessage = () => {
 		this.clearLoadingMessage();
 		this.timeoutID = setTimeout(
-			function() {
+			function () {
 				if ( ! this.state.body ) {
 					this.setState( {
 						body: 'Loading…',
@@ -92,16 +94,18 @@ export default class extends React.Component {
 		}
 	};
 
-	render() {
+	renderBody() {
 		const editURL = encodeURI(
 			'https://github.com/Automattic/wp-calypso/edit/master/' + this.props.path
 		);
-		const titleMatches = this.state.body.length && this.state.body.match( /<h1[^>]+>(.+)<\/h1>/ );
-		const title = titleMatches && titleMatches[ 1 ];
+		const { body, error } = this.state;
+
+		if ( ! body || error ) {
+			return null;
+		}
 
 		return (
-			<div className="devdocs devdocs__doc">
-				{ title ? <DocumentHead title={ title } /> : null }
+			<div className="devdocs__body">
 				<a
 					className="devdocs__doc-edit-link"
 					href={ editURL }
@@ -112,10 +116,23 @@ export default class extends React.Component {
 				</a>
 				<div
 					className="devdocs__doc-content"
-					ref="body"
 					//eslint-disable-next-line react/no-danger
-					dangerouslySetInnerHTML={ { __html: highlight( this.props.term, this.state.body ) } }
+					dangerouslySetInnerHTML={ { __html: highlight( this.props.term, body ) } }
 				/>
+			</div>
+		);
+	}
+
+	render() {
+		const { body, error } = this.state;
+		const titleMatches = body && body.length && body.match( /<h1[^>]+>(.+)<\/h1>/ );
+		const title = titleMatches && titleMatches[ 1 ];
+
+		return (
+			<div className="devdocs devdocs__doc">
+				{ title ? <DocumentHead title={ title } /> : null }
+				{ this.renderBody() }
+				{ error && <Error /> }
 			</div>
 		);
 	}

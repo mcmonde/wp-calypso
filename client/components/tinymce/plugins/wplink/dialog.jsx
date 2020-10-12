@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -8,15 +7,13 @@ import React from 'react';
 import tinymce from 'tinymce/tinymce';
 import { connect } from 'react-redux';
 import { find } from 'lodash';
-import Gridicon from 'gridicons';
 
 /**
  * Internal dependencies
  */
 import { deserialize } from 'lib/media-serialization';
-import MediaStore from 'lib/media/store';
 import { url as mediaUrl } from 'lib/media/utils';
-import Dialog from 'components/dialog';
+import { Dialog } from '@automattic/components';
 import FormTextInput from 'components/forms/form-text-input';
 import FormCheckbox from 'components/forms/form-checkbox';
 import FormButton from 'components/forms/form-button';
@@ -26,14 +23,16 @@ import PostSelector from 'my-sites/post-selector';
 import { getSelectedSite } from 'state/ui/selectors';
 import { getSitePosts } from 'state/posts/selectors';
 import { decodeEntities } from 'lib/formatting';
-import { recordEvent, recordStat } from 'lib/posts/stats';
+import { recordEditorEvent, recordEditorStat } from 'state/posts/stats';
+import Gridicon from 'components/gridicon';
+import { getMediaItem } from 'state/media/thunks';
 
 /**
  * Module variables
  */
-var REGEXP_EMAIL = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i,
-	REGEXP_URL = /^(https?|ftp):\/\/[A-Z0-9.-]+\.[A-Z]{2,4}[^ "]*$/i,
-	REGEXP_STANDALONE_URL = /^(?:[a-z]+:|#|\?|\.|\/)/;
+const REGEXP_EMAIL = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i;
+const REGEXP_URL = /^(https?|ftp):\/\/[A-Z0-9.-]+\.[A-Z]{2,4}[^ "]*$/i;
+const REGEXP_STANDALONE_URL = /^(?:[a-z]+:|#|\?|\.|\/)/;
 
 class LinkDialog extends React.Component {
 	static propTypes = {
@@ -50,14 +49,14 @@ class LinkDialog extends React.Component {
 		firstLoad: false,
 	};
 
-	componentWillReceiveProps( nextProps ) {
+	UNSAFE_componentWillReceiveProps( nextProps ) {
 		if ( nextProps.visible && ! this.props.visible ) {
 			this.setState( this.getState() );
 		}
 	}
 
 	getLink = () => {
-		var editor = this.props.editor;
+		const { editor } = this.props;
 
 		return editor.dom.getParent( editor.selection.getNode(), 'a' );
 	};
@@ -77,10 +76,7 @@ class LinkDialog extends React.Component {
 	};
 
 	updateEditor = () => {
-		var editor = this.props.editor,
-			attrs,
-			link,
-			linkText;
+		const { editor } = this.props;
 
 		editor.focus();
 
@@ -93,9 +89,9 @@ class LinkDialog extends React.Component {
 			return;
 		}
 
-		link = this.getLink();
-		linkText = this.state.linkText;
-		attrs = {
+		const link = this.getLink();
+		let { linkText } = this.state;
+		const attrs = {
 			href: this.getCorrectedUrl(),
 			target: this.state.newWindow ? '_blank' : '',
 		};
@@ -120,11 +116,10 @@ class LinkDialog extends React.Component {
 		this.closeDialog();
 	};
 
-	hasSelectedText = linkNode => {
-		var editor = this.props.editor,
-			html = editor.selection.getContent(),
-			nodes,
-			i;
+	hasSelectedText = ( linkNode ) => {
+		const { editor } = this.props;
+		const html = editor.selection.getContent();
+		let nodes;
 
 		// Partial html and not a fully selected anchor element
 		if (
@@ -141,7 +136,7 @@ class LinkDialog extends React.Component {
 				return false;
 			}
 
-			for ( i = nodes.length - 1; i >= 0; i-- ) {
+			for ( let i = nodes.length - 1; i >= 0; i-- ) {
 				if ( nodes[ i ].nodeType !== 3 ) {
 					return false;
 				}
@@ -152,10 +147,9 @@ class LinkDialog extends React.Component {
 	};
 
 	getInferredUrl = () => {
-		var selectedText = this.props.editor.selection.getContent(),
-			selectedNode,
-			parsedImage,
-			knownImage;
+		const selectedText = this.props.editor.selection.getContent();
+		let parsedImage;
+		let knownImage;
 
 		if ( REGEXP_EMAIL.test( selectedText ) ) {
 			return 'mailto:' + selectedText;
@@ -163,12 +157,12 @@ class LinkDialog extends React.Component {
 			return selectedText.replace( /&amp;|&#0?38;/gi, '&' );
 		}
 
-		selectedNode = this.props.editor.selection.getNode();
+		const selectedNode = this.props.editor.selection.getNode();
 		if ( selectedNode && 'IMG' === selectedNode.nodeName ) {
 			parsedImage = deserialize( selectedNode );
 			if ( this.props.site && parsedImage.media.ID ) {
 				knownImage =
-					MediaStore.get( this.props.site.ID, parsedImage.media.ID ) || parsedImage.media;
+					this.props.getMediaItem( this.props.site.ID, parsedImage.media.ID ) || parsedImage.media;
 				return mediaUrl( knownImage, {
 					size: 'full',
 				} );
@@ -179,18 +173,18 @@ class LinkDialog extends React.Component {
 	};
 
 	getState = () => {
-		var editor = this.props.editor,
-			selectedNode = editor.selection.getNode(),
-			linkNode = editor.dom.getParent( selectedNode, 'a[href]' ),
-			onlyText = this.hasSelectedText( linkNode ),
-			nextState = {
-				isNew: true,
-				newWindow: false,
-				showLinkText: true,
-				linkText: '',
-				url: '',
-				isUserDefinedLinkText: false,
-			};
+		const { editor } = this.props;
+		const selectedNode = editor.selection.getNode();
+		const linkNode = editor.dom.getParent( selectedNode, 'a[href]' );
+		const onlyText = this.hasSelectedText( linkNode );
+		const nextState = {
+			isNew: true,
+			newWindow: false,
+			showLinkText: true,
+			linkText: '',
+			url: '',
+			isUserDefinedLinkText: false,
+		};
 
 		if ( linkNode ) {
 			nextState.linkText = linkNode.innerText || linkNode.textContent;
@@ -216,22 +210,22 @@ class LinkDialog extends React.Component {
 		this.props.onClose();
 	};
 
-	setUrl = event => {
+	setUrl = ( event ) => {
 		this.setState( { url: event.target.value } );
 	};
 
-	setLinkText = event => {
+	setLinkText = ( event ) => {
 		this.setState( {
 			linkText: event.target.value,
 			isUserDefinedLinkText: true,
 		} );
 	};
 
-	setNewWindow = event => {
+	setNewWindow = ( event ) => {
 		this.setState( { newWindow: event.target.checked } );
 	};
 
-	onInputKeyDown = event => {
+	onInputKeyDown = ( event ) => {
 		if ( event.key === 'Enter' ) {
 			event.preventDefault();
 			this.updateEditor();
@@ -244,7 +238,7 @@ class LinkDialog extends React.Component {
 	};
 
 	getButtons = () => {
-		var buttonText, buttons;
+		let buttonText;
 
 		if ( this.state.isNew ) {
 			buttonText = this.props.translate( 'Add Link' );
@@ -252,7 +246,7 @@ class LinkDialog extends React.Component {
 			buttonText = this.props.translate( 'Save' );
 		}
 
-		buttons = [
+		const buttons = [
 			<FormButton key="save" onClick={ this.updateEditor }>
 				{ buttonText }
 			</FormButton>,
@@ -273,8 +267,8 @@ class LinkDialog extends React.Component {
 		return buttons;
 	};
 
-	setExistingContent = post => {
-		let state = { url: post.URL };
+	setExistingContent = ( post ) => {
+		const state = { url: post.URL };
 		const shouldSetLinkText =
 			! this.state.isUserDefinedLinkText &&
 			! this.props.editor.selection.getContent() &&
@@ -286,8 +280,8 @@ class LinkDialog extends React.Component {
 			} );
 		}
 
-		recordStat( 'link-existing-content' );
-		recordEvent( 'Set link to existing content' );
+		this.props.recordEditorStat( 'link-existing-content' );
+		this.props.recordEditorEvent( 'Set link to existing content' );
 
 		this.setState( state );
 	};
@@ -305,6 +299,7 @@ class LinkDialog extends React.Component {
 
 	state = this.getState();
 
+	/* eslint-disable jsx-a11y/no-autofocus */
 	render() {
 		return (
 			<Dialog
@@ -318,6 +313,7 @@ class LinkDialog extends React.Component {
 					<FormLabel>
 						<span>{ this.props.translate( 'URL' ) }</span>
 						<FormTextInput
+							// eslint-disable-next-line react/no-string-refs
 							ref="url"
 							autoFocus={ true }
 							onChange={ this.setUrl }
@@ -364,12 +360,16 @@ class LinkDialog extends React.Component {
 			</Dialog>
 		);
 	}
+	/* eslint-enable jsx-a11y/no-autofocus */
 }
 
-export default connect( state => {
-	const selectedSite = getSelectedSite( state );
-	return {
-		site: selectedSite,
-		sitePosts: selectedSite ? getSitePosts( state, selectedSite.ID ) : null,
-	};
-} )( localize( LinkDialog ) );
+export default connect(
+	( state ) => {
+		const selectedSite = getSelectedSite( state );
+		return {
+			site: selectedSite,
+			sitePosts: selectedSite ? getSitePosts( state, selectedSite.ID ) : null,
+		};
+	},
+	{ recordEditorEvent, recordEditorStat, getMediaItem }
+)( localize( LinkDialog ) );

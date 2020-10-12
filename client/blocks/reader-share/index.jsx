@@ -1,66 +1,58 @@
-/** @format */
 /**
  * External dependencies
  */
 import React from 'react';
 import { connect } from 'react-redux';
-import url from 'url';
 import { defer } from 'lodash';
 import config from 'config';
 import classnames from 'classnames';
 import PropTypes from 'prop-types';
-import { stringify } from 'qs';
 import page from 'page';
-import SocialLogo from 'social-logos';
 import { localize } from 'i18n-calypso';
 
 /**
  * Internal dependencies
  */
-import ReaderPopoverMenu from 'components/reader-popover/menu';
+import ReaderPopoverMenu from 'reader/components/reader-popover/menu';
 import PopoverMenuItem from 'components/popover/menu-item';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
+import SocialLogo from 'components/social-logo';
 import * as stats from 'reader/stats';
-import { preload } from 'sections-helper';
+import { preloadEditor } from 'sections-preloaders';
 import SiteSelector from 'components/site-selector';
-import { getPrimarySiteId } from 'state/selectors';
+import getPrimarySiteId from 'state/selectors/get-primary-site-id';
+import { Button } from '@automattic/components';
 
-function preloadEditor() {
-	preload( 'post-editor' );
-}
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 /**
  * Local variables
  */
 const actionMap = {
 	twitter( post ) {
-		const twitterUrlProperties = {
-			scheme: 'https',
-			hostname: 'twitter.com',
-			pathname: '/intent/tweet',
-			query: {
-				text: post.title,
-				url: post.URL,
-				via: 'wordpressdotcom',
-			},
-		};
+		const baseUrl = new URL( 'https://twitter.com/intent/tweet' );
+		const params = new URLSearchParams( {
+			text: post.title,
+			url: post.URL,
+		} );
+		baseUrl.search = params.toString();
 
-		const twitterUrl = url.format( twitterUrlProperties );
+		const twitterUrl = baseUrl.href;
 
 		window.open( twitterUrl, 'twitter', 'width=550,height=420,resizeable,scrollbars' );
 	},
 	facebook( post ) {
-		const facebookUrlProperties = {
-			scheme: 'https',
-			hostname: 'www.facebook.com',
-			pathname: '/sharer.php',
-			query: {
-				u: post.URL,
-				app_id: config( 'facebook_api_key' ),
-			},
-		};
+		const baseUrl = new URL( 'https://www.facebook.com/sharer.php' );
+		const params = new URLSearchParams( {
+			u: post.URL,
+			app_id: config( 'facebook_api_key' ),
+		} );
+		baseUrl.search = params.toString();
 
-		const facebookUrl = url.format( facebookUrlProperties );
+		const facebookUrl = baseUrl.href;
 
 		window.open( facebookUrl, 'facebook', 'width=626,height=436,resizeable,scrollbars' );
 	},
@@ -80,7 +72,8 @@ function buildQuerystringForPost( post ) {
 	args.text = post.excerpt;
 	args.url = post.URL;
 
-	return stringify( args );
+	const params = new URLSearchParams( args );
+	return params.toString();
 }
 
 class ReaderShare extends React.Component {
@@ -101,9 +94,10 @@ class ReaderShare extends React.Component {
 	constructor( props ) {
 		super( props );
 		this.mounted = false;
+		this.shareButton = React.createRef();
 	}
 
-	componentWillMount() {
+	componentDidMount() {
 		this.mounted = true;
 	}
 
@@ -115,7 +109,7 @@ class ReaderShare extends React.Component {
 		this.mounted = false;
 	}
 
-	deferMenuChange = showing => {
+	deferMenuChange = ( showing ) => {
 		if ( this.closeHandle ) {
 			clearTimeout( this.closeHandle );
 		}
@@ -126,8 +120,7 @@ class ReaderShare extends React.Component {
 		} );
 	};
 
-	toggle = event => {
-		event.preventDefault();
+	toggle = () => {
 		if ( ! this.state.showingMenu ) {
 			stats.recordAction( 'open_share' );
 			stats.recordGaEvent( 'Opened Share' );
@@ -147,7 +140,7 @@ class ReaderShare extends React.Component {
 		}
 	};
 
-	pickSiteToShareTo = slug => {
+	pickSiteToShareTo = ( slug ) => {
 		stats.recordAction( 'share_wordpress' );
 		stats.recordGaEvent( 'Clicked on Share to WordPress' );
 		stats.recordTrack( 'calypso_reader_share_to_site' );
@@ -155,7 +148,7 @@ class ReaderShare extends React.Component {
 		return true;
 	};
 
-	closeExternalShareMenu = action => {
+	closeExternalShareMenu = ( action ) => {
 		this.closeMenu();
 		const actionFunc = actionMap[ action ];
 		if ( actionFunc ) {
@@ -180,22 +173,28 @@ class ReaderShare extends React.Component {
 			this.props.tagName,
 			{
 				className: 'reader-share',
-				onClick: this.toggle,
+				onClick: ( event ) => event.preventDefault(),
 				onTouchStart: preloadEditor,
 				onMouseEnter: preloadEditor,
-				ref: 'shareButton',
 			},
 			[
-				<span key="button" ref="shareButton" className={ buttonClasses }>
-					<Gridicon icon="share" size={ this.props.iconSize } />
+				<Button
+					key="button"
+					ref={ this.shareButton }
+					className={ buttonClasses }
+					onClick={ this.toggle }
+					borderless
+					compact={ this.props.iconSize === 18 }
+				>
+					<Gridicon icon="share" />
 					<span className="reader-share__button-label">
 						{ translate( 'Share', { comment: 'Share the post' } ) }
 					</span>
-				</span>,
+				</Button>,
 				this.state.showingMenu && (
 					<ReaderPopoverMenu
 						key="menu"
-						context={ this.refs && this.refs.shareButton }
+						context={ this.shareButton.current }
 						isVisible={ this.state.showingMenu }
 						onClose={ this.closeExternalShareMenu }
 						position={ this.props.position }
@@ -223,12 +222,8 @@ class ReaderShare extends React.Component {
 						{ this.props.hasSites && (
 							<SiteSelector
 								className="reader-share__site-selector"
-								siteBasePath="/post"
 								onSiteSelect={ this.pickSiteToShareTo }
-								showAddNewSite={ false }
-								indicator={ false }
-								autoFocus={ false }
-								groups={ true }
+								groups
 							/>
 						) }
 					</ReaderPopoverMenu>
@@ -238,6 +233,6 @@ class ReaderShare extends React.Component {
 	}
 }
 
-export default connect( state => ( {
+export default connect( ( state ) => ( {
 	hasSites: !! getPrimarySiteId( state ),
 } ) )( localize( ReaderShare ) );

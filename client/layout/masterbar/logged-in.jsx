@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -18,35 +17,111 @@ import Notifications from './notifications';
 import Gravatar from 'components/gravatar';
 import config from 'config';
 import { preload } from 'sections-helper';
-import ResumeEditing from 'my-sites/resume-editing';
-import { getPrimarySiteId, isDomainOnlySite, isNotificationsOpen } from 'state/selectors';
+import { getCurrentUserSiteCount, getCurrentUser } from 'state/current-user/selectors';
+import { isSupportSession } from 'state/support/selectors';
+import AsyncLoad from 'components/async-load';
+import getPrimarySiteId from 'state/selectors/get-primary-site-id';
+import isDomainOnlySite from 'state/selectors/is-domain-only-site';
+import isNotificationsOpen from 'state/selectors/is-notifications-open';
+import isSiteMigrationInProgress from 'state/selectors/is-site-migration-in-progress';
+import isSiteMigrationActiveRoute from 'state/selectors/is-site-migration-active-route';
 import { setNextLayoutFocus } from 'state/ui/layout-focus/actions';
+import { getCurrentLayoutFocus } from 'state/ui/layout-focus/selectors';
 import { getSelectedSiteId } from 'state/ui/selectors';
-import { getSiteSlug } from 'state/sites/selectors';
+import { getSiteSlug, isJetpackSite } from 'state/sites/selectors';
+import canCurrentUserUseCustomerHome from 'state/sites/selectors/can-current-user-use-customer-home';
 import { getStatsPathForTab } from 'lib/route';
 import { domainManagementList } from 'my-sites/domains/paths';
+import getSiteMigrationStatus from 'state/selectors/get-site-migration-status';
+import { updateSiteMigrationMeta } from 'state/sites/actions';
+import { requestHttpData } from 'state/data-layer/http-data';
+import { http } from 'state/data-layer/wpcom-http/actions';
+import { hasUnseen } from 'state/reader-ui/seen-posts/selectors';
+import getPreviousPath from 'state/selectors/get-previous-path.js';
+import isAtomicSite from 'state/selectors/is-site-automated-transfer';
 
 class MasterbarLoggedIn extends React.Component {
 	static propTypes = {
+		user: PropTypes.object.isRequired,
 		domainOnlySite: PropTypes.bool,
-		user: PropTypes.object,
 		section: PropTypes.oneOfType( [ PropTypes.string, PropTypes.bool ] ),
 		setNextLayoutFocus: PropTypes.func.isRequired,
+		currentLayoutFocus: PropTypes.string,
 		siteSlug: PropTypes.string,
+		hasMoreThanOneSite: PropTypes.bool,
+		isCheckout: PropTypes.bool,
+		hasUnseen: PropTypes.bool,
 	};
 
 	clickMySites = () => {
 		this.props.recordTracksEvent( 'calypso_masterbar_my_sites_clicked' );
-		this.props.setNextLayoutFocus( 'sidebar' );
+		if ( ! config.isEnabled( 'nav-unification' ) ) {
+			this.props.setNextLayoutFocus( 'sidebar' );
+		} else if ( 'sites' !== this.props.section || 'sidebar' === this.props.currentLayoutFocus ) {
+			// when my-sites is not focused or sidebar is open, focus to my-sites' content. Else, open my-sites' sidebar.
+			this.props.setNextLayoutFocus( 'content' );
+		} else {
+			this.props.setNextLayoutFocus( 'sidebar' );
+		}
+
+		/**
+		 * Site Migration: Reset a failed migration when clicking on My Sites
+		 *
+		 * If the site migration has failed, clicking on My Sites sends the customer in a loop
+		 * until they click the Try Again button on the migration screen.
+		 *
+		 * This code makes it possible to reset the failed migration state when clicking My Sites too.
+		 */
+		if ( config.isEnabled( 'tools/migrate' ) ) {
+			const { migrationStatus, currentSelectedSiteId } = this.props;
+
+			if ( currentSelectedSiteId && migrationStatus === 'error' ) {
+				/**
+				 * Reset the in-memory site lock for the currently selected site
+				 */
+				this.props.updateSiteMigrationMeta( currentSelectedSiteId, 'inactive', null );
+
+				/**
+				 * Reset the migration on the backend
+				 */
+				requestHttpData(
+					'site-migration',
+					http( {
+						apiNamespace: 'wpcom/v2',
+						method: 'POST',
+						path: `/sites/${ currentSelectedSiteId }/reset-migration`,
+						body: {},
+					} ),
+					{
+						freshness: 0,
+					}
+				);
+			}
+		}
 	};
 
 	clickReader = () => {
 		this.props.recordTracksEvent( 'calypso_masterbar_reader_clicked' );
-		this.props.setNextLayoutFocus( 'content' );
+		if ( ! config.isEnabled( 'nav-unification' ) ) {
+			this.props.setNextLayoutFocus( 'content' );
+		} else if ( 'reader' !== this.props.section || 'sidebar' === this.props.currentLayoutFocus ) {
+			// when reader is not focused or sidebar is open, focus to reader's content. Else, open reader's sidebar.
+			this.props.setNextLayoutFocus( 'content' );
+		} else {
+			this.props.setNextLayoutFocus( 'sidebar' );
+		}
 	};
 
 	clickMe = () => {
 		this.props.recordTracksEvent( 'calypso_masterbar_me_clicked' );
+		if ( config.isEnabled( 'nav-unification' ) ) {
+			if ( 'me' !== this.props.section || 'sidebar' === this.props.currentLayoutFocus ) {
+				// when me is not focused or sidebar is open, focus to me's content. Else, open me's sidebar.
+				this.props.setNextLayoutFocus( 'content' );
+			} else {
+				this.props.setNextLayoutFocus( 'sidebar' );
+			}
+		}
 	};
 
 	preloadMySites = () => {
@@ -61,7 +136,7 @@ class MasterbarLoggedIn extends React.Component {
 		preload( 'me' );
 	};
 
-	isActive = section => {
+	isActive = ( section ) => {
 		return section === this.props.section && ! this.props.isNotificationsShowing;
 	};
 
@@ -74,43 +149,87 @@ class MasterbarLoggedIn extends React.Component {
 		return 'my-sites';
 	};
 
-	render() {
-		const { domainOnlySite, siteSlug, translate } = this.props,
-			mySitesUrl = domainOnlySite
-				? domainManagementList( siteSlug )
+	renderMySites() {
+		const {
+				domainOnlySite,
+				hasMoreThanOneSite,
+				siteSlug,
+				translate,
+				isCustomerHomeEnabled,
+				section,
+			} = this.props,
+			homeUrl = isCustomerHomeEnabled
+				? `/home/${ siteSlug }`
 				: getStatsPathForTab( 'day', siteSlug );
+
+		let mySitesUrl = domainOnlySite ? domainManagementList( siteSlug ) : homeUrl;
+		if ( config.isEnabled( 'nav-unification' ) && 'sites' === section ) {
+			mySitesUrl = '';
+		}
+		return (
+			<Item
+				url={ mySitesUrl }
+				tipTarget="my-sites"
+				icon={ this.wordpressIcon() }
+				onClick={ this.clickMySites }
+				isActive={ this.isActive( 'sites' ) }
+				tooltip={ translate( 'View a list of your sites and access their dashboards' ) }
+				preloadSection={ this.preloadMySites }
+			>
+				{ hasMoreThanOneSite
+					? translate( 'My Sites', { comment: 'Toolbar, must be shorter than ~12 chars' } )
+					: translate( 'My Site', { comment: 'Toolbar, must be shorter than ~12 chars' } ) }
+			</Item>
+		);
+	}
+
+	render() {
+		const {
+			domainOnlySite,
+			translate,
+			isCheckout,
+			isMigrationInProgress,
+			previousPath,
+			siteSlug,
+			isJetpackNotAtomic,
+			title,
+		} = this.props;
+
+		if ( isCheckout ) {
+			return (
+				<AsyncLoad
+					require="layout/masterbar/checkout"
+					placeholder={ null }
+					title={ title }
+					isJetpackNotAtomic={ isJetpackNotAtomic }
+					previousPath={ previousPath }
+					siteSlug={ siteSlug }
+				/>
+			);
+		}
 
 		return (
 			<Masterbar>
-				<Item
-					url={ mySitesUrl }
-					tipTarget="my-sites"
-					icon={ this.wordpressIcon() }
-					onClick={ this.clickMySites }
-					isActive={ this.isActive( 'sites' ) }
-					tooltip={ translate( 'View a list of your sites and access their dashboards' ) }
-					preloadSection={ this.preloadMySites }
-				>
-					{ this.props.user.get().site_count > 1
-						? translate( 'My Sites', { comment: 'Toolbar, must be shorter than ~12 chars' } )
-						: translate( 'My Site', { comment: 'Toolbar, must be shorter than ~12 chars' } ) }
-				</Item>
+				{ this.renderMySites() }
 				<Item
 					tipTarget="reader"
 					className="masterbar__reader"
-					url="/"
+					url="/read"
 					icon="reader"
 					onClick={ this.clickReader }
 					isActive={ this.isActive( 'reader' ) }
 					tooltip={ translate( 'Read the blogs and topics you follow' ) }
 					preloadSection={ this.preloadReader }
+					hasUnseen={ this.props.hasUnseen }
 				>
 					{ translate( 'Reader', { comment: 'Toolbar, must be shorter than ~12 chars' } ) }
 				</Item>
-				{ config.isEnabled( 'resume-editing' ) && <ResumeEditing /> }
-				{ ! domainOnlySite && (
+				{ ( this.props.isSupportSession || config.isEnabled( 'quick-language-switcher' ) ) && (
+					<AsyncLoad require="./quick-language-switcher" placeholder={ null } />
+				) }
+				<AsyncLoad require="my-sites/resume-editing" placeholder={ null } />
+				{ ! domainOnlySite && ! isMigrationInProgress && (
 					<Publish
-						user={ this.props.user }
 						isActive={ this.isActive( 'post' ) }
 						className="masterbar__item-new"
 						tooltip={ translate( 'Create a New Post' ) }
@@ -128,13 +247,12 @@ class MasterbarLoggedIn extends React.Component {
 					tooltip={ translate( 'Update your profile, personal settings, and more' ) }
 					preloadSection={ this.preloadMe }
 				>
-					<Gravatar user={ this.props.user.get() } alt="Me" size={ 18 } />
+					<Gravatar user={ this.props.user } alt={ translate( 'My Profile' ) } size={ 18 } />
 					<span className="masterbar__item-me-label">
-						{ translate( 'Me', { context: 'Toolbar, must be shorter than ~12 chars' } ) }
+						{ translate( 'My Profile', { context: 'Toolbar, must be shorter than ~12 chars' } ) }
 					</span>
 				</Item>
 				<Notifications
-					user={ this.props.user }
 					isShowing={ this.props.isNotificationsShowing }
 					isActive={ this.isActive( 'notifications' ) }
 					className="masterbar__item-notifications"
@@ -150,16 +268,32 @@ class MasterbarLoggedIn extends React.Component {
 }
 
 export default connect(
-	state => {
+	( state ) => {
 		// Falls back to using the user's primary site if no site has been selected
 		// by the user yet
-		const siteId = getSelectedSiteId( state ) || getPrimarySiteId( state );
+		const currentSelectedSiteId = getSelectedSiteId( state );
+		const siteId = currentSelectedSiteId || getPrimarySiteId( state );
+
+		const isMigrationInProgress =
+			isSiteMigrationInProgress( state, currentSelectedSiteId ) ||
+			isSiteMigrationActiveRoute( state );
 
 		return {
+			hasUnseen: hasUnseen( state ),
+			isCustomerHomeEnabled: canCurrentUserUseCustomerHome( state, siteId ),
 			isNotificationsShowing: isNotificationsOpen( state ),
 			siteSlug: getSiteSlug( state, siteId ),
 			domainOnlySite: isDomainOnlySite( state, siteId ),
+			hasMoreThanOneSite: getCurrentUserSiteCount( state ) > 1,
+			user: getCurrentUser( state ),
+			isSupportSession: isSupportSession( state ),
+			isMigrationInProgress,
+			migrationStatus: getSiteMigrationStatus( state, currentSelectedSiteId ),
+			currentSelectedSiteId,
+			previousPath: getPreviousPath( state ),
+			isJetpackNotAtomic: isJetpackSite( state, siteId ) && ! isAtomicSite( state, siteId ),
+			currentLayoutFocus: getCurrentLayoutFocus( state ),
 		};
 	},
-	{ setNextLayoutFocus, recordTracksEvent }
+	{ setNextLayoutFocus, recordTracksEvent, updateSiteMigrationMeta }
 )( localize( MasterbarLoggedIn ) );

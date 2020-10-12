@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -9,6 +7,11 @@ import React, { PureComponent } from 'react';
 /* Internal dependencies */
 import { localize } from 'i18n-calypso';
 import { truncateArticleContent } from '../helpers';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 export class TumblrSharePreview extends PureComponent {
 	render() {

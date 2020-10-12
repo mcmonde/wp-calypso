@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -13,7 +11,7 @@ import { localize } from 'i18n-calypso';
  * Internal dependencies
  */
 import config from 'config';
-import { isExternal } from 'lib/url';
+import { isOutsideCalypso } from 'lib/url';
 // actions
 import { sendMessage, sendNotTyping, sendTyping } from 'state/happychat/connection/actions';
 import {
@@ -41,6 +39,11 @@ import { Composer } from './composer';
 import { Notices } from './notices';
 import { Timeline } from './timeline';
 
+/**
+ * Style dependencies
+ */
+import './style.scss';
+
 /*
  * Main chat UI component
  */
@@ -53,7 +56,6 @@ export class Happychat extends Component {
 		this.props.setBlurred();
 	}
 
-	// transform-class-properties syntax so this is bound within the function
 	onCloseChatTitle = () => {
 		const { onMinimizeChat, onMinimizedChat, onCloseChat } = this.props;
 		onMinimizeChat();
@@ -148,11 +150,11 @@ Happychat.propTypes = {
 	twemojiUrl: PropTypes.string,
 };
 
-const isMessageFromCurrentUser = currentUser => ( { user_id, source } ) => {
+const isMessageFromCurrentUser = ( currentUser ) => ( { user_id, source } ) => {
 	return user_id.toString() === currentUser.ID.toString() && source === 'customer';
 };
 
-const mapState = state => {
+const mapState = ( state ) => {
 	const currentUser = getCurrentUser( state );
 	return {
 		chatStatus: getHappychatChatStatus( state ),
@@ -161,7 +163,7 @@ const mapState = state => {
 		disabled: ! canUserSendMessages( state ),
 		isChatOpen: isHappychatOpen( state ),
 		isCurrentUser: isMessageFromCurrentUser( currentUser ), // see redux-no-bound-selectors eslint-rule
-		isExternalUrl: isExternal,
+		isExternalUrl: isOutsideCalypso,
 		isMinimizing: isHappychatMinimizing( state ),
 		isServerReachable: isHappychatServerReachable( state ),
 		message: getCurrentMessage( state ),

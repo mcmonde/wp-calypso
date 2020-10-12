@@ -1,28 +1,24 @@
 .extended-header {
 	.section-header__label {
-		&:before {
+		&::before {
 			display: none;
 		}
 	}
 
 	.extended-header__header {
-		font-size: 18px;
+		font-size: $font-title-small;
 		margin-bottom: 0;
 		padding-top: 8px;
 	}
 
 	.extended-header__header-description {
-		color: $gray-text-min;
-		font-size: 12px;
+		color: var( --color-text-subtle );
+		font-size: $font-body-extra-small;
 		line-height: 18px;
 		padding-bottom: 8px;
 	}
 
 	.section-header__actions {
 		flex-shrink: 0;
-
-		.form-toggle__label .form-toggle__label-content {
-			margin-left: 0;
-		}
 	}
 }

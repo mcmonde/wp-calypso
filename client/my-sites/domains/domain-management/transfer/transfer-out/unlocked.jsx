@@ -1,9 +1,6 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import React from 'react';
 import { localize } from 'i18n-calypso';
 import { noop } from 'lodash';
@@ -11,14 +8,16 @@ import { noop } from 'lodash';
 /**
  * Internal dependencies
  */
-import Card from 'components/card';
-import SectionHeader from 'components/section-header';
+import { Card, Button } from '@automattic/components';
 import { getSelectedDomain } from 'lib/domains';
-import Button from 'components/button';
-import { requestTransferCode, cancelTransferRequest } from 'lib/upgrades/actions';
+import {
+	cancelTransferRequest,
+	fetchWapiDomainInfo,
+	requestTransferCode,
+} from 'lib/domains/wapi-domain-info/actions';
 import notices from 'notices';
 import { displayRequestTransferCodeResponseNotice } from './shared';
-import { CALYPSO_CONTACT, TRANSFER_DOMAIN_REGISTRATION } from 'lib/url/support';
+import { CALYPSO_CONTACT, TRANSFER_DOMAIN_REGISTRATION_WITH_NEW_REGISTRAR } from 'lib/url/support';
 
 class Unlocked extends React.Component {
 	state = {
@@ -30,32 +29,29 @@ class Unlocked extends React.Component {
 		this.setStateIfMounted = noop;
 	}
 
-	/**
-	 * Wrap setState calls that might occur after unmounting.
-	 *
-	 * When we cancel a transfer, that might update locking or privacy,
-	 * but errors mean we can't know in time - the store gets the information
-	 * before we do.
-	 *
-	 * The recommended solution is cancellable promises, but we don't want to
-	 * cancel these requests if we navigate away, so that won't work for us here.
-	 */
 	setStateIfMounted( ...args ) {
+		/**
+		 * Wrap setState calls that might occur after unmounting.
+		 *
+		 * When we cancel a transfer, that might update locking or privacy,
+		 * but errors mean we can't know in time - the store gets the information
+		 * before we do.
+		 *
+		 * The recommended solution is cancellable promises, but we don't want to
+		 * cancel these requests if we navigate away, so that won't work for us here.
+		 */
 		this.setState( ...args );
 	}
 
 	handleCancelTransferClick = () => {
 		const { translate } = this.props;
-		const {
-			privateDomain,
-			hasPrivacyProtection,
-			pendingTransfer,
-			domainLockingAvailable,
-		} = getSelectedDomain( this.props );
+		const { privateDomain, pendingTransfer, domainLockingAvailable } = getSelectedDomain(
+			this.props
+		);
 
 		this.setState( { submitting: true } );
 
-		const enablePrivacy = hasPrivacyProtection && ! privateDomain;
+		const enablePrivacy = ! privateDomain;
 		const lockDomain = domainLockingAvailable;
 
 		cancelTransferRequest(
@@ -66,7 +62,7 @@ class Unlocked extends React.Component {
 				enablePrivacy,
 				lockDomain,
 			},
-			error => {
+			( error ) => {
 				this.setStateIfMounted( { submitting: false } );
 
 				if ( error ) {
@@ -136,8 +132,8 @@ class Unlocked extends React.Component {
 	};
 
 	isDomainAlwaysTransferrable() {
-		const { domainLockingAvailable, hasPrivacyProtection } = getSelectedDomain( this.props );
-		return ! domainLockingAvailable && ! hasPrivacyProtection;
+		const { domainLockingAvailable, privateDomain } = getSelectedDomain( this.props );
+		return ! domainLockingAvailable && ! privateDomain;
 	}
 
 	renderCancelButton( domain ) {
@@ -150,9 +146,9 @@ class Unlocked extends React.Component {
 
 		return (
 			<Button
+				className="transfer-out__action-button"
 				onClick={ this.handleCancelTransferClick }
 				disabled={ this.state.submitting || ! this.state.sent }
-				compact
 			>
 				{ this.props.translate( 'Cancel Transfer' ) }
 			</Button>
@@ -169,9 +165,9 @@ class Unlocked extends React.Component {
 
 		return (
 			<Button
+				className="transfer-out__action-button"
 				onClick={ this.handleSendConfirmationCodeClick }
 				disabled={ this.state.submitting }
-				compact
 				primary
 			>
 				{ this.state.sent
@@ -191,12 +187,13 @@ class Unlocked extends React.Component {
 
 		this.setState( { submitting: true } );
 
-		requestTransferCode( options, error => {
+		requestTransferCode( options, ( error ) => {
 			this.setState( { submitting: false } );
 			if ( ! error ) {
 				this.setState( { sent: true } );
 			}
 			displayRequestTransferCodeResponseNotice( error, getSelectedDomain( this.props ) );
+			fetchWapiDomainInfo( this.props.selectedDomainName );
 		} );
 	};
 
@@ -215,17 +212,17 @@ class Unlocked extends React.Component {
 
 		return (
 			<p>
-				{ translate( 'The registry for your domain requires a special process for transfers. ' ) }{' '}
+				{ translate( 'The registry for your domain requires a special process for transfers. ' ) }{ ' ' }
 				{ sent
 					? translate(
 							'Our Happiness Engineers have been notified about ' +
 								'your transfer request and will be in touch shortly to help ' +
 								'you complete the process.'
-						)
+					  )
 					: translate(
 							'Please request an authorization code to notify our ' +
 								'Happiness Engineers of your intention.'
-						) }
+					  ) }
 			</p>
 		);
 	}
@@ -262,8 +259,8 @@ class Unlocked extends React.Component {
 		const { translate } = this.props;
 		const { submitting } = this.state;
 		const domain = getSelectedDomain( this.props );
-		const { privateDomain, hasPrivacyProtection, domainLockingAvailable } = domain;
-		const privacyDisabled = hasPrivacyProtection && ! privateDomain;
+		const { privateDomain, domainLockingAvailable } = domain;
+		const privacyDisabled = ! privateDomain;
 
 		let domainStateMessage;
 		if ( domainLockingAvailable && privacyDisabled ) {
@@ -281,23 +278,21 @@ class Unlocked extends React.Component {
 
 		return (
 			<div>
-				<SectionHeader
-					label={ translate( 'Transfer Domain' ) }
-					className="transfer-out__section-header"
-				>
-					{ this.renderCancelButton( domain ) }
-					{ this.renderSendButton( domain ) }
-				</SectionHeader>
-
-				<Card className="transfer-card">
+				<Card className="transfer-out__card">
 					<div>
 						{ submitting && <p>{ translate( 'Sending request…' ) }</p> }
 						{ domainStateMessage && <p>{ domainStateMessage }</p> }
 						{ this.renderBody( domain ) }
-						<a href={ TRANSFER_DOMAIN_REGISTRATION } target="_blank" rel="noopener noreferrer">
+						<a
+							href={ TRANSFER_DOMAIN_REGISTRATION_WITH_NEW_REGISTRAR }
+							target="_blank"
+							rel="noopener noreferrer"
+						>
 							{ translate( 'Learn More.' ) }
 						</a>
 					</div>
+					{ this.renderSendButton( domain ) }
+					{ this.renderCancelButton( domain ) }
 				</Card>
 			</div>
 		);

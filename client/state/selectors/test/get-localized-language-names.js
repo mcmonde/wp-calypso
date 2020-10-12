@@ -1,9 +1,7 @@
-/** @format */
-
 /**
  * Internal dependencies
  */
-import { getLocalizedLanguageNames } from 'state/selectors';
+import getLocalizedLanguageNames from 'state/selectors/get-localized-language-names';
 
 describe( 'getLocalizedLanguageNames()', () => {
 	test( 'should return', () => {

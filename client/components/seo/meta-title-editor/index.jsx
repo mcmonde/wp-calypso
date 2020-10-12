@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -14,7 +12,12 @@ import { get, identity, noop } from 'lodash';
 import TitleFormatEditor from 'components/title-format-editor';
 import { localize } from 'i18n-calypso';
 
-const titleTypes = translate => [
+/**
+ * Style dependencies
+ */
+import './style.scss';
+
+const titleTypes = ( translate ) => [
 	{ value: 'frontPage', label: translate( 'Front Page' ) },
 	{ value: 'posts', label: translate( 'Posts' ) },
 	{ value: 'pages', label: translate( 'Pages' ) },
@@ -22,7 +25,7 @@ const titleTypes = translate => [
 	{ value: 'archives', label: translate( 'Archives' ) },
 ];
 
-const getValidTokens = translate => ( {
+const getValidTokens = ( translate ) => ( {
 	siteName: translate( 'Site Title' ),
 	tagline: translate( 'Tagline' ),
 	postTitle: translate( 'Post Title' ),
@@ -81,7 +84,7 @@ export class MetaTitleEditor extends Component {
 
 		return (
 			<div className="meta-title-editor">
-				{ titleTypes( translate ).map( type => (
+				{ titleTypes( translate ).map( ( type ) => (
 					<TitleFormatEditor
 						key={ type.value }
 						disabled={ disabled }

@@ -1,5 +1,4 @@
-User State
-==========
+# User State
 
 A module for managing user state.
 
@@ -7,14 +6,14 @@ A module for managing user state.
 
 Used in combination with the Redux store instance `dispatch` function, actions can be used in manipulating the current global state.
 
-### `setCurrentUserId( userId: Number )`
+### `setCurrentUser( user: Object )`
 
 Sets the current user by user ID.
 
 ```js
-import { setCurrentUserId } from 'state/current-user/actions';
+import { setCurrentUser } from 'state/current-user/actions';
 
-dispatch( setCurrentUserId( 73705554 ) );
+dispatch( setCurrentUser( { ID: 73705554 } ) );
 ```
 
 ## Reducers

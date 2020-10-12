@@ -1,12 +1,12 @@
-/** @format */
 /**
  * External dependencies
  */
 import PropTypes from 'prop-types';
 import React from 'react';
 import createReactClass from 'create-react-class';
-import ReactCSSTransitionGroup from 'react-transition-group/CSSTransitionGroup';
-import i18n, { localize } from 'i18n-calypso';
+import TransitionGroup from 'react-transition-group/TransitionGroup';
+import CSSTransition from 'react-transition-group/CSSTransition';
+import { localize } from 'i18n-calypso';
 import debugFactory from 'debug';
 import emailValidator from 'email-validator';
 import { debounce, flowRight as compose, get, has, map, size, update } from 'lodash';
@@ -15,42 +15,55 @@ import { connect } from 'react-redux';
 /**
  * Internal dependencies
  */
-import LanguagePicker from 'components/language-picker';
-import MeSidebarNavigation from 'me/sidebar-navigation';
-import { protectForm } from 'lib/protect-form';
-import formBase from 'me/form-base';
-import config from 'config';
-import { supportsCssCustomProperties } from 'lib/feature-detection';
-import Card from 'components/card';
-import FormTextInput from 'components/forms/form-text-input';
-import FormTextValidation from 'components/forms/form-input-validation';
-import FormCheckbox from 'components/forms/form-checkbox';
-import FormFieldset from 'components/forms/form-fieldset';
-import FormLabel from 'components/forms/form-label';
-import FormLegend from 'components/forms/form-legend';
-import FormSettingExplanation from 'components/forms/form-setting-explanation';
-import FormButton from 'components/forms/form-button';
-import FormButtonsBar from 'components/forms/form-buttons-bar';
-import FormSectionHeading from 'components/forms/form-section-heading';
-import FormRadio from 'components/forms/form-radio';
-import { recordGoogleEvent, recordTracksEvent } from 'state/analytics/actions';
-import ReauthRequired from 'me/reauth-required';
-import twoStepAuthorization from 'lib/two-step-authorization';
-import Notice from 'components/notice';
-import NoticeAction from 'components/notice/notice-action';
-import observe from 'lib/mixins/data-observe';
-import Main from 'components/main';
-import SitesDropdown from 'components/sites-dropdown';
-import ColorSchemePicker from 'blocks/color-scheme-picker';
-import { successNotice, errorNotice } from 'state/notices/actions';
-import { getLanguage, isLocaleVariant, canBeTranslated } from 'lib/i18n-utils';
-import { isRequestingMissingSites } from 'state/selectors';
-import PageViewTracker from 'lib/analytics/page-view-tracker';
-import _user from 'lib/user';
-import { canDisplayCommunityTranslator } from 'components/community-translator/utils';
-import { ENABLE_TRANSLATOR_KEY } from 'components/community-translator/constants';
+import LanguagePicker from 'calypso/components/language-picker';
+import MeSidebarNavigation from 'calypso/me/sidebar-navigation';
+import { protectForm } from 'calypso/lib/protect-form';
+import formBase from 'calypso/me/form-base';
+import config from 'calypso/config';
+import { languages } from 'calypso/languages';
+import { supportsCssCustomProperties } from 'calypso/lib/feature-detection';
+import { Card, Button } from '@automattic/components';
+import FormTextInput from 'calypso/components/forms/form-text-input';
+import FormTextValidation from 'calypso/components/forms/form-input-validation';
+import FormCheckbox from 'calypso/components/forms/form-checkbox';
+import FormFieldset from 'calypso/components/forms/form-fieldset';
+import FormLabel from 'calypso/components/forms/form-label';
+import FormLegend from 'calypso/components/forms/form-legend';
+import FormSettingExplanation from 'calypso/components/forms/form-setting-explanation';
+import FormButton from 'calypso/components/forms/form-button';
+import FormButtonsBar from 'calypso/components/forms/form-buttons-bar';
+import FormSectionHeading from 'calypso/components/forms/form-section-heading';
+import FormRadio from 'calypso/components/forms/form-radio';
+import { recordGoogleEvent, recordTracksEvent, bumpStat } from 'calypso/state/analytics/actions';
+import ReauthRequired from 'calypso/me/reauth-required';
+import twoStepAuthorization from 'calypso/lib/two-step-authorization';
+import Notice from 'calypso/components/notice';
+import NoticeAction from 'calypso/components/notice/notice-action';
+import observe from 'calypso/lib/mixins/data-observe'; // eslint-disable-line no-restricted-imports
+import Main from 'calypso/components/main';
+import SitesDropdown from 'calypso/components/sites-dropdown';
+import ColorSchemePicker from 'calypso/blocks/color-scheme-picker';
+import { successNotice, errorNotice } from 'calypso/state/notices/actions';
+import { getLanguage, isLocaleVariant, canBeTranslated } from 'calypso/lib/i18n-utils';
+import isRequestingMissingSites from 'calypso/state/selectors/is-requesting-missing-sites';
+import PageViewTracker from 'calypso/lib/analytics/page-view-tracker';
+import { canDisplayCommunityTranslator } from 'calypso/components/community-translator/utils';
+import { ENABLE_TRANSLATOR_KEY } from 'calypso/lib/i18n-utils/constants';
+import AccountSettingsCloseLink from './close-link';
+import { requestGeoLocation } from 'calypso/state/data-getters';
+import { withLocalizedMoment } from 'calypso/components/localized-moment';
+import {
+	getCurrentUserDate,
+	getCurrentUserDisplayName,
+	getCurrentUserName,
+	getCurrentUserVisibleSiteCount,
+} from 'calypso/state/current-user/selectors';
 
-const user = _user();
+/**
+ * Style dependencies
+ */
+import './style.scss';
+
 const colorSchemeKey = 'calypso_preferences.colorScheme';
 
 /**
@@ -58,6 +71,7 @@ const colorSchemeKey = 'calypso_preferences.colorScheme';
  */
 const debug = debugFactory( 'calypso:me:account' );
 
+/* eslint-disable react/prefer-es6-class */
 const Account = createReactClass( {
 	displayName: 'Account',
 
@@ -70,7 +84,7 @@ const Account = createReactClass( {
 		showNoticeInitially: PropTypes.bool,
 	},
 
-	componentWillMount() {
+	UNSAFE_componentWillMount() {
 		// Clear any username changes that were previously made
 		this.props.username.clearValidation();
 		this.props.userSettings.removeUnsavedSetting( 'user_login' );
@@ -87,6 +101,10 @@ const Account = createReactClass( {
 
 	getUserSetting( settingName ) {
 		return this.props.userSettings.getSetting( settingName );
+	},
+
+	getUserOriginalSetting( settingName ) {
+		return this.props.userSettings.getOriginalSetting( settingName );
 	},
 
 	updateUserSetting( settingName, value ) {
@@ -109,12 +127,27 @@ const Account = createReactClass( {
 	},
 
 	updateLanguage( event ) {
-		const { value } = event.target;
-		const originalLanguage = this.props.userSettings.getOriginalSetting( 'language' );
-		const originalLocaleVariant = this.props.userSettings.getOriginalSetting( 'locale_variant' );
+		const { value, empathyMode, useFallbackForIncompleteLanguages } = event.target;
 		this.updateUserSetting( 'language', value );
-		const redirect =
-			value !== originalLanguage || value !== originalLocaleVariant ? '/me/account' : false;
+
+		if ( typeof empathyMode !== 'undefined' ) {
+			this.updateUserSetting( 'i18n_empathy_mode', empathyMode );
+		}
+
+		if ( typeof useFallbackForIncompleteLanguages !== 'undefined' ) {
+			this.updateUserSetting(
+				'use_fallback_for_incomplete_languages',
+				useFallbackForIncompleteLanguages
+			);
+		}
+
+		const shouldRedirect =
+			value !== this.getUserOriginalSetting( 'language' ) ||
+			value !== this.getUserOriginalSetting( 'locale_variant' ) ||
+			( typeof empathyMode !== 'undefined' &&
+				empathyMode !== this.getUserOriginalSetting( 'i18n_empathy_mode' ) );
+
+		const redirect = shouldRedirect ? '/me/account' : false;
 		// store any selected locale variant so we can test it against those with no GP translation sets
 		const localeVariantSelected = isLocaleVariant( value ) ? value : '';
 		this.setState( { redirect, localeVariantSelected } );
@@ -125,9 +158,10 @@ const Account = createReactClass( {
 		// This is a workaround that allows us to use userSettings.updateSetting() without an
 		// existing value. Without this workaround the save button wouldn't become active.
 		// TODO: the API should provide a default value, which would make this line obsolete
-		update( this.props.userSettings.settings, colorSchemeKey, value => value || 'default' );
+		update( this.props.userSettings.settings, colorSchemeKey, ( value ) => value || 'default' );
 
 		this.props.recordTracksEvent( 'calypso_color_schemes_select', { color_scheme: colorScheme } );
+		this.props.recordGoogleEvent( 'Me', 'Selected Color Scheme', 'scheme', colorScheme );
 		this.updateUserSetting( colorSchemeKey, colorScheme );
 	},
 
@@ -210,7 +244,7 @@ const Account = createReactClass( {
 									<a
 										target="_blank"
 										rel="noopener noreferrer"
-										href="https://en.support.wordpress.com/community-translator/"
+										href="https://translate.wordpress.com/community-translator/"
 										onClick={ this.getClickHandler( 'Community Translator Learn More Link' ) }
 									/>
 								),
@@ -237,7 +271,7 @@ const Account = createReactClass( {
 
 		return (
 			<FormSettingExplanation>
-				{' '}
+				{ ' ' }
 				{ translate(
 					'Thanks to {{a}}all our community members who helped translate to {{language/}}{{/a}}!',
 					{
@@ -275,8 +309,21 @@ const Account = createReactClass( {
 		const { unsavedSettings } = this.props.userSettings;
 		this.recordClickEvent( 'Save Account Settings Button' );
 		if ( has( unsavedSettings, colorSchemeKey ) ) {
+			const colorScheme = get( unsavedSettings, colorSchemeKey );
 			this.props.recordTracksEvent( 'calypso_color_schemes_save', {
-				color_scheme: get( unsavedSettings, colorSchemeKey ),
+				color_scheme: colorScheme,
+			} );
+			this.props.recordGoogleEvent( 'Me', 'Saved Color Scheme', 'scheme', colorScheme );
+			this.props.bumpStat( 'calypso_changed_color_scheme', colorScheme );
+		}
+
+		if ( has( unsavedSettings, 'language' ) ) {
+			this.props.recordTracksEvent( 'calypso_user_language_switch', {
+				new_language: this.getUserSetting( 'language' ),
+				previous_language:
+					this.getUserOriginalSetting( 'locale_variant' ) ||
+					this.getUserOriginalSetting( 'language' ),
+				country_code: this.props.countryCode,
 			} );
 		}
 	},
@@ -312,7 +359,7 @@ const Account = createReactClass( {
 	},
 
 	getCheckboxHandler( checkboxName ) {
-		return event => {
+		return ( event ) => {
 			const action = 'Clicked ' + checkboxName + ' checkbox';
 			const value = event.target.checked ? 1 : 0;
 
@@ -348,7 +395,7 @@ const Account = createReactClass( {
 		const action = null === this.state.usernameAction ? 'none' : this.state.usernameAction;
 
 		this.setState( { submittingForm: true } );
-		this.props.username.change( username, action, error => {
+		this.props.username.change( username, action, ( error ) => {
 			this.setState( { submittingForm: false } );
 			if ( error ) {
 				this.props.errorNotice( this.props.username.getValidationFailureMessage() );
@@ -357,7 +404,7 @@ const Account = createReactClass( {
 
 				// We reload here to refresh cookies, user object, and user settings.
 				// @TODO: Do not require reload here.
-				location.reload();
+				window.location.reload();
 			}
 		} );
 	},
@@ -369,8 +416,8 @@ const Account = createReactClass( {
 	},
 
 	renderJoinDate() {
-		const { translate } = this.props;
-		const dateMoment = i18n.moment( user.get().date );
+		const { currentUserDate, translate, moment } = this.props;
+		const dateMoment = moment( currentUserDate );
 
 		return (
 			<span>
@@ -459,17 +506,16 @@ const Account = createReactClass( {
 	},
 
 	renderPrimarySite() {
-		const { requestingMissingSites, translate } = this.props;
+		const { requestingMissingSites, translate, visibleSiteCount } = this.props;
 
-		if ( ! user.get().visible_site_count ) {
+		if ( ! visibleSiteCount ) {
 			return (
-				<a
-					className="button"
+				<Button
 					href={ config( 'signup_url' ) }
 					onClick={ this.getClickHandler( 'Primary Site Add New WordPress Button' ) }
 				>
 					{ translate( 'Add New Site' ) }
-				</a>
+				</Button>
 			);
 		}
 
@@ -524,7 +570,7 @@ const Account = createReactClass( {
 		return (
 			<div className="account__settings-form" key="settingsForm">
 				<FormFieldset>
-					<FormLabel htmlFor="user_email">{ translate( 'Email Address' ) }</FormLabel>
+					<FormLabel htmlFor="user_email">{ translate( 'Email address' ) }</FormLabel>
 					<FormTextInput
 						disabled={ this.getDisabledState() || this.hasPendingEmailChange() }
 						id="user_email"
@@ -542,12 +588,12 @@ const Account = createReactClass( {
 				</FormFieldset>
 
 				<FormFieldset>
-					<FormLabel htmlFor="primary_site_ID">{ translate( 'Primary Site' ) }</FormLabel>
+					<FormLabel htmlFor="primary_site_ID">{ translate( 'Primary site' ) }</FormLabel>
 					{ this.renderPrimarySite() }
 				</FormFieldset>
 
 				<FormFieldset>
-					<FormLabel htmlFor="user_URL">{ translate( 'Web Address' ) }</FormLabel>
+					<FormLabel htmlFor="user_URL">{ translate( 'Web address' ) }</FormLabel>
 					<FormTextInput
 						disabled={ this.getDisabledState() }
 						id="user_URL"
@@ -563,15 +609,21 @@ const Account = createReactClass( {
 				</FormFieldset>
 
 				<FormFieldset>
-					<FormLabel htmlFor="language">{ translate( 'Interface Language' ) }</FormLabel>
+					<FormLabel id="account__language" htmlFor="language">
+						{ translate( 'Interface language' ) }
+					</FormLabel>
 					<LanguagePicker
 						disabled={ this.getDisabledState() }
-						languages={ config( 'languages' ) }
+						languages={ languages }
 						onClick={ this.getClickHandler( 'Interface Language Field' ) }
 						valueKey="langSlug"
 						value={
 							this.getUserSetting( 'locale_variant' ) || this.getUserSetting( 'language' ) || ''
 						}
+						empathyMode={ this.getUserSetting( 'i18n_empathy_mode' ) }
+						useFallbackForIncompleteLanguages={ this.getUserSetting(
+							'use_fallback_for_incomplete_languages'
+						) }
 						onChange={ this.updateLanguage }
 					/>
 					<FormSettingExplanation>
@@ -585,13 +637,14 @@ const Account = createReactClass( {
 				{ canDisplayCommunityTranslator( this.getUserSetting( 'language' ) ) &&
 					this.communityTranslator() }
 
-				{ config.isEnabled( 'me/account/color-scheme-picker' ) &&
-					supportsCssCustomProperties() && (
-						<FormFieldset>
-							<FormLabel htmlFor="color_scheme">{ translate( 'Admin Color Scheme' ) }</FormLabel>
-							<ColorSchemePicker temporarySelection onSelection={ this.updateColorScheme } />
-						</FormFieldset>
-					) }
+				{ config.isEnabled( 'me/account/color-scheme-picker' ) && supportsCssCustomProperties() && (
+					<FormFieldset>
+						<FormLabel id="account__color_scheme" htmlFor="color_scheme">
+							{ translate( 'Dashboard color scheme' ) }
+						</FormLabel>
+						<ColorSchemePicker temporarySelection onSelection={ this.updateColorScheme } />
+					</FormFieldset>
+				) }
 
 				<FormButton
 					isSubmitting={ this.state.submittingForm }
@@ -600,7 +653,7 @@ const Account = createReactClass( {
 				>
 					{ this.state.submittingForm
 						? translate( 'Saving…' )
-						: translate( 'Save Account Settings' ) }
+						: translate( 'Save account settings' ) }
 				</FormButton>
 			</div>
 		);
@@ -621,19 +674,21 @@ const Account = createReactClass( {
 		return (
 			<FormFieldset>
 				<FormLegend>{ translate( 'Would you like a matching blog address too?' ) }</FormLegend>
-				{ // message is translated in the API
-				map( actions, ( message, key ) => (
-					<FormLabel key={ key }>
-						<FormRadio
-							name="usernameAction"
-							onChange={ this.handleRadioChange }
-							onClick={ this.handleUsernameChangeBlogRadio }
-							value={ key }
-							checked={ key === this.state.usernameAction }
-						/>
-						<span>{ message }</span>
-					</FormLabel>
-				) ) }
+				{
+					// message is translated in the API
+					map( actions, ( message, key ) => (
+						<FormLabel key={ key }>
+							<FormRadio
+								name="usernameAction"
+								onChange={ this.handleRadioChange }
+								onClick={ this.handleUsernameChangeBlogRadio }
+								value={ key }
+								checked={ key === this.state.usernameAction }
+								label={ message }
+							/>
+						</FormLabel>
+					) )
+				}
 			</FormFieldset>
 		);
 	},
@@ -642,7 +697,7 @@ const Account = createReactClass( {
 	 * These form fields are displayed when a username change is in progress.
 	 */
 	renderUsernameFields() {
-		const { translate, username } = this.props;
+		const { currentUserDisplayName, currentUserName, translate, username } = this.props;
 
 		const isSaveButtonDisabled =
 			this.getUserSetting( 'user_login' ) !== this.state.userLoginConfirm ||
@@ -658,6 +713,9 @@ const Account = createReactClass( {
 						} ) }
 					</FormLabel>
 					<FormTextInput
+						autoCapitalize="off"
+						autoComplete="off"
+						autoCorrect="off"
 						id="username_confirm"
 						name="username_confirm"
 						onFocus={ this.getFocusHandler( 'Username Confirm Field' ) }
@@ -678,7 +736,7 @@ const Account = createReactClass( {
 							'You will not be able to change your username back.',
 						{
 							args: {
-								username: user.get().username,
+								username: currentUserName,
 							},
 							components: {
 								strong: <strong />,
@@ -693,7 +751,7 @@ const Account = createReactClass( {
 							'you can do so under {{myProfileLink}}My Profile{{/myProfileLink}}.',
 						{
 							args: {
-								displayName: user.get().display_name,
+								displayName: currentUserDisplayName,
 							},
 							components: {
 								myProfileLink: (
@@ -729,7 +787,7 @@ const Account = createReactClass( {
 						type="button"
 						onClick={ this.getClickHandler( 'Change Username Button', this.submitUsernameForm ) }
 					>
-						{ translate( 'Save Username' ) }
+						{ translate( 'Save username' ) }
 					</FormButton>
 
 					<FormButton
@@ -762,7 +820,9 @@ const Account = createReactClass( {
 						<FormFieldset>
 							<FormLabel htmlFor="user_login">{ translate( 'Username' ) }</FormLabel>
 							<FormTextInput
+								autoCapitalize="off"
 								autoComplete="off"
+								autoCorrect="off"
 								className="account__username"
 								disabled={
 									this.getDisabledState() || ! this.getUserSetting( 'user_login_can_be_changed' )
@@ -778,15 +838,19 @@ const Account = createReactClass( {
 						</FormFieldset>
 
 						{ /* This is how we animate showing/hiding the form field sections */ }
-						<ReactCSSTransitionGroup
-							transitionName="account__username-form-toggle"
-							transitionEnterTimeout={ 500 }
-							transitionLeaveTimeout={ 10 }
-						>
-							{ renderUsernameForm ? this.renderUsernameFields() : this.renderAccountFields() }
-						</ReactCSSTransitionGroup>
+						<TransitionGroup>
+							<CSSTransition
+								key={ renderUsernameForm ? 'username' : 'account' }
+								classNames="account__username-form-toggle"
+								timeout={ { enter: 500, exit: 10 } }
+							>
+								{ renderUsernameForm ? this.renderUsernameFields() : this.renderAccountFields() }
+							</CSSTransition>
+						</TransitionGroup>
 					</form>
 				</Card>
+
+				{ config.isEnabled( 'me/account-close' ) && <AccountSettingsCloseLink /> }
 			</Main>
 		);
 	},
@@ -794,11 +858,17 @@ const Account = createReactClass( {
 
 export default compose(
 	connect(
-		state => ( {
+		( state ) => ( {
 			requestingMissingSites: isRequestingMissingSites( state ),
+			countryCode: requestGeoLocation().data,
+			currentUserDate: getCurrentUserDate( state ),
+			currentUserDisplayName: getCurrentUserDisplayName( state ),
+			currentUserName: getCurrentUserName( state ),
+			visibleSiteCount: getCurrentUserVisibleSiteCount( state ),
 		} ),
-		{ errorNotice, recordGoogleEvent, recordTracksEvent, successNotice }
+		{ bumpStat, errorNotice, recordGoogleEvent, recordTracksEvent, successNotice }
 	),
 	localize,
+	withLocalizedMoment,
 	protectForm
 )( Account );

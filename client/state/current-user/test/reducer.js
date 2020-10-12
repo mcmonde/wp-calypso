@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -9,9 +7,9 @@ import deepFreeze from 'deep-freeze';
 /**
  * Internal dependencies
  */
-import reducer, { id, capabilities as unwrappedCapabilities, currencyCode } from '../reducer';
+import reducer, { id, capabilities, currencyCode } from '../reducer';
 import {
-	CURRENT_USER_ID_SET,
+	CURRENT_USER_RECEIVE,
 	DESERIALIZE,
 	PLANS_RECEIVE,
 	SERIALIZE,
@@ -19,12 +17,10 @@ import {
 	SITE_PLANS_FETCH_COMPLETED,
 	SITES_RECEIVE,
 } from 'state/action-types';
-import { withSchemaValidation } from 'state/utils';
-import { useSandbox } from 'test/helpers/use-sinon';
-const capabilities = withSchemaValidation( unwrappedCapabilities.schema, unwrappedCapabilities );
+import { useSandbox } from 'test-helpers/use-sinon';
 
 describe( 'reducer', () => {
-	useSandbox( sandbox => {
+	useSandbox( ( sandbox ) => {
 		sandbox.stub( console, 'warn' );
 	} );
 
@@ -36,6 +32,7 @@ describe( 'reducer', () => {
 			'flags',
 			'gravatarStatus',
 			'emailVerification',
+			'lasagnaJwt',
 		] );
 	} );
 
@@ -48,8 +45,8 @@ describe( 'reducer', () => {
 
 		test( 'should set the current user ID', () => {
 			const state = id( null, {
-				type: CURRENT_USER_ID_SET,
-				userId: 73705554,
+				type: CURRENT_USER_RECEIVE,
+				user: { ID: 73705554 },
 			} );
 
 			expect( state ).to.equal( 73705554 );

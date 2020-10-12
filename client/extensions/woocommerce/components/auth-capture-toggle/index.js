@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -35,10 +33,8 @@ class AuthCaptureToggle extends Component {
 						value="yes"
 						checked={ ! isAuthOnlyMode }
 						onChange={ onSelectCapture }
+						label={ translate( 'Authorize and charge the customers credit card automatically' ) }
 					/>
-					<span>
-						{ translate( 'Authorize and charge the customers credit card automatically' ) }
-					</span>
 				</FormLabel>
 				<FormLabel>
 					<FormRadio
@@ -46,8 +42,8 @@ class AuthCaptureToggle extends Component {
 						value="no"
 						checked={ isAuthOnlyMode }
 						onChange={ onSelectAuthOnly }
+						label={ translate( "Authorize the customer's credit card but charge manually" ) }
 					/>
-					<span>{ translate( "Authorize the customer's credit card but charge manually" ) }</span>
 				</FormLabel>
 			</FormFieldset>
 		);

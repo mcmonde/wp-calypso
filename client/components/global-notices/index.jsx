@@ -1,68 +1,69 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import PropTypes from 'prop-types';
-import React from 'react';
-import createReactClass from 'create-react-class';
-import debugModule from 'debug';
+import React, { Component } from 'react';
+import { connect } from 'react-redux';
 
 /**
  * Internal Dependencies
  */
+import notices from 'notices';
 import Notice from 'components/notice';
 import NoticeAction from 'components/notice/notice-action';
-import notices from 'notices';
-import observe from 'lib/mixins/data-observe';
-import { connect } from 'react-redux';
-import { removeNotice } from 'state/notices/actions';
 import { getNotices } from 'state/notices/selectors';
+import { removeNotice } from 'state/notices/actions';
+import GlobalNoticesContainer from './container';
 
-const debug = debugModule( 'calypso:notices' );
+export class GlobalNotices extends Component {
+	update = () => {
+		this.forceUpdate();
+	};
 
-const NoticesList = createReactClass( {
-	displayName: 'NoticesList',
+	componentDidMount() {
+		if ( this.props.notices ) {
+			this.props.notices.on( 'change', this.update );
+		}
+	}
 
-	mixins: [ observe( 'notices' ) ],
+	componentWillUnmount() {
+		if ( this.props.notices ) {
+			this.props.notices.off( 'change', this.update );
+		}
+	}
 
-	propTypes: {
-		id: PropTypes.string,
-		notices: PropTypes.oneOfType( [ PropTypes.object, PropTypes.array ] ),
-	},
+	componentDidUpdate( prevProps ) {
+		if ( this.props.notices !== prevProps.notices ) {
+			// unbind the change event from the previous property instance
+			if ( prevProps.notices ) {
+				prevProps.notices.off( 'change', this.update );
+			}
 
-	getDefaultProps() {
-		return {
-			id: 'overlay-notices',
-			notices: Object.freeze( [] ),
-		};
-	},
+			// bind the change event for the next property instance
+			if ( this.props.notices ) {
+				this.props.notices.on( 'change', this.update );
+			}
+		}
+	}
 
-	componentWillMount() {
-		debug( 'Mounting Global Notices React component.' );
-	},
-
-	removeNoticeStoreNotice: notice => () => {
+	removeNoticeStoreNotice = ( notice ) => () => {
 		if ( notice ) {
 			notices.removeNotice( notice );
 		}
-	},
+	};
 
-	// Auto-bound by createReactClass.
-	// Migrate to arrow => when using class extends React.Component
-	removeReduxNotice( notice ) {
-		return e => {
-			if ( notice.onDismissClick ) {
-				notice.onDismissClick( e );
+	removeReduxNotice = ( noticeId, onDismissClick ) => {
+		return ( e ) => {
+			if ( onDismissClick ) {
+				onDismissClick( e );
 			}
-			this.props.removeNotice( notice.noticeId );
+			this.props.removeNotice( noticeId );
 		};
-	},
+	};
 
 	render() {
 		const noticesRaw = this.props.notices[ this.props.id ] || [];
-		let noticesList = noticesRaw.map( function( notice, index ) {
+		let noticesList = noticesRaw.map( function ( notice, index ) {
 			return (
 				<Notice
 					key={ 'notice-old-' + index }
@@ -82,42 +83,56 @@ const NoticesList = createReactClass( {
 			);
 		}, this );
 
-		//This is an interim solution for displaying both notices from redux store
-		//and from the old component. When all notices are moved to redux store, this component
-		//needs to be updated.
+		// This is an interim solution for displaying both notices from redux store and from the old
+		// component. When all notices are moved to redux store, this component needs to be updated.
 		noticesList = noticesList.concat(
-			this.props.storeNotices.map( function( { button, href, onClick, ...notice } ) {
-				return (
-					<Notice
-						{ ...notice }
-						key={ `notice-${ notice.noticeId }` }
-						onDismissClick={ this.removeReduxNotice( notice ) }
-					>
-						{ button && (
-							<NoticeAction href={ href } onClick={ onClick }>
-								{ button }
-							</NoticeAction>
-						) }
-					</Notice>
-				);
-			}, this )
+			this.props.storeNotices.map(
+				// We'll rest/spread props to notice so arbitrary props can be passed to `Notice`.
+				// Be sure to destructure any props that aren't for at `Notice`, e.g. `button`.
+				function ( { button, href, noticeId, onClick, onDismissClick, ...notice } ) {
+					return (
+						<Notice
+							{ ...notice }
+							key={ `notice-${ noticeId }` }
+							onDismissClick={ this.removeReduxNotice( noticeId, onDismissClick ) }
+						>
+							{ button && (
+								<NoticeAction href={ href } onClick={ onClick }>
+									{ button }
+								</NoticeAction>
+							) }
+						</Notice>
+					);
+				},
+				this
+			)
 		);
 
 		if ( ! noticesList.length ) {
 			return null;
 		}
 
-		return (
-			<div id={ this.props.id } className="global-notices">
-				{ noticesList }
-			</div>
-		);
-	},
-} );
+		return <GlobalNoticesContainer id={ this.props.id }>{ noticesList }</GlobalNoticesContainer>;
+	}
+
+	static propTypes = {
+		id: PropTypes.string,
+		notices: PropTypes.oneOfType( [ PropTypes.object, PropTypes.array ] ),
+
+		// Connected props
+		removeNotice: PropTypes.func.isRequired,
+		storeNotices: PropTypes.array.isRequired,
+	};
+
+	static defaultProps = {
+		id: 'overlay-notices',
+		notices: Object.freeze( [] ),
+	};
+}
 
 export default connect(
-	state => ( {
+	( state ) => ( {
 		storeNotices: getNotices( state ),
 	} ),
 	{ removeNotice }
-)( NoticesList );
+)( GlobalNotices );

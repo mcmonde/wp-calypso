@@ -1,32 +1,30 @@
-/** @format */
 /**
  * External dependencies
  */
-import { expect } from 'chai';
+import { expect as chaiExpect } from 'chai';
 import deepFreeze from 'deep-freeze';
-import sinon from 'sinon';
 
 /**
  * Internal dependencies
  */
 import { items, queuedRequests, lastFetched } from '../reducer';
 import {
+	READER_SITE_BLOCKS_RECEIVE,
 	READER_SITE_REQUEST,
 	READER_SITE_REQUEST_SUCCESS,
 	READER_SITE_REQUEST_FAILURE,
 	READER_SITE_UPDATE,
-	SERIALIZE,
-	DESERIALIZE,
-} from 'state/action-types';
+} from 'state/reader/action-types';
+import { SERIALIZE, DESERIALIZE } from 'state/action-types';
 
 describe( 'reducer', () => {
 	describe( 'items', () => {
 		test( 'should return an empty map by default', () => {
-			expect( items( undefined, {} ) ).to.deep.equal( {} );
+			chaiExpect( items( undefined, {} ) ).to.deep.equal( {} );
 		} );
 
 		test( 'should update the state when receiving a feed', () => {
-			expect(
+			chaiExpect(
 				items(
 					{},
 					{
@@ -45,7 +43,7 @@ describe( 'reducer', () => {
 		} );
 
 		test( 'should fallback to using the domain for the title if name is missing', () => {
-			expect(
+			chaiExpect(
 				items(
 					{},
 					{
@@ -66,7 +64,7 @@ describe( 'reducer', () => {
 		} );
 
 		test( 'should set the domain and slug from the url', () => {
-			expect(
+			chaiExpect(
 				items(
 					{},
 					{
@@ -89,7 +87,7 @@ describe( 'reducer', () => {
 		} );
 
 		test( 'should set the domain and slug from the url unless it is a site redirect', () => {
-			expect(
+			chaiExpect(
 				items(
 					{},
 					{
@@ -120,7 +118,7 @@ describe( 'reducer', () => {
 		} );
 
 		test( 'should decode entities in the site description', () => {
-			expect(
+			chaiExpect(
 				items(
 					{},
 					{
@@ -138,7 +136,9 @@ describe( 'reducer', () => {
 
 		test( 'should serialize site entries', () => {
 			const unvalidatedObject = deepFreeze( { hi: 'there' } );
-			expect( items( unvalidatedObject, { type: SERIALIZE } ) ).to.deep.equal( unvalidatedObject );
+			chaiExpect( items( unvalidatedObject, { type: SERIALIZE } ) ).to.deep.equal(
+				unvalidatedObject
+			);
 		} );
 
 		test( 'should not serialize errors', () => {
@@ -149,19 +149,17 @@ describe( 'reducer', () => {
 					is_error: true,
 				},
 			} );
-			expect( items( stateWithErrors, { type: SERIALIZE } ) ).to.deep.equal( {
+			chaiExpect( items( stateWithErrors, { type: SERIALIZE } ) ).to.deep.equal( {
 				12: { ID: 12, name: 'yes' },
 			} );
 		} );
 
-		test(
-			'should reject deserializing entries it cannot validate',
-			sinon.test( function() {
-				const unvalidatedObject = deepFreeze( { hi: 'there' } );
-				this.stub( console, 'warn' ); // stub warn to suppress the warning that validation failure emits
-				expect( items( unvalidatedObject, { type: DESERIALIZE } ) ).to.deep.equal( {} );
-			} )
-		);
+		test( 'should reject deserializing entries it cannot validate', () => {
+			const consoleSpy = jest.spyOn( console, 'warn' ).mockImplementation( () => {} );
+			const unvalidatedObject = deepFreeze( { hi: 'there' } );
+			chaiExpect( items( unvalidatedObject, { type: DESERIALIZE } ) ).to.deep.equal( {} );
+			consoleSpy.mockRestore();
+		} );
 
 		test( 'should deserialize good things', () => {
 			const validState = deepFreeze( {
@@ -170,11 +168,11 @@ describe( 'reducer', () => {
 					name: 'Example Dot Com',
 				},
 			} );
-			expect( items( validState, { type: DESERIALIZE } ) ).to.deep.equal( validState );
+			chaiExpect( items( validState, { type: DESERIALIZE } ) ).to.deep.equal( validState );
 		} );
 
 		test( 'should stash an error object in the map if the request fails with a 410', () => {
-			expect(
+			chaiExpect(
 				items(
 					{},
 					{
@@ -188,7 +186,7 @@ describe( 'reducer', () => {
 
 		test( 'should overwrite an existing entry on receiving a new feed', () => {
 			const startingState = deepFreeze( { 666: { ID: 666, name: 'valid' } } );
-			expect(
+			chaiExpect(
 				items( startingState, {
 					type: READER_SITE_REQUEST_SUCCESS,
 					payload: {
@@ -201,7 +199,7 @@ describe( 'reducer', () => {
 
 		test( 'should leave an existing entry alone if an error is received', () => {
 			const startingState = deepFreeze( { 666: { ID: 666, name: 'valid' } } );
-			expect(
+			chaiExpect(
 				items( startingState, {
 					type: READER_SITE_REQUEST_FAILURE,
 					error: { statusCode: 500 },
@@ -215,7 +213,7 @@ describe( 'reducer', () => {
 				666: { ID: 666, name: 'valid' },
 				777: { ID: 777, name: 'second valid' },
 			} );
-			expect(
+			chaiExpect(
 				items( startingState, {
 					type: READER_SITE_UPDATE,
 					payload: [
@@ -231,11 +229,34 @@ describe( 'reducer', () => {
 				777: { ID: 777, name: 'second valid' },
 			} );
 		} );
+
+		test( 'should accept site details from site blocks', () => {
+			const startingState = deepFreeze( {
+				666: { ID: 666, name: 'valid' },
+				777: { ID: 777, name: 'second valid' },
+			} );
+			expect(
+				items( startingState, {
+					type: READER_SITE_BLOCKS_RECEIVE,
+					payload: {
+						sites: [
+							{ ID: 1, name: 'first' },
+							{ ID: 2, name: 'second' },
+						],
+					},
+				} )
+			).toEqual( {
+				1: { ID: 1, name: 'first' },
+				2: { ID: 2, name: 'second' },
+				666: { ID: 666, name: 'valid' },
+				777: { ID: 777, name: 'second valid' },
+			} );
+		} );
 	} );
 
 	describe( 'isRequestingFeed', () => {
 		test( 'should add to the set of feeds inflight', () => {
-			expect(
+			chaiExpect(
 				queuedRequests(
 					{},
 					{
@@ -247,7 +268,7 @@ describe( 'reducer', () => {
 		} );
 
 		test( 'should remove the feed from the set inflight', () => {
-			expect(
+			chaiExpect(
 				queuedRequests( deepFreeze( { 1: true } ), {
 					type: READER_SITE_REQUEST_SUCCESS,
 					payload: { ID: 1 },
@@ -263,9 +284,7 @@ describe( 'reducer', () => {
 				type: READER_SITE_REQUEST_SUCCESS,
 				payload: { ID: 1 },
 			};
-			expect( lastFetched( original, action ) )
-				.to.have.a.property( 1 )
-				.that.is.a( 'number' );
+			chaiExpect( lastFetched( original, action ) ).to.have.a.property( 1 ).that.is.a( 'number' );
 		} );
 
 		test( 'should update the last fetched time on site update', () => {
@@ -274,9 +293,7 @@ describe( 'reducer', () => {
 				type: READER_SITE_UPDATE,
 				payload: [ { ID: 1 } ],
 			};
-			expect( lastFetched( original, action ) )
-				.to.have.a.property( 1 )
-				.that.is.a( 'number' );
+			chaiExpect( lastFetched( original, action ) ).to.have.a.property( 1 ).that.is.a( 'number' );
 		} );
 	} );
 } );

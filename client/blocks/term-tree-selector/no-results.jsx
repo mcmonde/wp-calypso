@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -40,7 +38,8 @@ class TermTreeSelectorNoResults extends React.PureComponent {
 		return (
 			<span className="is-empty-content">
 				{ this.props.translate( 'No results. Please try a different search.' ) }
-				&nbsp;{ createMessage }
+				&nbsp;
+				{ createMessage }
 			</span>
 		);
 	}

@@ -1,16 +1,14 @@
 .reader-post-options-menu,
 .reader-post-options-menu .ellipsis-menu {
-
 	.button.is-borderless {
-		color: $gray;
+		color: var( --color-text-subtle );
 
 		&:hover,
 		&:active {
-			color: $blue-medium;
+			color: var( --color-primary );
 		}
 
 		&:focus {
-			box-shadow: none;
 			outline: thin dotted;
 		}
 	}
@@ -20,24 +18,23 @@
 	}
 
 	&.is-menu-visible .button.is-borderless {
-		color: $blue-wordpress;
+		color: var( --color-primary );
 	}
 }
 
 .reader-post-options-menu__hr {
 	margin: 8px 0;
-	background: $gray-lighten-30;
+	background: var( --color-neutral-0 );
 }
 
 .reader-post-options-menu__popover {
-
 	.popover__menu {
 		min-width: 212px;
 	}
 
 	.popover__menu .follow-button,
 	.popover__menu .conversation-follow-button {
-		color: $blue-medium;
+		color: var( --color-primary );
 		padding: 9px 16px;
 
 		.gridicon {
@@ -46,29 +43,28 @@
 			padding-right: 0;
 
 			&:hover {
-				fill: $white;
+				fill: var( --color-text-inverted );
 			}
 		}
 
 		&:hover,
 		&:focus {
-			background-color: $blue-medium;
+			background-color: var( --color-primary );
 			color: white;
 
 			.gridicon {
-				fill: $white;
+				fill: var( --color-text-inverted );
 			}
 
 			.follow-button__label,
 			.conversation-follow-button__label {
-				color: $white;
+				color: var( --color-text-inverted );
 			}
 		}
 
 		.follow-button__label,
 		.conversation-follow-button__label {
-
-			@include breakpoint( "<660px" ) {
+			@include breakpoint-deprecated( '<660px' ) {
 				display: inline-block;
 			}
 		}
@@ -84,19 +80,19 @@
 	}
 
 	&.has-sticker {
-		color: $alert-red;
+		color: var( --color-error );
 
 		.gridicon {
-			fill: $alert-red;
+			fill: var( --color-error );
 		}
 
 		&:hover,
 		&:focus {
-			color: $white;
-			background: $alert-red;
+			color: var( --color-text-inverted );
+			background: var( --color-error );
 
 			.gridicon {
-				fill: $white;
+				fill: var( --color-text-inverted );
 			}
 		}
 	}

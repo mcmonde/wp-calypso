@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * Internal dependencies
  */
@@ -9,4 +7,11 @@ import cancelHandlers from './cancel';
 import detailHandlers from './detail';
 import rescheduleHandlers from './reschedule';
 
-export default mergeHandlers( bookHandlers, cancelHandlers, detailHandlers, rescheduleHandlers );
+import { registerHandlers } from 'state/data-layer/handler-registry';
+
+registerHandlers(
+	'state/data-layer/wpcom/concierge/schedules/appointments/index.js',
+	mergeHandlers( bookHandlers, cancelHandlers, detailHandlers, rescheduleHandlers )
+);
+
+export default {};

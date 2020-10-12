@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -6,15 +5,15 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { localize } from 'i18n-calypso';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 import { flow } from 'lodash';
 
 /**
  * Internal dependencies
  */
-import Button from 'components/button';
+import { Button } from '@automattic/components';
 import EditorPostType from 'post-editor/editor-post-type';
-import { closeEditorSidebar } from 'state/ui/editor/sidebar/actions';
+import { closeEditorSidebar } from 'state/editor/sidebar/actions';
 
 const EditorSidebarHeader = ( { closeSidebar, translate } ) => (
 	<div className="editor-sidebar__header">

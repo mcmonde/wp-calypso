@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -7,33 +5,28 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { localize } from 'i18n-calypso';
-import { flow, get, overSome } from 'lodash';
+import { flow } from 'lodash';
 
 /**
  * Internal dependencies
  */
+import { hasSiteSeoFeature } from './utils';
 import Accordion from 'components/accordion';
 import AccordionSection from 'components/accordion/section';
 import CategoriesTagsAccordion from 'post-editor/editor-categories-tags/accordion';
 import AsyncLoad from 'components/async-load';
 import EditorMoreOptionsSlug from 'post-editor/editor-more-options/slug';
-import PostMetadata from 'lib/post-metadata';
-import { isBusiness, isEnterprise, isJetpackPremium } from 'lib/products-values';
 import QueryJetpackPlugins from 'components/data/query-jetpack-plugins';
 import QueryPostTypes from 'components/data/query-post-types';
 import QuerySiteSettings from 'components/data/query-site-settings';
 import { getSelectedSiteId } from 'state/ui/selectors';
-import { getEditorPostId } from 'state/ui/editor/selectors';
+import { getEditorPostId } from 'state/editor/selectors';
 import { getEditedPostValue } from 'state/posts/selectors';
 import { getPostType } from 'state/post-types/selectors';
 import { getPlugins, isRequesting } from 'state/plugins/installed/selectors';
-import {
-	isJetpackMinimumVersion,
-	isJetpackModuleActive,
-	isJetpackSite,
-} from 'state/sites/selectors';
+import { isJetpackModuleActive, isJetpackSite } from 'state/sites/selectors';
 import config from 'config';
-import { areSitePermalinksEditable } from 'state/selectors';
+import areSitePermalinksEditable from 'state/selectors/are-site-permalinks-editable';
 import EditorDrawerTaxonomies from './taxonomies';
 import EditorDrawerPageOptions from './page-options';
 import EditorDrawerLabel from './label';
@@ -43,9 +36,9 @@ import EditorExcerpt from 'post-editor/editor-excerpt';
 import { getFirstConflictingPlugin } from 'lib/seo';
 
 /**
- * Constants
+ * Style dependencies
  */
-const hasSupportingPlan = overSome( isBusiness, isEnterprise, isJetpackPremium );
+import './style.scss';
 
 /**
  * A mapping of post type to hard-coded post types support. These values are
@@ -53,7 +46,7 @@ const hasSupportingPlan = overSome( isBusiness, isEnterprise, isJetpackPremium )
  * prevent the post type query component from being rendered.
  *
  * @see https://developer.wordpress.com/docs/api/1.1/get/sites/%24site/post-types/
- * @type {Object}
+ * @type {object}
  */
 const POST_TYPE_SUPPORTS = {
 	post: {
@@ -76,15 +69,10 @@ const POST_TYPE_SUPPORTS = {
 class EditorDrawer extends Component {
 	static propTypes = {
 		site: PropTypes.object,
-		savedPost: PropTypes.object,
-		post: PropTypes.object,
-		canJetpackUseTaxonomies: PropTypes.bool,
 		typeObject: PropTypes.object,
-		isNew: PropTypes.bool,
 		type: PropTypes.string,
 		setPostDate: PropTypes.func,
 		onSave: PropTypes.func,
-		isPostPrivate: PropTypes.bool,
 		confirmationSidebarStatus: PropTypes.string,
 	};
 
@@ -120,35 +108,23 @@ class EditorDrawer extends Component {
 
 	// Custom Taxonomies
 	renderTaxonomies() {
-		const { canJetpackUseTaxonomies } = this.props;
 		const isCustomTypesEnabled = config.isEnabled( 'manage/custom-post-types' );
 
-		if ( isCustomTypesEnabled && false !== canJetpackUseTaxonomies ) {
+		if ( isCustomTypesEnabled ) {
 			return <EditorDrawerTaxonomies />;
 		}
 	}
 
 	renderPostFormats() {
-		if ( ! this.props.post || ! this.currentPostTypeSupports( 'post-formats' ) ) {
+		if ( ! this.currentPostTypeSupports( 'post-formats' ) ) {
 			return;
 		}
 
-		return (
-			<AsyncLoad
-				require="post-editor/editor-post-formats/accordion"
-				className="editor-drawer__accordion"
-			/>
-		);
+		return <AsyncLoad require="post-editor/editor-post-formats/accordion" />;
 	}
 
 	renderSharing() {
-		return (
-			<AsyncLoad
-				require="post-editor/editor-sharing/accordion"
-				site={ this.props.site }
-				post={ this.props.post }
-			/>
-		);
+		return <AsyncLoad require="post-editor/editor-sharing/accordion" />;
 	}
 
 	renderFeaturedImage() {
@@ -174,9 +150,8 @@ class EditorDrawer extends Component {
 						'An excerpt is a short summary you can add to your posts. ' +
 							"Some themes show excerpts alongside post titles on your site's homepage and archive pages."
 					) }
-				>
-					<EditorExcerpt />
-				</EditorDrawerLabel>
+				/>
+				<EditorExcerpt />
 			</AccordionSection>
 		);
 	}
@@ -184,7 +159,7 @@ class EditorDrawer extends Component {
 	renderLocation() {
 		const { translate } = this.props;
 
-		if ( ! this.props.site || this.props.isJetpack ) {
+		if ( ! this.props.site ) {
 			return;
 		}
 
@@ -207,7 +182,7 @@ class EditorDrawer extends Component {
 
 		return (
 			<AccordionSection>
-				<AsyncLoad require="post-editor/editor-discussion" isNew={ this.props.isNew } />
+				<AsyncLoad require="post-editor/editor-discussion" />
 			</AccordionSection>
 		);
 	}
@@ -217,7 +192,6 @@ class EditorDrawer extends Component {
 			hasConflictingSeoPlugins,
 			isSeoToolsModuleActive,
 			isJetpack,
-			jetpackVersionSupportsSeo,
 			isRequestingPlugins,
 			site,
 		} = this.props;
@@ -230,7 +204,6 @@ class EditorDrawer extends Component {
 			if (
 				isRequestingPlugins ||
 				! isSeoToolsModuleActive ||
-				! jetpackVersionSupportsSeo ||
 				// Hide SEO accordion if this setting is managed by another SEO plugin.
 				hasConflictingSeoPlugins
 			) {
@@ -238,16 +211,11 @@ class EditorDrawer extends Component {
 			}
 		}
 
-		if ( ! hasSupportingPlan( site.plan ) ) {
+		if ( ! hasSiteSeoFeature( site ) ) {
 			return;
 		}
 
-		return (
-			<AsyncLoad
-				require="post-editor/editor-seo-accordion"
-				metaDescription={ PostMetadata.metaDescription( this.props.post ) }
-			/>
-		);
+		return <AsyncLoad require="post-editor/editor-seo-accordion" />;
 	}
 
 	renderCopyPost() {
@@ -295,23 +263,14 @@ class EditorDrawer extends Component {
 	}
 
 	renderStatus() {
-		// TODO: REDUX - remove this logic and prop for EditPostStatus when date is moved to redux
-		const postDate = get( this.props.post, 'date', null );
-		const postStatus = get( this.props.post, 'status', null );
-		const { translate, type } = this.props;
+		const { translate } = this.props;
 
 		return (
 			<Accordion title={ translate( 'Status' ) } e2eTitle="status">
 				<EditPostStatus
-					savedPost={ this.props.savedPost }
-					postDate={ postDate }
 					onSave={ this.props.onSave }
-					onTrashingPost={ this.props.onTrashingPost }
 					onPrivatePublish={ this.props.onPrivatePublish }
 					setPostDate={ this.props.setPostDate }
-					status={ postStatus }
-					type={ type }
-					isPostPrivate={ this.props.isPostPrivate }
 					confirmationSidebarStatus={ this.props.confirmationSidebarStatus }
 				/>
 			</Accordion>
@@ -344,7 +303,7 @@ EditorDrawer.displayName = 'EditorDrawer';
 
 const enhance = flow(
 	localize,
-	connect( state => {
+	connect( ( state ) => {
 		const siteId = getSelectedSiteId( state );
 		const type = getEditedPostValue( state, siteId, getEditorPostId( state ), 'type' );
 		const activePlugins = getPlugins( state, [ siteId ], 'active' );
@@ -352,10 +311,8 @@ const enhance = flow(
 		return {
 			hasConflictingSeoPlugins: !! getFirstConflictingPlugin( activePlugins ),
 			isPermalinkEditable: areSitePermalinksEditable( state, siteId ),
-			canJetpackUseTaxonomies: isJetpackMinimumVersion( state, siteId, '4.1' ),
 			isJetpack: isJetpackSite( state, siteId ),
 			isSeoToolsModuleActive: isJetpackModuleActive( state, siteId, 'seo-tools' ),
-			jetpackVersionSupportsSeo: isJetpackMinimumVersion( state, siteId, '4.4-beta1' ),
 			isRequestingPlugins: isRequesting( state, siteId ),
 			type,
 			typeObject: getPostType( state, siteId, type ),

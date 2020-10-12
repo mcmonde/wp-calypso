@@ -1,7 +1,6 @@
 /**
  * External dependencies
  *
- * @format
  */
 
 import React, { Component } from 'react';
@@ -22,7 +21,7 @@ import { emailSettingsSaveSettings } from 'woocommerce/state/sites/settings/emai
 import { isSavingMailChimpSettings } from 'woocommerce/state/sites/settings/mailchimp/selectors';
 import { isSavingEmailSettings } from 'woocommerce/state/sites/settings/email/selectors';
 import ActionHeader from 'woocommerce/components/action-header';
-import Button from 'components/button';
+import { Button } from '@automattic/components';
 import EmailSettings from './email-settings';
 import MailChimp from './mailchimp';
 import Main from 'components/main';

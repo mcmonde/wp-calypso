@@ -20,11 +20,13 @@ import {
 	removeIgnoreValidation,
 	updateAddressValue,
 	clearAvailableRates,
+	confirmAddressSuggestion,
 } from '../actions';
 import {
 	WOOCOMMERCE_SERVICES_SHIPPING_LABEL_SET_PACKAGE_TYPE,
 	WOOCOMMERCE_SERVICES_SHIPPING_LABEL_PURCHASE_RESPONSE,
 	WOOCOMMERCE_SERVICES_SHIPPING_LABEL_SET_PACKAGE_SIGNATURE,
+	WOOCOMMERCE_SERVICES_SHIPPING_LABEL_UPDATE_PACKAGE_WEIGHT,
 } from '../../action-types';
 
 const orderId = 1;
@@ -38,6 +40,9 @@ const initialState = {
 				isNormalized: false,
 				normalized: null,
 				ignoreValidation: { address: true, postcode: true, state: true, country: true },
+			},
+			destination: {
+				isNormalized: false,
 			},
 			packages: {
 				selected: {
@@ -60,6 +65,13 @@ const initialState = {
 				},
 				isPacked: true,
 			},
+			rates: {
+				values: {
+					weight_0_custom1: '',
+					weight_1_custom1: '',
+				},
+				available: {},
+			},
 		},
 		openedPackageId: 'weight_0_custom1',
 		labels: [],
@@ -76,6 +88,7 @@ describe( 'Label purchase form reducer', () => {
 	afterEach( () => {
 		// make sure the state hasn't been mutated
 		// after each test
+		// eslint-disable-next-line jest/no-standalone-expect
 		expect( initialState ).to.eql( stateBefore );
 	} );
 
@@ -85,10 +98,13 @@ describe( 'Label purchase form reducer', () => {
 
 		expect( state[ orderId ].form.packages.selected.weight_0_custom1 ).to.eql( undefined );
 		expect( state[ orderId ].form.packages.selected.weight_1_custom1.items.length ).to.eql( 2 );
-		expect( state[ orderId ].form.packages.selected.weight_1_custom1.items )
-			.to.include( initialState[ orderId ].form.packages.selected.weight_0_custom1.items[ 0 ] );
+		expect( state[ orderId ].form.packages.selected.weight_1_custom1.items ).to.include(
+			initialState[ orderId ].form.packages.selected.weight_0_custom1.items[ 0 ]
+		);
 		expect( state[ orderId ].form.packages.saved ).to.eql( false );
-		expect( state[ orderId ].form.rates.values ).to.include.all.keys( Object.keys( state[ orderId ].form.packages.selected ) );
+		expect( state[ orderId ].form.rates.values ).to.include.all.keys(
+			Object.keys( state[ orderId ].form.packages.selected )
+		);
 		expect( state[ orderId ].form.needsPrintConfirmation ).to.eql( false );
 		expect( state[ orderId ].form.rates.available ).to.eql( {} );
 	} );
@@ -99,12 +115,17 @@ describe( 'Label purchase form reducer', () => {
 
 		expect( state[ orderId ].form.packages.selected.weight_0_custom1 ).to.eql( undefined );
 		expect( state[ orderId ].form.packages.selected ).to.include.keys( 'client_individual_0' );
-		expect( state[ orderId ].form.packages.selected.client_individual_0.box_id ).to.eql( 'individual' );
+		expect( state[ orderId ].form.packages.selected.client_individual_0.box_id ).to.eql(
+			'individual'
+		);
 		expect( state[ orderId ].form.packages.selected.client_individual_0.items.length ).to.eql( 1 );
-		expect( state[ orderId ].form.packages.selected.client_individual_0.items )
-			.to.include( initialState[ orderId ].form.packages.selected.weight_0_custom1.items[ 0 ] );
+		expect( state[ orderId ].form.packages.selected.client_individual_0.items ).to.include(
+			initialState[ orderId ].form.packages.selected.weight_0_custom1.items[ 0 ]
+		);
 		expect( state[ orderId ].form.packages.saved ).to.eql( false );
-		expect( state[ orderId ].form.rates.values ).to.include.all.keys( Object.keys( state[ orderId ].form.packages.selected ) );
+		expect( state[ orderId ].form.rates.values ).to.include.all.keys(
+			Object.keys( state[ orderId ].form.packages.selected )
+		);
 		expect( state[ orderId ].form.needsPrintConfirmation ).to.eql( false );
 		expect( state[ orderId ].form.rates.available ).to.eql( {} );
 	} );
@@ -112,9 +133,11 @@ describe( 'Label purchase form reducer', () => {
 	it( 'MOVE_ITEM moves items from original packaging to selected packages and deletes original package', () => {
 		const existingState = cloneDeep( initialState );
 		existingState[ orderId ].form.packages.selected.client_individual_0 = {
-			items: [ {
-				product_id: 789,
-			} ],
+			items: [
+				{
+					product_id: 789,
+				},
+			],
 			box_id: 'individual',
 		};
 		existingState[ orderId ].openedPackageId = 'client_individual_0';
@@ -123,8 +146,9 @@ describe( 'Label purchase form reducer', () => {
 		const state = reducer( existingState, action );
 
 		expect( state[ orderId ].form.packages.selected.weight_0_custom1.items.length ).to.eql( 2 );
-		expect( state[ orderId ].form.packages.selected.weight_0_custom1.items )
-			.to.include( existingState[ orderId ].form.packages.selected.client_individual_0.items[ 0 ] );
+		expect( state[ orderId ].form.packages.selected.weight_0_custom1.items ).to.include(
+			existingState[ orderId ].form.packages.selected.client_individual_0.items[ 0 ]
+		);
 		expect( state[ orderId ].form.packages.saved ).to.eql( false );
 		expect( state[ orderId ].form.needsPrintConfirmation ).to.eql( false );
 		expect( state[ orderId ].form.rates.available ).to.eql( {} );
@@ -163,12 +187,15 @@ describe( 'Label purchase form reducer', () => {
 		expect( state[ orderId ].form.packages.selected.weight_0_custom1 ).to.not.exist;
 		expect( state[ orderId ].form.packages.selected.weight_1_custom1 ).to.not.exist;
 		expect( state[ orderId ].form.packages.selected.weight_2_custom1.items.length ).to.eql( 4 );
-		expect( state[ orderId ].form.packages.selected.weight_2_custom1.items )
-			.to.include( existingState[ orderId ].form.packages.selected.weight_0_custom1.items[ 0 ] );
-		expect( state[ orderId ].form.packages.selected.weight_2_custom1.items )
-			.to.include( existingState[ orderId ].form.packages.selected.weight_1_custom1.items[ 0 ] );
-		expect( state[ orderId ].form.packages.selected.weight_2_custom1.items )
-			.to.include( existingState[ orderId ].form.packages.selected.weight_1_custom1.items[ 1 ] );
+		expect( state[ orderId ].form.packages.selected.weight_2_custom1.items ).to.include(
+			existingState[ orderId ].form.packages.selected.weight_0_custom1.items[ 0 ]
+		);
+		expect( state[ orderId ].form.packages.selected.weight_2_custom1.items ).to.include(
+			existingState[ orderId ].form.packages.selected.weight_1_custom1.items[ 0 ]
+		);
+		expect( state[ orderId ].form.packages.selected.weight_2_custom1.items ).to.include(
+			existingState[ orderId ].form.packages.selected.weight_1_custom1.items[ 1 ]
+		);
 	} );
 
 	it( 'ADD_PACKAGE adds a new package', () => {
@@ -177,7 +204,9 @@ describe( 'Label purchase form reducer', () => {
 
 		expect( state[ orderId ].form.packages.selected ).to.include.keys( 'client_custom_0' );
 		expect( state[ orderId ].form.packages.selected.client_custom_0.items.length ).to.eql( 0 );
-		expect( state[ orderId ].form.packages.selected.client_custom_0.box_id ).to.eql( 'not_selected' );
+		expect( state[ orderId ].form.packages.selected.client_custom_0.box_id ).to.eql(
+			'not_selected'
+		);
 		expect( state[ orderId ].form.packages.selected.client_custom_0.length ).to.eql( 0 );
 		expect( state[ orderId ].form.packages.selected.client_custom_0.width ).to.eql( 0 );
 		expect( state[ orderId ].form.packages.selected.client_custom_0.height ).to.eql( 0 );
@@ -194,11 +223,15 @@ describe( 'Label purchase form reducer', () => {
 
 		expect( state[ orderId ].form.packages.selected ).to.not.include.keys( 'weight_0_custom1' );
 		expect( state[ orderId ].form.packages.selected ).to.include.keys( 'weight_1_custom1' );
-		expect( state[ orderId ].form.packages.selected.weight_1_custom1 )
-			.to.include.all.keys( Object.keys( initialState[ orderId ].form.packages.selected.weight_0_custom1 ) );
-		expect( state[ orderId ].form.packages.selected.weight_1_custom1 )
-			.to.include.all.keys( Object.keys( initialState[ orderId ].form.packages.selected.weight_1_custom1 ) );
-		expect( state[ orderId ].form.rates.values ).to.include.all.keys( Object.keys( state[ orderId ].form.packages.selected ) );
+		expect( state[ orderId ].form.packages.selected.weight_1_custom1 ).to.include.all.keys(
+			Object.keys( initialState[ orderId ].form.packages.selected.weight_0_custom1 )
+		);
+		expect( state[ orderId ].form.packages.selected.weight_1_custom1 ).to.include.all.keys(
+			Object.keys( initialState[ orderId ].form.packages.selected.weight_1_custom1 )
+		);
+		expect( state[ orderId ].form.rates.values ).to.include.all.keys(
+			Object.keys( state[ orderId ].form.packages.selected )
+		);
 		expect( state[ orderId ].form.packages.saved ).to.eql( false );
 		expect( state[ orderId ].form.needsPrintConfirmation ).to.eql( false );
 		expect( state[ orderId ].form.rates.available ).to.eql( {} );
@@ -219,13 +252,17 @@ describe( 'Label purchase form reducer', () => {
 		const state = reducer( initialState, action );
 
 		expect( state[ orderId ].form.packages.selected.weight_0_custom1.items.length ).to.eql( 1 );
-		expect( state[ orderId ].form.packages.selected.weight_0_custom1.box_id ).to.eql( 'customPackage1' );
+		expect( state[ orderId ].form.packages.selected.weight_0_custom1.box_id ).to.eql(
+			'customPackage1'
+		);
 		expect( state[ orderId ].form.packages.selected.weight_0_custom1.length ).to.eql( 1 );
 		expect( state[ orderId ].form.packages.selected.weight_0_custom1.width ).to.eql( 2 );
 		expect( state[ orderId ].form.packages.selected.weight_0_custom1.height ).to.eql( 3 );
 		expect( state[ orderId ].form.packages.selected.weight_0_custom1.weight ).to.eql( 4.7 );
 		expect( state[ orderId ].form.packages.saved ).to.eql( false );
-		expect( state[ orderId ].form.rates.values ).to.include.all.keys( Object.keys( state[ orderId ].form.packages.selected ) );
+		expect( state[ orderId ].form.rates.values ).to.include.all.keys(
+			Object.keys( state[ orderId ].form.packages.selected )
+		);
 		expect( state[ orderId ].form.needsPrintConfirmation ).to.eql( false );
 		expect( state[ orderId ].form.rates.available ).to.eql( {} );
 	} );
@@ -247,7 +284,9 @@ describe( 'Label purchase form reducer', () => {
 		};
 		const state = reducer( existingState, action );
 
-		expect( state[ orderId ].form.packages.selected.weight_0_custom1.box_id ).to.eql( 'customPackage1' );
+		expect( state[ orderId ].form.packages.selected.weight_0_custom1.box_id ).to.eql(
+			'customPackage1'
+		);
 		expect( state[ orderId ].form.packages.selected.weight_0_custom1.weight ).to.eql( 5.8 );
 	} );
 
@@ -268,7 +307,8 @@ describe( 'Label purchase form reducer', () => {
 		const state = reducer( existingState, action );
 
 		expect( state[ orderId ].form.origin.ignoreValidation ).to.be.null;
-		state[ orderId ].form.origin.ignoreValidation = existingState[ orderId ].form.origin.ignoreValidation;
+		state[ orderId ].form.origin.ignoreValidation =
+			existingState[ orderId ].form.origin.ignoreValidation;
 		expect( state ).to.deep.equal( existingState );
 	} );
 
@@ -403,7 +443,7 @@ describe( 'Label purchase form reducer', () => {
 		expect( state[ orderId ].form.packages.selected.weight_0_custom1.weight ).to.eql( 1.63 );
 	} );
 
-	it( 'WOOCOMMERCE_SERVICES_SHIPPING_LABEL_SET_PACKAGE_SIGNATURE updates package signature option', () => {
+	it( 'WOOCOMMERCE_SERVICES_SHIPPING_LABEL_SET_PACKAGE_SIGNATURE updates package signature option and clears rates', () => {
 		const action = {
 			type: WOOCOMMERCE_SERVICES_SHIPPING_LABEL_SET_PACKAGE_SIGNATURE,
 			siteId,
@@ -415,5 +455,55 @@ describe( 'Label purchase form reducer', () => {
 
 		expect( state[ orderId ].form.packages.selected.weight_0_custom1.signature ).to.eql( 'yes' );
 		expect( state[ orderId ].form.packages.saved ).to.be.false;
+		expect( state[ orderId ].form.rates.available ).to.be.an( 'object' ).that.is.empty;
+		expect( state[ orderId ].form.rates.values.weight_0_custom1 ).to.eql( '' );
+	} );
+
+	it( 'WOOCOMMERCE_SERVICES_SHIPPING_LABEL_UPDATE_PACKAGE_WEIGHT updates package weight option and clears rates', () => {
+		const action = {
+			type: WOOCOMMERCE_SERVICES_SHIPPING_LABEL_UPDATE_PACKAGE_WEIGHT,
+			siteId,
+			orderId,
+			packageId: 'weight_0_custom1',
+			value: '3.3',
+		};
+		const state = reducer( initialState, action );
+
+		expect( state[ orderId ].form.packages.selected.weight_0_custom1.weight ).to.eql( 3.3 );
+		expect( state[ orderId ].form.packages.selected.weight_0_custom1.isUserSpecifiedWeight ).to.be
+			.true;
+		expect( state[ orderId ].form.packages.saved ).to.be.false;
+		expect( state[ orderId ].form.rates.available ).to.be.an( 'object' ).that.is.empty;
+		expect( state[ orderId ].form.rates.values.weight_0_custom1 ).to.eql( '' );
+	} );
+
+	it( 'WOOCOMMERCE_SERVICES_SHIPPING_LABEL_CONFIRM_ADDRESS_SUGGESTION saves the address and proceeds to the next step', () => {
+		const group = 'origin';
+		let state = initialState;
+
+		const getState = () => ( {
+			extensions: {
+				woocommerce: {
+					woocommerceServices: {
+						[ siteId ]: {
+							shippingLabel: state,
+						},
+					},
+				},
+			},
+		} );
+
+		const dispatch = ( action ) => {
+			state = reducer( state, action );
+		};
+
+		confirmAddressSuggestion( orderId, siteId, group )( dispatch, getState );
+
+		expect( state[ orderId ].form[ group ] ).to.eql( {
+			...initialState[ orderId ].form[ group ],
+			expanded: false,
+			isNormalized: true,
+			normalized: initialState[ orderId ].form[ group ].values,
+		} );
 	} );
 } );

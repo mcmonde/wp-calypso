@@ -13,7 +13,17 @@ import FormLegend from 'components/forms/form-legend';
 import FieldError from '../field-error';
 import FormSettingExplanation from 'components/forms/form-setting-explanation';
 
-const Dropdown = ( { id, valuesMap, title, description, value, updateValue, error, disabled, className } ) => {
+const Dropdown = ( {
+	id,
+	valuesMap,
+	title,
+	description,
+	value,
+	updateValue,
+	error,
+	disabled,
+	className,
+} ) => {
 	const onChange = ( event ) => updateValue( event.target.value );
 
 	return (
@@ -25,12 +35,11 @@ const Dropdown = ( { id, valuesMap, title, description, value, updateValue, erro
 				value={ value }
 				onChange={ onChange }
 				disabled={ Boolean( disabled ) }
-				isError={ Boolean( error ) } >
-				{ Object.keys( valuesMap ).map( key => {
+				isError={ Boolean( error ) }
+			>
+				{ Object.keys( valuesMap ).map( ( key ) => {
 					return (
-						<option
-							key={ key }
-							value={ key }>
+						<option key={ key } value={ key }>
 							{ valuesMap[ key ] }
 						</option>
 					);
@@ -45,14 +54,11 @@ const Dropdown = ( { id, valuesMap, title, description, value, updateValue, erro
 Dropdown.propTypes = {
 	id: PropTypes.string.isRequired,
 	valuesMap: PropTypes.object.isRequired,
-	title: PropTypes.string,
+	title: PropTypes.node,
 	description: PropTypes.string,
 	value: PropTypes.string.isRequired,
 	updateValue: PropTypes.func.isRequired,
-	error: PropTypes.oneOfType( [
-		PropTypes.string,
-		PropTypes.bool,
-	] ),
+	error: PropTypes.oneOfType( [ PropTypes.string, PropTypes.bool ] ),
 	disabled: PropTypes.bool,
 	className: PropTypes.string,
 };

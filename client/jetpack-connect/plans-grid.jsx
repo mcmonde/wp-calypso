@@ -1,17 +1,20 @@
-/** @format */
 /**
  * External dependencies
  */
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
+import { connect } from 'react-redux';
 import { localize } from 'i18n-calypso';
 
 /**
  * Internal dependencies
  */
-import Main from 'components/main';
+import MainWrapper from './main-wrapper';
 import FormattedHeader from 'components/formatted-header';
 import PlansFeaturesMain from 'my-sites/plans-features-main';
+import PlansSkipButton from 'components/plans/plans-skip-button';
+import { recordTracksEvent } from 'state/analytics/actions';
+
 /**
  * Constants
  */
@@ -30,6 +33,12 @@ class JetpackPlansGrid extends Component {
 		translate: PropTypes.func.isRequired,
 	};
 
+	handleSkipButtonClick = () => {
+		this.props.recordTracksEvent( 'calypso_jpc_plans_skip_button_click' );
+
+		this.props.onSelect( null );
+	};
+
 	renderConnectHeader() {
 		const { isLanding, translate } = this.props;
 
@@ -43,8 +52,11 @@ class JetpackPlansGrid extends Component {
 	}
 
 	render() {
+		const { interval } = this.props;
+		const defaultInterval = 'yearly';
+
 		return (
-			<Main wideLayout className="jetpack-connect__hide-plan-icons">
+			<MainWrapper isWide className="jetpack-connect__hide-plan-icons">
 				<div className="jetpack-connect__plans">
 					{ this.renderConnectHeader() }
 					<div id="plans">
@@ -54,16 +66,21 @@ class JetpackPlansGrid extends Component {
 							isLandingPage={ ! this.props.selectedSite }
 							basePlansPath={ this.props.basePlansPath }
 							onUpgradeClick={ this.props.onSelect }
-							intervalType={ this.props.interval }
+							intervalType={ interval ? interval : defaultInterval }
 							hideFreePlan={ this.props.hideFreePlan }
 							displayJetpackPlans={ true }
 						/>
+
+						<PlansSkipButton onClick={ this.handleSkipButtonClick } />
+
 						{ this.props.children }
 					</div>
 				</div>
-			</Main>
+			</MainWrapper>
 		);
 	}
 }
 
-export default localize( JetpackPlansGrid );
+export default connect( null, {
+	recordTracksEvent,
+} )( localize( JetpackPlansGrid ) );

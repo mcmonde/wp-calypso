@@ -1,184 +1,236 @@
-/** @format */
 /**
  * External dependencies
  */
 import i18n from 'i18n-calypso';
 import React from 'react';
-import { isEmpty } from 'lodash';
-import { Route } from 'page';
+import { get, isEmpty } from 'lodash';
+import page from 'page';
 
 /**
  * Internal Dependencies
  */
-import analytics from 'lib/analytics';
-import { sectionifyWithRoutes } from 'lib/route';
 import { setDocumentHeadTitle as setTitle } from 'state/document-head/actions';
 import { setSection } from 'state/ui/actions';
 import { getSiteBySlug } from 'state/sites/selectors';
 import { getSelectedSite } from 'state/ui/selectors';
-import GsuiteNudge from 'my-sites/checkout/gsuite-nudge';
-import Checkout from './checkout';
-import CheckoutData from 'components/data/checkout';
-import CartData from 'components/data/cart';
-import SecondaryCart from './cart/secondary-cart';
+import GSuiteNudge from './gsuite-nudge';
+import CheckoutContainer from './checkout/checkout-container';
+import CheckoutSystemDecider from './checkout-system-decider';
 import CheckoutPendingComponent from './checkout-thank-you/pending';
 import CheckoutThankYouComponent from './checkout-thank-you';
+import UpsellNudge from './upsell-nudge';
+import { canUserPurchaseGSuite } from 'lib/gsuite';
+import { getRememberedCoupon } from 'lib/cart/actions';
+import { sites } from 'my-sites/controller';
+import CartData from 'components/data/cart';
+import userFactory from 'lib/user';
+import { getCurrentUser } from 'state/current-user/selectors';
+import { retrieveSignupDestination, setSignupCheckoutPageUnloaded } from 'signup/storageUtils';
 
-const checkoutRoutes = [
-	new Route( '/checkout/features/:feature/:site/:plan' ),
-	new Route( '/checkout/features/:feature/:site' ),
-	new Route( '/checkout/:product/renew/:purchase/:site' ),
-	new Route( '/checkout/:site/:product' ),
-	new Route( '/checkout/:site' ),
-];
+export function checkout( context, next ) {
+	const { feature, plan, domainOrProduct, purchaseId } = context.params;
 
-const checkoutGSuiteNudgeRoutes = [
-	new Route( '/checkout/:site/with-gsuite/:domain/:receipt' ),
-	new Route( '/checkout/:site/with-gsuite/:domain' ),
-];
+	const user = userFactory();
+	const isLoggedOut = ! user.get();
+	const state = context.store.getState();
+	const selectedSite = getSelectedSite( state );
+	const currentUser = getCurrentUser( state );
+	const hasSite = currentUser && currentUser.visible_site_count >= 1;
+	const isDomainOnlyFlow = context.query?.isDomainOnly === '1';
+	const isDisallowedForSitePicker =
+		context.pathname.includes( '/checkout/no-site' ) &&
+		( isLoggedOut || ! hasSite || isDomainOnlyFlow );
 
-const checkoutPendingRoutes = [
-	new Route( '/checkout/thank-you/no-site/pending/:orderId' ),
-	new Route( '/checkout/thank-you/:site/pending/:orderId' ),
-];
+	if ( ! selectedSite && ! isDisallowedForSitePicker ) {
+		sites( context, next );
+		return;
+	}
 
-const checkoutThankYouRoutes = [
-	new Route( '/checkout/thank-you/no-site/:receipt' ),
-	new Route( '/checkout/thank-you/no-site' ),
-	new Route( '/checkout/thank-you/:site/:receipt' ),
-	new Route( '/checkout/thank-you/:site' ),
-	new Route( '/checkout/thank-you/:site/:receipt/with-gsuite/:gsuiteReceipt' ),
-	new Route( '/checkout/thank-you/:site/:receipt/with-gsuite' ),
-	new Route( '/checkout/thank-you/features/:feature/:site/:receipt' ),
-	new Route( '/checkout/thank-you/features/:feature/:site' ),
-];
+	let product;
+	if ( selectedSite && selectedSite.slug !== domainOrProduct && domainOrProduct ) {
+		product = domainOrProduct;
+	} else {
+		product = context.params.product;
+	}
 
-export default {
-	checkout: function( context, next ) {
-		const { routePath, routeParams } = sectionifyWithRoutes( context.path, checkoutRoutes );
-		const { params } = context;
-		const { feature, product } = params;
+	if ( 'thank-you' === product ) {
+		return;
+	}
 
-		const state = context.store.getState();
-		const selectedSite = getSelectedSite( state );
+	// FIXME: Auto-converted from the Flux setTitle action. Please use <DocumentHead> instead.
+	context.store.dispatch( setTitle( i18n.translate( 'Checkout' ) ) );
 
-		if ( 'thank-you' === product ) {
-			return;
-		}
+	context.store.dispatch( setSection( { name: 'checkout' } ) );
 
-		analytics.pageView.record( routePath, 'Checkout', routeParams );
+	// NOTE: `context.query.code` is deprecated in favor of `context.query.coupon`.
+	const couponCode = context.query.coupon || context.query.code || getRememberedCoupon();
 
-		// FIXME: Auto-converted from the Flux setTitle action. Please use <DocumentHead> instead.
-		context.store.dispatch( setTitle( i18n.translate( 'Checkout' ) ) );
+	const isLoggedOutCart = isLoggedOut && context.pathname.includes( '/checkout/no-site' );
+	const isNoSiteCart =
+		! isLoggedOut &&
+		context.pathname.includes( '/checkout/no-site' ) &&
+		'no-user' === context.query.cart;
 
-		context.primary = (
-			<CheckoutData>
-				<Checkout
-					product={ product }
-					purchaseId={ context.params.purchaseId }
-					selectedFeature={ feature }
-					couponCode={ context.query.code }
-				/>
-			</CheckoutData>
-		);
+	const searchParams = new URLSearchParams( window.location.search );
+	const isSignupCheckout = searchParams.get( 'signup' ) === '1';
 
-		context.secondary = (
-			<CartData>
-				<SecondaryCart selectedSite={ selectedSite } />
-			</CartData>
-		);
-		next();
-	},
+	// Tracks if checkout page was unloaded before purchase completion,
+	// to prevent browser back duplicate sites. Check pau2Xa-1Io-p2#comment-6759.
+	if ( isSignupCheckout && ! isDomainOnlyFlow ) {
+		window.addEventListener( 'beforeunload', function () {
+			const signupDestinationCookieExists = retrieveSignupDestination();
+			signupDestinationCookieExists && setSignupCheckoutPageUnloaded( true );
+		} );
+	}
 
-	sitelessCheckout: function( context, next ) {
-		analytics.pageView.record( '/checkout/no-site', 'Checkout' );
-
-		// FIXME: Auto-converted from the Flux setTitle action. Please use <DocumentHead> instead.
-		context.store.dispatch( setTitle( i18n.translate( 'Checkout' ) ) );
-
-		context.primary = (
-			<CheckoutData>
-				<Checkout reduxStore={ context.store } />
-			</CheckoutData>
-		);
-
-		context.secondary = (
-			<CartData>
-				<SecondaryCart />
-			</CartData>
-		);
-		next();
-	},
-
-	checkoutPending: function( context, next ) {
-		const { routePath, routeParams } = sectionifyWithRoutes( context.path, checkoutPendingRoutes );
-		const orderId = Number( context.params.orderId );
-		const siteSlug = context.params.site;
-
-		analytics.pageView.record( routePath, 'Checkout Pending', routeParams );
-		context.store.dispatch( setSection( { name: 'checkout-thank-you' }, { hasSidebar: false } ) );
-
-		context.primary = <CheckoutPendingComponent orderId={ orderId } siteSlug={ siteSlug } />;
-
-		next();
-	},
-
-	checkoutThankYou: function( context, next ) {
-		const { routePath, routeParams } = sectionifyWithRoutes( context.path, checkoutThankYouRoutes );
-		const receiptId = Number( context.params.receiptId );
-		const gsuiteReceiptId = Number( context.params.gsuiteReceiptId ) || 0;
-
-		const state = context.store.getState();
-		const selectedSite = getSelectedSite( state );
-
-		analytics.pageView.record( routePath, 'Checkout Thank You', routeParams );
-
-		context.store.dispatch( setSection( { name: 'checkout-thank-you' }, { hasSidebar: false } ) );
-
-		// FIXME: Auto-converted from the Flux setTitle action. Please use <DocumentHead> instead.
-		context.store.dispatch( setTitle( i18n.translate( 'Thank You' ) ) );
-
-		context.primary = (
-			<CheckoutThankYouComponent
-				receiptId={ receiptId }
-				gsuiteReceiptId={ gsuiteReceiptId }
-				domainOnlySiteFlow={ isEmpty( context.params.site ) }
-				selectedFeature={ context.params.feature }
+	context.primary = (
+		<CartData>
+			<CheckoutSystemDecider
+				productAliasFromUrl={ product }
+				purchaseId={ purchaseId }
+				selectedFeature={ feature }
+				couponCode={ couponCode }
+				isComingFromSignup={ !! context.query.signup }
+				isComingFromGutenboarding={ !! context.query.preLaunch }
+				isGutenboardingCreate={ !! context.query.isGutenboardingCreate }
+				isComingFromUpsell={ !! context.query.upgrade }
+				plan={ plan }
 				selectedSite={ selectedSite }
+				reduxStore={ context.store }
+				redirectTo={ context.query.redirect_to }
+				upgradeIntent={ context.query.intent }
+				clearTransaction={ false }
+				isLoggedOutCart={ isLoggedOutCart }
+				isNoSiteCart={ isNoSiteCart }
 			/>
-		);
+		</CartData>
+	);
 
+	next();
+}
+
+export function checkoutPending( context, next ) {
+	const orderId = Number( context.params.orderId );
+	const siteSlug = context.params.site;
+
+	context.store.dispatch( setSection( { name: 'checkout-thank-you' } ) );
+
+	context.primary = (
+		<CheckoutPendingComponent
+			orderId={ orderId }
+			siteSlug={ siteSlug }
+			redirectTo={ context.query.redirectTo }
+		/>
+	);
+
+	next();
+}
+
+export function checkoutThankYou( context, next ) {
+	const receiptId = Number( context.params.receiptId );
+	const gsuiteReceiptId = Number( context.params.gsuiteReceiptId ) || 0;
+
+	const state = context.store.getState();
+	const selectedSite = getSelectedSite( state );
+	const displayMode = get( context, 'query.d' );
+
+	context.store.dispatch( setSection( { name: 'checkout-thank-you' } ) );
+
+	// FIXME: Auto-converted from the Flux setTitle action. Please use <DocumentHead> instead.
+	context.store.dispatch( setTitle( i18n.translate( 'Thank You' ) ) );
+
+	context.primary = (
+		<CheckoutThankYouComponent
+			receiptId={ receiptId }
+			gsuiteReceiptId={ gsuiteReceiptId }
+			domainOnlySiteFlow={ isEmpty( context.params.site ) }
+			selectedFeature={ context.params.feature }
+			redirectTo={ context.query.redirect_to }
+			upgradeIntent={ context.query.intent }
+			siteUnlaunchedBeforeUpgrade={ context.query.site_unlaunched_before_upgrade === 'true' }
+			selectedSite={ selectedSite }
+			displayMode={ displayMode }
+		/>
+	);
+
+	next();
+}
+
+export function gsuiteNudge( context, next ) {
+	const { domain, site, receiptId } = context.params;
+	context.store.dispatch( setSection( { name: 'gsuite-nudge' } ) );
+
+	const state = context.store.getState();
+	const selectedSite =
+		getSelectedSite( state ) || getSiteBySlug( state, site ) || getSiteBySlug( state, domain );
+
+	if ( ! selectedSite ) {
+		return null;
+	}
+
+	if ( ! canUserPurchaseGSuite() ) {
 		next();
-	},
+	}
 
-	gsuiteNudge( context, next ) {
-		const { routePath, routeParams } = sectionifyWithRoutes(
-			context.path,
-			checkoutGSuiteNudgeRoutes
-		);
-		const { domain, site, receiptId } = context.params;
-		context.store.dispatch( setSection( { name: 'gsuite-nudge' }, { hasSidebar: false } ) );
+	context.primary = (
+		<CheckoutContainer
+			shouldShowCart={ false }
+			clearTransaction={ true }
+			purchaseId={ Number( receiptId ) }
+		>
+			<GSuiteNudge
+				domain={ domain }
+				receiptId={ Number( receiptId ) }
+				selectedSiteId={ selectedSite.ID }
+			/>
+		</CheckoutContainer>
+	);
 
-		const state = context.store.getState();
-		const selectedSite =
-			getSelectedSite( state ) || getSiteBySlug( state, site ) || getSiteBySlug( state, domain );
+	next();
+}
 
-		if ( ! selectedSite ) {
-			return null;
-		}
+export function upsellNudge( context, next ) {
+	const { receiptId, site } = context.params;
 
-		analytics.pageView.record( routePath, 'G Suite Upsell', routeParams );
+	let upsellType, upgradeItem;
 
-		context.primary = (
-			<CartData>
-				<GsuiteNudge
-					domain={ domain }
-					receiptId={ Number( receiptId ) }
-					selectedSiteId={ selectedSite.ID }
-				/>
-			</CartData>
-		);
+	if ( context.path.includes( 'offer-quickstart-session' ) ) {
+		upsellType = 'concierge-quickstart-session';
+		upgradeItem = 'concierge-session';
+	} else if ( context.path.match( /(add|offer)-support-session/ ) ) {
+		upsellType = 'concierge-support-session';
+		upgradeItem = 'concierge-session';
+	} else if ( context.path.includes( 'offer-plan-upgrade' ) ) {
+		upsellType = 'plan-upgrade-upsell';
+		upgradeItem = context.params.upgradeItem;
+	}
 
-		next();
-	},
-};
+	context.store.dispatch( setSection( { name: upsellType } ) );
+
+	context.primary = (
+		<CheckoutContainer
+			shouldShowCart={ false }
+			clearTransaction={ true }
+			purchaseId={ Number( receiptId ) }
+		>
+			<UpsellNudge
+				siteSlugParam={ site }
+				receiptId={ Number( receiptId ) }
+				upsellType={ upsellType }
+				upgradeItem={ upgradeItem }
+			/>
+		</CheckoutContainer>
+	);
+
+	next();
+}
+
+export function redirectToSupportSession( context ) {
+	const { receiptId, site } = context.params;
+
+	// Redirect the old URL structure to the new URL structure to maintain backwards compatibility.
+	if ( context.params.receiptId ) {
+		page.redirect( `/checkout/offer-support-session/${ receiptId }/${ site }` );
+	}
+	page.redirect( `/checkout/offer-support-session/${ site }` );
+}

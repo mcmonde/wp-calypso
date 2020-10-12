@@ -1,12 +1,10 @@
-/** @format */
-
 /**
  * External dependencies
  */
 
 import React, { Component } from 'react';
 import { localize } from 'i18n-calypso';
-import { identity, includes, noop, pull } from 'lodash';
+import { identity, includes, noop, pull, union } from 'lodash';
 import PropTypes from 'prop-types';
 
 /**
@@ -14,16 +12,16 @@ import PropTypes from 'prop-types';
  */
 import SectionNav from 'components/section-nav';
 import SectionNavTabs from 'components/section-nav/tabs';
+import SectionNavTabItem from 'components/section-nav/item';
 import Search from 'components/search';
 import TrackComponentView from 'lib/analytics/track-component-view';
 import PlanStorage from 'blocks/plan-storage';
-import FilterItem from './filter-item';
 import DataSource from './data-source';
 
 // These source supply very large images, and there are instances such as
 // the site icon editor, where we want to disable them because the editor
 // can't handle the large images.
-const largeImageSources = [ 'pexels' ];
+const largeImageSources = [ 'pexels', 'google_photos' ];
 
 export class MediaLibraryFilterBar extends Component {
 	static propTypes = {
@@ -40,6 +38,7 @@ export class MediaLibraryFilterBar extends Component {
 		post: PropTypes.bool,
 		isConnected: PropTypes.bool,
 		disableLargeImageSources: PropTypes.bool,
+		disabledDataSources: PropTypes.arrayOf( PropTypes.string ),
 	};
 
 	static defaultProps = {
@@ -53,13 +52,11 @@ export class MediaLibraryFilterBar extends Component {
 		post: false,
 		isConnected: true,
 		disableLargeImageSources: false,
+		disabledDataSources: [],
 	};
 
 	getSearchPlaceholderText() {
 		const { filter, source, translate } = this.props;
-		if ( 'google_photos' === source ) {
-			return translate( 'Search your Google library…' );
-		}
 
 		if ( 'pexels' === source ) {
 			return translate( 'Search for free photos…' );
@@ -105,54 +102,71 @@ export class MediaLibraryFilterBar extends Component {
 		return enabledFilters && ( ! filter.length || ! includes( enabledFilters, filter ) );
 	}
 
-	changeFilter = filter => {
+	changeFilter = ( filter ) => () => {
 		this.props.onFilterChange( filter );
 	};
 
-	renderTabItems() {
-		if ( this.props.source !== '' ) {
-			return null;
+	getFiltersForSource( source ) {
+		if ( source === 'pexels' ) {
+			return [];
 		}
 
-		const tabs = [ '', 'this-post', 'images', 'documents', 'videos', 'audio' ];
+		if ( source === 'google_photos' ) {
+			return [ '', 'images', 'videos' ];
+		}
+
+		return [ '', 'this-post', 'images', 'documents', 'videos', 'audio' ];
+	}
+
+	renderTabItems() {
+		const tabs = this.getFiltersForSource( this.props.source );
 
 		if ( ! this.props.post ) {
 			pull( tabs, 'this-post' );
 		}
 
+		if ( tabs.length === 0 ) {
+			return null;
+		}
+
 		return (
 			<SectionNavTabs>
-				{ tabs.map( filter => (
-					<FilterItem
+				{ tabs.map( ( filter ) => (
+					<SectionNavTabItem
 						key={ 'filter-tab-' + filter }
-						value={ filter }
 						selected={ this.props.filter === filter }
-						onChange={ this.changeFilter }
+						onClick={ this.changeFilter( filter ) }
 						disabled={ this.isFilterDisabled( filter ) }
 					>
 						{ this.getFilterLabel( filter ) }
-					</FilterItem>
+					</SectionNavTabItem>
 				) ) }
 			</SectionNavTabs>
 		);
 	}
 
 	renderSearchSection() {
-		if ( this.props.filterRequiresUpgrade || ! this.props.isConnected ) {
+		const { source, onSearch, search, filterRequiresUpgrade, isConnected } = this.props;
+
+		if ( filterRequiresUpgrade || ! isConnected ) {
 			return null;
 		}
 
-		const isPinned = this.props.source === '';
+		if ( source === 'google_photos' ) {
+			return null;
+		}
+
+		const isPinned = source === '';
 
 		// Set the 'key' value so if the source is changed the component is refreshed, forcing it to clear the existing state
 		return (
 			<Search
-				key={ this.props.source }
+				key={ source }
 				analyticsGroup="Media"
 				pinned={ isPinned }
 				fitsContainer
-				onSearch={ this.props.onSearch }
-				initialValue={ this.props.search }
+				onSearch={ onSearch }
+				initialValue={ search }
 				placeholder={ this.getSearchPlaceholderText() }
 				delaySearch={ true }
 			/>
@@ -175,13 +189,17 @@ export class MediaLibraryFilterBar extends Component {
 	}
 
 	render() {
+		const disabledSources = this.props.disableLargeImageSources
+			? union( this.props.disabledDataSources, largeImageSources )
+			: this.props.disabledDataSources;
+
 		// Dropdown is disabled when viewing any external data source
 		return (
 			<div className="media-library__filter-bar">
 				<DataSource
 					source={ this.props.source }
 					onSourceChange={ this.props.onSourceChange }
-					disabledSources={ this.props.disableLargeImageSources ? largeImageSources : [] }
+					disabledSources={ disabledSources }
 				/>
 
 				<SectionNav

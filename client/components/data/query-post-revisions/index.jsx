@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -15,7 +13,7 @@ import { requestPostRevisions } from 'state/posts/revisions/actions';
 import { getEditedPostValue } from 'state/posts/selectors';
 
 class QueryPostRevisions extends Component {
-	componentWillMount() {
+	componentDidMount() {
 		this.request();
 	}
 

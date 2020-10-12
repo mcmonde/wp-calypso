@@ -1,4 +1,3 @@
-/** @format */
 /**
  * Internal dependencies
  */
@@ -12,6 +11,7 @@ import {
 	hasExpiredSecretError,
 	hasXmlrpcError,
 	isRemoteSiteOnSitesList,
+	isSiteBlockedError,
 } from '../selectors';
 
 describe( 'selectors', () => {
@@ -371,6 +371,53 @@ describe( 'selectors', () => {
 		} );
 	} );
 
+	describe( '#isSiteBlockedError', () => {
+		test( 'should be false when there is an empty state', () => {
+			const hasError = isSiteBlockedError( { jetpackConnect: {} } );
+			expect( hasError ).toBe( false );
+		} );
+
+		test( 'should be false when there is no error', () => {
+			const stateHasNoError = {
+				jetpackConnect: {
+					jetpackConnectAuthorize: {
+						authorizeError: false,
+					},
+				},
+			};
+			const hasError = isSiteBlockedError( stateHasNoError );
+			expect( hasError ).toBe( false );
+		} );
+
+		test( 'should be false when there is another error', () => {
+			const stateHasOtherError = {
+				jetpackConnect: {
+					jetpackConnectAuthorize: {
+						authorizeError: {
+							error: 'already_connected',
+						},
+					},
+				},
+			};
+			const hasError = isSiteBlockedError( stateHasOtherError );
+			expect( hasError ).toBe( false );
+		} );
+
+		test( 'should be true if site has been blocked', () => {
+			const stateHasBeenBlockedError = {
+				jetpackConnect: {
+					jetpackConnectAuthorize: {
+						authorizeError: {
+							error: 'site_blacklisted',
+						},
+					},
+				},
+			};
+			const hasError = isSiteBlockedError( stateHasBeenBlockedError );
+			expect( hasError ).toBe( true );
+		} );
+	} );
+
 	describe( '#getAuthAttempts()', () => {
 		test( "should return 0 if there's no stored info for the site", () => {
 			const state = {
@@ -414,7 +461,7 @@ describe( 'selectors', () => {
 	} );
 
 	describe( '#getUserAlreadyConnected()', () => {
-		const makeUserAlreadyConnectedState = result => ( {
+		const makeUserAlreadyConnectedState = ( result ) => ( {
 			jetpackConnect: {
 				jetpackConnectAuthorize: {
 					userAlreadyConnected: result,

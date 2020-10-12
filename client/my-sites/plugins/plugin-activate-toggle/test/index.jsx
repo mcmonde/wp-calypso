@@ -1,5 +1,4 @@
 /**
- * @format
  * @jest-environment jsdom
  */
 
@@ -22,9 +21,6 @@ jest.mock( 'my-sites/plugins/plugin-action/plugin-action', () =>
 	require( './mocks/plugin-action' )
 );
 jest.mock( 'lib/plugins/actions', () => require( './mocks/actions' ) );
-jest.mock( 'my-sites/plugins/disconnect-jetpack/disconnect-jetpack-button', () =>
-	require( 'components/empty-component' )
-);
 
 describe( 'PluginActivateToggle', () => {
 	const analyticsMock = {
@@ -34,8 +30,8 @@ describe( 'PluginActivateToggle', () => {
 	};
 
 	afterEach( () => {
-		mockedActions.togglePluginActivation.reset();
-		analyticsMock.recordGoogleEvent.reset();
+		mockedActions.togglePluginActivation.resetHistory();
+		analyticsMock.recordGoogleEvent.resetHistory();
 	} );
 
 	test( 'should render the component', () => {

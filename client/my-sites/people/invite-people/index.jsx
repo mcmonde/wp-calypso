@@ -1,12 +1,10 @@
-/** @format */
-
 /**
  * External dependencies
  */
 
 import React from 'react';
 import page from 'page';
-import { filter, get, groupBy, includes, isEmpty, pickBy, some, uniqueId } from 'lodash';
+import { filter, flowRight, get, groupBy, includes, isEmpty, pickBy, some, uniqueId } from 'lodash';
 import debugModule from 'debug';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
@@ -15,21 +13,25 @@ import { localize } from 'i18n-calypso';
 /**
  * Internal dependencies
  */
+import ContractorSelect from 'my-sites/people/contractor-select';
 import RoleSelect from 'my-sites/people/role-select';
 import TokenField from 'components/token-field';
 import FormButton from 'components/forms/form-button';
 import FormFieldset from 'components/forms/form-fieldset';
 import FormLabel from 'components/forms/form-label';
 import FormSettingExplanation from 'components/forms/form-setting-explanation';
-import { sendInvites } from 'lib/invites/actions';
-import Card from 'components/card';
+import {
+	sendInvites,
+	createInviteValidation,
+	generateInviteLinks,
+	disableInviteLinks,
+} from 'lib/invites/actions';
+import { Card, Button } from '@automattic/components';
 import Main from 'components/main';
 import HeaderCake from 'components/header-cake';
 import CountedTextarea from 'components/forms/counted-textarea';
-import { createInviteValidation } from 'lib/invites/actions';
 import InvitesCreateValidationStore from 'lib/invites/stores/invites-create-validation';
 import InvitesSentStore from 'lib/invites/stores/invites-sent';
-import analytics from 'lib/analytics';
 import SidebarNavigation from 'my-sites/sidebar-navigation';
 import EmptyContent from 'components/empty-content';
 import { userCan } from 'lib/site/utils';
@@ -42,9 +44,27 @@ import Notice from 'components/notice';
 import NoticeAction from 'components/notice/notice-action';
 import { isJetpackSite } from 'state/sites/selectors';
 import { activateModule } from 'state/jetpack/modules/actions';
-import { isActivatingJetpackModule, isJetpackModuleActive } from 'state/selectors';
+import isActivatingJetpackModule from 'state/selectors/is-activating-jetpack-module';
+import isJetpackModuleActive from 'state/selectors/is-jetpack-module-active';
 import isSiteAutomatedTransfer from 'state/selectors/is-site-automated-transfer';
 import PageViewTracker from 'lib/analytics/page-view-tracker';
+import { recordTracksEvent as recordTracksEventAction } from 'state/analytics/actions';
+import withTrackingTool from 'lib/analytics/with-tracking-tool';
+import isSiteWPForTeams from 'state/selectors/is-site-wpforteams';
+import QuerySiteInvites from 'components/data/query-site-invites';
+import { getInviteLinksForSite } from 'state/invites/selectors';
+import { getSiteRoles, getWpcomFollowerRole } from 'state/site-roles/selectors';
+import FormSelect from 'components/forms/form-select';
+import FormTextInput from 'components/forms/form-text-input';
+import ClipboardButton from 'components/forms/clipboard-button';
+import SectionHeader from 'components/section-header';
+import accept from 'lib/accept';
+import QueryJetpackModules from 'components/data/query-jetpack-modules';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 /**
  * Module variables
@@ -64,20 +84,36 @@ class InvitePeople extends React.Component {
 		InvitesSentStore.off( 'change', this.refreshFormState );
 	}
 
-	componentWillReceiveProps() {
-		this.setState( this.resetState() );
+	UNSAFE_componentWillReceiveProps( nextProps ) {
+		if (
+			this.props.siteId !== nextProps.siteId ||
+			this.props.needsVerification !== nextProps.needsVerification ||
+			this.props.showSSONotice !== nextProps.showSSONotice ||
+			this.props.isJetpack !== nextProps.isJetpack ||
+			this.props.isSiteAutomatedTransfer !== nextProps.isSiteAutomatedTransfer
+		) {
+			this.setState( this.resetState( nextProps ) );
+		}
 	}
 
-	resetState = () => {
+	resetState = ( props = this.props ) => {
+		const { isWPForTeamsSite } = props;
+
+		const defaultRole = isWPForTeamsSite ? 'editor' : 'follower';
+
 		return {
+			isExternal: false,
 			usernamesOrEmails: [],
-			role: 'follower',
+			role: defaultRole,
 			message: '',
 			sendingInvites: false,
 			getTokenStatus: () => {},
 			errorToDisplay: false,
 			errors: {},
 			success: [],
+			activeInviteLink: false,
+			showCopyConfirmation: false,
+			isGeneratingInviteLinks: false,
 		};
 	};
 
@@ -86,7 +122,7 @@ class InvitePeople extends React.Component {
 
 		if ( sendInvitesSuccess ) {
 			this.setState( this.resetState() );
-			analytics.tracks.recordEvent( 'calypso_invite_people_form_refresh_initial' );
+			this.props.recordTracksEventAction( 'calypso_invite_people_form_refresh_initial' );
 			debug( 'Submit successful. Resetting form.' );
 		} else {
 			const sendInvitesErrored = InvitesSentStore.getErrors( this.state.formId ),
@@ -104,13 +140,13 @@ class InvitePeople extends React.Component {
 			debug( 'Submit errored. Updating state to:  ' + JSON.stringify( updatedState ) );
 
 			this.setState( updatedState );
-			analytics.tracks.recordEvent( 'calypso_invite_people_form_refresh_retry' );
+			this.props.recordTracksEventAction( 'calypso_invite_people_form_refresh_retry' );
 		}
 	};
 
-	onTokensChange = tokens => {
+	onTokensChange = ( tokens ) => {
 		const { role, errorToDisplay, usernamesOrEmails, errors, success } = this.state;
-		const filteredTokens = tokens.map( value => {
+		const filteredTokens = tokens.map( ( value ) => {
 			if ( 'object' === typeof value ) {
 				return value.value;
 			}
@@ -121,7 +157,7 @@ class InvitePeople extends React.Component {
 			return includes( filteredTokens, key );
 		} );
 
-		const filteredSuccess = filter( success, successfulValidation => {
+		const filteredSuccess = filter( success, ( successfulValidation ) => {
 			return includes( filteredTokens, successfulValidation );
 		} );
 
@@ -134,40 +170,23 @@ class InvitePeople extends React.Component {
 		createInviteValidation( this.props.siteId, filteredTokens, role );
 
 		if ( filteredTokens.length > usernamesOrEmails.length ) {
-			analytics.tracks.recordEvent( 'calypso_invite_people_token_added' );
+			this.props.recordTracksEventAction( 'calypso_invite_people_token_added' );
 		} else {
-			analytics.tracks.recordEvent( 'calypso_invite_people_token_removed' );
+			this.props.recordTracksEventAction( 'calypso_invite_people_token_removed' );
 		}
 	};
 
-	onMessageChange = event => {
-		this.setState( { message: event.target.value } );
-	};
+	onMessageChange = ( event ) => this.setState( { message: event.target.value } );
 
-	onRoleChange = event => {
+	onRoleChange = ( event ) => {
 		const role = event.target.value;
 		this.setState( { role } );
 		createInviteValidation( this.props.siteId, this.state.usernamesOrEmails, role );
 	};
 
-	onFocusTokenField = () => {
-		analytics.tracks.recordEvent( 'calypso_invite_people_token_field_focus' );
-	};
-
-	onFocusRoleSelect = () => {
-		analytics.tracks.recordEvent( 'calypso_invite_people_role_select_focus' );
-	};
-
-	onFocusCustomMessage = () => {
-		analytics.tracks.recordEvent( 'calypso_invite_people_custom_message_focus' );
-	};
-
-	onClickSendInvites = () => {
-		analytics.tracks.recordEvent( 'calypso_invite_people_send_invite_button_click' );
-	};
-
-	onClickRoleExplanation = () => {
-		analytics.tracks.recordEvent( 'calypso_invite_people_role_explanation_link_click' );
+	onExternalChange = ( event ) => {
+		const isExternal = event.target.checked;
+		this.setState( { isExternal } );
 	};
 
 	refreshValidation = () => {
@@ -184,11 +203,11 @@ class InvitePeople extends React.Component {
 		} );
 
 		if ( errorsKeys.length ) {
-			analytics.tracks.recordEvent( 'calypso_invite_people_validation_refreshed_with_error' );
+			this.props.recordTracksEventAction( 'calypso_invite_people_validation_refreshed_with_error' );
 		}
 	};
 
-	getTooltip = value => {
+	getTooltip = ( value ) => {
 		const { errors, errorToDisplay } = this.state;
 		if ( errorToDisplay && value !== errorToDisplay ) {
 			return null;
@@ -199,7 +218,7 @@ class InvitePeople extends React.Component {
 	getTokensWithStatus = () => {
 		const { success, errors } = this.state;
 
-		const tokens = this.state.usernamesOrEmails.map( value => {
+		const tokens = this.state.usernamesOrEmails.map( ( value ) => {
 			if ( errors && errors[ value ] ) {
 				return {
 					status: 'error',
@@ -221,7 +240,7 @@ class InvitePeople extends React.Component {
 		return tokens;
 	};
 
-	submitForm = event => {
+	submitForm = ( event ) => {
 		event.preventDefault();
 		debug( 'Submitting invite form. State: ' + JSON.stringify( this.state ) );
 
@@ -230,22 +249,34 @@ class InvitePeople extends React.Component {
 		}
 
 		const formId = uniqueId();
-		const { usernamesOrEmails, message, role } = this.state;
+		const { usernamesOrEmails, message, role, isExternal } = this.state;
 
 		this.setState( { sendingInvites: true, formId } );
-		this.props.sendInvites( this.props.siteId, usernamesOrEmails, role, message, formId );
+		this.props.sendInvites(
+			this.props.siteId,
+			usernamesOrEmails,
+			role,
+			message,
+			formId,
+			isExternal
+		);
 
-		const groupedInvitees = groupBy( usernamesOrEmails, invitee => {
+		const groupedInvitees = groupBy( usernamesOrEmails, ( invitee ) => {
 			return includes( invitee, '@' ) ? 'email' : 'username';
 		} );
 
-		analytics.tracks.recordEvent( 'calypso_invite_people_form_submit', {
+		this.props.recordTracksEventAction( 'calypso_invite_people_form_submit', {
 			role,
+			is_external: isExternal,
 			number_invitees: usernamesOrEmails.length,
 			number_username_invitees: groupedInvitees.username ? groupedInvitees.username.length : 0,
 			number_email_invitees: groupedInvitees.email ? groupedInvitees.email.length : 0,
 			has_custom_message: 'string' === typeof message && !! message.length,
 		} );
+
+		if ( includes( [ 'administrator', 'editor', 'author', 'contributor' ], role ) ) {
+			page( `/people/new/${ this.props.site.slug }/sent` );
+		}
 	};
 
 	isSubmitDisabled = () => {
@@ -263,7 +294,7 @@ class InvitePeople extends React.Component {
 
 		// If there are invitees, and there are no errors, let's check
 		// if there are any pending validations.
-		return some( usernamesOrEmails, value => {
+		return some( usernamesOrEmails, ( value ) => {
 			return ! includes( success, value );
 		} );
 	};
@@ -284,25 +315,38 @@ class InvitePeople extends React.Component {
 	};
 
 	renderRoleExplanation = () => {
-		const { translate } = this.props;
+		const { translate, onClickRoleExplanation } = this.props;
 		return (
 			<a
 				target="_blank"
 				rel="noopener noreferrer"
-				href="http://en.support.wordpress.com/user-roles/"
-				onClick={ this.onClickRoleExplanation }
+				href="http://wordpress.com/support/user-roles/"
+				onClick={ onClickRoleExplanation }
 			>
 				{ translate( 'Learn more about roles' ) }
 			</a>
 		);
 	};
 
-	enableSSO = () => {
-		this.props.activateModule( this.props.siteId, 'sso' );
+	enableSSO = () => this.props.activateModule( this.props.siteId, 'sso' );
+
+	isExternalRole = ( role ) => {
+		const roles = [ 'administrator', 'editor', 'author', 'contributor' ];
+		return includes( roles, role );
 	};
 
 	renderInviteForm = () => {
-		const { site, translate, needsVerification, isJetpack, showSSONotice } = this.props;
+		const {
+			site,
+			translate,
+			needsVerification,
+			isJetpack,
+			showSSONotice,
+			onClickSendInvites,
+			onFocusTokenField,
+			onFocusRoleSelect,
+			onFocusCustomMessage,
+		} = this.props;
 
 		const inviteForm = (
 			<Card>
@@ -310,7 +354,7 @@ class InvitePeople extends React.Component {
 					<form onSubmit={ this.submitForm }>
 						<div role="group" className="invite-people__token-field-wrapper">
 							<FormLabel htmlFor="usernamesOrEmails">
-								{ translate( 'Usernames or Emails' ) }
+								{ translate( 'Usernames or emails' ) }
 							</FormLabel>
 							<TokenField
 								id="usernamesOrEmails"
@@ -323,14 +367,12 @@ class InvitePeople extends React.Component {
 								maxLength={ 10 }
 								value={ this.getTokensWithStatus() }
 								onChange={ this.onTokensChange }
-								onFocus={ this.onFocusTokenField }
+								onFocus={ onFocusTokenField }
 								disabled={ this.state.sendingInvites }
 							/>
 							<FormSettingExplanation>
 								{ translate(
-									'Want to invite new users to your site? The more the merrier! ' +
-										'Invite as many as you want, up to 10 at a time, by adding ' +
-										'their email addresses or WordPress.com usernames.'
+									'Enter up to 10 WordPress.com usernames or email addresses at a time.'
 								) }
 							</FormSettingExplanation>
 						</div>
@@ -341,14 +383,21 @@ class InvitePeople extends React.Component {
 							includeFollower
 							siteId={ this.props.siteId }
 							onChange={ this.onRoleChange }
-							onFocus={ this.onFocusRoleSelect }
+							onFocus={ onFocusRoleSelect }
 							value={ this.state.role }
 							disabled={ this.state.sendingInvites }
 							explanation={ this.renderRoleExplanation() }
 						/>
 
+						{ ! this.props.isWPForTeamsSite && this.isExternalRole( this.state.role ) && (
+							<ContractorSelect
+								onChange={ this.onExternalChange }
+								checked={ this.state.isExternal }
+							/>
+						) }
+
 						<FormFieldset>
-							<FormLabel htmlFor="message">{ translate( 'Custom Message' ) }</FormLabel>
+							<FormLabel htmlFor="message">{ translate( 'Custom message' ) }</FormLabel>
 							<CountedTextarea
 								name="message"
 								id="message"
@@ -356,20 +405,19 @@ class InvitePeople extends React.Component {
 								maxLength={ 500 }
 								acceptableLength={ 500 }
 								onChange={ this.onMessageChange }
-								onFocus={ this.onFocusCustomMessage }
+								onFocus={ onFocusCustomMessage }
 								value={ this.state.message }
 								disabled={ this.state.sendingInvites }
 							/>
 							<FormSettingExplanation>
 								{ translate(
-									'(Optional) You can enter a custom message of up to 500 characters ' +
-										'that will be included in the invitation to the user(s).'
+									'(Optional) Enter a custom message to be sent with your invitation.'
 								) }
 							</FormSettingExplanation>
 						</FormFieldset>
 
-						<FormButton disabled={ this.isSubmitDisabled() } onClick={ this.onClickSendInvites }>
-							{ translate( 'Send Invitation', 'Send Invitations', {
+						<FormButton disabled={ this.isSubmitDisabled() } onClick={ onClickSendInvites }>
+							{ translate( 'Send invitation', 'Send invitations', {
 								count: this.state.usernamesOrEmails.length || 1,
 								context: 'Button label',
 							} ) }
@@ -418,10 +466,207 @@ class InvitePeople extends React.Component {
 		return inviteForm;
 	};
 
+	getInviteLinkRoles = () => {
+		const { siteRoles, wpcomFollowerRole } = this.props;
+
+		if ( ! siteRoles || ! wpcomFollowerRole ) {
+			return [];
+		}
+
+		return siteRoles.concat( wpcomFollowerRole );
+	};
+
+	isValidInviteLinkRole = ( inviteLinkRole ) => {
+		const roles = this.getInviteLinkRoles();
+		return roles.some( ( role ) => role === inviteLinkRole );
+	};
+
+	generateInviteLinks = () => {
+		this.setState( {
+			isGeneratingInviteLinks: true,
+		} );
+
+		return this.props.generateInviteLinks( this.props.siteId );
+	};
+
+	disableInviteLinks = () => {
+		accept(
+			<div>
+				<p>
+					{ this.props.translate(
+						'Once this invite link is disabled, nobody will be able to use it to join your team. Are you sure?'
+					) }
+				</p>
+			</div>,
+			( accepted ) => {
+				if ( accepted ) {
+					this.props.disableInviteLinks( this.props.siteId );
+					this.setState( this.resetState() );
+				}
+			},
+			this.props.translate( 'Disable' )
+		);
+	};
+
+	showInviteLinkForRole = ( event ) => {
+		const { inviteLinks } = this.props;
+		const role = event.target.value || 'administrator';
+		this.setState( { activeInviteLink: inviteLinks[ role ] } );
+		this.setState( { showCopyConfirmation: false } );
+	};
+
+	getActiveInviteLink = ( activeInviteLink ) => {
+		if ( activeInviteLink ) {
+			return activeInviteLink;
+		}
+
+		if ( this.props.inviteLinks && typeof this.props.inviteLinks.administrator !== 'undefined' ) {
+			return this.props.inviteLinks.administrator;
+		}
+
+		return false;
+	};
+
+	onInviteLinkCopy = () => {
+		this.setState( {
+			showCopyConfirmation: true,
+		} );
+
+		clearTimeout( this.dismissCopyConfirmation );
+		this.dismissCopyConfirmation = setTimeout( () => {
+			this.setState( {
+				showCopyConfirmation: false,
+			} );
+		}, 4000 );
+	};
+
+	renderCopyLinkButton = ( link, className ) => {
+		const { translate } = this.props;
+
+		let label;
+		if ( this.state.showCopyConfirmation ) {
+			label = translate( 'Copied!' );
+		} else {
+			label = translate( 'Copy link' );
+		}
+
+		return (
+			<ClipboardButton
+				className={ className }
+				text={ link }
+				onCopy={ this.onInviteLinkCopy }
+				compact
+			>
+				{ label }
+			</ClipboardButton>
+		);
+	};
+
+	renderInviteLinkRoleSelector = ( activeInviteLink ) => {
+		const { translate, inviteLinks } = this.props;
+		const allRoles = this.getInviteLinkRoles();
+
+		const roleOptions =
+			allRoles &&
+			allRoles.map( ( role ) => {
+				if ( inviteLinks[ role.name ] ) {
+					return (
+						<option value={ role.name } key={ role.name }>
+							{ role.display_name }
+						</option>
+					);
+				}
+			} );
+
+		const inviteUrlRef = React.createRef();
+
+		return (
+			<React.Fragment>
+				<div className="invite-people__link-selector">
+					<FormSelect
+						id="invite-people__link-selector-role"
+						className="invite-people__link-selector-role"
+						onChange={ this.showInviteLinkForRole }
+					>
+						{ roleOptions }
+					</FormSelect>
+
+					<FormTextInput
+						id="invite-people__link-selector-text"
+						className="invite-people__link-selector-text"
+						value={ activeInviteLink.link }
+						readOnly
+						ref={ inviteUrlRef }
+					/>
+					{ this.renderCopyLinkButton(
+						activeInviteLink.link,
+						'invite-people__link-selector-copy'
+					) }
+				</div>
+
+				<div className="invite-people__link-footer">
+					<span className="invite-people__link-expiry">
+						Expires on { new Date( activeInviteLink.expiry * 1000 ).toLocaleDateString() }{ ' ' }
+					</span>
+					<span>
+						(
+						<button className="invite-people__link-disable" onClick={ this.disableInviteLinks }>
+							{ translate( 'Disable invite link' ) }
+						</button>
+						)
+					</span>
+				</div>
+			</React.Fragment>
+		);
+	};
+
+	renderInviteLinkGenerateButton = () => {
+		const { translate } = this.props;
+
+		return (
+			<Button
+				onClick={ this.generateInviteLinks }
+				className="invite-people__link-generate"
+				busy={ this.state.isGeneratingInviteLinks }
+			>
+				{ translate( 'Generate new link' ) }
+			</Button>
+		);
+	};
+
+	renderInviteLinkForm = () => {
+		const { translate } = this.props;
+
+		const activeInviteLink = this.getActiveInviteLink( this.state.activeInviteLink );
+
+		const inviteLinkForm = (
+			<Card className="invite-people__link">
+				<EmailVerificationGate>
+					<div className="invite-people__link-instructions">
+						{ translate(
+							'Use this link to onboard your team members without having to invite them one by one. {{strong}}Anybody visiting this URL will be able to sign up to your organization,{{/strong}} even if they received the link from somebody else, so make sure that you share it with trusted people.',
+							{
+								components: {
+									strong: <strong />,
+								},
+							}
+						) }
+					</div>
+
+					{ activeInviteLink
+						? this.renderInviteLinkRoleSelector( activeInviteLink )
+						: this.renderInviteLinkGenerateButton() }
+				</EmailVerificationGate>
+			</Card>
+		);
+
+		return inviteLinkForm;
+	};
+
 	state = this.resetState();
 
 	render() {
-		const { site, translate } = this.props;
+		const { site, translate, isWPForTeamsSite, isJetpack } = this.props;
 		if ( site && ! userCan( 'promote_users', site ) ) {
 			return (
 				<Main>
@@ -438,18 +683,27 @@ class InvitePeople extends React.Component {
 		return (
 			<Main className="invite-people">
 				<PageViewTracker path="/people/new/:site" title="People > Invite People" />
+				{ site.ID && <QuerySiteInvites siteId={ site.ID } /> }
+				{ site.ID && isJetpack && <QueryJetpackModules siteId={ site.ID } /> }
+
 				<SidebarNavigation />
 				<HeaderCake isCompact onClick={ this.goBack }>
 					{ translate( 'Invite People' ) }
 				</HeaderCake>
 				{ this.renderInviteForm() }
+				{ isWPForTeamsSite && (
+					<React.Fragment>
+						<SectionHeader label={ translate( 'Invite Link' ) } />
+						{ this.renderInviteLinkForm() }
+					</React.Fragment>
+				) }
 			</Main>
 		);
 	}
 }
 
-export default connect(
-	state => {
+const connectComponent = connect(
+	( state ) => {
 		const siteId = getSelectedSiteId( state );
 		const activating = isActivatingJetpackModule( state, siteId, 'sso' );
 		const active = isJetpackModuleActive( state, siteId, 'sso' );
@@ -457,10 +711,41 @@ export default connect(
 		return {
 			siteId,
 			needsVerification: ! isCurrentUserEmailVerified( state ),
-			showSSONotice: !! ( activating || active ),
+			showSSONotice: ! ( activating || active ),
 			isJetpack: isJetpackSite( state, siteId ),
 			isSiteAutomatedTransfer: isSiteAutomatedTransfer( state, siteId ),
+			isWPForTeamsSite: isSiteWPForTeams( state, siteId ),
+			inviteLinks: getInviteLinksForSite( state, siteId ),
+			siteRoles: getSiteRoles( state, siteId ),
+			wpcomFollowerRole: getWpcomFollowerRole( state, siteId ),
 		};
 	},
-	dispatch => bindActionCreators( { sendInvites, activateModule }, dispatch )
-)( localize( InvitePeople ) );
+	( dispatch ) => ( {
+		...bindActionCreators(
+			{
+				sendInvites,
+				activateModule,
+				generateInviteLinks,
+				disableInviteLinks,
+			},
+			dispatch
+		),
+		recordTracksEventAction,
+		onFocusTokenField: () =>
+			dispatch( recordTracksEventAction( 'calypso_invite_people_token_field_focus' ) ),
+		onFocusRoleSelect: () =>
+			dispatch( recordTracksEventAction( 'calypso_invite_people_role_select_focus' ) ),
+		onFocusCustomMessage: () =>
+			dispatch( recordTracksEventAction( 'calypso_invite_people_custom_message_focus' ) ),
+		onClickSendInvites: () =>
+			dispatch( recordTracksEventAction( 'calypso_invite_people_send_invite_button_click' ) ),
+		onClickRoleExplanation: () =>
+			dispatch( recordTracksEventAction( 'calypso_invite_people_role_explanation_link_click' ) ),
+	} )
+);
+
+export default flowRight(
+	connectComponent,
+	localize,
+	withTrackingTool( 'HotJar' )
+)( InvitePeople );

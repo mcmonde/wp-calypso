@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -7,7 +6,7 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import classNames from 'classnames';
 import { localize } from 'i18n-calypso';
-import List from 'react-virtualized/List';
+import { AutoSizer, List } from '@automattic/react-virtualized';
 import {
 	debounce,
 	difference,
@@ -23,7 +22,10 @@ import {
 /**
  * Internal dependencies
  */
-import analytics from 'lib/analytics';
+import FormCheckbox from 'components/forms/form-checkbox';
+import FormRadio from 'components/forms/form-radio';
+import FormLabel from 'components/forms/form-label';
+import { gaRecordEvent } from 'lib/analytics/ga';
 import NoResults from './no-results';
 import Search from './search';
 import { decodeEntities } from 'lib/formatting';
@@ -37,6 +39,11 @@ import {
 import PodcastIndicator from 'components/podcast-indicator';
 import QuerySiteSettings from 'components/data/query-site-settings';
 import getPodcastingCategoryId from 'state/selectors/get-podcasting-category-id';
+
+/**
+ * Style dependencies
+ */
+import './terms.scss';
 
 /**
  * Constants
@@ -62,7 +69,6 @@ class TermTreeSelectorList extends Component {
 		onChange: PropTypes.func,
 		isError: PropTypes.bool,
 		height: PropTypes.number,
-		width: PropTypes.number,
 	};
 
 	static defaultProps = {
@@ -84,7 +90,7 @@ class TermTreeSelectorList extends Component {
 
 	state = this.constructor.initialState;
 
-	componentWillMount() {
+	UNSAFE_componentWillMount() {
 		this.itemHeights = {};
 		this.hasPerformedSearch = false;
 		this.list = null;
@@ -97,7 +103,7 @@ class TermTreeSelectorList extends Component {
 		}, SEARCH_DEBOUNCE_TIME_MS );
 	}
 
-	componentWillReceiveProps( nextProps ) {
+	UNSAFE_componentWillReceiveProps( nextProps ) {
 		if ( nextProps.taxonomy !== this.props.taxonomy ) {
 			this.setState( this.constructor.initialState );
 		}
@@ -137,15 +143,7 @@ class TermTreeSelectorList extends Component {
 		}
 	};
 
-	setSelectorRef = selectorRef => {
-		if ( ! selectorRef ) {
-			return;
-		}
-
-		this.setState( { selectorRef } );
-	};
-
-	getPageForIndex = index => {
+	getPageForIndex = ( index ) => {
 		const { query, lastPage } = this.props;
 		const perPage = query.number || DEFAULT_TERMS_PER_PAGE;
 		const page = Math.ceil( index / perPage );
@@ -194,16 +192,17 @@ class TermTreeSelectorList extends Component {
 	hasNoSearchResults = () => {
 		return (
 			! this.props.loading &&
-			( this.props.terms && ! this.props.terms.length ) &&
+			this.props.terms &&
+			! this.props.terms.length &&
 			!! this.state.searchTerm.length
 		);
 	};
 
 	hasNoTerms = () => {
-		return ! this.props.loading && ( this.props.terms && ! this.props.terms.length );
+		return ! this.props.loading && this.props.terms && ! this.props.terms.length;
 	};
 
-	getItem = index => {
+	getItem = ( index ) => {
 		if ( this.props.terms ) {
 			return this.props.terms[ index ];
 		}
@@ -221,7 +220,7 @@ class TermTreeSelectorList extends Component {
 		return this.props.lastPage || !! this.getItem( index );
 	};
 
-	getTermChildren = termId => {
+	getTermChildren = ( termId ) => {
 		const { terms } = this.props;
 		return filter( terms, ( { parent } ) => parent === termId );
 	};
@@ -264,15 +263,6 @@ class TermTreeSelectorList extends Component {
 		}, 0 );
 	};
 
-	getResultsWidth = () => {
-		const { selectorRef } = this.state;
-		if ( selectorRef ) {
-			return selectorRef.clientWidth;
-		}
-
-		return 0;
-	};
-
 	getRowCount = () => {
 		let count = 0;
 
@@ -287,7 +277,7 @@ class TermTreeSelectorList extends Component {
 		return count;
 	};
 
-	onSearch = event => {
+	onSearch = ( event ) => {
 		const searchTerm = event.target.value;
 		if ( this.state.searchTerm && ! searchTerm ) {
 			this.props.onSearch( '' );
@@ -299,14 +289,14 @@ class TermTreeSelectorList extends Component {
 
 		if ( ! this.hasPerformedSearch ) {
 			this.hasPerformedSearch = true;
-			analytics.ga.recordEvent( this.props.analyticsPrefix, 'Performed Term Search' );
+			gaRecordEvent( this.props.analyticsPrefix, 'Performed Term Search' );
 		}
 
 		this.setState( { searchTerm } );
 		this.debouncedSearch();
 	};
 
-	setListRef = ref => {
+	setListRef = ( ref ) => {
 		this.list = ref;
 	};
 
@@ -337,13 +327,12 @@ class TermTreeSelectorList extends Component {
 		const isPodcastingCategory = taxonomy === 'category' && podcastingCategoryId === itemId;
 		const name = decodeEntities( item.name ) || translate( 'Untitled' );
 		const checked = includes( selected, itemId );
-		const inputType = multiple ? 'checkbox' : 'radio';
+		const InputComponent = multiple ? FormCheckbox : FormRadio;
 		const disabled =
 			multiple && checked && defaultTermId && 1 === selected.length && defaultTermId === itemId;
 
 		const input = (
-			<input
-				type={ inputType }
+			<InputComponent
 				value={ itemId }
 				onChange={ onChange }
 				disabled={ disabled }
@@ -362,7 +351,7 @@ class TermTreeSelectorList extends Component {
 				</label>
 				{ children.length > 0 && (
 					<div className="term-tree-selector__nested-list">
-						{ children.map( child => this.renderItem( child, true ) ) }
+						{ children.map( ( child ) => this.renderItem( child, true ) ) }
 					</div>
 				) }
 			</div>
@@ -388,16 +377,14 @@ class TermTreeSelectorList extends Component {
 			return this.renderItem( item );
 		}
 
+		const InputComponent = this.props.multiple ? FormCheckbox : FormRadio;
+
 		return (
 			<div key="placeholder" className="term-tree-selector__list-item is-placeholder">
-				<label>
-					<input
-						type={ this.props.multiple ? 'checkbox' : 'radio' }
-						disabled
-						className="term-tree-selector__input"
-					/>
+				<FormLabel>
+					<InputComponent disabled className="term-tree-selector__input" />
 					<span className="term-tree-selector__label">{ this.props.translate( 'Loading…' ) }</span>
-				</label>
+				</FormLabel>
 			</div>
 		);
 	};
@@ -417,7 +404,7 @@ class TermTreeSelectorList extends Component {
 		const showSearch =
 			( searchLength > 0 || ! isSmall ) &&
 			( this.props.terms || ( ! this.props.terms && searchLength > 0 ) );
-		const { className, isError, loading, siteId, taxonomy, query, height, width } = this.props;
+		const { className, isError, loading, siteId, taxonomy, query, height } = this.props;
 		const classes = classNames( 'term-tree-selector', className, {
 			'is-loading': loading,
 			'is-small': isSmall,
@@ -426,8 +413,8 @@ class TermTreeSelectorList extends Component {
 		} );
 
 		return (
-			<div ref={ this.setSelectorRef } className={ classes }>
-				{ this.state.requestedPages.map( page => (
+			<div className={ classes }>
+				{ this.state.requestedPages.map( ( page ) => (
 					<QueryTerms
 						key={ `query-${ page }` }
 						siteId={ siteId }
@@ -438,18 +425,22 @@ class TermTreeSelectorList extends Component {
 				{ taxonomy === 'category' && siteId && <QuerySiteSettings siteId={ siteId } /> }
 
 				{ showSearch && <Search searchTerm={ this.state.searchTerm } onSearch={ this.onSearch } /> }
-				<List
-					ref={ this.setListRef }
-					width={ width || this.getResultsWidth() }
-					height={ isSmall ? this.getCompactContainerHeight() : height }
-					onRowsRendered={ this.setRequestedPages }
-					rowCount={ rowCount }
-					estimatedRowSize={ ITEM_HEIGHT }
-					rowHeight={ this.getRowHeight }
-					rowRenderer={ this.cellRendererWrapper }
-					noRowsRenderer={ this.renderNoResults }
-					className="term-tree-selector__results"
-				/>
+				<AutoSizer disableHeight>
+					{ ( { width } ) => (
+						<List
+							ref={ this.setListRef }
+							width={ width }
+							height={ isSmall ? this.getCompactContainerHeight() : height }
+							onRowsRendered={ this.setRequestedPages }
+							rowCount={ rowCount }
+							estimatedRowSize={ ITEM_HEIGHT }
+							rowHeight={ this.getRowHeight }
+							rowRenderer={ this.cellRendererWrapper }
+							noRowsRenderer={ this.renderNoResults }
+							className="term-tree-selector__results"
+						/>
+					) }
+				</AutoSizer>
 			</div>
 		);
 	}
@@ -459,12 +450,20 @@ export default connect( ( state, ownProps ) => {
 	const siteId = getSelectedSiteId( state );
 	const { taxonomy, query } = ownProps;
 
+	// A parent component may pass in the podcasting category ID (like in the
+	// settings page, where the user may not have saved their selection yet)...
+	let podcastingCategoryId = ownProps.podcastingCategoryId;
+	if ( typeof podcastingCategoryId === 'undefined' && taxonomy === 'category' ) {
+		// ... or we may fetch it from state ourselves (like in the editor).
+		podcastingCategoryId = getPodcastingCategoryId( state, siteId );
+	}
+
 	return {
 		loading: isRequestingTermsForQueryIgnoringPage( state, siteId, taxonomy, query ),
 		terms: getTermsForQueryIgnoringPage( state, siteId, taxonomy, query ),
 		lastPage: getTermsLastPageForQuery( state, siteId, taxonomy, query ),
 		siteId,
 		query,
-		podcastingCategoryId: taxonomy === 'category' && getPodcastingCategoryId( state, siteId ),
+		podcastingCategoryId,
 	};
 } )( localize( TermTreeSelectorList ) );

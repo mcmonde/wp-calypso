@@ -1,27 +1,31 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import PropTypes from 'prop-types';
 import React from 'react';
 import { connect } from 'react-redux';
 import classNames from 'classnames';
 import { max, throttle, values } from 'lodash';
-import i18n, { localize } from 'i18n-calypso';
+import { localize } from 'i18n-calypso';
+import moment from 'moment';
 
 /**
  * Internal dependencies
  */
 import compareProps from 'lib/compare-props';
 import Month from './month';
-import Card from 'components/card';
+import { Card } from '@automattic/components';
 import SectionHeader from 'components/section-header';
 import QuerySiteStats from 'components/data/query-site-stats';
+import { withLocalizedMoment } from 'components/localized-moment';
 import { getSiteOption } from 'state/sites/selectors';
 import { getSelectedSiteId } from 'state/ui/selectors';
 import { getSiteStatsPostStreakData } from 'state/stats/lists/selectors';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class PostTrends extends React.Component {
 	static displayName = 'PostTrends';
@@ -36,9 +40,12 @@ class PostTrends extends React.Component {
 		canScrollRight: false,
 	};
 
+	wrapperRef = React.createRef();
+	yearRef = React.createRef();
+
 	componentDidMount() {
-		var node = this.refs.wrapper,
-			yearNode = this.refs.year,
+		const node = this.wrapperRef.current,
+			yearNode = this.yearRef.current,
 			computedStyle = window.getComputedStyle( yearNode ),
 			margin =
 				parseInt( computedStyle.getPropertyValue( 'margin-left' ), 10 ) +
@@ -59,9 +66,9 @@ class PostTrends extends React.Component {
 	}
 
 	resize = () => {
-		var scrollProps = {},
-			node = this.refs.wrapper,
-			yearNode = this.refs.year,
+		const scrollProps = {},
+			node = this.wrapperRef.current,
+			yearNode = this.yearRef.current,
 			computedStyle = window.getComputedStyle( yearNode ),
 			margin =
 				parseInt( computedStyle.getPropertyValue( 'margin-left' ), 10 ) +
@@ -78,14 +85,14 @@ class PostTrends extends React.Component {
 		this.setState( scrollProps );
 	};
 
-	scroll = direction => {
-		var node = this.refs.wrapper,
-			yearNode = this.refs.year,
+	scroll = ( direction ) => {
+		const node = this.wrapperRef.current,
+			yearNode = this.yearRef.current,
 			computedStyle = window.getComputedStyle( yearNode ),
 			margin =
 				parseInt( computedStyle.getPropertyValue( 'margin-left' ), 10 ) +
-				parseInt( computedStyle.getPropertyValue( 'margin-right' ), 10 ),
-			left = parseInt( computedStyle.getPropertyValue( 'left' ), 10 );
+				parseInt( computedStyle.getPropertyValue( 'margin-right' ), 10 );
+		let left = parseInt( computedStyle.getPropertyValue( 'left' ), 10 );
 
 		if ( 1 !== direction ) {
 			direction = -1;
@@ -121,10 +128,7 @@ class PostTrends extends React.Component {
 		const months = [];
 
 		for ( let i = 11; i >= 0; i-- ) {
-			const startDate = i18n
-				.moment()
-				.subtract( i, 'months' )
-				.startOf( 'month' );
+			const startDate = this.props.moment().subtract( i, 'months' ).startOf( 'month' );
 			months.push(
 				<Month key={ i } startDate={ startDate } streakData={ streakData } max={ maxPosts } />
 			);
@@ -144,19 +148,20 @@ class PostTrends extends React.Component {
 			'is-active': this.state.canScrollRight,
 		} );
 
+		/* eslint-disable jsx-a11y/click-events-have-key-events, wpcalypso/jsx-classname-namespace */
 		return (
 			<div className="post-trends">
 				{ siteId && <QuerySiteStats siteId={ siteId } statType="statsStreak" query={ query } /> }
-				<SectionHeader label={ this.props.translate( 'Posting Activity' ) } />
+				<SectionHeader label={ this.props.translate( 'Posting activity' ) } />
 				<Card>
-					<div className={ leftClass } onClick={ this.scrollLeft }>
+					<div className={ leftClass } onClick={ this.scrollLeft } role="button" tabIndex="0">
 						<span className="left-arrow" />
 					</div>
-					<div className={ rightClass } onClick={ this.scrollRight }>
+					<div className={ rightClass } onClick={ this.scrollRight } role="button" tabIndex="0">
 						<span className="right-arrow" />
 					</div>
-					<div ref="wrapper" className="post-trends__wrapper">
-						<div ref="year" className="post-trends__year">
+					<div ref={ this.wrapperRef } className="post-trends__wrapper">
+						<div ref={ this.yearRef } className="post-trends__year">
 							{ this.getMonthComponents() }
 						</div>
 						<div className="post-trends__key-container">
@@ -185,20 +190,15 @@ class PostTrends extends React.Component {
 	}
 }
 
-const mapStateToProps = state => {
+const mapStateToProps = ( state ) => {
 	const siteId = getSelectedSiteId( state );
 	const query = {
-		startDate: i18n
-			.moment()
+		startDate: moment()
 			.locale( 'en' )
 			.subtract( 1, 'year' )
 			.startOf( 'month' )
 			.format( 'YYYY-MM-DD' ),
-		endDate: i18n
-			.moment()
-			.locale( 'en' )
-			.endOf( 'month' )
-			.format( 'YYYY-MM-DD' ),
+		endDate: moment().locale( 'en' ).endOf( 'month' ).format( 'YYYY-MM-DD' ),
 		gmtOffset: getSiteOption( state, siteId, 'gmt_offset' ),
 		max: 3000,
 	};
@@ -212,4 +212,4 @@ const mapStateToProps = state => {
 
 export default connect( mapStateToProps, null, null, {
 	areStatePropsEqual: compareProps( { deep: [ 'query' ] } ),
-} )( localize( PostTrends ) );
+} )( localize( withLocalizedMoment( PostTrends ) ) );

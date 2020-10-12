@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -10,7 +8,7 @@ import { expect } from 'chai';
  */
 import reducer from '../reducer';
 import { ROUTE_SET, COMMENTS_LIKE } from 'state/action-types';
-import { useFakeTimers } from 'test/helpers/use-sinon';
+import { useFakeTimers } from 'test-helpers/use-sinon';
 
 describe( 'reducer', () => {
 	useFakeTimers( 1337 );

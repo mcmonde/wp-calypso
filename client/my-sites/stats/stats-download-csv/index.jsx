@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -10,13 +8,13 @@ import { connect } from 'react-redux';
 import { saveAs } from 'browser-filesaver';
 import { localize } from 'i18n-calypso';
 import { flowRight } from 'lodash';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 
 /**
  * Internal dependencies
  */
 import titlecase from 'to-title-case';
-import Button from 'components/button';
+import { Button } from '@automattic/components';
 import { getSiteStatsCSVData, isRequestingSiteStatsForQuery } from 'state/stats/lists/selectors';
 import { recordGoogleEvent } from 'state/analytics/actions';
 import QuerySiteStats from 'components/data/query-site-stats';
@@ -36,7 +34,7 @@ class StatsDownloadCsv extends Component {
 		borderless: PropTypes.bool,
 	};
 
-	downloadCsv = event => {
+	downloadCsv = ( event ) => {
 		event.preventDefault();
 		const { siteSlug, path, period, data } = this.props;
 
@@ -52,7 +50,7 @@ class StatsDownloadCsv extends Component {
 		this.props.recordGoogleEvent( 'Stats', 'CSV Download ' + titlecase( path ) );
 
 		const csvData = data
-			.map( row => {
+			.map( ( row ) => {
 				return row.join( ',' );
 			} )
 			.join( '\n' );
@@ -65,17 +63,24 @@ class StatsDownloadCsv extends Component {
 	render() {
 		const { data, siteId, statType, query, translate, isLoading, borderless } = this.props;
 		try {
-			const isFileSaverSupported = !! new Blob(); // eslint-disable-line no-unused-vars
+			new Blob(); // eslint-disable-line no-new
 		} catch ( e ) {
 			return null;
 		}
 		const disabled = isLoading || ! data.length;
 
 		return (
-			<Button compact onClick={ this.downloadCsv } disabled={ disabled } borderless={ borderless }>
-				{ siteId &&
-					statType && <QuerySiteStats statType={ statType } siteId={ siteId } query={ query } /> }
-				<Gridicon icon="cloud-download" />{' '}
+			<Button
+				className="stats-download-csv"
+				compact
+				onClick={ this.downloadCsv }
+				disabled={ disabled }
+				borderless={ borderless }
+			>
+				{ siteId && statType && (
+					<QuerySiteStats statType={ statType } siteId={ siteId } query={ query } />
+				) }
+				<Gridicon icon="cloud-download" />{ ' ' }
 				{ translate( 'Download data as CSV', {
 					context: 'Action shown in stats to download data as csv.',
 				} ) }

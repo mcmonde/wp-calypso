@@ -1,9 +1,13 @@
-/** @format */
+/**
+ * External dependencies
+ */
+import '@automattic/calypso-polyfills';
 
 /**
  * Internal dependencies
  */
+import localStoragePolyfill from 'lib/local-storage-polyfill';
 
-import localStoragePolyfill from 'lib/local-storage';
-
+// Only used in Calypso proper, so no need to turn into a package
+// and add to calypso-polyfills for now.
 localStoragePolyfill();

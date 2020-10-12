@@ -1,15 +1,13 @@
-/** @format */
-
 /**
  * Internal dependencies
  */
-
 import { addQueryArgs } from 'lib/url';
-import { addLocaleToPath, addLocaleToWpcomUrl } from 'lib/i18n-utils';
+import { addLocaleToPath, localizeUrl } from 'lib/i18n-utils';
 import config, { isEnabled } from 'config';
 
 export function login( {
 	isJetpack,
+	isGutenboarding,
 	isNative,
 	locale,
 	redirectTo,
@@ -18,6 +16,10 @@ export function login( {
 	emailAddress,
 	socialService,
 	oauth2ClientId,
+	wccomFrom,
+	site,
+	useMagicLink,
+	from,
 } = {} ) {
 	let url = config( 'login_url' );
 
@@ -26,12 +28,20 @@ export function login( {
 
 		if ( socialService ) {
 			url += '/' + socialService + '/callback';
+		} else if ( twoFactorAuthType && isJetpack ) {
+			url += '/jetpack/' + twoFactorAuthType;
+		} else if ( twoFactorAuthType && isGutenboarding ) {
+			url += '/new/' + twoFactorAuthType;
 		} else if ( twoFactorAuthType ) {
 			url += '/' + twoFactorAuthType;
 		} else if ( socialConnect ) {
 			url += '/social-connect';
 		} else if ( isJetpack ) {
 			url += '/jetpack';
+		} else if ( isGutenboarding ) {
+			url += '/new';
+		} else if ( useMagicLink ) {
+			url += '/link';
 		}
 	}
 
@@ -39,8 +49,12 @@ export function login( {
 		if ( isNative ) {
 			url = addLocaleToPath( url, locale );
 		} else {
-			url = addLocaleToWpcomUrl( url, locale );
+			url = localizeUrl( url, locale );
 		}
+	}
+
+	if ( site ) {
+		url = addQueryArgs( { site }, url );
 	}
 
 	if ( redirectTo ) {
@@ -53,6 +67,14 @@ export function login( {
 
 	if ( oauth2ClientId && ! isNaN( oauth2ClientId ) ) {
 		url = addQueryArgs( { client_id: oauth2ClientId }, url );
+	}
+
+	if ( wccomFrom ) {
+		url = addQueryArgs( { 'wccom-from': wccomFrom }, url );
+	}
+
+	if ( from ) {
+		url = addQueryArgs( { from }, url );
 	}
 
 	return url;

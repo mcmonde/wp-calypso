@@ -1,10 +1,8 @@
-/** @format */
-
 /**
  * External dependencies
  */
 
-import { filter, get, isEmpty, isInteger, keyBy, merge, omit } from 'lodash';
+import { filter, get, isEmpty, isInteger, keyBy, omit } from 'lodash';
 
 /**
  * Internal dependencies
@@ -12,14 +10,14 @@ import { filter, get, isEmpty, isInteger, keyBy, merge, omit } from 'lodash';
 import {
 	POST_EDIT,
 	POST_REVISIONS_RECEIVE,
-	POST_REVISIONS_REQUEST,
-	POST_REVISIONS_REQUEST_FAILURE,
-	POST_REVISIONS_REQUEST_SUCCESS,
 	POST_REVISIONS_SELECT,
 	POST_REVISIONS_DIALOG_CLOSE,
 	POST_REVISIONS_DIALOG_OPEN,
+	POST_REVISIONS_DIFF_SPLIT_VIEW,
+	POST_REVISIONS_DIFF_UNIFY_VIEW,
 	SELECTED_SITE_SET,
 } from 'state/action-types';
+import authors from './authors/reducer';
 import { combineReducers } from 'state/utils';
 
 export function diffs( state = {}, { diffs: diffsFromServer, postId, revisions, siteId, type } ) {
@@ -69,27 +67,12 @@ export function diffs( state = {}, { diffs: diffsFromServer, postId, revisions, 
 			[ postId ]: {
 				...{
 					...omit( sitePostState, 'revisions' ),
-					...keyBy( filteredDiffs, d => `${ d.from }:${ d.to }` ),
+					...keyBy( filteredDiffs, ( d ) => `${ d.from }:${ d.to }` ),
 				},
 				revisions: mergedRevisions,
 			},
 		},
 	};
-}
-
-export function requesting( state = {}, action ) {
-	switch ( action.type ) {
-		case POST_REVISIONS_REQUEST:
-		case POST_REVISIONS_REQUEST_FAILURE:
-		case POST_REVISIONS_REQUEST_SUCCESS:
-			return merge( {}, state, {
-				[ action.siteId ]: {
-					[ action.postId ]: action.type === POST_REVISIONS_REQUEST,
-				},
-			} );
-	}
-
-	return state;
 }
 
 export function selection( state = {}, action ) {
@@ -112,6 +95,10 @@ export function ui( state = {}, action ) {
 			return { ...state, isDialogVisible: false };
 		case POST_REVISIONS_DIALOG_OPEN:
 			return { ...state, isDialogVisible: true };
+		case POST_REVISIONS_DIFF_SPLIT_VIEW:
+			return { ...state, diffView: 'split' };
+		case POST_REVISIONS_DIFF_UNIFY_VIEW:
+			return { ...state, diffView: 'unified' };
 		default:
 			return state;
 	}
@@ -119,7 +106,7 @@ export function ui( state = {}, action ) {
 
 export default combineReducers( {
 	diffs,
-	requesting,
 	selection,
 	ui,
+	authors,
 } );

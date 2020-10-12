@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -20,25 +18,20 @@ import {
 } from 'state/automated-transfer/actions';
 import { transferStates } from 'state/automated-transfer/constants';
 
-export const requestStatus = ( { dispatch }, action ) => {
-	const { siteId } = action;
+import { registerHandlers } from 'state/data-layer/handler-registry';
 
-	dispatch(
-		http(
-			{
-				method: 'GET',
-				path: `/sites/${ siteId }/automated-transfers/status`,
-				apiVersion: '1',
-			},
-			action
-		)
+export const requestStatus = ( action ) =>
+	http(
+		{
+			method: 'GET',
+			path: `/sites/${ action.siteId }/automated-transfers/status`,
+			apiVersion: '1',
+		},
+		action
 	);
-};
 
-export const receiveStatus = (
-	{ dispatch },
-	{ siteId },
-	{ status, uploaded_plugin_slug, transfer_id }
+export const receiveStatus = ( { siteId }, { status, uploaded_plugin_slug, transfer_id } ) => (
+	dispatch
 ) => {
 	const pluginId = uploaded_plugin_slug;
 
@@ -61,12 +54,16 @@ export const receiveStatus = (
 	}
 };
 
-export const requestingStatusFailure = ( { dispatch }, { siteId } ) => {
-	dispatch( automatedTransferStatusFetchingFailure( siteId ) );
+export const requestingStatusFailure = ( { siteId } ) => {
+	return automatedTransferStatusFetchingFailure( siteId );
 };
 
-export default {
+registerHandlers( 'state/data-layer/wpcom/sites/automated-transfer/status/index.js', {
 	[ AUTOMATED_TRANSFER_STATUS_REQUEST ]: [
-		dispatchRequest( requestStatus, receiveStatus, requestingStatusFailure ),
+		dispatchRequest( {
+			fetch: requestStatus,
+			onSuccess: receiveStatus,
+			onError: requestingStatusFailure,
+		} ),
 	],
-};
+} );

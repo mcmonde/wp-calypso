@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -8,8 +7,8 @@ import { expect } from 'chai';
  * Internal dependencies
  */
 import { cancellationEffectDetail, cancellationEffectHeadline } from '../cancellation-effect';
-import productsValues from 'lib/products-values';
-import purchases from 'lib/purchases';
+import productsValues from 'calypso/lib/products-values';
+import purchases from 'calypso/lib/purchases';
 
 jest.mock( 'lib/products-values', () => ( {} ) );
 jest.mock( 'lib/purchases', () => ( {} ) );
@@ -90,10 +89,20 @@ describe( 'cancellation-effect', () => {
 				productsValues.isTheme = () => false;
 				productsValues.isGoogleApps = () => false;
 				productsValues.isJetpackPlan = () => false;
+				productsValues.isDotComPlan = () => true;
 				const headline = cancellationEffectDetail( purchase, translate );
 				expect( headline.text ).to.equal(
 					'All plan features and custom changes will be removed from your site and you will be refunded %(cost)s.'
 				);
+			} );
+
+			test( 'should return the default when all the product specific conditions are false', () => {
+				productsValues.isTheme = () => false;
+				productsValues.isGoogleApps = () => false;
+				productsValues.isJetpackPlan = () => false;
+				productsValues.isDotComPlan = () => false;
+				const headline = cancellationEffectDetail( purchase, translate );
+				expect( headline.text ).to.equal( 'You will be refunded %(cost)s.' );
 			} );
 		} );
 
@@ -123,10 +132,19 @@ describe( 'cancellation-effect', () => {
 			test( 'should return translation of plan message when product is not g suite or a domain mapping', () => {
 				productsValues.isGoogleApps = () => false;
 				productsValues.isDomainMapping = () => false;
+				productsValues.isPlan = () => true;
 				const headline = cancellationEffectDetail( purchase, translate );
 				expect( headline.text ).to.equal(
 					"Your plan's features remain active until your subscription expires on %(subscriptionEndDate)s."
 				);
+			} );
+
+			test( 'should return an empty message when all the above product specific conditions are false.', () => {
+				productsValues.isGoogleApps = () => false;
+				productsValues.isDomainMapping = () => false;
+				productsValues.isPlan = () => false;
+				const headline = cancellationEffectDetail( purchase, translate );
+				expect( headline ).to.equal( '' );
 			} );
 		} );
 	} );

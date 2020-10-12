@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -45,8 +43,8 @@ function mentions( editor ) {
 
 	// Cancel Enter key press if the popover is visible.
 	// Doing this in the Mentions component is too late.
-	editor.on( 'keydown', event => {
-		if ( document.querySelector( '.mentions__suggestions' ) && event.keyCode === ENTER ) {
+	editor.on( 'keydown', ( event ) => {
+		if ( document.querySelector( '.user-mentions__suggestions' ) && event.keyCode === ENTER ) {
 			event.preventDefault();
 		}
 	} );

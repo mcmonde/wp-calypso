@@ -1,10 +1,8 @@
-/** @format */
-
 jest.mock( 'lib/abtest', () => ( {
 	abtest: () => '',
 } ) );
 
-const translate = x => x;
+const translate = ( x ) => x;
 
 /**
  * External dependencies
@@ -28,7 +26,7 @@ describe( 'TermPickerOpton basic tests', () => {
 				translate={ translate }
 			/>
 		);
-		expect( option.find( '.subscription-length-picker__option' ).length ).toBe( 1 );
+		expect( option.find( '.subscription-length-picker__option' ) ).toHaveLength( 1 );
 	} );
 	test( 'should display save badge if savePercent is specified', () => {
 		const option = shallow(
@@ -40,7 +38,7 @@ describe( 'TermPickerOpton basic tests', () => {
 				translate={ translate }
 			/>
 		);
-		expect( option.find( 'Badge' ).length ).toBe( 1 );
+		expect( option.find( 'Badge' ) ).toHaveLength( 1 );
 	} );
 	test( 'should say "{price} / month" if savePercent is not specified', () => {
 		const option = shallow(

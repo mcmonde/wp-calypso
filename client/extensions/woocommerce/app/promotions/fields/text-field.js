@@ -12,7 +12,7 @@ import FormField from './form-field';
 
 const TextField = ( props ) => {
 	const { fieldName, explanationText, placeholderText, value, edit } = props;
-	const renderedValue = ( 'undefined' !== typeof value ? value : '' );
+	const renderedValue = 'undefined' !== typeof value ? value : '';
 
 	const onChange = ( e ) => {
 		const newValue = e.target.value;
@@ -20,7 +20,7 @@ const TextField = ( props ) => {
 	};
 
 	return (
-		<FormField { ...props } >
+		<FormField { ...props }>
 			<FormTextInput
 				id={ fieldName + '-label' }
 				aria-describedby={ explanationText && fieldName + '-description' }

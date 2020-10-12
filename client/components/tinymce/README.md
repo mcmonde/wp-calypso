@@ -1,16 +1,39 @@
-TinyMCE
--------
+## TinyMCE
 
 The `<TinyMCE />` React component is a wrapper around the [TinyMCE](http://www.tinymce.com/) WYWIWYG editor. This folder also contains all of the TinyMCE plugins currently in use by the Calypso project. TinyMCE is relied upon by the editor page, and its implementation is heavily influenced by its usage there. Many plugins and styles have been adapted for use in Calypso from the core WordPress project.
+
+## Upgrading `tinymce`
+
+When upgrading the version of `tinymce` in `package.json`, be sure to also
+update the TinyMCE skin files pulled from the Calypso repo. Here's how:
+
+- Upgrade the TinyMCE package in `node_modules/tinymce`
+- Update the skin files in the `static/` directory in Calypso:
+
+```sh
+git rm -r static/tinymce/skins/lightgray/
+cp -r node_modules/tinymce/skins/lightgray static/tinymce/skins/
+git add static/tinymce/skins/lightgray/
+```
+
+- Commit any changes to the `static/` directory along with the upgrade
+- Make sure the Calypso editor is loading `skin.min.css` and `content.min.css`
+  from `/calypso/`, which corresponds to the `static/` directory in the repo:
+  - `http://calypso.localhost:3000/calypso/tinymce/skins/lightgray/skin.min.css`
+    (local development)
+  - `https://wordpress.com/calypso/tinymce/skins/lightgray/skin.min.css`
+    (staging)
+
+In the future, it would be nice to not have this manual copy step. Ideas and
+PRs welcome, but for now, it's probably not a good idea to update these files
+outside of a TinyMCE upgrade.
 
 ## Usage
 
 ```jsx
 class MyComponent extends React.Component {
 	render() {
-		return (
-			<TinyMCE mode="tinymce" />
-		);
+		return <TinyMCE mode="tinymce" />;
 	}
 }
 ```
@@ -52,12 +75,12 @@ Many TinyMCE events can be hooked by passing its equivalent event name from the 
 
 Other props are defined in detail below:
 
-| property             | type                           | required | default     | comment |
-| -------------------- | ------------------------------ | -------- | ----------- | ------- |
-| `mode`               | String (`"tinymce"`, `"html"`) | no       | `"tinymce"` | The editor can be toggled between two modes, `tinymce` and `html`. The `tinymce` mode will be rendered as the visual WYSIWYG editor. The `html` mode is rendered as a `<textarea>` element. |
-| `isNew`              | Boolean                        | no       | `false`     | Controls whether the editor instance should be autofocused when initialized. |
-| `tabIndex`           | Number                         | no       | `null`      | Controls the `tabindex` attribute of both the TinyMCE visual editor and the `<textarea>` element. |
-| `onTextEditorChange` | Function                       | no       | `null`      | If defined, a function to be triggered when the contents of the `<textarea>` element change. |
+| property             | type                           | required | default     | comment                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| -------------------- | ------------------------------ | -------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `mode`               | String (`"tinymce"`, `"html"`) | no       | `"tinymce"` | The editor can be toggled between two modes, `tinymce` and `html`. The `tinymce` mode will be rendered as the visual WYSIWYG editor. The `html` mode is rendered as a `<textarea>` element.                                                                                                                                                                                                                                                  |
+| `isNew`              | Boolean                        | no       | `false`     | Controls whether the editor instance should be autofocused when initialized.                                                                                                                                                                                                                                                                                                                                                                 |
+| `tabIndex`           | Number                         | no       | `null`      | Controls the `tabindex` attribute of both the TinyMCE visual editor and the `<textarea>` element.                                                                                                                                                                                                                                                                                                                                            |
+| `onTextEditorChange` | Function                       | no       | `null`      | If defined, a function to be triggered when the contents of the `<textarea>` element change.                                                                                                                                                                                                                                                                                                                                                 |
 | `onTogglePin`        | Function                       | no       | `null`      | If defined, a function to be triggered when the visual editor toolbar is pinned to the top of the screen. Currently, any instance of `<TinyMCE />` is hard-coded to pin its toolbar to the top of the viewport on larger displays when the Calypso master bar bumps against the top of the toolbar. The function should expect to be passed a string argument, `"pin"` or `"unpinned"`, when the toolbar is pinned or unpinned respectively. |
 
 ## Plugins

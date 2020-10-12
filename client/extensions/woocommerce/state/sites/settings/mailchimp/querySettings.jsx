@@ -13,16 +13,16 @@ import { isRequestingSettings } from './selectors';
 
 class QueryMailChimpSettings extends Component {
 	static propTypes = {
-		siteId:	PropTypes.number.isRequired,
+		siteId: PropTypes.number.isRequired,
 		isRequesting: PropTypes.bool.isRequired,
 		requestSettings: PropTypes.func.isRequired,
-	}
+	};
 
 	componentDidMount() {
 		this.request( this.props );
 	}
 
-	componentWillReceiveProps( nextProps ) {
+	UNSAFE_componentWillReceiveProps( nextProps ) {
 		if ( this.props.siteId === nextProps.siteId ) {
 			return;
 		}

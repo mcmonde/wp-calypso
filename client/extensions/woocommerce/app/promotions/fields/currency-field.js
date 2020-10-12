@@ -12,7 +12,7 @@ import FormField from './form-field';
 
 const CurrencyField = ( props ) => {
 	const { fieldName, explanationText, placeholderText, value, edit, currency } = props;
-	const renderedValue = ( 'undefined' !== typeof value && null !== value ? value : '' );
+	const renderedValue = 'undefined' !== typeof value && null !== value ? value : '';
 
 	const onChange = ( e ) => {
 		const newValue = e.target.value;
@@ -20,7 +20,7 @@ const CurrencyField = ( props ) => {
 	};
 
 	return (
-		<FormField { ...props } >
+		<FormField { ...props }>
 			<PriceInput
 				noWrap
 				size="4"

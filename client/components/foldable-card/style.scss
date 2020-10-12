@@ -2,7 +2,7 @@
 .foldable-card.card {
 	@include clear-fix;
 	position: relative;
-	transition: margin .15s linear;
+	transition: margin 0.15s linear;
 	padding: 0;
 
 	&.is-expanded {
@@ -24,14 +24,14 @@
 		cursor: pointer;
 	}
 
-	&.has-border{
+	&.has-border {
 		.foldable-card__summary,
 		.foldable-card__summary-expanded {
 			margin-right: 48px;
 		}
 
 		.foldable-card__expand {
-			border-left: 1px $gray-light solid;
+			border-left: 1px var( --color-neutral-5 ) solid;
 		}
 	}
 }
@@ -42,7 +42,7 @@
 }
 
 .foldable-card.is-expanded .foldable-card__header {
-	margin-bottom: 0px;
+	margin-bottom: 0;
 	height: inherit;
 	min-height: 64px;
 }
@@ -85,7 +85,7 @@ button.foldable-card__action {
 	flex: 2 1;
 	margin-right: 5px;
 
-	@include breakpoint( '<480px' ) {
+	@include breakpoint-deprecated( '<480px' ) {
 		flex: 1 1;
 	}
 }
@@ -96,7 +96,7 @@ button.foldable-card__action {
 	flex: 1 1;
 	justify-content: flex-end;
 
-	@include breakpoint( '<480px' ) {
+	@include breakpoint-deprecated( '<480px' ) {
 		flex: 0 1;
 	}
 }
@@ -105,21 +105,21 @@ button.foldable-card__action {
 	width: 48px;
 
 	.gridicon {
-		fill: $gray;
+		fill: var( --color-neutral-30 );
 		display: flex;
 		align-items: center;
 		width: 100%;
 		vertical-align: middle;
 
-		transition: transform .15s cubic-bezier(0.175, .885, .32, 1.275), color .20s ease-in;
+		transition: transform 0.15s cubic-bezier( 0.175, 0.885, 0.32, 1.275 ), color 0.2s ease-in;
 	}
 
 	.gridicon:hover {
-		fill: $gray;
+		fill: var( --color-neutral-30 );
 	}
 
 	&:hover .gridicon {
-		fill: $blue-medium;
+		fill: var( --color-neutral-50 );
 	}
 }
 
@@ -134,7 +134,7 @@ button.foldable-card__action {
 .foldable-card.is-expanded .foldable-card__content {
 	display: block;
 	padding: 16px;
-	border-top: 1px solid $gray-light;
+	border-top: 1px solid var( --color-neutral-5 );
 }
 
 .foldable-card.is-compact .foldable-card.is-expanded .foldable-card__content {
@@ -144,12 +144,12 @@ button.foldable-card__action {
 .foldable-card__summary,
 .foldable-card__summary-expanded {
 	margin-right: 40px;
-	color: $gray-text-min;
-	font-size: 12px;
+	color: var( --color-text-subtle );
+	font-size: $font-body-extra-small;
 	transition: opacity 0.2s linear;
 	display: inline-block;
 
-	@include breakpoint( "<480px" ) {
+	@include breakpoint-deprecated( '<480px' ) {
 		display: none;
 	}
 }

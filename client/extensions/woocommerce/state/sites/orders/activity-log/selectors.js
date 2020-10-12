@@ -32,6 +32,11 @@ export const EVENT_TYPES = {
 	INTERNAL_NOTE: 'INTERNAL_NOTE',
 
 	/**
+	 * A state in which label purchases are still pending.
+	 */
+	LABEL_PURCHASING: 'LABEL_PURCHASING',
+
+	/**
 	 * "Shipping label purchased" event, which will include tracking number, buttons to refund & reprint, and other info
 	 */
 	LABEL_PURCHASED: 'LABEL_PURCHASED',
@@ -58,10 +63,10 @@ export const EVENT_TYPES = {
 };
 
 /**
- * @param {Object} state Whole Redux state tree
- * @param {Number} orderId Order ID to check.
- * @param {Number} [siteId] Site ID to check. If not provided, the Site ID selected in the UI will be used
- * @return {boolean} Whether the activity log for a given order has been successfully loaded from the server.
+ * @param {object} state Whole Redux state tree
+ * @param {number} orderId Order ID to check.
+ * @param {number} [siteId] Site ID to check. If not provided, the Site ID selected in the UI will be used
+ * @returns {boolean} Whether the activity log for a given order has been successfully loaded from the server.
  */
 export const isActivityLogLoaded = ( state, orderId, siteId = getSelectedSiteId( state ) ) => {
 	const notesLoaded = areOrderNotesLoaded( state, orderId, siteId );
@@ -69,7 +74,10 @@ export const isActivityLogLoaded = ( state, orderId, siteId = getSelectedSiteId(
 		return false;
 	}
 
-	if ( ! plugins.isWcsEnabled( state, siteId ) || areShippingLabelsErrored( state, orderId, siteId ) ) {
+	if (
+		! plugins.isWcsEnabled( state, siteId ) ||
+		areShippingLabelsErrored( state, orderId, siteId )
+	) {
 		return true;
 	}
 
@@ -77,10 +85,10 @@ export const isActivityLogLoaded = ( state, orderId, siteId = getSelectedSiteId(
 };
 
 /**
- * @param {Object} state Whole Redux state tree
- * @param {Number} orderId Order ID to check.
- * @param {Number} [siteId] Site ID to check. If not provided, the Site ID selected in the UI will be used
- * @return {boolean} Whether the activity log for a given order is currently being retrieved from the server.
+ * @param {object} state Whole Redux state tree
+ * @param {number} orderId Order ID to check.
+ * @param {number} [siteId] Site ID to check. If not provided, the Site ID selected in the UI will be used
+ * @returns {boolean} Whether the activity log for a given order is currently being retrieved from the server.
  */
 export const isActivityLogLoading = ( state, orderId, siteId = getSelectedSiteId( state ) ) => {
 	const notesLoading = areOrderNotesLoading( state, orderId, siteId );
@@ -88,7 +96,10 @@ export const isActivityLogLoading = ( state, orderId, siteId = getSelectedSiteId
 		return true;
 	}
 
-	if ( ! plugins.isWcsEnabled( state, siteId ) || areShippingLabelsErrored( state, orderId, siteId ) ) {
+	if (
+		! plugins.isWcsEnabled( state, siteId ) ||
+		areShippingLabelsErrored( state, orderId, siteId )
+	) {
 		return false;
 	}
 
@@ -96,24 +107,24 @@ export const isActivityLogLoading = ( state, orderId, siteId = getSelectedSiteId
 };
 
 /**
- * @param {Object} state Whole Redux state tree
- * @param {Number} orderId Order ID to check.
- * @param {Number} [siteId] Site ID to check. If not provided, the Site ID selected in the UI will be used
- * @return {Object[]} List of events to display. Each event will have at least these properties:
- * - {String} type The type of the event. See the EVENT_TYPES enum.
- * - {Number} key A unique ID for the event. The combination of "type + key" must be unique in the whole list.
- * - {Number} timestamp The time of the event.
+ * @param {object} state Whole Redux state tree
+ * @param {number} orderId Order ID to check.
+ * @param {number} [siteId] Site ID to check. If not provided, the Site ID selected in the UI will be used
+ * @returns {object[]} List of events to display. Each event will have at least these properties:
+ * - {string} type The type of the event. See the EVENT_TYPES enum.
+ * - {number} key A unique ID for the event. The combination of "type + key" must be unique in the whole list.
+ * - {number} timestamp The time of the event.
  */
 export const getActivityLogEvents = ( state, orderId, siteId = getSelectedSiteId( state ) ) => {
 	const order = getOrder( state, orderId, siteId );
-	const events = getOrderNotes( state, orderId, siteId ).map( note => ( {
+	const events = getOrderNotes( state, orderId, siteId ).map( ( note ) => ( {
 		key: note.id,
 		type: note.customer_note ? EVENT_TYPES.CUSTOMER_NOTE : EVENT_TYPES.INTERNAL_NOTE,
 		timestamp: new Date( note.date_created_gmt + 'Z' ).getTime(),
 		content: note.note,
 	} ) );
 
-	getOrderRefunds( state, orderId, siteId ).forEach( refund => {
+	getOrderRefunds( state, orderId, siteId ).forEach( ( refund ) => {
 		events.push( {
 			key: refund.id,
 			type: EVENT_TYPES.REFUND_NOTE,
@@ -126,7 +137,12 @@ export const getActivityLogEvents = ( state, orderId, siteId = getSelectedSiteId
 
 	if ( plugins.isWcsEnabled( state, siteId ) ) {
 		const labels = getLabels( state, orderId, siteId );
-		const renderableLabels = filter( labels, { status: 'PURCHASED' } );
+		const renderableLabels = filter(
+			labels,
+			( label ) =>
+				-1 !== [ 'PURCHASED', 'ANONYMIZED', 'PURCHASE_IN_PROGRESS' ].indexOf( label.status )
+		);
+
 		renderableLabels.forEach( ( label, index, allLabels ) => {
 			const labelIndex = allLabels.length - 1 - index;
 			if ( label.refund ) {
@@ -136,6 +152,7 @@ export const getActivityLogEvents = ( state, orderId, siteId = getSelectedSiteId
 							key: label.label_id,
 							type: EVENT_TYPES.LABEL_REFUND_COMPLETED,
 							timestamp: label.refund.refund_date,
+							serviceName: label.service_name,
 							labelIndex,
 							amount: parseFloat( label.refund.amount ) || label.refundable_amount,
 							currency: label.currency,
@@ -146,6 +163,7 @@ export const getActivityLogEvents = ( state, orderId, siteId = getSelectedSiteId
 							key: label.label_id,
 							type: EVENT_TYPES.LABEL_REFUND_REJECTED,
 							timestamp: label.refund.refund_date,
+							serviceName: label.service_name,
 							labelIndex,
 						} );
 						break;
@@ -155,12 +173,25 @@ export const getActivityLogEvents = ( state, orderId, siteId = getSelectedSiteId
 							key: label.label_id,
 							type: EVENT_TYPES.LABEL_REFUND_REQUESTED,
 							timestamp: label.refund.request_date,
+							serviceName: label.service_name,
 							labelIndex,
 							amount: parseFloat( label.refund.amount ) || label.refundable_amount,
 							currency: label.currency,
 						} );
 				}
 			}
+
+			if ( 'PURCHASE_IN_PROGRESS' === label.status ) {
+				return events.push( {
+					key: label.label_id,
+					type: EVENT_TYPES.LABEL_PURCHASING,
+					labelIndex,
+					labelId: label.label_id,
+					serviceName: label.service_name,
+					carrierId: label.carrier_id,
+				} );
+			}
+
 			events.push( {
 				key: label.label_id,
 				type: EVENT_TYPES.LABEL_PURCHASED,
@@ -180,8 +211,10 @@ export const getActivityLogEvents = ( state, orderId, siteId = getSelectedSiteId
 				amount: label.rate,
 				refundableAmount: label.refundable_amount,
 				currency: label.currency,
+				anonymized: 'ANONYMIZED' === label.status,
 				// If there's a refund in progress or completed, the Reprint/Refund buttons or the tracking number must *not* be shown
-				showDetails: ! label.refund || 'rejected' === label.refund.status || 'unknown' === label.refund.status,
+				showDetails:
+					! label.refund || 'rejected' === label.refund.status || 'unknown' === label.refund.status,
 			} );
 		} );
 	}

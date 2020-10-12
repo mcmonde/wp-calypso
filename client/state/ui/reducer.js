@@ -1,42 +1,29 @@
-/** @format */
-
 /**
  * Internal dependencies
  */
-
 import {
-	MASTERBAR_TOGGLE_VISIBILITY,
 	SELECTED_SITE_SET,
-	SECTION_SET,
+	SECTION_LOADING_SET,
 	PREVIEW_IS_SHOWING,
 	NOTIFICATIONS_PANEL_TOGGLE,
-} from 'state/action-types';
-import { combineReducers, createReducer } from 'state/utils';
+} from 'calypso/state/action-types';
+import { combineReducers, withoutPersistence } from 'calypso/state/utils';
 import actionLog from './action-log/reducer';
-import billingTransactions from './billing-transactions/reducer';
-import comments from './comments/reducer';
-import dropZone from './drop-zone/reducer';
-import editor from './editor/reducer';
-import googleMyBusiness from './google-my-business/reducer';
-import guidedTour from './guided-tours/reducer';
+import checkout from './checkout/reducer';
 import language from './language/reducer';
 import layoutFocus from './layout-focus/reducer';
+import masterbarVisibility from './masterbar-visibility/reducer';
 import mediaModal from './media-modal/reducer';
-import npsSurveyNotice from './nps-survey-notice/reducer';
-import oauth2Clients from './oauth2-clients/reducer';
-import payment from './payment/reducer';
 import postTypeList from './post-type-list/reducer';
 import preview from './preview/reducer';
-import reader from './reader/reducer';
-import route from './route/reducer';
-import themeSetup from './theme-setup/reducers';
+import section from './section/reducer';
 
 /**
  * Tracks the currently selected site ID.
  *
- * @param  {Object} state  Current state
- * @param  {Object} action Action payload
- * @return {Object}        Updated state
+ * @param  {object} state  Current state
+ * @param  {object} action Action payload
+ * @returns {object}        Updated state
  */
 export function selectedSiteId( state = null, action ) {
 	switch ( action.type ) {
@@ -47,83 +34,64 @@ export function selectedSiteId( state = null, action ) {
 	return state;
 }
 
-export const siteSelectionInitialized = createReducer( false, {
-	[ SELECTED_SITE_SET ]: () => true,
+export const siteSelectionInitialized = withoutPersistence( ( state = false, action ) => {
+	switch ( action.type ) {
+		case SELECTED_SITE_SET:
+			return true;
+	}
+
+	return state;
 } );
 
-//TODO: do we really want to mix strings and booleans?
-export function section( state = false, action ) {
+export function isSectionLoading( state = false, action ) {
 	switch ( action.type ) {
-		case SECTION_SET:
-			return action.section !== undefined ? action.section : state;
+		case SECTION_LOADING_SET:
+			return action.isSectionLoading;
 	}
 	return state;
 }
 
-export function hasSidebar( state = true, action ) {
+export const isPreviewShowing = withoutPersistence( ( state = false, action ) => {
 	switch ( action.type ) {
-		case SECTION_SET:
-			return action.hasSidebar !== undefined ? action.hasSidebar : state;
+		case PREVIEW_IS_SHOWING: {
+			const { isShowing } = action;
+			return isShowing !== undefined ? isShowing : state;
+		}
 	}
-	return state;
-}
 
-export function isLoading( state = false, action ) {
-	switch ( action.type ) {
-		case SECTION_SET:
-			return action.isLoading !== undefined ? action.isLoading : state;
-	}
 	return state;
-}
-
-export const isPreviewShowing = createReducer( false, {
-	[ PREVIEW_IS_SHOWING ]: ( state, { isShowing } ) =>
-		isShowing !== undefined ? isShowing : state,
 } );
 
 /**
  * Tracks if the notifications panel is open
- * @param  {Object} state  Current state
- * @param  {Object} action Action payload
- * @return {Object}        Updated state
+ *
+ * @param   {object} state       Current state
+ * @param   {object} action      Action payload
+ * @param   {string} action.type The action type identifier. In this case it's looking for NOTIFICATIONS_PANEL_TOGGLE
+ * @returns {object}             Updated state
  */
-export const isNotificationsOpen = function( state = false, { type } ) {
+export const isNotificationsOpen = function ( state = false, { type } ) {
 	if ( type === NOTIFICATIONS_PANEL_TOGGLE ) {
 		return ! state;
 	}
 	return state;
 };
 
-export const masterbarVisibility = ( state = true, { type, isVisible } ) =>
-	type === MASTERBAR_TOGGLE_VISIBILITY ? isVisible : state;
-
 const reducer = combineReducers( {
 	actionLog,
-	billingTransactions,
-	comments,
-	dropZone,
-	editor,
-	googleMyBusiness,
-	guidedTour,
-	hasSidebar,
-	isLoading,
+	checkout,
+	isSectionLoading,
 	isNotificationsOpen,
 	isPreviewShowing,
 	language,
 	layoutFocus,
 	masterbarVisibility,
 	mediaModal,
-	npsSurveyNotice,
-	oauth2Clients,
-	payment,
 	postTypeList,
 	preview,
-	reader,
-	route,
 	section,
 	selectedSiteId,
 	siteSelectionInitialized,
-	themeSetup,
 } );
 
 export default reducer;

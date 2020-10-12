@@ -2,35 +2,34 @@
 	white-space: nowrap;
 }
 
-
 .editor-delete-post {
 	display: block;
 	margin-top: -7px;
 }
 
 .editor-delete-post__button.button.is-borderless {
-	color: $gray-text-min;
+	color: var( --color-text-subtle );
 	padding: 0;
 
 	&.is-trashing {
-		color: $orange-fire;
+		color: var( --color-error );
 		.gridicon {
-			color: $orange-fire;
+			color: var( --color-error );
 		}
 	}
 
 	&:hover,
 	&:focus {
-		color: $orange-fire;
+		color: var( --color-error );
 		outline: none;
 
 		.gridicon {
-			color: $orange-fire;
+			color: var( --color-error );
 		}
 	}
 
 	.gridicon {
-		color: $gray-text-min;
+		color: var( --color-text-subtle );
 		margin-right: 4px;
 	}
 }

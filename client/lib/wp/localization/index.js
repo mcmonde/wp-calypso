@@ -1,15 +1,13 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import { parse, stringify } from 'qs';
 
 /**
  * Internal dependencies
  */
-import { getCurrentUserLocale, getCurrentUserLocaleVariant } from 'state/current-user/selectors';
+import getCurrentLocaleSlug from 'state/selectors/get-current-locale-slug';
+import getCurrentLocaleVariant from 'state/selectors/get-current-locale-variant';
 
 /**
  * Module variables
@@ -19,7 +17,7 @@ let locale;
 /**
  * Setter function for internal locale value
  *
- * @param {String} localeToSet Locale to set
+ * @param {string} localeToSet Locale to set
  */
 export function setLocale( localeToSet ) {
 	locale = localeToSet;
@@ -28,7 +26,7 @@ export function setLocale( localeToSet ) {
 /**
  * Getter function for internal locale value
  *
- * @return {String} Locale
+ * @returns {string} Locale
  */
 export function getLocale() {
 	return locale;
@@ -38,8 +36,8 @@ export function getLocale() {
  * Given a WPCOM parameter set, modifies the query such that a non-default
  * locale is added to the query parameter.
  *
- * @param  {Object} params Original parameters
- * @return {Object}        Revised parameters, if non-default locale
+ * @param  {object} params Original parameters
+ * @returns {object}        Revised parameters, if non-default locale
  */
 export function addLocaleQueryParam( params ) {
 	if ( ! locale || 'en' === locale ) {
@@ -66,15 +64,15 @@ export function addLocaleQueryParam( params ) {
  * localization helpers. Specifically, this adds a locale query parameter
  * by default.
  *
- * @param  {Object} wpcom Original WPCOM instance
- * @return {Object}       Modified WPCOM instance with localization helpers
+ * @param {object} wpcom Original WPCOM instance
+ * @returns {object} Modified WPCOM instance with localization helpers
  */
 export function injectLocalization( wpcom ) {
 	const originalRequest = wpcom.request.bind( wpcom );
 	return Object.assign( wpcom, {
 		localized: true,
 
-		request: function( params, callback ) {
+		request: function ( params, callback ) {
 			return originalRequest( addLocaleQueryParam( params ), callback );
 		},
 	} );
@@ -84,13 +82,14 @@ export function injectLocalization( wpcom ) {
  * Subscribes to the provided Redux store instance, updating the known locale
  * value to the latest value when state changes.
  *
- * @param {Object} store Redux store instance
+ * @param {object} store Redux store instance
  */
 export function bindState( store ) {
 	function setLocaleFromState() {
-		setLocale(
-			getCurrentUserLocaleVariant( store.getState() ) || getCurrentUserLocale( store.getState() )
-		);
+		const state = store.getState();
+		const localeVariant = getCurrentLocaleVariant( state );
+		const localeSlug = getCurrentLocaleSlug( state );
+		setLocale( localeVariant || localeSlug );
 	}
 
 	store.subscribe( setLocaleFromState );

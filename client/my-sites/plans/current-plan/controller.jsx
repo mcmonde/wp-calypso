@@ -1,9 +1,6 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import React from 'react';
 import page from 'page';
 
@@ -11,28 +8,32 @@ import page from 'page';
  * Internal Dependencies
  */
 import CurrentPlan from './';
-import { isFreePlan } from 'lib/products-values';
 import { getSelectedSite } from 'state/ui/selectors';
+import { isFreePlan } from 'lib/products-values';
 
-export default {
-	currentPlan( context, next ) {
-		const state = context.store.getState();
+export function currentPlan( context, next ) {
+	const state = context.store.getState();
 
-		const selectedSite = getSelectedSite( state );
+	const selectedSite = getSelectedSite( state );
 
-		if ( ! selectedSite ) {
-			page.redirect( '/plans/' );
+	if ( ! selectedSite ) {
+		page.redirect( '/plans/' );
 
-			return null;
-		}
+		return null;
+	}
 
-		if ( isFreePlan( selectedSite.plan ) ) {
-			page.redirect( `/plans/${ selectedSite.slug }` );
+	if ( isFreePlan( selectedSite.plan ) ) {
+		page.redirect( `/plans/${ selectedSite.slug }` );
 
-			return null;
-		}
+		return null;
+	}
 
-		context.primary = <CurrentPlan context={ context } />;
-		next();
-	},
-};
+	const product = context.query.product;
+	const requestThankYou = context.query.hasOwnProperty( 'thank-you' );
+
+	context.primary = (
+		<CurrentPlan path={ context.path } product={ product } requestThankYou={ requestThankYou } />
+	);
+
+	next();
+}

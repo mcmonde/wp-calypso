@@ -1,138 +1,173 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import PropTypes from 'prop-types';
 import React from 'react';
 import { localize } from 'i18n-calypso';
+import { connect } from 'react-redux';
 
 /**
  * Internal dependencies
  */
-import CompactCard from 'components/card/compact';
+import { Card } from '@automattic/components';
 import ContactDisplay from './contact-display';
-import Notice from 'components/notice';
-import {
-	domainManagementPrivacyProtection,
-	domainManagementTransferOut,
-} from 'my-sites/domains/paths';
-import SectionHeader from 'components/section-header';
 import { PUBLIC_VS_PRIVATE } from 'lib/url/support';
+import FormToggle from 'components/forms/form-toggle';
+import Gridicon from 'components/gridicon';
+import {
+	enableDomainPrivacy,
+	disableDomainPrivacy,
+	discloseDomainContactInfo,
+	redactDomainContactInfo,
+} from 'state/sites/domains/actions';
+import { isUpdatingDomainPrivacy } from 'state/sites/domains/selectors';
 
-class ContactsPrivacyCard extends React.PureComponent {
+class ContactsPrivacyCard extends React.Component {
 	static propTypes = {
-		contactInformation: PropTypes.object.isRequired,
 		privateDomain: PropTypes.bool.isRequired,
-		hasPrivacyProtection: PropTypes.bool.isRequired,
+		privacyAvailable: PropTypes.bool.isRequired,
 		selectedDomainName: PropTypes.string.isRequired,
 		selectedSite: PropTypes.oneOfType( [ PropTypes.object, PropTypes.bool ] ).isRequired,
-		currentUserCanManage: PropTypes.bool.isRequired,
+		contactInfoDisclosureAvailable: PropTypes.bool.isRequired,
+		contactInfoDisclosed: PropTypes.bool.isRequired,
+		isPendingIcannVerification: PropTypes.bool.isRequired,
 	};
 
-	render() {
-		const { contactInformation, currentUserCanManage, translate } = this.props;
+	togglePrivacy = () => {
+		const { selectedSite, privateDomain, selectedDomainName: name } = this.props;
+
+		if ( privateDomain ) {
+			this.props.disableDomainPrivacy( selectedSite.ID, name );
+		} else {
+			this.props.enableDomainPrivacy( selectedSite.ID, name );
+		}
+	};
+
+	toggleContactInfo = () => {
+		const { selectedSite, contactInfoDisclosed, selectedDomainName: name } = this.props;
+
+		if ( contactInfoDisclosed ) {
+			this.props.redactDomainContactInfo( selectedSite.ID, name );
+		} else {
+			this.props.discloseDomainContactInfo( selectedSite.ID, name );
+		}
+	};
+
+	getPrivacyProtection() {
+		const { privateDomain, privacyAvailable } = this.props;
+		const { translate, isUpdatingPrivacy } = this.props;
+
+		let privacyProtectionNote;
+		if ( ! privacyAvailable ) {
+			privacyProtectionNote = (
+				<div className="contacts-privacy__settings warning">
+					<Gridicon icon="info-outline" size={ 18 } />
+					<p>{ translate( 'Privacy settings can not be changed for this domain' ) }</p>
+				</div>
+			);
+		}
 
 		return (
-			<div>
-				<SectionHeader label={ translate( 'Domain Contacts' ) } />
-
-				<CompactCard className="contacts-privacy-card">
-					<p className="settings-explanation">
-						{ translate(
-							'Domain owners are required to make their contact information available to the public. ' +
-								'{{a}}Learn more.{{/a}}',
-							{
-								components: {
-									a: <a href={ PUBLIC_VS_PRIVATE } target="_blank" rel="noopener noreferrer" />,
-								},
-							}
-						) }
-					</p>
-
-					{ currentUserCanManage && this.getNotice() }
-
-					<ContactDisplay contactInformation={ contactInformation } />
-				</CompactCard>
-			</div>
+			<React.Fragment>
+				<div className="contacts-privacy__settings">
+					<FormToggle
+						wrapperClassName="edit__privacy-protection-toggle"
+						checked={ privateDomain }
+						toggling={ isUpdatingPrivacy }
+						disabled={ isUpdatingPrivacy || ! privacyAvailable }
+						onChange={ this.togglePrivacy }
+					>
+						{ translate( 'Privacy Protection' ) }
+					</FormToggle>
+				</div>
+				{ privacyProtectionNote }
+			</React.Fragment>
 		);
 	}
 
-	getNotice() {
+	getContactInfoDisclosed() {
 		const {
-			hasPrivacyProtection,
+			contactInfoDisclosed,
+			contactInfoDisclosureAvailable,
+			isPendingIcannVerification,
+			isUpdatingPrivacy,
 			privacyAvailable,
 			privateDomain,
-			selectedSite,
-			selectedDomainName,
 			translate,
 		} = this.props;
 
-		if ( ! privacyAvailable ) {
+		if ( ! privacyAvailable || ! contactInfoDisclosureAvailable || privateDomain ) {
 			return false;
 		}
 
-		if ( hasPrivacyProtection && privateDomain ) {
-			return (
-				<Notice status="is-success" showDismiss={ false }>
+		const contactVerificationNotice = isPendingIcannVerification ? (
+			<div className="contacts-privacy__settings warning">
+				<Gridicon icon="info-outline" size={ 18 } />
+				<p>
 					{ translate(
-						'{{strong}}Privacy Protection{{/strong}} is turned on for this domain. ' +
-							'Your contact information is {{strong}}private{{/strong}}. ',
-						{
-							components: {
-								strong: <strong />,
-							},
-						}
+						'You need to verify the contact information for the domain before you can disclose it publicly.'
 					) }
-				</Notice>
-			);
-		} else if ( hasPrivacyProtection && ! privateDomain ) {
-			return (
-				<Notice status="is-warning" showDismiss={ false }>
-					{ translate(
-						'{{strong}}Privacy Protection{{/strong}} is temporarily ' +
-							'disabled for this domain while the domain is being transferred. ' +
-							'Your contact information is {{strong}}public{{/strong}}. ' +
-							'{{a}}Cancel Transfer and Enable Privacy Protection{{/a}}',
-						{
-							components: {
-								strong: <strong />,
-								a: (
-									<a
-										href={ domainManagementTransferOut( selectedSite.slug, selectedDomainName ) }
-									/>
-								),
-							},
-						}
-					) }
-				</Notice>
-			);
-		}
+				</p>
+			</div>
+		) : null;
 
 		return (
-			<Notice status="is-warning" showDismiss={ false }>
-				{ translate(
-					'{{strong}}Privacy Protection{{/strong}} is turned off for this domain. ' +
-						'Your contact information is {{strong}}public{{/strong}}. ' +
-						'{{a}}Enable Privacy Protection{{/a}}',
-					{
-						components: {
-							strong: <strong />,
-							a: (
-								<a
-									href={ domainManagementPrivacyProtection(
-										selectedSite.slug,
-										selectedDomainName
-									) }
-								/>
-							),
-						},
-					}
-				) }
-			</Notice>
+			<React.Fragment>
+				<div className="contacts-privacy__settings">
+					<FormToggle
+						wrapperClassName="edit__disclose-contact-information"
+						checked={ contactInfoDisclosed }
+						toggling={ isUpdatingPrivacy }
+						disabled={ isUpdatingPrivacy || isPendingIcannVerification }
+						onChange={ this.toggleContactInfo }
+					>
+						{ translate( 'Display my contact information in public WHOIS' ) }
+					</FormToggle>
+				</div>
+				{ contactVerificationNotice }
+			</React.Fragment>
+		);
+	}
+
+	render() {
+		const { translate, selectedDomainName } = this.props;
+
+		return (
+			<div>
+				<Card className="contacts-privacy__card">
+					<p>{ translate( 'Your domain contact information' ) }</p>
+
+					<ContactDisplay selectedDomainName={ selectedDomainName } />
+
+					{ this.getPrivacyProtection() }
+
+					{ this.getContactInfoDisclosed() }
+
+					<p className="contacts-privacy__settings-explanation">
+						{ translate( '{{a}}Learn more{{/a}} about private registration and GDPR protection.', {
+							components: {
+								a: <a href={ PUBLIC_VS_PRIVATE } target="_blank" rel="noopener noreferrer" />,
+							},
+						} ) }
+					</p>
+				</Card>
+			</div>
 		);
 	}
 }
 
-export default localize( ContactsPrivacyCard );
+export default connect(
+	( state, ownProps ) => ( {
+		isUpdatingPrivacy: isUpdatingDomainPrivacy(
+			state,
+			ownProps.selectedSite.ID,
+			ownProps.selectedDomainName
+		),
+	} ),
+	{
+		enableDomainPrivacy,
+		disableDomainPrivacy,
+		discloseDomainContactInfo,
+		redactDomainContactInfo,
+	}
+)( localize( ContactsPrivacyCard ) );

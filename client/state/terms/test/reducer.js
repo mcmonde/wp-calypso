@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -20,7 +18,7 @@ import {
 	TERMS_REQUEST_SUCCESS,
 	SERIALIZE,
 } from 'state/action-types';
-import { useSandbox } from 'test/helpers/use-sinon';
+import { useSandbox } from 'test-helpers/use-sinon';
 
 /**
  * Test Data
@@ -45,7 +43,7 @@ const testTerms = [
 ];
 
 describe( 'reducer', () => {
-	useSandbox( sandbox => {
+	useSandbox( ( sandbox ) => {
 		sandbox.stub( console, 'warn' );
 	} );
 

@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -11,13 +9,18 @@ import { localize } from 'i18n-calypso';
 /**
  * Internal dependencies
  */
-import Card from 'components/card';
+import { Card } from '@automattic/components';
 import FormFieldset from 'components/forms/form-fieldset';
+import FormSettingExplanation from 'components/forms/form-setting-explanation';
 import CompactFormToggle from 'components/forms/form-toggle/compact';
-import SectionHeader from 'components/section-header';
-import InfoPopover from 'components/info-popover';
-import ExternalLink from 'components/external-link';
+import SupportInfo from 'components/support-info';
 import RelatedContentPreview from './related-content-preview';
+import SettingsSectionHeader from 'my-sites/site-settings/settings-section-header';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 const RelatedPosts = ( {
 	fields,
@@ -28,22 +31,16 @@ const RelatedPosts = ( {
 } ) => {
 	return (
 		<div>
-			<SectionHeader label={ translate( 'Related Posts' ) } />
+			<SettingsSectionHeader title={ translate( 'Related posts' ) } />
 
 			<Card className="related-posts__card site-settings__traffic-settings">
 				<FormFieldset>
-					<div className="related-posts__info site-settings__info-link-container">
-						<InfoPopover position="left">
-							{ translate( 'Automatically displays similar content at the end of each post.' ) }{' '}
-							<ExternalLink
-								href="https://jetpack.com/support/related-posts/"
-								icon={ false }
-								target="_blank"
-							>
-								{ translate( 'Learn more' ) }
-							</ExternalLink>
-						</InfoPopover>
-					</div>
+					<SupportInfo
+						text={ translate(
+							'The feature helps visitors find more of your content by displaying related posts at the bottom of each post.'
+						) }
+						link="https://jetpack.com/support/related-posts/"
+					/>
 
 					<CompactFormToggle
 						checked={ !! fields.jetpack_relatedposts_enabled }
@@ -61,9 +58,7 @@ const RelatedPosts = ( {
 							}
 							onChange={ handleAutosavingToggle( 'jetpack_relatedposts_show_headline' ) }
 						>
-							{ translate(
-								'Show a "Related" header to more clearly separate the related section from posts'
-							) }
+							{ translate( 'Highlight related content with a heading' ) }
 						</CompactFormToggle>
 
 						<CompactFormToggle
@@ -73,9 +68,26 @@ const RelatedPosts = ( {
 							}
 							onChange={ handleAutosavingToggle( 'jetpack_relatedposts_show_thumbnails' ) }
 						>
-							{ translate( 'Use a large and visually striking layout' ) }
+							{ translate( 'Show a thumbnail image where available' ) }
 						</CompactFormToggle>
 					</div>
+
+					<FormSettingExplanation>
+						{ translate(
+							"These settings won't apply to {{a}}related posts added using the block editor{{/a}}.",
+							{
+								components: {
+									a: (
+										<a
+											href="https://jetpack.com/support/jetpack-blocks/related-posts-block/"
+											target="_blank"
+											rel="noopener noreferrer"
+										/>
+									),
+								},
+							}
+						) }
+					</FormSettingExplanation>
 
 					<RelatedContentPreview
 						showHeadline={ fields.jetpack_relatedposts_show_headline }

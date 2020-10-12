@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -9,10 +8,10 @@ import config from 'config';
 /**
  * Internal dependencies
  */
-import Card from 'components/card';
+import { Card } from '@automattic/components';
 
 class PostUnavailable extends React.PureComponent {
-	componentWillMount() {
+	componentDidMount() {
 		this.errors = {
 			unauthorized: this.props.translate(
 				'This is a post on a private site that you’re following, but not currently a member of.' +
@@ -24,20 +23,22 @@ class PostUnavailable extends React.PureComponent {
 	}
 
 	render() {
-		var errorMessage = this.errors[ this.props.post.errorCode || 'default' ] || this.errors.default;
+		const errorMessage =
+			this.errors[ this.props.post.errorCode || 'default' ] || this.errors.default;
 
 		if ( this.props.post.statusCode === 404 ) {
 			// don't render a card for 404s. These are posts that we once had but were deleted.
 			return null;
 		}
 
+		/* eslint-disable wpcalypso/jsx-classname-namespace */
 		return (
 			<Card tagName="article" className="reader__card is-error">
 				<div className="reader__post-header">
 					<h1 className="reader__post-title">
-						<a className="reader__post-title-link" target="_blank" rel="noopener noreferrer">
+						<div className="reader__post-title-link">
 							<span className="reader__placeholder-text">Oops!</span>
-						</a>
+						</div>
 					</h1>
 				</div>
 
@@ -49,6 +50,7 @@ class PostUnavailable extends React.PureComponent {
 				</div>
 			</Card>
 		);
+		/* eslint-enable wpcalypso/jsx-classname-namespace */
 	}
 }
 

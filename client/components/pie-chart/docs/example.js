@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -8,12 +6,12 @@ import React, { Component } from 'react';
 /**
  * Internal dependencies
  */
-import Card from 'components/card';
-import CardHeading from 'components/card-heading';
+import { Button, Card } from '@automattic/components';
+import FormInputCheckbox from 'components/forms/form-checkbox';
+import FormLabel from 'components/forms/form-label';
+import FormTextInput from 'components/forms/form-text-input';
 import PieChart from 'components/pie-chart';
 import PieChartLegend from 'components/pie-chart/legend';
-import PieChartPlaceholder from 'components/pie-chart/placeholder';
-import PieChartLegendPlaceholder from 'components/pie-chart/legend-placeholder';
 
 class PieChartExample extends Component {
 	static displayName = 'PieChart';
@@ -48,7 +46,7 @@ class PieChartExample extends Component {
 		} );
 	};
 
-	changeShow = event => {
+	changeShow = ( event ) => {
 		this.setState( {
 			[ event.target.name ]: {
 				name: this.state[ event.target.name ].name,
@@ -59,7 +57,7 @@ class PieChartExample extends Component {
 		} );
 	};
 
-	changeValue = event => {
+	changeValue = ( event ) => {
 		this.setState( {
 			[ event.target.name ]: {
 				name: this.state[ event.target.name ].name,
@@ -78,8 +76,8 @@ class PieChartExample extends Component {
 
 	render() {
 		const data = [];
-		for ( let seriesName of [ 'direct', 'discovery', 'referral' ] ) {
-			const series = this.state[ seriesName ];
+
+		for ( const seriesName of [ 'direct', 'discovery', 'referral' ] ) {
 			if ( this.state[ seriesName ].show ) {
 				data.push( {
 					value: this.state[ seriesName ].value || 0,
@@ -91,32 +89,35 @@ class PieChartExample extends Component {
 
 		return (
 			<div>
-				<a className="docs__design-toggle button" onClick={ this.changeShowDataControls }>
+				<Button className="docs__design-toggle" onClick={ this.changeShowDataControls }>
 					{ this.state.showDataControls ? 'Hide Data Controls' : 'Show Data Controls' }
-				</a>
+				</Button>
+
 				<Card>
 					<PieChart data={ data } title={ this.titleFunc } />
 					<PieChartLegend data={ data } />
 				</Card>
+
 				{ this.state.showDataControls && (
 					<Card>
-						{ [ 'direct', 'discovery', 'referral' ].map( seriesName => {
+						{ [ 'direct', 'discovery', 'referral' ].map( ( seriesName ) => {
 							return (
 								<div key={ seriesName }>
 									<h2>{ this.state[ seriesName ].name }</h2>
-									<input
+									<FormTextInput
 										name={ seriesName }
 										type="number"
 										value={ this.state[ seriesName ].value }
 										onChange={ this.changeValue }
 									/>
-									<label>{ 'Show' }</label>{' '}
-									<input
-										name={ seriesName }
-										type="checkbox"
-										checked={ this.state[ seriesName ].show }
-										onChange={ this.changeShow }
-									/>
+									<FormLabel>
+										<FormInputCheckbox
+											name={ seriesName }
+											checked={ this.state[ seriesName ].show }
+											onChange={ this.changeShow }
+										/>
+										<span>Show</span>
+									</FormLabel>
 								</div>
 							);
 						} ) }

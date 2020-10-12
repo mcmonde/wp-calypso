@@ -23,7 +23,7 @@ export default class NumberInput extends Component {
 		text: this.props.value,
 	};
 
-	componentWillReceiveProps( nextProps ) {
+	UNSAFE_componentWillReceiveProps( nextProps ) {
 		if ( ! this.state.focused && nextProps.value !== this.props.value ) {
 			this.setState( { text: nextProps.value } );
 		}
@@ -32,7 +32,7 @@ export default class NumberInput extends Component {
 	handleChange = ( event ) => {
 		this.setState( { text: event.target.value } );
 		this.props.onChange( event );
-	}
+	};
 
 	handleBlur = ( event ) => {
 		this.setState( {
@@ -40,11 +40,11 @@ export default class NumberInput extends Component {
 			text: this.props.value,
 		} );
 		this.props.onChange( event );
-	}
+	};
 
 	handleFocus = () => {
 		this.setState( { focused: true } );
-	}
+	};
 
 	render() {
 		return (

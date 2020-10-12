@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -18,7 +17,7 @@ import {
 	withAnalytics,
 } from 'state/analytics/actions';
 import { deleteComment } from 'state/comments/actions';
-import { getSiteComment } from 'state/selectors';
+import { getSiteComment } from 'state/comments/selectors';
 import Notice from 'components/notice';
 import NoticeAction from 'components/notice/notice-action';
 

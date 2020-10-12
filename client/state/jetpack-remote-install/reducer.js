@@ -1,9 +1,7 @@
-/** @format */
-
 /**
  * Internal dependencies
  */
-import { combineReducers, keyedReducer } from 'state/utils';
+import { combineReducers, keyedReducer, withStorageKey } from 'state/utils';
 import {
 	JETPACK_REMOTE_INSTALL,
 	JETPACK_REMOTE_INSTALL_FAILURE,
@@ -48,8 +46,10 @@ export const errorMessageReducer = keyedReducer(
 	}
 );
 
-export default combineReducers( {
+const combinedReducer = combineReducers( {
 	errorCode: errorCodeReducer,
 	errorMessage: errorMessageReducer,
 	isComplete,
 } );
+
+export default withStorageKey( 'jetpackRemoteInstall', combinedReducer );

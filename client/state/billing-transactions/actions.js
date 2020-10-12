@@ -1,9 +1,6 @@
-/** @format */
-
 /**
  * Internal dependencies
  */
-
 import {
 	BILLING_RECEIPT_EMAIL_SEND,
 	BILLING_RECEIPT_EMAIL_SEND_FAILURE,
@@ -15,8 +12,10 @@ import {
 } from 'state/action-types';
 import wp from 'lib/wp';
 
+import 'state/billing-transactions/init';
+
 export const requestBillingTransactions = () => {
-	return dispatch => {
+	return ( dispatch ) => {
 		dispatch( {
 			type: BILLING_TRANSACTIONS_REQUEST,
 		} );
@@ -35,7 +34,7 @@ export const requestBillingTransactions = () => {
 					type: BILLING_TRANSACTIONS_REQUEST_SUCCESS,
 				} );
 			} )
-			.catch( error => {
+			.catch( ( error ) => {
 				dispatch( {
 					type: BILLING_TRANSACTIONS_REQUEST_FAILURE,
 					error,
@@ -44,8 +43,8 @@ export const requestBillingTransactions = () => {
 	};
 };
 
-export const sendBillingReceiptEmail = receiptId => {
-	return dispatch => {
+export const sendBillingReceiptEmail = ( receiptId ) => {
+	return ( dispatch ) => {
 		dispatch( {
 			type: BILLING_RECEIPT_EMAIL_SEND,
 			receiptId,
@@ -61,7 +60,7 @@ export const sendBillingReceiptEmail = receiptId => {
 					receiptId,
 				} );
 			} )
-			.catch( error => {
+			.catch( ( error ) => {
 				dispatch( {
 					type: BILLING_RECEIPT_EMAIL_SEND_FAILURE,
 					receiptId,

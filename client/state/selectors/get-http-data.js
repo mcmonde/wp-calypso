@@ -1,3 +1,1 @@
-/** @format */
-
-export { getHttpData as default } from 'state/data-layer/http-data/common';
+export { getHttpData as default } from 'state/data-layer/http-data';

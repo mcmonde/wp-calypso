@@ -3,10 +3,9 @@
  *
  *
  *
- * @format
  * @see lib/directly for more about Directly
- * @param {Object}  state  Global state tree
- * @return {Boolean}        Whether the widget has failed
+ * @param {object}  state  Global state tree
+ * @returns {boolean}        Whether the widget has failed
  */
 
 /**
@@ -14,6 +13,8 @@
  */
 import { STATUS_ERROR } from 'state/help/directly/constants';
 
+import 'state/help/init';
+
 export default function isDirectlyFailed( state ) {
-	return state.help.directly.status === STATUS_ERROR;
+	return state.help?.directly.status === STATUS_ERROR;
 }

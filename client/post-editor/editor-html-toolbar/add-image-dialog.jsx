@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -11,7 +9,7 @@ import { localize } from 'i18n-calypso';
 /**
  * Internal dependencies
  */
-import Dialog from 'components/dialog';
+import { Dialog } from '@automattic/components';
 import FormFieldset from 'components/forms/form-fieldset';
 import FormLabel from 'components/forms/form-label';
 import FormTextInput from 'components/forms/form-text-input';
@@ -30,15 +28,15 @@ export class AddImageDialog extends Component {
 		imageUrl: '',
 	};
 
-	setImageAlt = event => {
+	setImageAlt = ( event ) => {
 		this.setState( { imageAlt: event.target.value } );
 	};
 
-	setImageTitle = event => {
+	setImageTitle = ( event ) => {
 		this.setState( { imageTitle: event.target.value } );
 	};
 
-	setImageUrl = event => {
+	setImageUrl = ( event ) => {
 		this.setState( { imageUrl: event.target.value } );
 	};
 
@@ -76,7 +74,6 @@ export class AddImageDialog extends Component {
 
 		return (
 			<Dialog
-				autoFocus={ false }
 				isVisible={ shouldDisplay }
 				buttons={ buttons }
 				onClose={ this.onCloseDialog }
@@ -84,15 +81,31 @@ export class AddImageDialog extends Component {
 			>
 				<FormFieldset>
 					<FormLabel htmlFor="image_url">{ translate( 'URL' ) }</FormLabel>
-					<FormTextInput name="image_url" onChange={ this.setImageUrl } value={ imageUrl } />
+					<FormTextInput
+						autoFocus // eslint-disable-line jsx-a11y/no-autofocus
+						id="image_url"
+						name="image_url"
+						onChange={ this.setImageUrl }
+						value={ imageUrl }
+					/>
 				</FormFieldset>
 				<FormFieldset>
 					<FormLabel htmlFor="image_title">{ translate( 'Title' ) }</FormLabel>
-					<FormTextInput name="image_title" onChange={ this.setImageTitle } value={ imageTitle } />
+					<FormTextInput
+						id="image_title"
+						name="image_title"
+						onChange={ this.setImageTitle }
+						value={ imageTitle }
+					/>
 				</FormFieldset>
 				<FormFieldset>
 					<FormLabel htmlFor="image_alt">{ translate( 'Alt Text' ) }</FormLabel>
-					<FormTextInput name="image_alt" onChange={ this.setImageAlt } value={ imageAlt } />
+					<FormTextInput
+						id="image_alt"
+						name="image_alt"
+						onChange={ this.setImageAlt }
+						alue={ imageAlt }
+					/>
 				</FormFieldset>
 			</Dialog>
 		);

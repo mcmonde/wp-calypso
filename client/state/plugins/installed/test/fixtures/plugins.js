@@ -1,7 +1,4 @@
 /**
- * /* eslint-disable max-len
- *
- * @format
  */
 
 export const akismet = {

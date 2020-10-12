@@ -1,10 +1,6 @@
 .following-manage__header {
-	font-weight: 600;
-	margin: 14px 0 14px 14px;
-
-	@include breakpoint( ">660px" ) {
-		margin: 36px 0 20px;
-	}
+	max-width: 720px;
+	margin: auto;
 }
 
 .following-manage .search {
@@ -16,7 +12,7 @@
 }
 
 .following-manage__input-card.card.is-compact {
-	box-shadow: 0 0 0 2px $gray-lighten-20, 0 1px 2px $gray-lighten-20;
+	box-shadow: 0 0 0 2px var( --color-neutral-10 ), 0 1px 2px var( --color-neutral-10 );
 }
 
 .following-manage__subscriptions {
@@ -26,7 +22,7 @@
 
 // Load more results
 .following-manage__show-more {
-	border-top: 1px solid $gray-lighten-20;
+	border-top: 1px solid var( --color-neutral-10 );
 	display: flex;
 	justify-content: center;
 	margin-top: 10px;
@@ -36,11 +32,11 @@
 	border-top: 0;
 	border-top-left-radius: 0;
 	border-top-right-radius: 0;
-	color: $gray;
-	font-size: 11px;
+	color: var( --color-text-subtle );
+	font-size: $font-body-extra-small;
 	padding: 2px 9px 6px 11px;
 	position: relative;
-		top: -1px;
+	top: -1px;
 
 	.gridicon.gridicons-chevron-down {
 		height: 14px;
@@ -50,7 +46,7 @@
 	}
 
 	&:hover {
-		color: $gray-darken-10;
+		color: var( --color-neutral-40 );
 		cursor: pointer;
 	}
 }
@@ -59,11 +55,11 @@
 .following-manage__subscriptions-controls {
 	display: flex;
 
-	@include breakpoint( "<960px" ) {
+	@include breakpoint-deprecated( '<960px' ) {
 		flex-wrap: wrap;
 	}
 
-	@include breakpoint( "<660px" ) {
+	@include breakpoint-deprecated( '<660px' ) {
 		margin: 0 15px;
 	}
 
@@ -76,7 +72,7 @@
 		font-weight: 600;
 		padding: 4px 0 15px;
 
-		@include breakpoint( "<960px" ) {
+		@include breakpoint-deprecated( '<960px' ) {
 			flex: 0 0 auto;
 			width: 100%;
 		}
@@ -86,9 +82,7 @@
 		position: relative;
 
 		&::before {
-
-			@include breakpoint( "<960px" ) {
-
+			@include breakpoint-deprecated( '<960px' ) {
 				@include long-content-fade( $size: 20% );
 				height: 30px;
 				right: 30px;
@@ -99,20 +93,19 @@
 
 	.following-manage__subscriptions-sort,
 	.following-manage__subscriptions-search {
-
-		@include breakpoint( "<960px" ) {
+		@include breakpoint-deprecated( '<960px' ) {
 			flex: 1;
 		}
 	}
 
 	.following-manage__subscriptions-sort .following-manage__sort-controls {
-		color: $gray;
-		font-size: 12px;
+		color: var( --color-text-subtle );
+		font-size: $font-body-extra-small;
 		font-weight: normal;
 		padding-top: 8px;
 		width: 100%;
 
-		@include breakpoint( ">960px" ) {
+		@include breakpoint-deprecated( '>960px' ) {
 			min-width: 200px;
 		}
 	}
@@ -120,18 +113,18 @@
 	.following-manage__subscriptions-search {
 		margin-top: 1px;
 
-		@include breakpoint( "<660px" ) {
+		@include breakpoint-deprecated( '<660px' ) {
 			margin-right: 0;
 		}
 	}
 
 	.following-manage__subscriptions-search .search-card {
-		box-shadow: 0 0 0 1px transparentize( $gray-lighten-20, .3 );
+		box-shadow: 0 0 0 1px rgba( var( --color-neutral-10-rgb ), 0.3 );
 
 		.following-manage__search-followed-input.is-compact {
 			height: 32px;
 
-			@include breakpoint( "<660px" ) {
+			@include breakpoint-deprecated( '<660px' ) {
 				min-width: 0;
 			}
 		}
@@ -145,19 +138,18 @@
 	.following-manage__subscriptions-import-export {
 		margin-right: 0;
 
-		@include breakpoint( "<660px" ) {
+		@include breakpoint-deprecated( '<660px' ) {
 			display: none;
 		}
 
 		.gridicon.gridicons-ellipsis {
-			fill: $gray-lighten-10;
+			fill: var( --color-neutral-20 );
 			top: 0;
 		}
 	}
 }
 
 .following-manage__subscriptions-import-export-menu-item {
-
 	.reader-import-button__icon,
 	.reader-export-button__icon {
 		vertical-align: middle;
@@ -167,18 +159,18 @@
 	&:focus {
 		.reader-import-button__icon,
 		.reader-export-button__icon {
-			fill: $white;
+			fill: var( --color-text-inverted );
 		}
 
 		.reader-import-button__label,
 		.reader-export-button__label {
-			color: $white;
+			color: var( --color-text-inverted );
 		}
 	}
 }
 
 .following-manage .reader-recommended-sites {
-	border-bottom: 1px solid $gray-lighten-20;
+	border-bottom: 1px solid var( --color-neutral-10 );
 }
 
 .following-manage__search-followed {
@@ -186,16 +178,15 @@
 }
 
 .following-manage__search-followed-input {
-
-	@include breakpoint( ">960px" ) {
+	@include breakpoint-deprecated( '>960px' ) {
 		min-width: 200px;
 	}
 }
 
 .following-manage__search-results > div {
-	border-bottom: 1px solid $gray-lighten-30;
+	border-bottom: 1px solid var( --color-neutral-0 );
 
-	&:nth-last-child(2),
+	&:nth-last-child( 2 ),
 	&:last-child {
 		border-bottom: 0;
 	}
@@ -203,7 +194,7 @@
 
 .following-manage__search-results.is-empty,
 .following-manage__subscriptions-list.is-empty {
-	color: $gray-darken-10;
+	color: var( --color-neutral-40 );
 }
 
 .following-manage__search-results .reader-subscription-list-item__options {
@@ -211,13 +202,12 @@
 	flex-direction: column;
 	min-width: 24px;
 
-	@include breakpoint( ">660px" ) {
+	@include breakpoint-deprecated( '>660px' ) {
 		min-width: 90px;
 	}
 
 	.button.follow-button {
-
-		@include breakpoint( ">660px" ) {
+		@include breakpoint-deprecated( '>660px' ) {
 			display: flex;
 		}
 	}
@@ -234,7 +224,7 @@
 }
 
 .following-manage__sites-window-scroller-row-wrapper {
-	border-bottom: 1px solid $gray-lighten-30;
+	border-bottom: 1px solid var( --color-neutral-0 );
 
 	&:last-child {
 		border: 0;
@@ -244,11 +234,11 @@
 .following-manage__url-follow-no-search-results-message {
 	margin-top: -5px;
 	padding-bottom: 15px;
-	color: $gray-darken-10
+	color: var( --color-neutral-40 );
 }
 
 .following-manage__url-follow {
-	border-bottom: 1px solid $gray-lighten-30;
+	border-bottom: 1px solid var( --color-neutral-0 );
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
@@ -258,24 +248,24 @@
 
 	.follow-button {
 		.gridicon {
-			fill: $blue-medium;
+			fill: var( --color-primary );
 		}
 
 		.follow-button__label {
-			color: $blue-medium;
+			color: var( --color-primary );
 
-			@include breakpoint ("<660px" ) {
+			@include breakpoint-deprecated( '<660px' ) {
 				display: inline;
 			}
 		}
 
 		&.is-following {
 			.gridicon {
-				fill: $alert-green;
+				fill: var( --color-success );
 			}
 
 			.follow-button__label {
-				color: $alert-green;
+				color: var( --color-success );
 			}
 		}
 	}

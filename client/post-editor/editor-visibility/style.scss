@@ -1,6 +1,6 @@
 .editor-visibility {
 	display: flex;
-	font-size: 13px;
+	font-size: $font-body-small;
 	justify-content: space-between;
 	align-items: center;
 	margin: 8px 0;
@@ -17,16 +17,16 @@
 	}
 
 	.select-dropdown__header {
-		max-width: ( $sidebar-width-max - $accordion-padding * 2 );
+		max-width: calc( var( --sidebar-width-max ) - ( #{$accordion-padding} * 2 ) );
 
-		@include breakpoint( "<660px" ) {
+		@include breakpoint-deprecated( '<660px' ) {
 			max-width: 100%;
-			min-width: ( $sidebar-width-max - $accordion-padding * 2 );
+			min-width: calc( var( --sidebar-width-max ) - ( #{$accordion-padding} * 2 ) );
 		}
 	}
 
-	.form-text-input {
-		font-size: 13px;
+	input[type='text'].form-text-input {
+		font-size: $font-body-small;
 		margin-top: 8px;
 	}
 
@@ -43,22 +43,22 @@
 	}
 
 	.gridicons-globe {
-		color: $alert-green;
+		color: var( --color-success );
 	}
 
 	.gridicons-user {
-		color: $alert-yellow;
+		color: var( --color-warning );
 	}
 
 	.gridicons-lock {
-		color: $alert-red;
+		color: var( --color-error );
 	}
 
 	.gridicon.is_active {
-		color: $gray-dark;
+		color: var( --color-neutral-70 );
 
 		&:hover {
-			color: lighten( $gray, 15% );
+			color: var( --color-neutral-10 );
 		}
 	}
 
@@ -71,7 +71,7 @@
 	&.is-touch,
 	&:hover {
 		.editor-visibility__label {
-			color: $gray-darken-10;
+			color: var( --color-neutral-40 );
 		}
 	}
 
@@ -80,13 +80,13 @@
 	}
 }
 
-.editor-visibility__dialog{
+.editor-visibility__dialog {
 	text-align: left;
 	width: 180px;
 	padding: 20px;
 
 	.form-text-input {
-		font-size: 13px;
+		font-size: $font-body-small;
 	}
 
 	.form-input-validation {
@@ -105,18 +105,18 @@
 		cursor: pointer;
 		vertical-align: bottom;
 		margin-left: 4px;
-		color: lighten( $gray, 15% );
+		color: var( --color-neutral-10 );
 
 		&:hover {
-			color: $gray-dark;
+			color: var( --color-neutral-70 );
 		}
 	}
 
 	.gridicon.is_active {
-		color: $gray-dark;
+		color: var( --color-neutral-70 );
 
 		&:hover {
-			color: lighten( $gray, 15% );
+			color: var( --color-neutral-10 );
 		}
 	}
 }

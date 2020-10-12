@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -10,32 +9,41 @@ import { localize } from 'i18n-calypso';
 /**
  * Internal dependencies
  */
-import CompactCard from 'components/card/compact';
+import { CompactCard, ProductIcon } from '@automattic/components';
 import {
-	getName,
+	getDisplayName,
 	isExpired,
 	isExpiring,
 	isIncludedWithPlan,
 	isOneTimePurchase,
+	isPartnerPurchase,
+	isRecentMonthlyPurchase,
 	isRenewing,
 	purchaseType,
 	showCreditCardExpiringWarning,
-	subscribedWithinPastWeek,
-} from 'lib/purchases';
+	getPartnerName,
+} from 'calypso/lib/purchases';
 import {
 	isDomainProduct,
 	isDomainTransfer,
 	isGoogleApps,
 	isPlan,
 	isTheme,
-} from 'lib/products-values';
-import Notice from 'components/notice';
-import PlanIcon from 'components/plans/plan-icon';
-import Gridicon from 'gridicons';
-import { managePurchase } from '../paths';
-import TrackComponentView from 'lib/analytics/track-component-view';
+	isJetpackProduct,
+	isConciergeSession,
+} from 'calypso/lib/products-values';
+import Notice from 'calypso/components/notice';
+import Gridicon from 'calypso/components/gridicon';
+import { withLocalizedMoment } from 'calypso/components/localized-moment';
+import TrackComponentView from 'calypso/lib/analytics/track-component-view';
+import { getPlanClass, getPlanTermLabel } from 'calypso/lib/plans';
 
-const eventProperties = warning => ( { warning, position: 'purchase-list' } );
+/**
+ * Style dependencies
+ */
+import './style.scss';
+
+const eventProperties = ( warning ) => ( { warning, position: 'purchase-list' } );
 
 class PurchaseItem extends Component {
 	trackImpression( warning ) {
@@ -59,20 +67,23 @@ class PurchaseItem extends Component {
 			);
 		}
 
-		if ( isRenewing( purchase ) ) {
+		if ( isRenewing( purchase ) && purchase.renewDate ) {
+			const renewDate = moment( purchase.renewDate );
 			return translate( 'Renews on %s', {
-				args: purchase.renewMoment.format( 'LL' ),
+				args: renewDate.format( 'LL' ),
 			} );
 		}
 
+		const expiry = moment( purchase.expiryDate );
+
 		if ( isExpiring( purchase ) ) {
-			if ( purchase.expiryMoment < moment().add( 30, 'days' ) ) {
-				const status = subscribedWithinPastWeek( purchase ) ? 'is-info' : 'is-error';
+			if ( expiry < moment().add( 30, 'days' ) ) {
+				const status = isRecentMonthlyPurchase( purchase ) ? 'is-info' : 'is-error';
 				return (
 					<Notice isCompact status={ status } icon="notice">
 						{ translate( 'Expires %(timeUntilExpiry)s', {
 							args: {
-								timeUntilExpiry: purchase.expiryMoment.fromNow(),
+								timeUntilExpiry: expiry.fromNow(),
 							},
 							context:
 								'timeUntilExpiry is of the form "[number] [time-period] ago" i.e. "3 days ago"',
@@ -83,15 +94,19 @@ class PurchaseItem extends Component {
 			}
 
 			return translate( 'Expires on %s', {
-				args: purchase.expiryMoment.format( 'LL' ),
+				args: expiry.format( 'LL' ),
 			} );
 		}
 
 		if ( isExpired( purchase ) ) {
-			const expiredToday = moment().diff( purchase.expiryMoment, 'hours' ) < 24;
-			const expiredText = expiredToday
-				? purchase.expiryMoment.format( '[today]' )
-				: purchase.expiryMoment.fromNow();
+			if ( isConciergeSession( purchase ) ) {
+				return translate( 'Session used on %s', {
+					args: expiry.format( 'LL' ),
+				} );
+			}
+
+			const expiredToday = moment().diff( expiry, 'hours' ) < 24;
+			const expiredText = expiredToday ? expiry.format( '[today]' ) : expiry.fromNow();
 
 			return (
 				<Notice isCompact status="is-error" icon="notice">
@@ -142,10 +157,13 @@ class PurchaseItem extends Component {
 			return null;
 		}
 
-		if ( isPlan( purchase ) ) {
+		if ( isPlan( purchase ) || isJetpackProduct( purchase ) ) {
 			return (
 				<div className="purchase-item__plan-icon">
-					<PlanIcon plan={ purchase.productSlug } />
+					<ProductIcon
+						slug={ purchase.productSlug }
+						className={ getPlanClass( purchase.productSlug ) }
+					/>
 				</div>
 			);
 		}
@@ -170,14 +188,32 @@ class PurchaseItem extends Component {
 		);
 	}
 
+	getLabelText() {
+		const { purchase, translate } = this.props;
+
+		if ( purchase && isPartnerPurchase( purchase ) ) {
+			return translate( 'This plan is managed by %(partnerName)s', {
+				args: {
+					partnerName: getPartnerName( purchase ),
+				},
+			} );
+		} else if ( purchase && purchase.productSlug ) {
+			return getPlanTermLabel( purchase.productSlug, translate );
+		}
+
+		return null;
+	}
+
 	render() {
-		const { isPlaceholder, isDisconnectedSite, purchase } = this.props;
+		const { isPlaceholder, isDisconnectedSite, purchase, isJetpack } = this.props;
 		const classes = classNames(
 			'purchase-item',
 			{ 'is-expired': purchase && 'expired' === purchase.expiryStatus },
 			{ 'is-placeholder': isPlaceholder },
 			{ 'is-included-with-plan': purchase && isIncludedWithPlan( purchase ) }
 		);
+
+		const label = this.getLabelText();
 
 		let content;
 		if ( isPlaceholder ) {
@@ -187,27 +223,35 @@ class PurchaseItem extends Component {
 				<span className="purchase-item__wrapper">
 					{ this.renderIcon() }
 					<div className="purchase-item__details">
-						<div className="purchase-item__title">{ getName( purchase ) }</div>
+						<div className="purchase-item__title">{ getDisplayName( purchase ) }</div>
 						<div className="purchase-item__purchase-type">{ purchaseType( purchase ) }</div>
-						<div className="purchase-item__purchase-date">{ this.renewsOrExpiresOn() }</div>
+						{ label && <div className="purchase-item__term-label">{ label }</div> }
+						{ ! isPartnerPurchase( purchase ) && (
+							<div className="purchase-item__purchase-date">{ this.renewsOrExpiresOn() }</div>
+						) }
 					</div>
 				</span>
 			);
 		}
 
-		let props;
-		if ( ! isPlaceholder ) {
-			props = {
-				onClick: this.scrollToTop,
-			};
-
-			if ( ! isDisconnectedSite ) {
-				props.href = managePurchase( this.props.slug, this.props.purchase.id );
+		let onClick;
+		let href;
+		if ( ! isPlaceholder && this.props.getManagePurchaseUrlFor ) {
+			// A "disconnected" Jetpack site's purchases may be managed.
+			// A "disconnected" WordPress.com site may not (the user has been removed).
+			if ( ! isDisconnectedSite || isJetpack ) {
+				onClick = this.scrollToTop;
+				href = this.props.getManagePurchaseUrlFor( this.props.slug, this.props.purchase.id );
 			}
 		}
 
 		return (
-			<CompactCard className={ classes } { ...props }>
+			<CompactCard
+				className={ classes }
+				data-e2e-connected-site={ ! isDisconnectedSite }
+				href={ href }
+				onClick={ onClick }
+			>
 				{ content }
 			</CompactCard>
 		);
@@ -219,6 +263,8 @@ PurchaseItem.propTypes = {
 	isDisconnectedSite: PropTypes.bool,
 	purchase: PropTypes.object,
 	slug: PropTypes.string,
+	isJetpack: PropTypes.bool,
+	getManagePurchaseUrlFor: PropTypes.func,
 };
 
-export default localize( PurchaseItem );
+export default localize( withLocalizedMoment( PurchaseItem ) );

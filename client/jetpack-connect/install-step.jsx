@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -10,7 +9,7 @@ import { localize } from 'i18n-calypso';
 /**
  * Internal dependencies
  */
-import Card from 'components/card';
+import { Card } from '@automattic/components';
 import { preventWidows } from 'lib/formatting';
 import versionCompare from 'lib/version-compare';
 import JetpackExampleInstall from './example-components/jetpack-install';
@@ -32,12 +31,12 @@ class JetpackInstallStep extends Component {
 		onClick: noop,
 	};
 
-	confirmJetpackInstalled = event => {
+	confirmJetpackInstalled = ( event ) => {
 		event.preventDefault();
 		this.props.confirmJetpackInstallStatus( true );
 	};
 
-	confirmJetpackNotInstalled = event => {
+	confirmJetpackNotInstalled = ( event ) => {
 		event.preventDefault();
 		this.props.confirmJetpackInstallStatus( false );
 	};
@@ -129,7 +128,8 @@ class JetpackInstallStep extends Component {
 				<div className="jetpack-connect__install-step-title">{ step.title }</div>
 				<div className="jetpack-connect__install-step-text">
 					<span>
-						{ preventWidows( step.text ) }&nbsp;
+						{ preventWidows( step.text ) }
+						&nbsp;
 						{ step.action }
 					</span>
 				</div>

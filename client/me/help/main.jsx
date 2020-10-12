@@ -1,36 +1,39 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
-import { find } from 'lodash';
-import { localize } from 'i18n-calypso';
-import React from 'react';
 import debugModule from 'debug';
+import React from 'react';
 import { connect } from 'react-redux';
+import { localize } from 'i18n-calypso';
+import { some } from 'lodash';
 
 /**
  * Internal dependencies
  */
-import Main from 'components/main';
-import analytics from 'lib/analytics';
-import { getCurrentUserId, isCurrentUserEmailVerified } from 'state/current-user/selectors';
-import HappinessEngineers from 'me/help/help-happiness-engineers';
-import MeSidebarNavigation from 'me/sidebar-navigation';
+import { recordTracksEvent } from 'calypso/lib/analytics/tracks';
+import { Button, CompactCard } from '@automattic/components';
+import HappinessEngineers from 'calypso/me/help/help-happiness-engineers';
+import HelpResult from './help-results/item';
 import HelpSearch from './help-search';
 import HelpTeaserButton from './help-teaser-button';
-import CompactCard from 'components/card/compact';
-import Button from 'components/button';
-import SectionHeader from 'components/section-header';
-import HelpResult from './help-results/item';
 import HelpUnverifiedWarning from './help-unverified-warning';
-import { getUserPurchases, isFetchingUserPurchases } from 'state/purchases/selectors';
-import { planMatches } from 'lib/plans';
-import { GROUP_WPCOM, TYPE_BUSINESS } from 'lib/plans/constants';
-import QueryUserPurchases from 'components/data/query-user-purchases';
-import PageViewTracker from 'lib/analytics/page-view-tracker';
-import { getSupportLocale } from 'lib/i18n-utils';
+import Main from 'calypso/components/main';
+import MeSidebarNavigation from 'calypso/me/sidebar-navigation';
+import PageViewTracker from 'calypso/lib/analytics/page-view-tracker';
+import QueryUserPurchases from 'calypso/components/data/query-user-purchases';
+import SectionHeader from 'calypso/components/section-header';
+import { getCurrentUserId, isCurrentUserEmailVerified } from 'calypso/state/current-user/selectors';
+import { localizeUrl } from 'calypso/lib/i18n-utils';
+import { getUserPurchases, isFetchingUserPurchases } from 'calypso/state/purchases/selectors';
+import { planHasFeature } from 'calypso/lib/plans';
+import { FEATURE_BUSINESS_ONBOARDING } from 'calypso/lib/plans/constants';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
+
+/* eslint-disable wpcalypso/jsx-classname-namespace */
 
 /**
  * Module variables
@@ -43,31 +46,45 @@ class Help extends React.PureComponent {
 	getHelpfulArticles = () => {
 		const helpfulResults = [
 			{
-				link: 'https://en.support.wordpress.com/business-plan/',
+				link: 'https://wordpress.com/support/do-i-need-a-website-a-blog-or-a-website-with-a-blog/',
+				title: this.props.translate( 'Do I Need a Website, a Blog, or a Website with a Blog?' ),
+				description: this.props.translate(
+					'If you’re building a brand new site, you might be wondering if you need a website, a blog, or a website with a blog. At WordPress.com, you can create all of these options easily, right in your dashboard.'
+				),
+			},
+			{
+				link: 'https://wordpress.com/support/business-plan/',
 				title: this.props.translate( 'Uploading custom plugins and themes' ),
 				description: this.props.translate(
 					'Learn more about installing a custom theme or plugin using the Business plan.'
 				),
 			},
 			{
-				link: 'https://en.support.wordpress.com/all-about-domains/',
+				link: 'https://wordpress.com/support/all-about-domains/',
 				title: this.props.translate( 'All About Domains' ),
 				description: this.props.translate(
 					'Set up your domain whether it’s registered with WordPress.com or elsewhere.'
 				),
 			},
 			{
-				link: `https://${ getSupportLocale() }.support.wordpress.com/start/`,
+				link: 'https://wordpress.com/support/start/',
 				title: this.props.translate( 'Get Started' ),
 				description: this.props.translate(
 					'No matter what kind of site you want to build, our five-step checklists will get you set up and ready to publish.'
 				),
 			},
 			{
-				link: 'https://en.support.wordpress.com/settings/privacy-settings/',
+				link: 'https://wordpress.com/support/settings/privacy-settings/',
 				title: this.props.translate( 'Privacy Settings' ),
 				description: this.props.translate(
 					'Limit your site’s visibility or make it completely private.'
+				),
+			},
+			{
+				link: 'https://wordpress.com/support/manage-purchases/',
+				title: this.props.translate( 'Managing Purchases, Renewals, and Cancellations' ),
+				description: this.props.translate(
+					'Have a question or need to change something about a purchase you have made? Learn how.'
 				),
 			},
 		];
@@ -78,7 +95,7 @@ class Help extends React.PureComponent {
 				{ helpfulResults.map( ( result, index ) => {
 					const trackClick = () => {
 						debug( 'Suggested result click: ', result.link );
-						analytics.tracks.recordEvent( 'calypso_help_suggested_result_click', {
+						recordTracksEvent( 'calypso_help_suggested_result_click', {
 							link: result.link,
 							position: index,
 						} );
@@ -102,7 +119,7 @@ class Help extends React.PureComponent {
 			<div className="help__support-links">
 				<CompactCard
 					className="help__support-link"
-					href={ `https://${ getSupportLocale() }.support.wordpress.com` }
+					href={ localizeUrl( 'https://wordpress.com/support/' ) }
 					target="__blank"
 				>
 					<div className="help__support-link-section">
@@ -118,7 +135,7 @@ class Help extends React.PureComponent {
 				</CompactCard>
 				<CompactCard
 					className="help__support-link"
-					href="https://en.support.wordpress.com/video-tutorials/"
+					href={ localizeUrl( 'https://wordpress.com/support/video-tutorials/' ) }
 					target="__blank"
 				>
 					<div className="help__support-link-section">
@@ -192,7 +209,8 @@ class Help extends React.PureComponent {
 		return (
 			<HelpTeaserButton
 				onClick={ this.trackCoursesButtonClick }
-				href="/help/courses"
+				href="https://wordpress.com/webinars"
+				target="_blank"
 				title={ this.props.translate( 'Courses' ) }
 				description={ this.props.translate(
 					'Learn how to make the most of your site with these courses and webinars'
@@ -203,7 +221,7 @@ class Help extends React.PureComponent {
 
 	trackCoursesButtonClick = () => {
 		const { isBusinessPlanUser } = this.props;
-		analytics.tracks.recordEvent( 'calypso_help_courses_click', {
+		recordTracksEvent( 'calypso_help_courses_click', {
 			is_business_plan_user: isBusinessPlanUser,
 		} );
 	};
@@ -243,15 +261,16 @@ class Help extends React.PureComponent {
 	}
 }
 
-const isWPCOMBusinessPlan = purchase =>
-	planMatches( purchase.productSlug, { type: TYPE_BUSINESS, group: GROUP_WPCOM } );
+function planHasOnboarding( { productSlug } ) {
+	return planHasFeature( productSlug, FEATURE_BUSINESS_ONBOARDING );
+}
 
 export const mapStateToProps = ( state, ownProps ) => {
 	const isEmailVerified = isCurrentUserEmailVerified( state );
 	const userId = getCurrentUserId( state );
 	const purchases = getUserPurchases( state, userId );
 	const isLoading = isFetchingUserPurchases( state );
-	const isBusinessPlanUser = purchases && !! find( purchases, isWPCOMBusinessPlan );
+	const isBusinessPlanUser = some( purchases, planHasOnboarding );
 	const showCoursesTeaser = ownProps.isCoursesEnabled && isBusinessPlanUser;
 
 	return {

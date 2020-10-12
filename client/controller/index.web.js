@@ -1,10 +1,7 @@
-/** @format */
-
 /**
  * External dependencies
  */
 import React from 'react';
-import ReactDom from 'react-dom';
 import { Provider as ReduxProvider } from 'react-redux';
 import page from 'page';
 
@@ -12,37 +9,51 @@ import page from 'page';
  * Internal Dependencies
  */
 import config from 'config';
+import { translate } from 'i18n-calypso';
 import Layout from 'layout';
 import LayoutLoggedOut from 'layout/logged-out';
+import EmptyContent from 'components/empty-content';
+import CalypsoI18nProvider from 'components/calypso-i18n-provider';
+import MomentProvider from 'components/localized-moment/provider';
 import { login } from 'lib/paths';
 import { makeLayoutMiddleware } from './shared.js';
-import { getCurrentUser } from 'state/current-user/selectors';
-import userFactory from 'lib/user';
+import { isUserLoggedIn } from 'state/current-user/selectors';
+import { getImmediateLoginEmail, getImmediateLoginLocale } from 'state/immediate-login/selectors';
+import { getSiteFragment } from 'lib/route';
+import { hydrate } from './web-util.js';
 
 /**
  * Re-export
  */
-export { setSection, setUpLocale } from './shared.js';
+export { setSectionMiddleware, setLocaleMiddleware } from './shared.js';
+export { render, hydrate, redirectLoggedIn } from './web-util.js';
 
-const user = userFactory();
+export const ProviderWrappedLayout = ( { store, primary, secondary, redirectUri } ) => {
+	const state = store.getState();
+	const userLoggedIn = isUserLoggedIn( state );
 
-export const ReduxWrappedLayout = ( { store, primary, secondary, redirectUri } ) => (
-	<ReduxProvider store={ store }>
-		{ getCurrentUser( store.getState() ) ? (
-			<Layout primary={ primary } secondary={ secondary } user={ user } />
-		) : (
-			<LayoutLoggedOut primary={ primary } secondary={ secondary } redirectUri={ redirectUri } />
-		) }
-	</ReduxProvider>
-);
+	const layout = userLoggedIn ? (
+		<Layout primary={ primary } secondary={ secondary } />
+	) : (
+		<LayoutLoggedOut primary={ primary } secondary={ secondary } redirectUri={ redirectUri } />
+	);
 
-export const makeLayout = makeLayoutMiddleware( ReduxWrappedLayout );
+	return (
+		<CalypsoI18nProvider>
+			<ReduxProvider store={ store }>
+				<MomentProvider>{ layout }</MomentProvider>
+			</ReduxProvider>
+		</CalypsoI18nProvider>
+	);
+};
+
+export const makeLayout = makeLayoutMiddleware( ProviderWrappedLayout );
 
 /**
  * Isomorphic routing helper, client side
  *
  * @param { string } route - A route path
- * @param { ...function } middlewares - Middleware to be invoked for route
+ * @param {...Function} middlewares - Middleware to be invoked for route
  *
  * This function is passed to individual sections' controllers via
  * `server/bundler/loader`. Sections are free to either ignore it, or use it
@@ -53,34 +64,53 @@ export const makeLayout = makeLayoutMiddleware( ReduxWrappedLayout );
  * divs.
  */
 export function clientRouter( route, ...middlewares ) {
-	page( route, ...middlewares, render );
-}
-
-export function redirectLoggedIn( context, next ) {
-	const currentUser = getCurrentUser( context.store.getState() );
-
-	if ( currentUser ) {
-		page.redirect( '/' );
-		return;
-	}
-
-	next();
+	page( route, ...middlewares, hydrate );
 }
 
 export function redirectLoggedOut( context, next ) {
-	const currentUser = getCurrentUser( context.store.getState() );
+	const state = context.store.getState();
+	const userLoggedOut = ! isUserLoggedIn( state );
 
-	if ( ! currentUser ) {
-		return page.redirect(
-			login( {
-				isNative: config.isEnabled( 'login/native-login-links' ),
-				redirectTo: context.path,
-			} )
-		);
+	if ( userLoggedOut ) {
+		const siteFragment = context.params.site || getSiteFragment( context.path );
+
+		const loginParameters = {
+			isNative: config.isEnabled( 'login/native-login-links' ),
+			redirectTo: context.path,
+			site: siteFragment,
+		};
+
+		// Pass along "login_email" and "login_locale" parameters from the
+		// original URL, to ensure the login form is pre-filled with the
+		// correct email address and built with the correct language (when
+		// either of those are requested).
+		const login_email = getImmediateLoginEmail( state );
+		if ( login_email ) {
+			loginParameters.emailAddress = login_email;
+		}
+		const login_locale = getImmediateLoginLocale( state );
+		if ( login_locale ) {
+			loginParameters.locale = login_locale;
+		}
+
+		// force full page reload to avoid SSR hydration issues.
+		window.location = login( loginParameters );
+		return;
 	}
 	next();
 }
 
-export function render( context ) {
-	ReactDom.render( context.layout, document.getElementById( 'wpcom' ) );
-}
+export const notFound = ( context, next ) => {
+	/* eslint-disable wpcalypso/jsx-classname-namespace */
+	context.primary = (
+		<EmptyContent
+			className="content-404"
+			illustration="/calypso/images/illustrations/illustration-404.svg"
+			title={ translate( 'Uh oh. Page not found.' ) }
+			line={ translate( "Sorry, the page you were looking for doesn't exist or has been moved." ) }
+		/>
+	);
+	/* eslint-enable wpcalypso/jsx-classname-namespace */
+
+	next();
+};

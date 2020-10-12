@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -17,7 +15,7 @@ import {
 	submitMailChimpCampaignDefaults,
 	submitMailChimpStoreInfo,
 } from '../actions';
-import useNock from 'test/helpers/use-nock';
+import useNock from 'test-helpers/use-nock';
 import {
 	WOOCOMMERCE_MAILCHIMP_API_KEY_SUBMIT_SUCCESS,
 	WOOCOMMERCE_MAILCHIMP_API_KEY_SUBMIT,
@@ -36,7 +34,7 @@ describe( 'actions', () => {
 	describe( '#requestSettings()', () => {
 		const siteId = '123';
 
-		useNock( nock => {
+		useNock( ( nock ) => {
 			nock( 'https://public-api.wordpress.com:443' )
 				.persist()
 				.get( '/rest/v1.1/jetpack-blogs/123/rest-api/' )
@@ -104,11 +102,16 @@ describe( 'actions', () => {
 	describe( '#submitMailChimpApiKey()', () => {
 		const siteId = '123';
 
-		useNock( nock => {
+		useNock( ( nock ) => {
 			nock( 'https://public-api.wordpress.com:443' )
 				.persist()
-				.post( '/rest/v1.1/jetpack-blogs/123/rest-api/' )
-				.query( { path: '/wc/v3/mailchimp/api_key&_via_calypso&_method=put', json: true } )
+				.post( '/rest/v1.1/jetpack-blogs/123/rest-api/', {
+					path: '/wc/v3/mailchimp/api_key&_via_calypso&_method=put',
+					body: JSON.stringify( {
+						mailchimp_api_key: '12345testing',
+					} ),
+					json: true,
+				} )
 				.reply( 200, {
 					data: {
 						mailchimp_api_key: '12345testing',
@@ -156,11 +159,18 @@ describe( 'actions', () => {
 	describe( '#submitMailChimpStoreInfo()', () => {
 		const siteId = '123';
 
-		useNock( nock => {
+		useNock( ( nock ) => {
 			nock( 'https://public-api.wordpress.com:443' )
 				.persist()
-				.post( '/rest/v1.1/jetpack-blogs/123/rest-api/' )
-				.query( { path: '/wc/v3/mailchimp/store_info&_via_calypso&_method=put', json: true } )
+				.post( '/rest/v1.1/jetpack-blogs/123/rest-api/', {
+					path: '/wc/v3/mailchimp/store_info&_via_calypso&_method=put',
+					body: JSON.stringify( {
+						store_name: 'mystore',
+						store_street: 'street',
+						store_city: 'Valhalla',
+					} ),
+					json: true,
+				} )
 				.reply( 200, {
 					data: {
 						mailchimp_api_key: '12345testing',
@@ -218,11 +228,17 @@ describe( 'actions', () => {
 	describe( '#submitMailChimpCampaignDefaults()', () => {
 		const siteId = '123';
 
-		useNock( nock => {
+		useNock( ( nock ) => {
 			nock( 'https://public-api.wordpress.com:443' )
 				.persist()
-				.post( '/rest/v1.1/jetpack-blogs/123/rest-api/' )
-				.query( { path: '/wc/v3/mailchimp/store_info&_via_calypso&_method=put', json: true } )
+				.post( '/rest/v1.1/jetpack-blogs/123/rest-api/', {
+					path: '/wc/v3/mailchimp/campaign_defaults&_via_calypso&_method=put',
+					body: JSON.stringify( {
+						campaign_from_name: 'woo',
+						campaign_from_email: 'mystore@woo.woo',
+					} ),
+					json: true,
+				} )
 				.reply( 200, {
 					data: {
 						mailchimp_api_key: '12345testing',
@@ -289,7 +305,7 @@ describe( 'actions', () => {
 	describe( '#requestSyncStatus()', () => {
 		const siteId = '123';
 
-		useNock( nock => {
+		useNock( ( nock ) => {
 			nock( 'https://public-api.wordpress.com:443' )
 				.persist()
 				.get( '/rest/v1.1/jetpack-blogs/123/rest-api/' )

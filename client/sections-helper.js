@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * sections-helper
  *
@@ -14,12 +12,7 @@
 /**
  * External dependencies
  */
-import { filter, isEmpty, find } from 'lodash';
-
-/**
- * Internal dependencies
- */
-import { switchCSS } from 'lib/i18n-utils/switch-locale';
+import { find } from 'lodash';
 
 let sections = null;
 export function receiveSections( s ) {
@@ -33,27 +26,24 @@ export function getSections() {
 	return sections;
 }
 
-function maybeLoadCSS( sectionName ) {
-	//eslint-disable-line no-unused-vars
+export function preload( sectionName ) {
 	const section = find( sections, { name: sectionName } );
 
-	if ( ! ( section && section.css ) ) {
-		return;
+	if ( section ) {
+		section.load();
 	}
-
-	const url =
-		typeof document !== 'undefined' && document.documentElement.dir === 'rtl'
-			? section.css.urls.rtl
-			: section.css.urls.ltr;
-
-	switchCSS( 'section-css-' + section.css.id, url );
 }
 
-export function preload( sectionName ) {
-	maybeLoadCSS( sectionName );
-	const filteredSections = filter( sections, { name: sectionName } );
-	if ( isEmpty( filteredSections ) ) {
-		return Promise.reject( `Attempting to load non-existent section: ${ sectionName }` );
+export function load( sectionName, moduleName ) {
+	const section = find( sections, { name: sectionName, module: moduleName } );
+
+	if ( ! section ) {
+		return Promise.reject(
+			`Attempting to load non-existent section: ${ sectionName } (module=${ moduleName })`
+		);
 	}
-	return Promise.all( filteredSections.map( section => section.load() ) );
+
+	// section.load() loads the module synchronously (using require()) in environments without
+	// code splitting. The return value must be explicitly resolved to Promise.
+	return Promise.resolve( section.load() );
 }

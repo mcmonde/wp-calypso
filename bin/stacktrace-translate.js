@@ -123,14 +123,16 @@ function loadBuild() {
 
 	if ( verbose ) {
 		console.log(
-			Object.keys( sources ).length + ' sources and ' +
-			Object.keys( sourceMaps ).length + ' maps loaded.'
+			Object.keys( sources ).length +
+				' sources and ' +
+				Object.keys( sourceMaps ).length +
+				' maps loaded.'
 		);
 	}
 
 	return {
 		sources,
-		sourceMaps
+		sourceMaps,
 	};
 }
 
@@ -185,7 +187,7 @@ function run( args ) {
 
 	verbose = _.includes( args, '-v' ) || _.includes( args, '--verbose' );
 	const fileName = _.find( args, ( el, index ) => {
-		return ( 2 <= index && ! el.startsWith( '-' ) );
+		return 2 <= index && ! el.startsWith( '-' );
 	} );
 
 	if ( fileName ) {
@@ -196,4 +198,3 @@ function run( args ) {
 }
 
 run( process.argv );
-

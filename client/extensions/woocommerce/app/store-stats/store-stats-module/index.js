@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -11,7 +10,7 @@ import classnames from 'classnames';
 /**
  * Internal dependencies
  */
-import Card from 'components/card';
+import { Card } from '@automattic/components';
 import {
 	isRequestingSiteStatsForQuery,
 	getSiteStatsNormalizedData,
@@ -35,7 +34,7 @@ class StoreStatsModule extends Component {
 		loaded: false,
 	};
 
-	componentWillReceiveProps( nextProps ) {
+	UNSAFE_componentWillReceiveProps( nextProps ) {
 		if ( ! nextProps.requesting && this.props.requesting ) {
 			this.setState( { loaded: true } );
 		}
@@ -59,12 +58,11 @@ class StoreStatsModule extends Component {
 						<StatsModulePlaceholder isLoading={ isLoading } />
 					</Card>
 				) }
-				{ ! isLoading &&
-					hasEmptyData && (
-						<Card className="stats-module is-showing-error has-no-data">
-							<ErrorPanel message={ emptyMessage } />
-						</Card>
-					) }
+				{ ! isLoading && hasEmptyData && (
+					<Card className="stats-module is-showing-error has-no-data">
+						<ErrorPanel message={ emptyMessage } />
+					</Card>
+				) }
 				{ ! isLoading && ! hasEmptyData && children }
 			</div>
 			/* eslint-enable wpcalypso/jsx-classname-namespace */

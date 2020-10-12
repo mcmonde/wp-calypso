@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -12,7 +10,7 @@ import React from 'react';
 import StoreConnection from 'components/data/store-connection';
 import CartStore from 'lib/cart/store';
 
-var stores = [ CartStore ];
+const stores = [ CartStore ];
 
 function getStateFromStores() {
 	return {

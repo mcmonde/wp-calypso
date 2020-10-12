@@ -1,5 +1,4 @@
 /**
- * @format
  * @jest-environment jsdom
  */
 
@@ -12,12 +11,12 @@ import { expect } from 'chai';
  * Internal dependencies
  */
 import preloadImage from '../preload-image';
-import { useSandbox } from 'test/helpers/use-sinon';
+import { useSandbox } from 'test-helpers/use-sinon';
 
 describe( '#preloadImage()', () => {
 	let sandbox, Image;
 
-	useSandbox( newSandbox => {
+	useSandbox( ( newSandbox ) => {
 		sandbox = newSandbox;
 		Image = sandbox.stub( global.window, 'Image' );
 	} );
@@ -32,7 +31,8 @@ describe( '#preloadImage()', () => {
 		preloadImage( src );
 
 		expect( Image ).to.have.been.calledOnce;
-		expect( Image.thisValues[ 0 ].src ).to.equal( src );
+		expect( Image ).to.have.been.calledWithNew;
+		expect( Image.returnValues[ 0 ].src ).to.equal( src );
 	} );
 
 	test( 'should only load an image once per `src`', () => {

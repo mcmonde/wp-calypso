@@ -1,5 +1,4 @@
 /**
- * @format
  * @jest-environment jsdom
  */
 
@@ -19,6 +18,9 @@ jest.mock( 'lib/cart-values', () => ( {
 	isPaymentMethodEnabled: jest.fn( false ),
 	paymentMethodName: jest.fn( false ),
 } ) );
+
+// Gets rid of warnings such as 'UnhandledPromiseRejectionWarning: Error: No available storage method found.'
+jest.mock( 'lib/user', () => () => {} );
 
 describe( 'PaymentBox', () => {
 	const defaultProps = {

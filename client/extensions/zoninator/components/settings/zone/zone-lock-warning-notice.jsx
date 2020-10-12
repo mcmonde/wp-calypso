@@ -12,13 +12,13 @@ import { flowRight } from 'lodash';
  */
 import Notice from 'components/notice';
 import NoticeAction from 'components/notice/notice-action';
+import { withLocalizedMoment } from 'components/localized-moment';
 import { requestFeed } from '../../../state/feeds/actions';
 import { requestLock, resetLock } from '../../../state/locks/actions';
 import { requestZones } from '../../../state/zones/actions';
 import { blocked } from '../../../state/locks/selectors';
 
 class ZoneLockWarningNotice extends PureComponent {
-
 	static propTypes = {
 		isBlocked: PropTypes.bool,
 		requestFeed: PropTypes.func.isRequired,
@@ -39,22 +39,21 @@ class ZoneLockWarningNotice extends PureComponent {
 
 		this.props.resetLock( this.props.siteId, this.props.zoneId );
 		this.props.requestLock( this.props.siteId, this.props.zoneId );
-	}
+	};
 
-	noticeText = isBlocked => isBlocked
-		? this.props.translate( 'This zone is currently being edited by another user. Try again in a moment.' )
-		: this.props.translate( 'You have reached the maximum idle limit. Refresh to continue.' );
+	noticeText = ( isBlocked ) =>
+		isBlocked
+			? this.props.translate(
+					'This zone is currently being edited by another user. Try again in a moment.'
+			  )
+			: this.props.translate( 'You have reached the maximum idle limit. Refresh to continue.' );
 
 	render() {
 		const { isBlocked, translate } = this.props;
 
 		return (
 			<div>
-				<Notice
-					showDismiss={ false }
-					status="is-warning"
-					text={ this.noticeText( isBlocked ) }
-				>
+				<Notice showDismiss={ false } status="is-warning" text={ this.noticeText( isBlocked ) }>
 					<NoticeAction onClick={ this.refreshLock }>{ translate( 'Refresh' ) }</NoticeAction>
 				</Notice>
 			</div>
@@ -67,4 +66,8 @@ const connectComponent = connect(
 	{ requestFeed, requestLock, requestZones, resetLock }
 );
 
-export default flowRight( connectComponent, localize )( ZoneLockWarningNotice );
+export default flowRight(
+	connectComponent,
+	localize,
+	withLocalizedMoment
+)( ZoneLockWarningNotice );

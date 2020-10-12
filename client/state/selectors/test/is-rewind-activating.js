@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -9,7 +7,7 @@ import deepFreeze from 'deep-freeze';
 /**
  * Internal dependencies
  */
-import { isRewindActivating } from 'state/selectors';
+import isRewindActivating from 'state/selectors/is-rewind-activating';
 
 const siteId = 77203074;
 

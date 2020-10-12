@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -11,6 +9,11 @@ import { localize } from 'i18n-calypso';
  * Internal dependencies
  */
 import DomainSuggestion from 'components/domains/domain-suggestion';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class DomainTransferSuggestion extends React.Component {
 	static propTypes = {
@@ -26,7 +29,7 @@ class DomainTransferSuggestion extends React.Component {
 		return (
 			<DomainSuggestion
 				buttonContent={ buttonContent }
-				buttonProps={ { borderless: true } }
+				buttonStyles={ { borderless: true } }
 				extraClasses="is-visible domain-transfer-suggestion"
 				hidePrice={ true }
 				onButtonClick={ this.props.onButtonClick }

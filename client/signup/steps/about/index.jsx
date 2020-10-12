@@ -1,18 +1,15 @@
-/** @format */
 /**
  * External dependencies
  */
 import React, { Component } from 'react';
 import { localize } from 'i18n-calypso';
 import { connect } from 'react-redux';
-import { invoke, noop, findKey } from 'lodash';
-import classNames from 'classnames';
+import { noop, includes } from 'lodash';
 
 /**
  * Internal dependencies
  */
 import StepWrapper from 'signup/step-wrapper';
-import SignupActions from 'lib/signup/actions';
 import formState from 'lib/form-state';
 import { setSiteTitle } from 'state/signup/steps/site-title/actions';
 import { setDesignType } from 'state/signup/steps/design-type/actions';
@@ -21,41 +18,59 @@ import { setSiteGoals } from 'state/signup/steps/site-goals/actions';
 import { getSiteGoals } from 'state/signup/steps/site-goals/selectors';
 import { setUserExperience } from 'state/signup/steps/user-experience/actions';
 import { getUserExperience } from 'state/signup/steps/user-experience/selectors';
+import { getSiteType } from 'state/signup/steps/site-type/selectors';
 import { recordTracksEvent } from 'state/analytics/actions';
-import { getThemeForSiteGoals, getSiteTypeForSiteGoals } from 'signup/utils';
+import { getThemeForSiteGoals, getDesignTypeForSiteGoals } from 'signup/utils';
 import { setSurvey } from 'state/signup/steps/survey/actions';
 import { getSurveyVertical } from 'state/signup/steps/survey/selectors';
-import { hints } from 'lib/signup/hint-data';
+import { isValidLandingPageVertical } from 'lib/signup/verticals';
 import { DESIGN_TYPE_STORE } from 'signup/constants';
-import PressableStoreStep from '../design-type-with-store/pressable-store';
-import { abtest } from 'lib/abtest';
 import { isUserLoggedIn } from 'state/current-user/selectors';
+import { getSiteTypePropertyValue } from 'lib/signup/site-type';
+import {
+	getSiteVerticalId,
+	getSiteVerticalParentId,
+} from 'state/signup/steps/site-vertical/selectors';
+import { setSiteVertical } from 'state/signup/steps/site-vertical/actions';
+import hasInitializedSites from 'state/selectors/has-initialized-sites';
+import { saveSignupStep, submitSignupStep } from 'state/signup/progress/actions';
 
 //Form components
-import Card from 'components/card';
-import Button from 'components/button';
+import { Card, Button, ScreenReaderText } from '@automattic/components';
 import FormTextInput from 'components/forms/form-text-input';
+import InfoPopover from 'components/info-popover';
 import FormLabel from 'components/forms/form-label';
 import FormLegend from 'components/forms/form-legend';
 import FormFieldset from 'components/forms/form-fieldset';
 import FormInputCheckbox from 'components/forms/form-checkbox';
 import SegmentedControl from 'components/segmented-control';
-import ControlItem from 'components/segmented-control/item';
-import Suggestions from 'components/suggestions';
+import SiteVerticalsSuggestionSearch from 'components/site-verticals-suggestion-search';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class AboutStep extends Component {
 	constructor( props ) {
 		super( props );
+		this._isMounted = false;
+		const hasPrepopulatedVertical =
+			isValidLandingPageVertical( props.siteTopic ) &&
+			props.queryObject.vertical === props.siteTopic;
+
 		this.state = {
-			query: '',
-			siteTopicValue: this.props.siteTopic,
-			userExperience: this.props.userExperience,
-			showStore: false,
+			verticalId: props.verticalId,
+			verticalParentId: props.verticalParentId,
+			siteTopicValue: props.siteTopic,
+			userExperience: props.userExperience,
 			pendingStoreClick: false,
+			hasPrepopulatedVertical,
 		};
 	}
 
-	componentWillMount() {
+	componentDidMount() {
+		this._isMounted = true;
 		this.formStateController = new formState.Controller( {
 			fieldNames: [ 'siteTitle', 'siteGoals', 'siteTopic' ],
 			validatorFunction: noop,
@@ -73,126 +88,44 @@ class AboutStep extends Component {
 				},
 			},
 		} );
-
 		this.setFormState( this.formStateController.getInitialState() );
+
+		this.props.saveSignupStep( { stepName: this.props.stepName } );
 	}
 
-	setFormState = state => {
-		this.setState( { form: state } );
-	};
+	componentWillUnmount() {
+		this._isMounted = false;
+	}
 
-	setPressableStore = ref => {
-		this.pressableStore = ref;
-	};
+	setFormState = ( state ) => this._isMounted && this.setState( { form: state } );
 
-	setSuggestionsRef = ref => {
-		this.suggestionsRef = ref;
-	};
-
-	hideSuggestions = () => {
-		this.setState( { query: '' } );
-	};
-
-	handleSuggestionChangeEvent = event => {
-		this.setState( { query: event.target.value } );
-		this.setState( { siteTopicValue: event.target.value } );
-
-		this.formStateController.handleFieldChange( {
-			name: event.target.name,
-			value: event.target.value,
+	onSiteTopicChange = ( { parent, verticalId, verticalName, verticalSlug } ) => {
+		const verticalParentId = parent || verticalId;
+		this.setState( {
+			verticalId: verticalId,
+			siteTopicValue: verticalName,
+			siteTopicSlug: verticalSlug,
+			verticalParentId,
 		} );
-	};
 
-	handleSuggestionKeyDown = event => {
-		if ( this.suggestionsRef.props.suggestions.length > 0 ) {
-			const fieldName = event.target.name;
-			let suggestionPosition = this.suggestionsRef.state.suggestionPosition;
-
-			switch ( event.key ) {
-				case 'ArrowRight':
-					this.updateFieldFromSuggestion(
-						this.getSuggestionLabel( suggestionPosition ),
-						fieldName
-					);
-
-					break;
-				case 'ArrowUp':
-					if ( suggestionPosition === 0 ) {
-						suggestionPosition = this.suggestionsRef.props.suggestions.length;
-					}
-
-					this.updateFieldFromSuggestion(
-						this.getSuggestionLabel( suggestionPosition - 1 ),
-						fieldName
-					);
-
-					break;
-				case 'ArrowDown':
-					suggestionPosition++;
-
-					if ( suggestionPosition === this.suggestionsRef.props.suggestions.length ) {
-						suggestionPosition = 0;
-					}
-
-					this.updateFieldFromSuggestion(
-						this.getSuggestionLabel( suggestionPosition ),
-						fieldName
-					);
-
-					break;
-				case 'Tab':
-					this.updateFieldFromSuggestion(
-						this.getSuggestionLabel( suggestionPosition ),
-						fieldName
-					);
-
-					break;
-				case 'Enter':
-					event.preventDefault();
-					break;
-			}
-		}
-
-		this.suggestionsRef.handleKeyEvent( event );
-	};
-
-	handleSuggestionMouseDown = position => {
-		this.setState( { siteTopicValue: position.label } );
-		this.hideSuggestions();
-
+		this.props.recordTracksEvent( 'calypso_signup_actions_select_site_topic', {
+			vertical_name: verticalName,
+			parent_id: verticalParentId,
+		} );
 		this.formStateController.handleFieldChange( {
 			name: 'siteTopic',
-			value: position.label,
+			value: verticalName,
 		} );
 	};
 
-	getSuggestions() {
-		return Object.values( hints )
-			.filter( hint => this.state.query && hint.match( new RegExp( this.state.query, 'i' ) ) )
-			.map( hint => ( { label: hint } ) );
-	}
-
-	getSuggestionLabel( suggestionPosition ) {
-		return this.suggestionsRef.props.suggestions[ suggestionPosition ].label;
-	}
-
-	updateFieldFromSuggestion( term, field ) {
-		this.setState( { siteTopicValue: term } );
-
-		this.formStateController.handleFieldChange( {
-			name: field,
-			value: term,
-		} );
-	}
-
-	handleChangeEvent = event => {
+	handleChangeEvent = ( event ) => {
 		this.formStateController.handleFieldChange( {
 			name: event.target.name,
 			value: event.target.value,
 		} );
 	};
 
-	checkBoxHandleChange = event => {
+	checkBoxHandleChange = ( event ) => {
 		const fieldValue = formState.getFieldValue( this.state.form, 'siteGoals' );
 		const valuesArray = fieldValue ? fieldValue.split( ',' ) : [];
 
@@ -208,7 +141,7 @@ class AboutStep extends Component {
 		} );
 	};
 
-	handleCheckboxKeyDown = event => {
+	handleCheckboxKeyDown = ( event ) => {
 		if ( event.key === 'Enter' ) {
 			event.preventDefault();
 			event.target.checked = ! event.target.checked;
@@ -226,69 +159,110 @@ class AboutStep extends Component {
 	}
 
 	handleSegmentClick( value ) {
-		return function() {
+		return function () {
 			this.setState( {
 				userExperience: value,
 			} );
 		}.bind( this );
 	}
 
-	handleStoreBackClick = () => {
-		this.setState( { showStore: false }, this.scrollUp );
-		return;
-	};
-
-	handleSubmit = event => {
+	handleSubmit = ( event ) => {
 		event.preventDefault();
-		const { goToNextStep, stepName, translate } = this.props;
+		const {
+			goToNextStep,
+			stepName,
+			flowName,
+			shouldHideSiteTitle,
+			shouldHideSiteGoals,
+			previousFlowName,
+			siteType,
+		} = this.props;
 
 		//Defaults
-		let themeRepo = 'pub/radcliffe-2',
-			designType = 'blog',
-			siteTitleValue = 'Site Title';
+		let themeRepo = 'pub/radcliffe-2';
+		let designType = 'blog';
+		let siteTitleValue = 'Site Title';
+		let nextFlowName = flowName;
 
 		//Inputs
-		const siteTitleInput = formState.getFieldValue( this.state.form, 'siteTitle' );
-		const siteGoalsInput = formState.getFieldValue( this.state.form, 'siteGoals' );
-		const siteGoalsArray = siteGoalsInput.split( ',' );
-		const siteGoalsGroup = siteGoalsArray.sort().join();
 		const userExperienceInput = this.state.userExperience;
 		const siteTopicInput = formState.getFieldValue( this.state.form, 'siteTopic' );
-
 		const eventAttributes = {};
 
-		//Site Title
-		if ( siteTitleInput !== '' ) {
-			siteTitleValue = siteTitleInput;
-			this.props.setSiteTitle( siteTitleValue );
+		if ( ! shouldHideSiteTitle ) {
+			//Site Title
+			const siteTitleInput = formState.getFieldValue( this.state.form, 'siteTitle' );
+			if ( siteTitleInput !== '' ) {
+				siteTitleValue = siteTitleInput;
+				this.props.setSiteTitle( siteTitleValue );
+			}
+			eventAttributes.site_title = siteTitleInput || 'N/A';
 		}
 
-		eventAttributes.site_title = siteTitleInput || 'N/A';
+		// Set Site Topic value for tracking/marketing
+		eventAttributes.site_topic = this.state.hasPrepopulatedVertical
+			? this.state.siteTopicValue
+			: this.state.siteTopicSlug || siteTopicInput;
 
-		//Site Topic
-		const englishSiteTopicInput =
-			findKey( hints, siteTopic => siteTopic === siteTopicInput ) || siteTopicInput;
-
-		eventAttributes.site_topic = englishSiteTopicInput || 'N/A';
+		this.props.recordTracksEvent( 'calypso_signup_actions_submit_site_topic', {
+			value: eventAttributes.site_topic || 'N/A',
+		} );
 
 		this.props.setSurvey( {
-			vertical: englishSiteTopicInput,
+			vertical: eventAttributes.site_topic,
 			otherText: '',
 			siteType: designType,
 		} );
 
-		//Site Goals
-		this.props.setSiteGoals( siteGoalsInput );
-		themeRepo = getThemeForSiteGoals( siteGoalsInput );
-		designType = getSiteTypeForSiteGoals( siteGoalsInput, this.props.flowName );
+		// Update the vertical state tree used for onboarding flows
+		// to maintain consistency
+		this.props.setSiteVertical( {
+			id: this.state.verticalId,
+			name: this.state.siteTopicValue,
+			slug: this.state.siteTopicSlug,
+			isUserInput: ! this.state.verticalId,
+			parentId: this.state.verticalParentId,
+		} );
 
-		for ( let i = 0; i < siteGoalsArray.length; i++ ) {
-			eventAttributes[ `site_goal_${ siteGoalsArray[ i ] }` ] = true;
+		//Site Goals
+		if ( shouldHideSiteGoals ) {
+			themeRepo =
+				getSiteTypePropertyValue( 'slug', siteType, 'theme' ) || 'pub/independent-publisher-2';
+
+			if ( 'ecommerce' === flowName ) {
+				designType = 'page';
+			} else {
+				designType = getSiteTypePropertyValue( 'slug', siteType, 'designType' ) || 'blog';
+			}
+
+			eventAttributes.site_type = siteType;
+		} else {
+			const siteGoalsInput = formState.getFieldValue( this.state.form, 'siteGoals' );
+			const siteGoalsArray = siteGoalsInput.split( ',' );
+			const siteGoalsGroup = siteGoalsArray.sort().join();
+
+			this.props.setSiteGoals( siteGoalsInput );
+			themeRepo = this.state.hasPrepopulatedVertical
+				? 'pub/radcliffe-2'
+				: getThemeForSiteGoals( siteGoalsInput );
+			designType = getDesignTypeForSiteGoals( siteGoalsInput, flowName );
+
+			for ( let i = 0; i < siteGoalsArray.length; i++ ) {
+				eventAttributes[ `site_goal_${ siteGoalsArray[ i ] }` ] = true;
+			}
+
+			eventAttributes.site_goal_selections = siteGoalsGroup;
+
+			//Store
+			if ( designType === DESIGN_TYPE_STORE ) {
+				nextFlowName =
+					siteGoalsArray.indexOf( 'sell' ) === -1 && previousFlowName
+						? previousFlowName
+						: 'ecommerce';
+			}
 		}
 
-		eventAttributes.site_goal_selections = siteGoalsGroup;
-
-		//SET SITETYPE
+		//SET DESIGN TYPE
 		this.props.setDesignType( designType );
 		this.props.recordTracksEvent( 'calypso_triforce_select_design', {
 			category: designType,
@@ -302,36 +276,13 @@ class AboutStep extends Component {
 
 		this.props.recordTracksEvent( 'calypso_signup_actions_user_input', eventAttributes );
 
-		//Store
-		const nextFlowName = designType === DESIGN_TYPE_STORE ? 'store-nux' : this.props.flowName;
-
-		//Pressable
-		if (
-			designType === DESIGN_TYPE_STORE &&
-			abtest( 'signupAtomicStoreVsPressable' ) === 'pressable'
-		) {
-			this.scrollUp();
-
-			this.setState( {
-				showStore: true,
-			} );
-
-			invoke( this, 'pressableStore.focus' );
-
-			return;
-		}
-
 		//Create site
-		SignupActions.submitSignupStep(
-			{
-				processingMessage: translate( 'Collecting your information' ),
-				stepName: stepName,
-			},
-			[],
+		this.props.submitSignupStep(
+			{ stepName },
 			{
 				themeSlugWithRepo: themeRepo,
 				siteTitle: siteTitleValue,
-				designType: designType,
+				designType,
 				surveyQuestion: siteTopicInput,
 			}
 		);
@@ -386,9 +337,9 @@ class AboutStep extends Component {
 							key={ options[ item ].key }
 						>
 							{ 0 === index && (
-								<span className="about__screen-reader-text screen-reader-text">
+								<ScreenReaderText>
 									{ translate( 'What’s the primary goal you have for your site?' ) }
-								</span>
+								</ScreenReaderText>
 							) }
 							<FormInputCheckbox
 								name="siteGoals"
@@ -413,7 +364,8 @@ class AboutStep extends Component {
 		if ( isLoggedIn ) {
 			return null;
 		}
-
+		/* eslint-disable jsx-a11y/click-events-have-key-events */
+		/* eslint-disable jsx-a11y/no-static-element-interactions */
 		return (
 			<FormFieldset className="about__last-fieldset">
 				<FormLegend>{ translate( 'How comfortable are you with creating a website?' ) }</FormLegend>
@@ -426,49 +378,43 @@ class AboutStep extends Component {
 					</span>
 
 					<SegmentedControl className="is-primary about__segmented-control">
-						<ControlItem
+						<SegmentedControl.Item
 							selected={ this.state.userExperience === 1 }
 							onClick={ this.handleSegmentClick( 1 ) }
 						>
-							<span className="about__screen-reader-text screen-reader-text">
+							<ScreenReaderText>
 								{ translate( 'How comfortable are you with creating a website?' ) }
-							</span>
-							1
-							<span className="about__screen-reader-text screen-reader-text">
-								{ translate( 'Beginner' ) }
-							</span>
-						</ControlItem>
+							</ScreenReaderText>
+							1<ScreenReaderText>{ translate( 'Beginner' ) }</ScreenReaderText>
+						</SegmentedControl.Item>
 
-						<ControlItem
+						<SegmentedControl.Item
 							selected={ this.state.userExperience === 2 }
 							onClick={ this.handleSegmentClick( 2 ) }
 						>
 							2
-						</ControlItem>
+						</SegmentedControl.Item>
 
-						<ControlItem
+						<SegmentedControl.Item
 							selected={ this.state.userExperience === 3 }
 							onClick={ this.handleSegmentClick( 3 ) }
 						>
 							3
-						</ControlItem>
+						</SegmentedControl.Item>
 
-						<ControlItem
+						<SegmentedControl.Item
 							selected={ this.state.userExperience === 4 }
 							onClick={ this.handleSegmentClick( 4 ) }
 						>
 							4
-						</ControlItem>
+						</SegmentedControl.Item>
 
-						<ControlItem
+						<SegmentedControl.Item
 							selected={ this.state.userExperience === 5 }
 							onClick={ this.handleSegmentClick( 5 ) }
 						>
-							5
-							<span className="about__screen-reader-text screen-reader-text">
-								{ translate( 'Expert' ) }
-							</span>
-						</ControlItem>
+							5<ScreenReaderText>{ translate( 'Expert' ) }</ScreenReaderText>
+						</SegmentedControl.Item>
 					</SegmentedControl>
 					<span
 						className="about__segment-label about__max-label"
@@ -479,6 +425,8 @@ class AboutStep extends Component {
 				</div>
 			</FormFieldset>
 		);
+		/* eslint-enable jsx-a11y/click-events-have-key-events */
+		/* eslint-enable jsx-a11y/no-static-element-interactions */
 	}
 
 	scrollUp() {
@@ -488,80 +436,78 @@ class AboutStep extends Component {
 		}
 	}
 
+	shouldShowSiteTopicField() {
+		const { steps } = this.props;
+		const { hasPrepopulatedVertical } = this.state;
+
+		return ! hasPrepopulatedVertical && ! includes( steps, 'site-topic' );
+	}
+
 	renderContent() {
-		const { translate, siteTitle } = this.props;
+		const { translate, siteTitle, shouldHideSiteTitle, shouldHideSiteGoals } = this.props;
 
-		const pressableWrapperClassName = classNames( 'about__pressable-wrapper', {
-			'about__wrapper-is-hidden': ! this.state.showStore,
-		} );
-
-		const aboutFormClassName = classNames( 'about__form-wrapper', {
-			'about__wrapper-is-hidden': this.state.showStore,
-		} );
+		const { siteTopicValue } = this.state;
 
 		return (
 			<div className="about__wrapper">
-				<div className={ pressableWrapperClassName }>
-					<PressableStoreStep
-						{ ...this.props }
-						onBackClick={ this.handleStoreBackClick }
-						setRef={ this.setPressableStore }
-						isVisible={ this.state.showStore }
-					/>
-				</div>
-
-				<div className={ aboutFormClassName }>
+				<div className="about__form-wrapper">
 					<form onSubmit={ this.handleSubmit }>
 						<Card>
-							<FormFieldset>
-								<FormLabel htmlFor="siteTitle">
-									{ translate( 'What would you like to name your site?' ) }
-								</FormLabel>
-								<FormTextInput
-									id="siteTitle"
-									name="siteTitle"
-									placeholder={ translate( "e.g. Mel's Diner, Stevie’s Blog, Vail Renovations" ) }
-									defaultValue={ siteTitle }
-									onChange={ this.handleChangeEvent }
-								/>
-							</FormFieldset>
+							{ ! shouldHideSiteTitle && (
+								<FormFieldset>
+									<FormLabel htmlFor="siteTitle">
+										{ translate( 'What would you like to name your site?' ) }
+										<InfoPopover className="about__info-popover" position="top">
+											{ translate(
+												"We'll use this as your site title. " +
+													"Don't worry, you can change this later."
+											) }
+										</InfoPopover>
+									</FormLabel>
+									<FormTextInput
+										id="siteTitle"
+										name="siteTitle"
+										placeholder={ translate(
+											"E.g., Mel's Diner, Stevie’s Blog, Vail Renovations"
+										) }
+										defaultValue={ siteTitle }
+										onChange={ this.handleChangeEvent }
+									/>
+								</FormFieldset>
+							) }
 
-							<FormFieldset>
-								<FormLabel htmlFor="siteTopic">
-									{ translate( 'What will your site be about?' ) }
-								</FormLabel>
-								<FormTextInput
-									id="siteTopic"
-									name="siteTopic"
-									placeholder={ translate( 'e.g. Fashion, travel, design, plumber, electrician' ) }
-									value={ this.state.siteTopicValue }
-									onChange={ this.handleSuggestionChangeEvent }
-									onBlur={ this.hideSuggestions }
-									onKeyDown={ this.handleSuggestionKeyDown }
-									autoComplete="off"
-								/>
-								<Suggestions
-									ref={ this.setSuggestionsRef }
-									query={ this.state.query }
-									suggestions={ this.getSuggestions() }
-									suggest={ this.handleSuggestionMouseDown }
-								/>
-							</FormFieldset>
+							{ this.shouldShowSiteTopicField() && (
+								<FormFieldset>
+									<FormLabel htmlFor="siteTopic">
+										{ translate( 'What will your site be about?' ) }
+										<InfoPopover className="about__info-popover" position="top">
+											{ translate( "We'll use this to personalize your site and experience." ) }
+										</InfoPopover>
+									</FormLabel>
+									<SiteVerticalsSuggestionSearch
+										onChange={ this.onSiteTopicChange }
+										searchValue={ siteTopicValue }
+									/>
+								</FormFieldset>
+							) }
 
-							<FormFieldset>
-								<FormLegend>
-									{ translate( 'What’s the primary goal you have for your site?' ) }
-								</FormLegend>
-								{ this.renderGoalCheckboxes() }
-							</FormFieldset>
+							{ ! shouldHideSiteGoals && (
+								<FormFieldset>
+									<FormLegend>
+										{ translate( 'What’s the primary goal you have for your site?' ) }
+									</FormLegend>
+									{ this.renderGoalCheckboxes() }
+								</FormFieldset>
+							) }
 
 							{ this.renderExperienceOptions() }
+
+							<div className="about__submit-wrapper">
+								<Button primary={ true } type="submit">
+									{ translate( 'Continue' ) }
+								</Button>
+							</div>
 						</Card>
-						<div className="about__submit-wrapper">
-							<Button primary={ true } type="submit">
-								{ translate( 'Continue' ) }
-							</Button>
-						</div>
 					</form>
 				</div>
 			</div>
@@ -569,31 +515,55 @@ class AboutStep extends Component {
 	}
 
 	render() {
-		const { flowName, positionInFlow, signupProgress, stepName, translate } = this.props;
+		const {
+			flowName,
+			positionInFlow,
+			stepName,
+			translate,
+			hasInitializedSitesBackUrl,
+		} = this.props;
+		const headerText = translate( 'Let’s create a site.' );
+		const subHeaderText = translate(
+			'Please answer these questions so we can help you make the site you need.'
+		);
 
 		return (
 			<StepWrapper
 				flowName={ flowName }
 				stepName={ stepName }
 				positionInFlow={ positionInFlow }
-				headerText={ translate( 'Let’s create a site' ) }
-				subHeaderText={ translate(
-					'Please answer these questions so we can help you make the site you need.'
-				) }
-				signupProgress={ signupProgress }
+				headerText={ headerText }
+				fallbackHeaderText={ headerText }
+				subHeaderText={ subHeaderText }
+				fallbackSubHeaderText={ subHeaderText }
 				stepContent={ this.renderContent() }
+				allowBackFirstStep={ !! hasInitializedSitesBackUrl }
+				backUrl={ hasInitializedSitesBackUrl }
+				backLabelText={ hasInitializedSitesBackUrl ? translate( 'Back to My Sites' ) : null }
 			/>
 		);
 	}
 }
 
 export default connect(
-	state => ( {
+	( state, ownProps ) => ( {
 		siteTitle: getSiteTitle( state ),
 		siteGoals: getSiteGoals( state ),
 		siteTopic: getSurveyVertical( state ),
 		userExperience: getUserExperience( state ),
+		siteType: getSiteType( state ),
 		isLoggedIn: isUserLoggedIn( state ),
+		verticalId: getSiteVerticalId( state ),
+		verticalParentId: getSiteVerticalParentId( state ),
+		shouldHideSiteGoals:
+			'onboarding' === ownProps.flowName && includes( ownProps.steps, 'site-type' ),
+		shouldHideSiteTitle:
+			'onboarding' === ownProps.flowName && includes( ownProps.steps, 'site-title' ),
+		shouldSkipAboutStep:
+			includes( ownProps.steps, 'site-type' ) &&
+			includes( ownProps.steps, 'site-topic' ) &&
+			includes( ownProps.steps, 'site-title' ),
+		hasInitializedSitesBackUrl: hasInitializedSites( state ) ? '/sites/' : false,
 	} ),
 	{
 		setSiteTitle,
@@ -602,5 +572,8 @@ export default connect(
 		setSurvey,
 		setUserExperience,
 		recordTracksEvent,
+		setSiteVertical,
+		saveSignupStep,
+		submitSignupStep,
 	}
 )( localize( AboutStep ) );

@@ -1,26 +1,29 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 import classNames from 'classnames';
 import { throttle, map, uniq } from 'lodash';
 import { connect } from 'react-redux';
+import { loadScript } from '@automattic/load-script';
 import { localize } from 'i18n-calypso';
 
 /**
  * Internal dependencies
  */
-import analytics from 'lib/analytics';
-import { loadScript } from 'lib/load-script';
+import { gaRecordEvent } from 'lib/analytics/ga';
+import config from 'config';
 import StatsModulePlaceholder from '../stats-module/placeholder';
 import QuerySiteStats from 'components/data/query-site-stats';
 import { getSelectedSiteId } from 'state/ui/selectors';
 import { getSiteStatsNormalizedData } from 'state/stats/lists/selectors';
 import { getCurrentUserCountryCode } from 'state/current-user/selectors';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class StatsGeochart extends Component {
 	static propTypes = {
@@ -32,10 +35,11 @@ class StatsGeochart extends Component {
 
 	visualizationsLoaded = false;
 	visualization = null;
+	chartRef = React.createRef();
 
 	componentDidMount() {
-		if ( ! window.google ) {
-			loadScript( 'https://www.google.com/jsapi' );
+		if ( ! window.google || ! window.google.charts ) {
+			loadScript( 'https://www.gstatic.com/charts/loader.js' );
 			this.tick();
 		} else {
 			// google jsapi is in the dom, load the visualizations again just in case
@@ -68,13 +72,13 @@ class StatsGeochart extends Component {
 	}
 
 	recordEvent = () => {
-		analytics.ga.recordEvent( 'Stats', 'Clicked Country on Map' );
+		gaRecordEvent( 'Stats', 'Clicked Country on Map' );
 	};
 
 	drawRegionsMap = () => {
-		if ( this.refs && this.refs.chart ) {
+		if ( this.chartRef.current ) {
 			this.visualizationsLoaded = true;
-			this.visualization = new window.google.visualization.GeoChart( this.refs.chart );
+			this.visualization = new window.google.visualization.GeoChart( this.chartRef.current );
 			window.google.visualization.events.addListener(
 				this.visualization,
 				'regionClick',
@@ -98,7 +102,7 @@ class StatsGeochart extends Component {
 			return;
 		}
 
-		const mapData = map( data, country => {
+		const mapData = map( data, ( country ) => {
 			return [
 				{
 					v: country.countryCode,
@@ -112,8 +116,18 @@ class StatsGeochart extends Component {
 		chartData.addColumn( 'string', translate( 'Country' ).toString() );
 		chartData.addColumn( 'number', translate( 'Views' ).toString() );
 		chartData.addRows( mapData );
-		const node = this.refs.chart;
+		const node = this.chartRef.current;
 		const width = node.clientWidth;
+
+		// Note that using raw hex values here is an exception due to
+		// IE11 and other older browser not supporting CSS custom props.
+		// We have to set values to Google GeoChart via JS. We don't
+		// support switching color schemes in IE11 thus applying the
+		// defaults as raw hex values here.
+		const chartColorLight =
+			getComputedStyle( document.body ).getPropertyValue( '--color-accent-5' ).trim() || '#ffdff3';
+		const chartColorDark =
+			getComputedStyle( document.body ).getPropertyValue( '--color-accent' ).trim() || '#d52c82';
 
 		const options = {
 			width: 100 + '%',
@@ -121,7 +135,7 @@ class StatsGeochart extends Component {
 			keepAspectRatio: true,
 			enableRegionInteractivity: true,
 			region: 'world',
-			colorAxis: { colors: [ '#FFF088', '#F34605' ] },
+			colorAxis: { colors: [ chartColorLight, chartColorDark ] },
 			domain: currentUserCountryCode,
 		};
 
@@ -136,11 +150,12 @@ class StatsGeochart extends Component {
 
 	loadVisualizations = () => {
 		// If google is already in the DOM, don't load it again.
-		if ( window.google ) {
-			window.google.load( 'visualization', '1', {
+		if ( window.google && window.google.charts ) {
+			window.google.charts.load( '45', {
 				packages: [ 'geochart' ],
-				callback: this.drawRegionsMap,
+				mapsApiKey: config( 'google_maps_and_places_api_key' ),
 			} );
+			window.google.charts.setOnLoadCallback( this.drawRegionsMap );
 			clearTimeout( this.timer );
 		} else {
 			this.tick();
@@ -161,8 +176,9 @@ class StatsGeochart extends Component {
 
 		return (
 			<div>
-				<div ref="chart" className={ classes } />
+				<div ref={ this.chartRef } className={ classes } />
 				{ siteId && <QuerySiteStats statType={ statType } siteId={ siteId } query={ query } /> }
+				{ /* eslint-disable-next-line wpcalypso/jsx-classname-namespace */ }
 				<StatsModulePlaceholder className="is-block" isLoading={ isLoading } />
 			</div>
 		);

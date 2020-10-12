@@ -1,26 +1,17 @@
-/** @format */
-
 /**
  * Internal dependencies
  */
-
 import { bypassDataLayer } from './utils';
-import { mergeHandlers } from 'state/action-watchers/utils';
+import { getHandlers, registerHandlers } from 'state/data-layer/handler-registry';
 import wpcomHttpHandlers from './wpcom-http';
 import httpData from './http-data';
 import httpHandlers from 'state/http';
-import thirdPartyHandlers from './third-party';
-import wpcomHandlers from './wpcom';
 
-const mergedHandlers = mergeHandlers(
-	httpData,
-	httpHandlers,
-	wpcomHttpHandlers,
-	thirdPartyHandlers,
-	wpcomHandlers
-);
+registerHandlers( 'declarative resource loader', httpData );
+registerHandlers( 'raw HTTP request loader', httpHandlers );
+registerHandlers( 'WordPress API request loader', wpcomHttpHandlers );
 
-const shouldNext = action => {
+const shouldNext = ( action ) => {
 	const meta = action.meta;
 	if ( ! meta ) {
 		return true;
@@ -60,19 +51,19 @@ const shouldNext = action => {
  * The optimizations reduce function-calling and object
  * property lookup where possible.
  *
- * @param {Object<String,Function[]>} handlers map of action types to handlers
+ * @param {Function} handlersFor returns list of handlers for given action type
  * @returns {Function} middleware handler
  */
-export const middleware = handlers => store => next => {
+export const middleware = ( handlersFor ) => ( store ) => ( next ) => {
 	/**
 	 * Middleware handler
 	 *
 	 * @function
-	 * @param {Object} action Redux action
+	 * @param {object} action Redux action
 	 * @returns {undefined} please do not use
 	 */
-	return action => {
-		const handlerChain = handlers[ action.type ];
+	return ( action ) => {
+		const handlerChain = handlersFor( action.type );
 
 		// if no handler is defined for the action type
 		// then pass it along the chain untouched
@@ -92,7 +83,7 @@ export const middleware = handlers => store => next => {
 			}
 		}
 
-		handlerChain.forEach( handler => handler( store, action ) );
+		handlerChain.forEach( ( handler ) => handler( store, action ) );
 
 		if ( shouldNext( action ) ) {
 			next( bypassDataLayer( action ) );
@@ -100,4 +91,4 @@ export const middleware = handlers => store => next => {
 	};
 };
 
-export default middleware( mergedHandlers );
+export default middleware( getHandlers );

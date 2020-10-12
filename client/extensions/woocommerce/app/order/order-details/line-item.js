@@ -1,15 +1,14 @@
-/** @format */
 /**
  * External dependencies
  */
 import React, { Component, Fragment } from 'react';
 import PropTypes from 'prop-types';
 import { localize } from 'i18n-calypso';
+import formatCurrency from '@automattic/format-currency';
 
 /**
  * Internal dependencies
  */
-import formatCurrency from 'lib/format-currency';
 import { getLink } from 'woocommerce/lib/nav-utils';
 import { getOrderLineItemTax } from 'woocommerce/lib/order-values';
 import { getOrderItemCost } from 'woocommerce/lib/order-values/totals';
@@ -50,9 +49,9 @@ class OrderLineItem extends Component {
 		translate: PropTypes.func,
 	};
 
-	isDiscountedProduct = item => parseFloat( item.total ) !== parseFloat( item.subtotal );
+	isDiscountedProduct = ( item ) => parseFloat( item.total ) !== parseFloat( item.subtotal );
 
-	renderName = item => {
+	renderName = ( item ) => {
 		const { isEditing, site } = this.props;
 		if ( isEditing ) {
 			return <span className="order-details__item-link">{ item.name }</span>;
@@ -67,7 +66,7 @@ class OrderLineItem extends Component {
 		);
 	};
 
-	renderPrice = item => {
+	renderPrice = ( item ) => {
 		const { order } = this.props;
 		if ( this.isDiscountedProduct( item ) ) {
 			const preDiscountCost = getOrderItemCost( order, item.id );
@@ -85,7 +84,7 @@ class OrderLineItem extends Component {
 		return formatCurrency( item.price, order.currency );
 	};
 
-	renderTotal = item => {
+	renderTotal = ( item ) => {
 		const { order } = this.props;
 		if ( this.isDiscountedProduct( item ) ) {
 			return (

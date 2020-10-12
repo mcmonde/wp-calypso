@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -11,13 +9,18 @@ import { connect } from 'react-redux';
 /**
  * Internal dependencies
  */
-import Card from 'components/card';
+import { Card } from '@automattic/components';
 import StatsTabs from '../stats-tabs';
 import StatsTab from '../stats-tabs/tab';
 import SectionHeader from 'components/section-header';
 import QuerySiteStats from 'components/data/query-site-stats';
 import { getSiteStatsForQuery } from 'state/stats/lists/selectors';
 import { getSiteSlug } from 'state/sites/selectors';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class StatsSiteOverview extends Component {
 	static propTypes = {
@@ -32,7 +35,7 @@ class StatsSiteOverview extends Component {
 		title: PropTypes.string,
 	};
 
-	isValueLow = value => {
+	isValueLow = ( value ) => {
 		return ! value || 0 === value;
 	};
 
@@ -40,8 +43,9 @@ class StatsSiteOverview extends Component {
 		const { siteId, siteSlug, path, summaryData, query, title } = this.props;
 		const { views, visitors, likes, comments } = summaryData;
 		const siteStatsPath = [ path, siteSlug ].join( '/' );
-		let headerPath = siteStatsPath;
+		const headerPath = siteStatsPath;
 
+		/* eslint-disable wpcalypso/jsx-classname-namespace*/
 		return (
 			<div>
 				{ siteId && <QuerySiteStats siteId={ siteId } statType="statsSummary" query={ query } /> }

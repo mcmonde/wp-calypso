@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -10,10 +8,10 @@ import page from 'page';
  * Internal dependencies
  */
 import controller from './controller';
-import { makeLayout, render as clientRender } from 'controller';
-import { siteSelection, sites } from 'my-sites/controller';
+import { makeLayout, render as clientRender } from 'calypso/controller';
+import { siteSelection, sites } from 'calypso/my-sites/controller';
 
-const redirectToBooking = context => {
+const redirectToBooking = ( context ) => {
 	page.redirect( `/me/concierge/${ context.params.siteSlug }/book` );
 };
 

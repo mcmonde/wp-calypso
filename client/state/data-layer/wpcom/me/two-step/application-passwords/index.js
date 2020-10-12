@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -8,25 +6,24 @@ import { noop } from 'lodash';
 /**
  * Internal dependencies
  */
-import deleteHandler from './delete';
 import makeJsonSchemaParser from 'lib/make-json-schema-parser';
-import newHandler from './new';
 import schema from './schema';
 import { APPLICATION_PASSWORDS_REQUEST } from 'state/action-types';
-import { dispatchRequestEx } from 'state/data-layer/wpcom-http/utils';
+import { dispatchRequest } from 'state/data-layer/wpcom-http/utils';
 import { http } from 'state/data-layer/wpcom-http/actions';
-import { mergeHandlers } from 'state/action-watchers/utils';
 import { receiveApplicationPasswords } from 'state/application-passwords/actions';
 
-export const apiTransformer = data => data.application_passwords;
+import { registerHandlers } from 'state/data-layer/handler-registry';
+
+export const apiTransformer = ( data ) => data.application_passwords;
 
 /**
  * Dispatches a request to fetch application passwords of the current user
  *
- * @param   {Object} action Redux action
- * @returns {Object} Dispatched http action
+ * @param   {object} action Redux action
+ * @returns {object} Dispatched http action
  */
-export const requestApplicationPasswords = action =>
+export const requestApplicationPasswords = ( action ) =>
 	http(
 		{
 			apiVersion: '1.1',
@@ -39,22 +36,20 @@ export const requestApplicationPasswords = action =>
 /**
  * Dispatches a user application passwords receive action when the request succeeded.
  *
- * @param   {Object} action       Redux action
- * @param   {Object} appPasswords Application passwords
- * @returns {Object} Dispatched user application passwords receive action
+ * @param   {object} action       Redux action
+ * @param   {object} appPasswords Application passwords
+ * @returns {object} Dispatched user application passwords receive action
  */
 export const handleRequestSuccess = ( action, appPasswords ) =>
 	receiveApplicationPasswords( appPasswords );
 
-const requestHandler = {
+registerHandlers( 'state/data-layer/wpcom/me/two-step/application-passwords/index.js', {
 	[ APPLICATION_PASSWORDS_REQUEST ]: [
-		dispatchRequestEx( {
+		dispatchRequest( {
 			fetch: requestApplicationPasswords,
 			onSuccess: handleRequestSuccess,
 			onError: noop,
 			fromApi: makeJsonSchemaParser( schema, apiTransformer ),
 		} ),
 	],
-};
-
-export default mergeHandlers( requestHandler, newHandler, deleteHandler );
+} );

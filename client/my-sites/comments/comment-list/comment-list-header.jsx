@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -17,7 +16,8 @@ import { convertDateToUserLocation } from 'components/post-schedule/utils';
 import { decodeEntities, stripHTML } from 'lib/formatting';
 import { gmtOffset, timezone } from 'lib/site/utils';
 import { bumpStat, composeAnalytics, recordTracksEvent } from 'state/analytics/actions';
-import { getSiteComments, hasNavigated } from 'state/selectors';
+import { getSiteComments } from 'state/comments/selectors';
+import hasNavigated from 'state/selectors/has-navigated';
 import { getSitePost } from 'state/posts/selectors';
 import { isJetpackSite } from 'state/sites/selectors';
 import { getSelectedSite, getSelectedSiteId, getSelectedSiteSlug } from 'state/ui/selectors';
@@ -105,7 +105,7 @@ const mapStateToProps = ( state, { postId } ) => {
 	};
 };
 
-const mapDispatchToProps = dispatch => ( {
+const mapDispatchToProps = ( dispatch ) => ( {
 	recordReaderArticleOpened: () =>
 		dispatch(
 			composeAnalytics(

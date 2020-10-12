@@ -1,9 +1,8 @@
-/** @format */
+/* eslint jest/expect-expect: ["error", { "assertFunctionNames": ["assertMixin", "assert.*"] }] */
 
 /**
  * External dependencies
  */
-
 import { assert } from 'chai';
 
 /**
@@ -62,14 +61,14 @@ describe( 'observe()', () => {
 		test( 'should not do anything if props did not change', () => {
 			let mixin = observe( 'baba', 'dyado' ),
 				context = mockContext( 'baba', 'dyado', 'wink' );
-			mixin.componentWillReceiveProps.call( context, context.props );
+			mixin.UNSAFE_componentWillReceiveProps.call( context, context.props );
 			assert.deepEqual( [], context.onCalls );
 			assert.deepEqual( [], context.offCalls );
 		} );
 		test( 'should re-bind the event handlers if the props reference changed', () => {
 			let mixin = observe( 'baba', 'dyado' ),
 				context = mockContext( 'baba', 'dyado' );
-			mixin.componentWillReceiveProps.call( context, {
+			mixin.UNSAFE_componentWillReceiveProps.call( context, {
 				baba: context.props.baba,
 				dyado: mockEventEmitter( context, 'dyado' ),
 			} );
@@ -79,14 +78,14 @@ describe( 'observe()', () => {
 		test( 'should only unbind the event if the prop goes missing, but not bind it', () => {
 			let mixin = observe( 'baba', 'dyado' ),
 				context = mockContext( 'baba', 'dyado' );
-			mixin.componentWillReceiveProps.call( context, { baba: context.props.baba } );
+			mixin.UNSAFE_componentWillReceiveProps.call( context, { baba: context.props.baba } );
 			assert.deepEqual( [], context.onCalls );
 			assert.deepEqual( [ 'dyado' ], context.offCalls );
 		} );
 		test( 'should only bind the event if the prop appears, but not unbind it', () => {
 			let mixin = observe( 'baba', 'dyado' ),
 				context = mockContext();
-			mixin.componentWillReceiveProps.call( context, {
+			mixin.UNSAFE_componentWillReceiveProps.call( context, {
 				baba: mockEventEmitter( context, 'baba' ),
 			} );
 			assert.deepEqual( [ 'baba' ], context.onCalls );
@@ -103,7 +102,7 @@ function mockContext() {
 			props: {},
 			update: 'callback',
 		};
-	propNames.forEach( function( name ) {
+	propNames.forEach( function ( name ) {
 		context.props[ name ] = mockEventEmitter( context, name );
 	} );
 	return context;
@@ -111,12 +110,12 @@ function mockContext() {
 
 function mockEventEmitter( context, name ) {
 	return {
-		on: function( event, callback ) {
+		on: function ( event, callback ) {
 			context.onCalls.push( name );
 			assert.deepEqual( 'change', event );
 			assert.deepEqual( 'callback', callback );
 		},
-		off: function( event, callback ) {
+		off: function ( event, callback ) {
 			context.offCalls.push( name );
 			assert.deepEqual( 'change', event );
 			assert.deepEqual( 'callback', callback );
@@ -127,5 +126,5 @@ function mockEventEmitter( context, name ) {
 function assertMixin( mixin ) {
 	assert.isFunction( mixin.componentDidMount );
 	assert.isFunction( mixin.componentWillUnmount );
-	assert.isFunction( mixin.componentWillReceiveProps );
+	assert.isFunction( mixin.UNSAFE_componentWillReceiveProps );
 }

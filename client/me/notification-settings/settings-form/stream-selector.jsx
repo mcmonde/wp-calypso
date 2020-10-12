@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -8,34 +6,33 @@ import PropTypes from 'prop-types';
 import React, { PureComponent } from 'react';
 import { connect } from 'react-redux';
 import { map } from 'lodash';
-import Immutable from 'immutable';
 
 /**
  * Internal dependencies
  */
-import FormSelect from 'components/forms/form-select';
+import FormSelect from 'calypso/components/forms/form-select';
 import { getLabelForStream } from './locales';
-import { getUserDevices } from 'state/selectors';
+import getUserDevices from 'calypso/state/selectors/get-user-devices';
 
 class NotificationSettingsFormStreamSelector extends PureComponent {
 	static propTypes = {
 		devices: PropTypes.array,
 		selectedStream: PropTypes.oneOfType( [ PropTypes.string, PropTypes.number ] ).isRequired,
-		settings: PropTypes.instanceOf( Immutable.Map ),
+		settings: PropTypes.object,
 		onChange: PropTypes.func.isRequired,
 	};
 
-	onChange = event => this.props.onChange( event.target.value );
+	onChange = ( event ) => this.props.onChange( event.target.value );
 
 	render() {
 		const options = [ 'timeline', 'email' ]
-			.map( stream => (
+			.map( ( stream ) => (
 				<option key={ stream } value={ stream }>
 					{ getLabelForStream( stream ) }
 				</option>
 			) )
 			.concat(
-				map( this.props.devices, device => (
+				map( this.props.devices, ( device ) => (
 					<option key={ device.id } value={ device.id }>
 						{ device.name }
 					</option>
@@ -52,6 +49,6 @@ class NotificationSettingsFormStreamSelector extends PureComponent {
 	}
 }
 
-export default connect( state => ( {
+export default connect( ( state ) => ( {
 	devices: getUserDevices( state ),
 } ) )( NotificationSettingsFormStreamSelector );

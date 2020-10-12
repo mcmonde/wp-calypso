@@ -1,9 +1,6 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import PropTypes from 'prop-types';
 import { localize } from 'i18n-calypso';
 import React from 'react';
@@ -14,14 +11,20 @@ import { noop, assign, omitBy, some, isEqual, partial } from 'lodash';
  * Internal dependencies
  */
 import HeaderCake from 'components/header-cake';
-import MediaStore from 'lib/media/store';
+import EditorMediaModalContent from '../content';
 import EditorMediaModalGalleryDropZone from './drop-zone';
 import EditorMediaModalGalleryFields from './fields';
 import EditorMediaModalGalleryPreview from './preview';
 import { GalleryDefaultAttrs } from 'lib/media/constants';
 import { ModalViews } from 'state/ui/media-modal/constants';
-import { setEditorMediaModalView } from 'state/ui/editor/actions';
+import { setEditorMediaModalView } from 'state/editor/actions';
 import { isModuleActive } from 'lib/site/utils';
+import getMediaItem from 'state/media/thunks/get-media-item';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class EditorMediaModalGallery extends React.Component {
 	static propTypes = {
@@ -40,7 +43,7 @@ class EditorMediaModalGallery extends React.Component {
 		invalidItemDropped: false,
 	};
 
-	componentWillMount() {
+	UNSAFE_componentWillMount() {
 		if ( this.props.settings ) {
 			this.maybeUpdateColumnsSetting();
 			this.reconcileSettingsItems( this.props.settings, this.props.items );
@@ -67,16 +70,16 @@ class EditorMediaModalGallery extends React.Component {
 		// set are similarly appended to the settings set.
 		// Finally, make sure that all items are the latest version
 		const newItems = settings.items
-			.filter( item => {
+			.filter( ( item ) => {
 				return some( items, { ID: item.ID } );
 			} )
 			.concat(
-				items.filter( item => {
+				items.filter( ( item ) => {
 					return ! some( settings.items, { ID: item.ID } );
 				} )
 			)
-			.map( item => {
-				return MediaStore.get( this.props.site.ID, item.ID );
+			.map( ( item ) => {
+				return this.props.getMediaItem( this.props.site.ID, item.ID );
 			} );
 
 		if ( ! isEqual( newItems, settings.items ) ) {
@@ -100,7 +103,7 @@ class EditorMediaModalGallery extends React.Component {
 			return;
 		}
 
-		let defaultSettings = assign( {}, GalleryDefaultAttrs, { items } );
+		const defaultSettings = assign( {}, GalleryDefaultAttrs, { items } );
 
 		if ( site && ( ! site.jetpack || isModuleActive( site, 'tiled-gallery' ) ) ) {
 			defaultSettings.type = 'rectangular';
@@ -117,7 +120,7 @@ class EditorMediaModalGallery extends React.Component {
 
 		// Merge object of settings with existing set
 		let updatedSettings = assign( {}, this.props.settings, setting );
-		updatedSettings = omitBy( updatedSettings, updatedValue => null === updatedValue );
+		updatedSettings = omitBy( updatedSettings, ( updatedValue ) => null === updatedValue );
 		this.props.onUpdateSettings( updatedSettings );
 	};
 
@@ -125,6 +128,7 @@ class EditorMediaModalGallery extends React.Component {
 		const { site, items, settings } = this.props;
 
 		return (
+			/* eslint-disable wpcalypso/jsx-classname-namespace */
 			<div className="editor-media-modal-gallery">
 				<EditorMediaModalGalleryDropZone
 					site={ site }
@@ -134,7 +138,7 @@ class EditorMediaModalGallery extends React.Component {
 					onClick={ this.props.onReturnToList }
 					backText={ this.props.translate( 'Media Library' ) }
 				/>
-				<div className="editor-media-modal-gallery__content editor-media-modal__content">
+				<EditorMediaModalContent className="editor-media-modal-gallery__content">
 					<EditorMediaModalGalleryPreview
 						site={ site }
 						items={ items }
@@ -151,12 +155,14 @@ class EditorMediaModalGallery extends React.Component {
 							numberOfItems={ items.length }
 						/>
 					</div>
-				</div>
+				</EditorMediaModalContent>
 			</div>
+			/* eslint-enable wpcalypso/jsx-classname-namespace */
 		);
 	}
 }
 
 export default connect( null, {
 	onReturnToList: partial( setEditorMediaModalView, ModalViews.LIST ),
+	getMediaItem,
 } )( localize( EditorMediaModalGallery ) );

@@ -1,27 +1,31 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import classNames from 'classnames';
 import { flowRight as compose, isEqual, uniqBy } from 'lodash';
-import { localize, moment } from 'i18n-calypso';
+import { localize } from 'i18n-calypso';
 
 /**
  * Internal dependencies
  */
-import CompactCard from 'components/card/compact';
+import FormInputCheckbox from 'components/forms/form-checkbox';
+import { CompactCard } from '@automattic/components';
 import PluginIcon from 'my-sites/plugins/plugin-icon/plugin-icon';
 import PluginActivateToggle from 'my-sites/plugins/plugin-activate-toggle';
 import PluginAutoupdateToggle from 'my-sites/plugins/plugin-autoupdate-toggle';
 import Count from 'components/count';
 import Notice from 'components/notice';
+import { withLocalizedMoment } from 'components/localized-moment';
 import PluginNotices from 'lib/plugins/notices';
 import { errorNotice } from 'state/notices/actions';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 function checkPropsChange( nextProps, propArr ) {
 	let i;
@@ -55,7 +59,6 @@ class PluginItem extends Component {
 			errors: PropTypes.array,
 			inProgress: PropTypes.array,
 		} ),
-		hasAllNoManageSites: PropTypes.bool,
 		hasUpdate: PropTypes.func,
 	};
 
@@ -82,10 +85,6 @@ class PluginItem extends Component {
 			return true;
 		}
 
-		if ( this.props.hasAllNoManageSites !== nextProps.hasAllNoManageSites ) {
-			return true;
-		}
-
 		if (
 			this.props.notices &&
 			PluginNotices.shouldComponentUpdateNotices( this.props.notices, nextProps.notices )
@@ -97,13 +96,13 @@ class PluginItem extends Component {
 	}
 
 	ago( date ) {
-		return moment.utc( date, 'YYYY-MM-DD hh:mma' ).fromNow();
+		return this.props.moment.utc( date, 'YYYY-MM-DD hh:mma' ).fromNow();
 	}
 
 	doing() {
 		const { translate, progress } = this.props;
 		const log = progress[ 0 ];
-		const uniqLogs = uniqBy( progress, function( uniqLog ) {
+		const uniqLogs = uniqBy( progress, function ( uniqLog ) {
 			return uniqLog.site.ID;
 		} );
 		const translationArgs = {
@@ -120,7 +119,7 @@ class PluginItem extends Component {
 							'Updating on %(count)s site',
 							'Updating on %(count)s sites',
 							translationArgs
-						);
+					  );
 				break;
 
 			case 'ACTIVATE_PLUGIN':
@@ -130,7 +129,7 @@ class PluginItem extends Component {
 							'Activating on %(count)s site',
 							'Activating on %(count)s sites',
 							translationArgs
-						);
+					  );
 				break;
 
 			case 'DEACTIVATE_PLUGIN':
@@ -140,7 +139,7 @@ class PluginItem extends Component {
 							'Deactivating on %(count)s site',
 							'Deactivating on %(count)s sites',
 							translationArgs
-						);
+					  );
 				break;
 
 			case 'ENABLE_AUTOUPDATE_PLUGIN':
@@ -150,7 +149,7 @@ class PluginItem extends Component {
 							'Enabling autoupdates on %(count)s site',
 							'Enabling autoupdates on %(count)s sites',
 							translationArgs
-						);
+					  );
 				break;
 
 			case 'DISABLE_AUTOUPDATE_PLUGIN':
@@ -160,7 +159,7 @@ class PluginItem extends Component {
 							'Disabling autoupdates on %(count)s site',
 							'Disabling autoupdates on %(count)s sites',
 							translationArgs
-						);
+					  );
 
 				break;
 			case 'REMOVE_PLUGIN':
@@ -170,14 +169,14 @@ class PluginItem extends Component {
 							'Removing from %(count)s site',
 							'Removing from %(count)s sites',
 							translationArgs
-						);
+					  );
 		}
 		return message;
 	}
 
 	renderUpdateFlag() {
 		const { sites, translate } = this.props;
-		const recentlyUpdated = sites.some( function( site ) {
+		const recentlyUpdated = sites.some( function ( site ) {
 			return site.plugin && site.plugin.update && site.plugin.update.recentlyUpdated;
 		} );
 
@@ -194,19 +193,18 @@ class PluginItem extends Component {
 		}
 
 		const updated_versions = this.props.plugin.sites
-			.map( site => {
+			.map( ( site ) => {
 				if ( site.plugin.update && site.plugin.update.new_version ) {
 					return site.plugin.update.new_version;
 				}
 				return false;
 			} )
-			.filter( version => version );
+			.filter( ( version ) => version );
 
 		return (
 			<Notice
 				isCompact
 				icon="sync"
-				status="is-warning"
 				inline={ true }
 				text={ translate( 'Version %(newPluginVersion)s is available', {
 					args: { newPluginVersion: updated_versions[ 0 ] },
@@ -246,15 +244,6 @@ class PluginItem extends Component {
 		}
 
 		return null;
-	}
-
-	showNoManageNotice() {
-		this.props.errorNotice(
-			this.props.translate(
-				'Jetpack Manage is disabled for all the sites where this plugin is installed'
-			),
-			{ id: 'plugin-no-manage-error' } // Display the notice only once on repeated clicks
-		);
 	}
 
 	renderActions() {
@@ -315,11 +304,8 @@ class PluginItem extends Component {
 		);
 	}
 
-	onItemClick = event => {
-		if ( this.props.hasAllNoManageSites ) {
-			event.preventDefault();
-			this.showNoManageNotice();
-		} else if ( this.props.isSelectable ) {
+	onItemClick = ( event ) => {
+		if ( this.props.isSelectable ) {
 			event.preventDefault();
 			this.props.onClick( this );
 		}
@@ -332,26 +318,23 @@ class PluginItem extends Component {
 			return this.renderPlaceholder();
 		}
 
-		const disabled = this.props.hasAllNoManageSites;
-
 		const pluginTitle = <div className="plugin-item__title">{ plugin.name }</div>;
 
 		let pluginActions = null;
 		if ( ! this.props.selectedSite ) {
 			pluginActions = this.renderSiteCount();
-		} else if ( ! disabled ) {
+		} else {
 			pluginActions = this.renderActions();
 		}
 
-		const pluginItemClasses = classNames( 'plugin-item', { disabled } );
+		const pluginItemClasses = classNames( 'plugin-item', 'plugin-item-' + plugin.slug );
 
 		return (
 			<CompactCard className={ pluginItemClasses }>
-				{ disabled || ! this.props.isSelectable ? null : (
-					<input
+				{ ! this.props.isSelectable ? null : (
+					<FormInputCheckbox
 						className="plugin-item__checkbox"
 						id={ plugin.slug }
-						type="checkbox"
 						onClick={ this.props.onClick }
 						checked={ this.props.isSelected }
 						readOnly={ true }
@@ -374,4 +357,8 @@ class PluginItem extends Component {
 	}
 }
 
-export default compose( connect( null, { errorNotice } ), localize )( PluginItem );
+export default compose(
+	connect( null, { errorNotice } ),
+	localize,
+	withLocalizedMoment
+)( PluginItem );

@@ -13,17 +13,13 @@
 
 	&.is-warning {
 		.plugin-action__label {
-			color: $alert-red;
+			color: var( --color-error );
 		}
 	}
 
-	.disconnect-jetpack-button {
-		margin-right: 0;
-	}
-
 	.plugin-action__label {
-		@include breakpoint( '<480px' ) {
-			color: $gray-dark;
+		@include breakpoint-deprecated( '<480px' ) {
+			color: var( --color-neutral-70 );
 		}
 	}
 }
@@ -48,13 +44,13 @@
 	display: flex;
 	flex-direction: row-reverse;
 	align-items: center;
-	font-size: 12px;
+	font-size: $font-body-extra-small;
 	line-height: 16px;
 	margin-right: 8px;
 	cursor: pointer;
 
 	.is-disabled & {
-		color: $gray-lighten-10;
+		color: var( --color-neutral-20 );
 		cursor: default;
 	}
 
@@ -75,7 +71,8 @@
 		display: block;
 	}
 
-	.gridicons-info-outline g {
+	.gridicons-info-outline > use:first-child,
+	.gridicons-info-outline > g:first-child {
 		// revert the translate(1px,1px) done by needs-offset
 		transform: none;
 	}

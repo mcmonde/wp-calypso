@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -22,8 +21,7 @@ import {
 	areSettingsGeneralLoaded,
 	getStoreLocation,
 } from 'woocommerce/state/sites/settings/general/selectors';
-import Button from 'components/button';
-import Dialog from 'components/dialog';
+import { Button, Dialog } from '@automattic/components';
 import { fetchLocations } from 'woocommerce/state/sites/data/locations/actions';
 import { fetchSettingsGeneral } from 'woocommerce/state/sites/settings/general/actions';
 import FormCheckbox from 'components/forms/form-checkbox';
@@ -34,7 +32,8 @@ import FormLegend from 'components/forms/form-legend';
 import FormPhoneMediaInput from 'components/forms/form-phone-media-input';
 import FormTextInput from 'components/forms/form-text-input';
 import getAddressViewFormat from 'woocommerce/lib/get-address-view-format';
-import { forPayments as countriesList } from 'lib/countries-list';
+import getCountries from 'state/selectors/get-countries';
+import QueryPaymentCountries from 'components/data/query-countries/payments';
 
 const defaultAddress = {
 	street: '',
@@ -75,6 +74,7 @@ class CustomerAddressDialog extends Component {
 				),
 			} )
 		),
+		countriesList: PropTypes.array.isRequired,
 		isBilling: PropTypes.bool,
 		isVisible: PropTypes.bool,
 		siteId: PropTypes.number,
@@ -104,11 +104,11 @@ class CustomerAddressDialog extends Component {
 		this.maybeFetchLocations();
 	}
 
-	componentWillMount() {
+	UNSAFE_componentWillMount() {
 		this.fetchData( this.props );
 	}
 
-	componentWillReceiveProps( newProps ) {
+	UNSAFE_componentWillReceiveProps( newProps ) {
 		if ( newProps.siteId !== this.props.siteId ) {
 			this.fetchData( newProps );
 		}
@@ -155,15 +155,15 @@ class CustomerAddressDialog extends Component {
 		this.props.closeDialog();
 	};
 
-	onPhoneChange = phone => {
-		this.setState( prevState => {
+	onPhoneChange = ( phone ) => {
+		this.setState( ( prevState ) => {
 			const { address } = prevState;
 			const newState = { ...address, phone: phone.value };
 			return { address: newState, phoneCountry: phone.countryCode };
 		} );
 	};
 
-	onChange = event => {
+	onChange = ( event ) => {
 		const value = event.target.value;
 		let name = event.target.name;
 		if ( 'street' === name ) {
@@ -171,7 +171,7 @@ class CustomerAddressDialog extends Component {
 		} else if ( 'street2' === name ) {
 			name = 'address_2';
 		}
-		this.setState( prevState => {
+		this.setState( ( prevState ) => {
 			const { address } = prevState;
 			const newState = { address: { ...address, [ name ]: value } };
 
@@ -190,7 +190,7 @@ class CustomerAddressDialog extends Component {
 		} );
 	};
 
-	validateEmail = event => {
+	validateEmail = ( event ) => {
 		const { translate } = this.props;
 		if ( ! emailValidator.validate( event.target.value ) ) {
 			this.setState( {
@@ -204,7 +204,7 @@ class CustomerAddressDialog extends Component {
 	};
 
 	toggleShipping = () => {
-		this.setState( prevState => {
+		this.setState( ( prevState ) => {
 			const { address } = prevState;
 			const newState = { ...address, copyToShipping: ! prevState.address.copyToShipping };
 			return { address: newState };
@@ -220,11 +220,12 @@ class CustomerAddressDialog extends Component {
 		return (
 			<div className="order-customer__billing-fields">
 				<FormFieldset>
+					<QueryPaymentCountries />
 					<FormPhoneMediaInput
-						label={ translate( 'Phone Number' ) }
+						label={ translate( 'Phone number' ) }
 						onChange={ this.onPhoneChange }
 						countryCode={ this.state.phoneCountry }
-						countriesList={ countriesList }
+						countriesList={ this.props.countriesList }
 						value={ get( address, 'phone', '' ) }
 					/>
 				</FormFieldset>
@@ -275,11 +276,11 @@ class CustomerAddressDialog extends Component {
 			>
 				<FormFieldset>
 					<FormLegend className="order-customer__billing-details">
-						{ isBilling ? translate( 'Billing Details' ) : translate( 'Shipping Details' ) }
+						{ isBilling ? translate( 'Billing details' ) : translate( 'Shipping details' ) }
 					</FormLegend>
 					<div className="order-customer__fieldset">
 						<div className="order-customer__field">
-							<FormLabel htmlFor="first_name">{ translate( 'First Name' ) }</FormLabel>
+							<FormLabel htmlFor="first_name">{ translate( 'First name' ) }</FormLabel>
 							<FormTextInput
 								id="first_name"
 								name="first_name"
@@ -288,7 +289,7 @@ class CustomerAddressDialog extends Component {
 							/>
 						</div>
 						<div className="order-customer__field">
-							<FormLabel htmlFor="last_name">{ translate( 'Last Name' ) }</FormLabel>
+							<FormLabel htmlFor="last_name">{ translate( 'Last name' ) }</FormLabel>
 							<FormTextInput
 								id="last_name"
 								name="last_name"
@@ -311,7 +312,7 @@ class CustomerAddressDialog extends Component {
 }
 
 export default connect(
-	state => {
+	( state ) => {
 		const address = getStoreLocation( state );
 		const locationsLoaded = areLocationsLoaded( state );
 		const areSettingsLoaded = areSettingsGeneralLoaded( state );
@@ -321,9 +322,10 @@ export default connect(
 			areLocationsLoaded: locationsLoaded,
 			areSettingsLoaded,
 			countries,
+			countriesList: getCountries( state, 'payments' ),
 			defaultCountry: address.country,
 			defaultState: address.state,
 		};
 	},
-	dispatch => bindActionCreators( { fetchLocations, fetchSettingsGeneral }, dispatch )
+	( dispatch ) => bindActionCreators( { fetchLocations, fetchSettingsGeneral }, dispatch )
 )( localize( CustomerAddressDialog ) );

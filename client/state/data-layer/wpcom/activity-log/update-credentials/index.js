@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -27,15 +26,18 @@ import {
 import { successNotice, errorNotice } from 'state/notices/actions';
 import { transformApi } from 'state/data-layer/wpcom/sites/rewind/api-transformer';
 
+import { registerHandlers } from 'state/data-layer/handler-registry';
+
 const navigateTo =
-	undefined !== typeof window ? path => window.open( path, '_blank' ) : path => page( path );
+	undefined !== typeof window
+		? ( path ) => window.open( path, '_blank' )
+		: ( path ) => page( path );
 
 /**
  * Makes sure that we can initialize a connection
  * to HappyChat. We'll need this on the API response
  *
- * @param {function} dispatch Redux dispatcher
- * @param {function} getState Redux getState
+ * @param {object} args Redux dispatcher, getState
  */
 export const primeHappychat = ( { dispatch, getState } ) => {
 	const state = getState();
@@ -46,62 +48,71 @@ export const primeHappychat = ( { dispatch, getState } ) => {
 	}
 };
 
-export const request = ( { dispatch }, action ) => {
+export const request = ( action ) => {
 	const notice = successNotice( i18n.translate( 'Testing connection…' ), { duration: 30000 } );
-	const { notice: { noticeId } } = notice;
-
-	dispatch( notice );
+	const {
+		notice: { noticeId },
+	} = notice;
 
 	const { path, ...otherCredentials } = action.credentials;
 	const credentials = { ...otherCredentials, abspath: path };
 
-	dispatch(
+	const tracksEvent = recordTracksEvent( 'calypso_rewind_creds_update_attempt', {
+		site_id: action.siteId,
+		protocol: action.credentials.protocol,
+	} );
+
+	return [
+		notice,
+		tracksEvent,
 		http(
 			{
-				apiVersion: '1.1',
+				apiNamespace: 'wpcom/v2',
 				method: 'POST',
-				path: `/activity-log/${ action.siteId }/update-credentials`,
+				path: `/sites/${ action.siteId }/rewind/credentials/update`,
 				body: { credentials },
 			},
 			{ ...action, noticeId }
-		)
-	);
+		),
+	];
 };
 
-export const success = ( { dispatch }, action, { rewind_state } ) => {
-	dispatch( {
+export const success = ( action, { rewind_state } ) => [
+	{
 		type: JETPACK_CREDENTIALS_UPDATE_SUCCESS,
 		siteId: action.siteId,
-	} );
+	},
 
-	dispatch( {
+	{
 		type: JETPACK_CREDENTIALS_STORE,
 		credentials: {
 			main: action.credentials,
 		},
 		siteId: action.siteId,
-	} );
-
-	dispatch(
-		successNotice( i18n.translate( 'Your site is now connected.' ), {
-			duration: 4000,
-			id: action.noticeId,
-		} )
-	);
-
+	},
+	successNotice( i18n.translate( 'Your site is now connected.' ), {
+		duration: 4000,
+		id: action.noticeId,
+	} ),
+	recordTracksEvent( 'calypso_rewind_creds_update_success', {
+		site_id: action.siteId,
+		protocol: action.credentials.protocol,
+	} ),
 	// the API transform could fail and the rewind data might
 	// be unavailable so if that's the case just let it go
 	// for now. we'll improve our rigor as time goes by.
-	try {
-		dispatch( {
-			type: REWIND_STATE_UPDATE,
-			siteId: action.siteId,
-			data: transformApi( rewind_state ),
-		} );
-	} catch ( e ) {}
-};
+	( () => {
+		try {
+			return {
+				type: REWIND_STATE_UPDATE,
+				siteId: action.siteId,
+				data: transformApi( rewind_state ),
+			};
+		} catch ( e ) {}
+	} )(),
+];
 
-export const failure = ( { dispatch, getState }, action, error ) => {
+export const failure = ( action, error ) => ( dispatch, getState ) => {
 	dispatch( {
 		type: JETPACK_CREDENTIALS_UPDATE_FAILURE,
 		error,
@@ -115,17 +126,17 @@ export const failure = ( { dispatch, getState }, action, error ) => {
 		return canChat ? dispatch( openChat() ) : navigateTo( '/help' );
 	};
 
-	const { translate } = i18n;
 	const baseOptions = { duration: 10000, id: action.noticeId };
 
 	const announce = ( message, options ) =>
 		dispatch( errorNotice( message, options ? { ...baseOptions, ...options } : baseOptions ) );
 
-	const spreadHappiness = message => {
+	const spreadHappiness = ( message ) => {
 		const tracksEvent = recordTracksEvent( 'calypso_rewind_creds_update_failure', {
 			site_id: action.siteId,
-			error: error.error,
-			status_code: error.statusCode,
+			error: error.code,
+			error_message: error.message,
+			status_code: error.data ?? error.statusCode,
 			host: action.credentials.host,
 			kpri: action.credentials.krpi ? 'provided but [omitted here]' : 'not provided',
 			pass: action.credentials.pass ? 'provided but [omitted here]' : 'not provided',
@@ -142,83 +153,90 @@ export const failure = ( { dispatch, getState }, action, error ) => {
 		);
 	};
 
-	switch ( error.error ) {
+	switch ( error.code ) {
 		case 'service_unavailable':
 			announce(
-				translate(
-					"Our service isn't working right now. We're working to restore it as soon as possible."
+				i18n.translate(
+					'A error occurred when we were trying to validate your site information. Please make sure your credentials and host URL are correct and try again. If you need help, please click on the support chat link.'
 				),
-				{ button: translate( 'Try again' ), onClick: () => dispatch( action ) }
+				{ button: i18n.translate( 'Support chat' ), onClick: getHelp }
 			);
 			spreadHappiness(
-				'Rewind Credentials: update request failed on timeout (could be us or remote site)'
+				'Restore Credentials: update request failed on timeout (could be us or remote site)'
 			);
 			break;
 
 		case 'missing_args':
 			announce(
-				translate( 'Something seems to be missing — please fill out all the required fields.' )
+				i18n.translate( 'Something seems to be missing — please fill out all the required fields.' )
 			);
-			spreadHappiness( 'Rewind Credentials: missing API args (contact a dev)' );
+			spreadHappiness( 'Restore Credentials: missing API args (contact a dev)' );
 			break;
 
 		case 'invalid_args':
 			announce(
-				translate(
+				i18n.translate(
 					"The information you entered seems to be incorrect. Let's take " +
 						'another look to ensure everything is in the right place.'
 				)
 			);
-			spreadHappiness( 'Rewind Credentials: invalid API args (contact a dev)' );
+			spreadHappiness( 'Restore Credentials: invalid API args (contact a dev)' );
 			break;
 
 		case 'invalid_credentials':
 			announce(
-				translate(
+				i18n.translate(
 					"We couldn't connect to your site. Please verify your credentials and give it another try."
 				)
 			);
-			spreadHappiness( 'Rewind Credentials: invalid credentials' );
+			spreadHappiness( 'Restore Credentials: invalid credentials' );
 			break;
 
 		case 'invalid_wordpress_path':
 			announce(
-				translate(
+				i18n.translate(
 					'We looked for `wp-config.php` in the WordPress installation ' +
 						"path you provided but couldn't find it."
 				),
-				{ button: translate( 'Get help' ), onClick: getHelp }
+				{ button: i18n.translate( 'Get help' ), onClick: getHelp }
 			);
-			spreadHappiness( "Rewind Credentials: can't find WordPress installation files" );
+			spreadHappiness( "Restore Credentials: can't find WordPress installation files" );
 			break;
 
 		case 'read_only_install':
 			announce(
-				translate(
+				i18n.translate(
 					'It looks like your server is read-only. ' +
-						'To create backups and rewind your site, we need permission to write to your server.'
+						'To create backups and restore your site, we need permission to write to your server.'
 				),
-				{ button: translate( 'Get help' ), onClick: getHelp }
+				{ button: i18n.translate( 'Get help' ), onClick: getHelp }
 			);
-			spreadHappiness( 'Rewind Credentials: creds only seem to provide read-only access' );
+			spreadHappiness( 'Restore Credentials: creds only seem to provide read-only access' );
 			break;
 
 		case 'unreachable_path':
 			announce(
-				translate(
+				i18n.translate(
 					'We tried to access your WordPress installation through its publicly available URL, ' +
 						"but it didn't work. Please make sure the directory is accessible and try again."
 				)
 			);
-			spreadHappiness( 'Rewind Credentials: creds might be for wrong site on right server' );
+			spreadHappiness( 'Restore Credentials: creds might be for wrong site on right server' );
 			break;
 
 		default:
-			announce( translate( 'Error saving. Please check your credentials and try again.' ) );
-			spreadHappiness( 'Rewind Credentials: unknown failure saving credentials' );
+			announce( i18n.translate( 'Error saving. Please check your credentials and try again.' ) );
+			spreadHappiness( 'Restore Credentials: unknown failure saving credentials' );
 	}
 };
 
-export default {
-	[ JETPACK_CREDENTIALS_UPDATE ]: [ primeHappychat, dispatchRequest( request, success, failure ) ],
-};
+registerHandlers( 'state/data-layer/wpcom/activity-log/update-credentials/index.js', {
+	[ JETPACK_CREDENTIALS_UPDATE ]: [
+		primeHappychat,
+		dispatchRequest( {
+			fetch: request,
+			onSuccess: success,
+			onError: failure,
+		} ),
+	],
+} );

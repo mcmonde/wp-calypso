@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -10,6 +9,7 @@ import { connect } from 'react-redux';
 /**
  * Internal dependencies
  */
+import config from 'config';
 import Stream from 'reader/stream';
 import EmptyContent from './empty';
 import DocumentHead from 'components/data/document-head';
@@ -24,12 +24,17 @@ import {
 import QueryReaderList from 'components/data/query-reader-list';
 import { recordAction, recordGaEvent, recordTrack } from 'reader/stats';
 
+/**
+ * Style dependencies
+ */
+import './style.scss';
+
 class ListStream extends React.Component {
 	constructor( props ) {
 		super( props );
 		this.title = props.translate( 'Loading list' );
 	}
-	toggleFollowing = isFollowRequested => {
+	toggleFollowing = ( isFollowRequested ) => {
 		const list = this.props.list;
 
 		if ( isFollowRequested ) {
@@ -57,16 +62,11 @@ class ListStream extends React.Component {
 	render() {
 		const list = this.props.list,
 			shouldShowFollow = list && ! list.is_owner,
-			shouldShowEdit = ! shouldShowFollow,
 			emptyContent = <EmptyContent />,
 			listStreamIconClasses = 'gridicon gridicon__list';
 
-		let editUrl = null;
-
 		if ( list ) {
 			this.title = list.title;
-
-			editUrl = `https://wordpress.com/read/list/${ list.owner }/${ list.slug }/edit`;
 		}
 
 		if ( this.props.isMissing ) {
@@ -80,7 +80,12 @@ class ListStream extends React.Component {
 				emptyContent={ emptyContent }
 				showFollowInHeader={ shouldShowFollow }
 			>
-				<DocumentHead title={ this.props.translate( '%s ‹ Reader', { args: this.title } ) } />
+				<DocumentHead
+					title={ this.props.translate( '%s ‹ Reader', {
+						args: this.title,
+						comment: '%s is the section name. For example: "My Likes"',
+					} ) }
+				/>
 				<QueryReaderList owner={ this.props.owner } slug={ this.props.slug } />
 				<ListStreamHeader
 					isPlaceholder={ ! list }
@@ -93,11 +98,13 @@ class ListStream extends React.Component {
 							viewBox="0 0 24 24"
 						>
 							<g>
-								<path d="M9 19h10v-2H9v2zm0-6h10v-2H9v2zm0-8v2h10V5H9zm-3-.5c-.828
+								<path
+									d="M9 19h10v-2H9v2zm0-6h10v-2H9v2zm0-8v2h10V5H9zm-3-.5c-.828
 									0-1.5.672-1.5 1.5S5.172 7.5 6 7.5 7.5 6.828 7.5 6 6.828 4.5 6
 									4.5zm0 6c-.828 0-1.5.672-1.5 1.5s.672 1.5 1.5 1.5 1.5-.672
 									1.5-1.5-.672-1.5-1.5-1.5zm0 6c-.828 0-1.5.672-1.5 1.5s.672 1.5
-									1.5 1.5 1.5-.672 1.5-1.5-.672-1.5-1.5-1.5z" />
+									1.5 1.5 1.5-.672 1.5-1.5-.672-1.5-1.5-1.5z"
+								/>
 							</g>
 						</svg>
 					}
@@ -106,8 +113,8 @@ class ListStream extends React.Component {
 					showFollow={ shouldShowFollow }
 					following={ this.props.isSubscribed }
 					onFollowToggle={ this.toggleFollowing }
-					showEdit={ shouldShowEdit }
-					editUrl={ editUrl }
+					showEdit={ config.isEnabled( 'reader/list-management' ) && list && list.is_owner }
+					editUrl={ window.location.href + '/edit' }
 				/>
 			</Stream>
 		);
@@ -122,7 +129,7 @@ export default connect(
 			isMissing: isMissingByOwnerAndSlug( state, ownProps.owner, ownProps.slug ),
 		};
 	},
-	dispatch => {
+	( dispatch ) => {
 		return bindActionCreators(
 			{
 				followList,

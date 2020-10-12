@@ -1,13 +1,12 @@
 /**
  * External depedencies
  *
- * @format
  */
 
 import React, { Component } from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 import { localize } from 'i18n-calypso';
 import PropTypes from 'prop-types';
 
@@ -15,7 +14,7 @@ import PropTypes from 'prop-types';
  * Internal dependencies
  */
 import accept from 'lib/accept';
-import Button from 'components/button';
+import { Button } from '@automattic/components';
 import { decodeEntities, removep } from 'lib/formatting';
 import {
 	deleteReviewReply,
@@ -30,6 +29,7 @@ import {
 	getReviewReplyEdits,
 } from 'woocommerce/state/ui/review-replies/selectors';
 import { getReviewReply } from 'woocommerce/state/sites/review-replies/selectors';
+import FormTextarea from 'components/forms/form-textarea';
 import Gravatar from './gravatar';
 import humanDate from 'lib/human-date';
 
@@ -52,7 +52,7 @@ class ReviewReply extends Component {
 		this.props.clearReviewReplyEdits( siteId );
 	};
 
-	onTextChange = event => {
+	onTextChange = ( event ) => {
 		const { value } = event.target;
 		const { siteId, reviewId, replyId } = this.props;
 		this.props.editReviewReply( siteId, reviewId, { id: replyId, content: value } );
@@ -61,7 +61,7 @@ class ReviewReply extends Component {
 	onDelete = () => {
 		const { siteId, reviewId, replyId, translate } = this.props;
 		const areYouSure = translate( 'Are you sure you want to permanently delete this reply?' );
-		accept( areYouSure, accepted => {
+		accept( areYouSure, ( accepted ) => {
 			if ( ! accepted ) {
 				return;
 			}
@@ -103,7 +103,7 @@ class ReviewReply extends Component {
 		const { translate, editContent } = this.props;
 		return (
 			<div className="reviews__reply-edit">
-				<textarea onChange={ this.onTextChange } value={ editContent } />
+				<FormTextarea onChange={ this.onTextChange } value={ editContent } />
 
 				<div className="reviews__reply-edit-buttons">
 					<Button compact onClick={ this.onCancel }>

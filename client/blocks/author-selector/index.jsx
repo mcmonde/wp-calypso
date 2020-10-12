@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -15,6 +14,11 @@ import SiteUsersFetcher from 'components/site-users-fetcher';
 import SwitcherShell from './switcher-shell';
 
 /**
+ * Style dependencies
+ */
+import './style.scss';
+
+/**
  * Module variables
  */
 const debug = debugModule( 'calypso:author-selector' );
@@ -25,14 +29,15 @@ class AuthorSelector extends React.Component {
 	static propTypes = {
 		siteId: PropTypes.number.isRequired,
 		onSelect: PropTypes.func,
-		exclude: PropTypes.arrayOf( PropTypes.number ),
+		exclude: PropTypes.oneOfType( [ PropTypes.arrayOf( PropTypes.number ), PropTypes.func ] ),
 		allowSingleUser: PropTypes.bool,
 		popoverPosition: PropTypes.string,
+		transformAuthor: PropTypes.func,
 	};
 
 	static defaultProps = {
 		showAuthorMenu: false,
-		onClose: function() {},
+		onClose: function () {},
 		allowSingleUser: false,
 		popoverPosition: 'bottom left',
 	};
@@ -70,7 +75,7 @@ class AuthorSelector extends React.Component {
 		);
 	}
 
-	_updateSearch = searchTerm => {
+	_updateSearch = ( searchTerm ) => {
 		searchTerm = searchTerm ? '*' + searchTerm + '*' : '';
 		this.setState( {
 			search: searchTerm,

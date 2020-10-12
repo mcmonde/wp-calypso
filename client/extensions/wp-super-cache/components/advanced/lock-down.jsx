@@ -1,17 +1,15 @@
-/** @format */
-
 /**
  * External dependencies
  */
 
 import React from 'react';
 import { pick } from 'lodash';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 
 /**
  * Internal dependencies
  */
-import Card from 'components/card';
+import { Card } from '@automattic/components';
 import SectionHeader from 'components/section-header';
 import FormToggle from 'components/forms/form-toggle/compact';
 import ClipboardButton from 'components/forms/clipboard-button';
@@ -86,11 +84,11 @@ const LockDown = ( {
 									? translate(
 											'WordPress is locked down. Super Cache static files will not be deleted ' +
 												'when new comments are made.'
-										)
+									  )
 									: translate(
 											'WordPress is not locked down. New comments will refresh Super Cache ' +
 												'static files as normal.'
-										)
+									  )
 							}
 						/>
 					</div>
@@ -100,7 +98,7 @@ const LockDown = ( {
 	);
 };
 
-const getFormSettings = settings => {
+const getFormSettings = ( settings ) => {
 	return pick( settings, [ 'cache_lock_down' ] );
 };
 

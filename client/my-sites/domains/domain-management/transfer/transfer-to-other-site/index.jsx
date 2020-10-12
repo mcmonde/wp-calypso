@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -12,32 +11,34 @@ import { localize } from 'i18n-calypso';
 /**
  * Internal Dependencies
  */
-import Card from 'components/card';
+import { Card } from '@automattic/components';
 import SiteSelector from 'components/site-selector';
 import { getCurrentUser, currentUserHasFlag } from 'state/current-user/selectors';
 import { DOMAINS_WITH_PLANS_ONLY } from 'state/current-user/constants';
-import { getSites, isDomainOnlySite } from 'state/selectors';
+import getSites from 'state/selectors/get-sites';
+import isDomainOnlySite from 'state/selectors/is-domain-only-site';
 import Header from 'my-sites/domains/domain-management/components/header';
 import Main from 'components/main';
 import { domainManagementList, domainManagementTransfer } from 'my-sites/domains/paths';
 import { getSelectedDomain } from 'lib/domains';
 import NonOwnerCard from 'my-sites/domains/domain-management/components/domain/non-owner-card';
 import DomainMainPlaceholder from 'my-sites/domains/domain-management/components/domain/main-placeholder';
-import SectionHeader from 'components/section-header';
 import TransferConfirmationDialog from './confirmation-dialog';
 import { successNotice, errorNotice } from 'state/notices/actions';
 import wp from 'lib/wp';
 import { isWpComFreePlan } from 'lib/plans';
 import { requestSites } from 'state/sites/actions';
+import getCurrentRoute from 'state/selectors/get-current-route';
 
 const wpcom = wp.undocumented();
 
 export class TransferToOtherSite extends React.Component {
 	static propTypes = {
-		selectedDomainName: PropTypes.string.isRequired,
-		selectedSite: PropTypes.object.isRequired,
 		currentUser: PropTypes.object.isRequired,
 		isDomainOnly: PropTypes.bool.isRequired,
+		isRequestingSiteDomains: PropTypes.bool.isRequired,
+		selectedDomainName: PropTypes.string.isRequired,
+		selectedSite: PropTypes.object.isRequired,
 	};
 
 	state = {
@@ -47,10 +48,10 @@ export class TransferToOtherSite extends React.Component {
 	};
 
 	isDataReady() {
-		return this.props.domains.hasLoadedFromServer;
+		return ! this.props.isRequestingSiteDomains;
 	}
 
-	isSiteEligible = site => {
+	isSiteEligible = ( site ) => {
 		// check if it's an Atomic site from the site options
 		const isAtomic = get( site, 'options.is_automated_transfer', false );
 
@@ -65,7 +66,7 @@ export class TransferToOtherSite extends React.Component {
 		);
 	};
 
-	handleSiteSelect = targetSiteId => {
+	handleSiteSelect = ( targetSiteId ) => {
 		this.setState( {
 			targetSiteId,
 			showConfirmationDialog: true,
@@ -74,10 +75,10 @@ export class TransferToOtherSite extends React.Component {
 
 	handleConfirmTransfer = ( targetSite, closeDialog ) => {
 		const { selectedDomainName } = this.props;
-		const targetSiteName = targetSite.name;
+		const targetSiteTitle = targetSite.title;
 		const successMessage = this.props.translate(
-			'%(selectedDomainName)s has been transferred to site: %(targetSiteName)s',
-			{ args: { selectedDomainName, targetSiteName } }
+			'%(selectedDomainName)s has been transferred to site: %(targetSiteTitle)s',
+			{ args: { selectedDomainName, targetSiteTitle } }
 		);
 		const defaultErrorMessage = this.props.translate(
 			'Failed to transfer %(selectedDomainName)s, please try again or contact support.',
@@ -100,7 +101,7 @@ export class TransferToOtherSite extends React.Component {
 						page( domainManagementList( this.props.selectedSite.slug ) );
 					}
 				},
-				error => {
+				( error ) => {
 					this.setState( { disableDialogButtons: false } );
 					closeDialog();
 					this.props.errorNotice( error.message || defaultErrorMessage );
@@ -119,14 +120,14 @@ export class TransferToOtherSite extends React.Component {
 			return <DomainMainPlaceholder goBack={ this.goToEdit } />;
 		}
 
-		const { selectedSite, selectedDomainName } = this.props;
+		const { selectedSite, selectedDomainName, currentRoute } = this.props;
 		const { slug } = selectedSite;
 
 		return (
 			<Main className="transfer-to-other-site">
 				<Header
 					selectedDomainName={ selectedDomainName }
-					backHref={ domainManagementTransfer( slug, selectedDomainName ) }
+					backHref={ domainManagementTransfer( slug, selectedDomainName, currentRoute ) }
 				>
 					{ this.props.translate( 'Transfer Domain To Another Site' ) }
 				</Header>
@@ -158,7 +159,6 @@ export class TransferToOtherSite extends React.Component {
 
 		return (
 			<div>
-				<SectionHeader label={ translate( 'Transfer Domain To Another Site' ) } />
 				<Card className="transfer-to-other-site__card">
 					<p>{ message }</p>
 					<SiteSelector
@@ -186,8 +186,9 @@ export default connect(
 	( state, ownProps ) => ( {
 		currentUser: getCurrentUser( state ),
 		domainsWithPlansOnly: currentUserHasFlag( state, DOMAINS_WITH_PLANS_ONLY ),
-		isDomainOnly: isDomainOnlySite( state, ownProps.selectedSite.ID ),
+		isDomainOnly: isDomainOnlySite( state, get( ownProps, 'selectedSite.ID', null ) ),
 		sites: getSites( state ),
+		currentRoute: getCurrentRoute( state ),
 	} ),
 	{
 		errorNotice,

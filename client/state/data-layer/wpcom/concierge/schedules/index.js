@@ -1,10 +1,14 @@
-/** @format */
-
 /**
  * Internal dependencies
  */
 import { mergeHandlers } from 'state/action-watchers/utils';
-import availableTimes from './available-times';
 import appointments from './appointments';
 
-export default mergeHandlers( availableTimes, appointments );
+import { registerHandlers } from 'state/data-layer/handler-registry';
+
+registerHandlers(
+	'state/data-layer/wpcom/concierge/schedules/index.js',
+	mergeHandlers( appointments )
+);
+
+export default {};

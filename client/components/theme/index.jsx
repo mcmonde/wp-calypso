@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -9,25 +7,26 @@ import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import { get, isEmpty, isEqual, noop, some } from 'lodash';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 import { localize } from 'i18n-calypso';
 import photon from 'photon';
 
 /**
  * Internal dependencies
  */
-import Card from 'components/card';
+import { Card, Ribbon, Button } from '@automattic/components';
 import ThemeMoreButton from './more-button';
 import PulsingDot from 'components/pulsing-dot';
-import Ribbon from 'components/ribbon';
 import InfoPopover from 'components/info-popover';
-import Button from 'components/button';
 import TrackComponentView from 'lib/analytics/track-component-view';
 import { recordTracksEvent } from 'state/analytics/actions';
+import { setThemesBookmark } from 'state/themes/themes-ui/actions';
 
 /**
- * Component
+ * Style dependencies
  */
+import './style.scss';
+
 export class Theme extends Component {
 	static propTypes = {
 		theme: PropTypes.shape( {
@@ -72,6 +71,12 @@ export class Theme extends Component {
 		actionLabel: PropTypes.string,
 		// Translate function,
 		translate: PropTypes.func,
+		// Themes bookmark items.
+		setThemesBookmark: PropTypes.func,
+		bookmarkRef: PropTypes.oneOfType( [
+			PropTypes.func,
+			PropTypes.shape( { current: PropTypes.any } ),
+		] ),
 	};
 
 	static defaultProps = {
@@ -99,40 +104,29 @@ export class Theme extends Component {
 	}
 
 	onScreenshotClick = () => {
-		this.props.onScreenshotClick( this.props.theme.id, this.props.index );
+		const { onScreenshotClick } = this.props;
+		if ( typeof onScreenshotClick === 'function' ) {
+			onScreenshotClick( this.props.theme.id, this.props.index );
+		}
 	};
 
-	isBeginnerTheme = () => {
+	isBeginnerTheme() {
 		const { theme } = this.props;
 		const skillLevels = get( theme, [ 'taxonomies', 'theme_skill-level' ] );
 		return some( skillLevels, { slug: 'beginner' } );
-	};
+	}
 
-	renderPlaceholder = () => {
+	renderPlaceholder() {
+		/* eslint-disable wpcalypso/jsx-classname-namespace */
 		return (
 			<Card className="theme is-placeholder">
 				<div className="theme__content" />
 			</Card>
 		);
-	};
+		/* eslint-enable wpcalypso/jsx-classname-namespace */
+	}
 
-	renderHover = () => {
-		if ( this.props.screenshotClickUrl || this.props.onScreenshotClick ) {
-			return (
-				<a
-					aria-label={ this.props.theme.name }
-					title={ this.props.theme.description }
-					className="theme__active-focus"
-					href={ this.props.screenshotClickUrl || '#' }
-					onClick={ this.onScreenshotClick }
-				>
-					<span>{ this.props.actionLabel }</span>
-				</a>
-			);
-		}
-	};
-
-	renderInstalling = () => {
+	renderInstalling() {
 		if ( this.props.installing ) {
 			return (
 				<div className="theme__installing">
@@ -140,7 +134,7 @@ export class Theme extends Component {
 				</div>
 			);
 		}
-	};
+	}
 
 	onUpsellClick = () => {
 		this.props.recordTracksEvent( 'calypso_upgrade_nudge_cta_click', {
@@ -149,12 +143,17 @@ export class Theme extends Component {
 		} );
 	};
 
+	setBookmark = () => {
+		this.props.setThemesBookmark( this.props.theme.id );
+	};
+
 	render() {
 		const { active, price, theme, translate, upsellUrl } = this.props;
 		const { name, description, screenshot } = theme;
+		const isActionable = this.props.screenshotClickUrl || this.props.onScreenshotClick;
 		const themeClass = classNames( 'theme', {
 			'is-active': active,
-			'is-actionable': !! ( this.props.screenshotClickUrl || this.props.onScreenshotClick ),
+			'is-actionable': isActionable,
 		} );
 
 		const hasPrice = /\d/g.test( price );
@@ -207,17 +206,26 @@ export class Theme extends Component {
 		const themeImgSrcDoubleDpi = photon( screenshot, { fit, zoom: 2 } );
 		const e2eThemeName = name.toLowerCase().replace( /\s+/g, '-' );
 
+		const bookmarkRef = this.props.bookmarkRef ? { ref: this.props.bookmarkRef } : {};
+
 		return (
-			<Card className={ themeClass } data-e2e-theme={ e2eThemeName }>
+			<Card className={ themeClass } data-e2e-theme={ e2eThemeName } onClick={ this.setBookmark }>
 				{ this.isBeginnerTheme() && (
 					<Ribbon className="theme__ribbon" color="green">
 						{ translate( 'Beginner' ) }
 					</Ribbon>
 				) }
-				<div className="theme__content">
-					{ this.renderHover() }
-
-					<a href={ this.props.screenshotClickUrl }>
+				<div className="theme__content" { ...bookmarkRef }>
+					<a
+						aria-label={ name }
+						className="theme__thumbnail"
+						href={ this.props.screenshotClickUrl || 'javascript:;' /* fallback for a11y */ }
+						onClick={ this.onScreenshotClick }
+						title={ description }
+					>
+						{ isActionable && (
+							<div className="theme__thumbnail-label">{ this.props.actionLabel }</div>
+						) }
 						{ this.renderInstalling() }
 						{ screenshot ? (
 							<img
@@ -225,7 +233,6 @@ export class Theme extends Component {
 								className="theme__img"
 								src={ themeImgSrc }
 								srcSet={ `${ themeImgSrcDoubleDpi } 2x` }
-								onClick={ this.onScreenshotClick }
 								id={ screenshotID }
 							/>
 						) : (
@@ -262,7 +269,4 @@ export class Theme extends Component {
 	}
 }
 
-const mapStateToProps = null;
-const mapDispatchToProps = { recordTracksEvent };
-
-export default connect( mapStateToProps, mapDispatchToProps )( localize( Theme ) );
+export default connect( null, { recordTracksEvent, setThemesBookmark } )( localize( Theme ) );

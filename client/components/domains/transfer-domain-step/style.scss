@@ -1,3 +1,4 @@
+
 .transfer-domain-step {
 	padding: 0;
 
@@ -6,19 +7,36 @@
 		margin-bottom: 9px;
 	}
 
-	p {
-		margin-bottom: 0;
+	.transfer-domain-step__domain-description {
+		display: flex;
+		justify-content: space-between;
+		flex-direction: column;
+		margin-bottom: 20px;
+
+		@include breakpoint-deprecated( '>960px' ) {
+			flex-direction: row;
+		}
 	}
 
-	.domain-product-price {
-		float: left;
-		margin-bottom: 20px;
-		min-width: 0;
+	.transfer-domain-step__price {
+		font-weight: 600;
 
-		@include breakpoint( ">960px" ) {
-			float: right;
-			margin-bottom: 0;
+		&.is-free-with-plan,
+		&.is-sale-price {
+			font-weight: 400;
+			font-size: 90%;
 		}
+
+		@include breakpoint-deprecated( '>960px' ) {
+			text-align: right;
+		}
+	}
+
+	.transfer-domain-step__free-with-plan {
+		color: var( --color-neutral-50 );
+		font-weight: 400;
+		font-size: 0.9em;
+		line-height: 25px;
 	}
 
 	.notice {
@@ -27,6 +45,10 @@
 
 	.transfer-domain-step__domain-availability {
 		margin-top: 30px;
+	}
+
+	.domain-suggestion.card {
+		border-left: 3px solid var( --color-success );
 	}
 }
 
@@ -51,48 +73,58 @@
 		margin-left: 20px;
 		max-width: 140px;
 
-		@include breakpoint( '>480px' ) {
+		@include breakpoint-deprecated( '>480px' ) {
 			display: block;
 		}
 
-		@include breakpoint( '>660px' ) {
+		@include breakpoint-deprecated( '>660px' ) {
 			display: none;
 		}
 
-		@include breakpoint( '>960px' ) {
+		@include breakpoint-deprecated( '>960px' ) {
 			display: block;
 		}
 	}
 }
 
-.transfer-domain-step__domain-description {
-	font-size: 16px;
-	margin-bottom: 20px;
+.transfer-domain-step__domain-text {
+	font-size: 0.9em;
+	margin-top: 20px;
 }
 
 .transfer-domain-step__go {
-	margin-top: 20px;
-	margin-bottom: 10px;
+	flex-grow: 1;
+	margin: 10px 0 0;
+
+	@include breakpoint-deprecated( '>660px' ) {
+		min-width: 100px;
+		flex-grow: 0;
+		margin: 0 0 0 10px;
+	}
 }
 
 .transfer-domain-step__domain-heading {
-	font-size: 18px;
-	font-weight: 500;
-	margin-bottom: 5px;
+	font-size: 1em;
+	font-weight: 600;
+	margin: auto 0;
 }
 
 .transfer-domain-step__add-domain {
 	display: flex;
-	flex-direction: column;
+	flex-flow: column;
 	width: 100%;
+
+	@include breakpoint-deprecated( '>660px' ) {
+		flex-flow: row;
+	}
 }
 
 .transfer-domain-step__map-option {
-	color: $gray-darken-20;
+	color: var( --color-neutral-50 );
 }
 
 .transfer-domain-step__map-help {
-	color: $gray;
+	color: var( --color-neutral-light );
 	position: relative;
 	top: 2px;
 }
@@ -102,10 +134,10 @@
 	height: 28px;
 	line-height: 28px;
 	border-radius: 50%;
-	border: 1px solid $gray-lighten-20;
-	background-color: $gray-light;
-	color: $gray-darken-20;
-	font-size: 18px;
+	border: 1px solid var( --color-neutral-10 );
+	background-color: var( --color-neutral-0 );
+	color: var( --color-neutral-50 );
+	font-size: $font-title-small;
 	text-align: center;
 	margin-right: 15px;
 	flex-shrink: 0;
@@ -121,15 +153,15 @@
 	}
 
 	.transfer-domain-step__section-heading {
-		color: $gray-darken-20;
+		color: var( --color-neutral-50 );
 		align-items: center;
 		display: flex;
-		font-size: 16px;
+		font-size: $font-body;
 		justify-content: space-between;
 	}
 
 	.transfer-domain-step__section-callout {
-		background: $gray-light;
+		background: var( --color-neutral-0 );
 		margin: 14px 0;
 	}
 
@@ -137,7 +169,7 @@
 		align-items: flex-start;
 
 		.transfer-domain-step__section-heading {
-			color: $gray-dark;
+			color: var( --color-neutral-70 );
 		}
 	}
 
@@ -145,7 +177,7 @@
 		.transfer-domain-step__section-heading-number {
 			background: none;
 			border: none;
-			color: $alert-green;
+			color: var( --color-success );
 
 			.gridicon {
 				margin-left: -4px;
@@ -166,7 +198,7 @@
 }
 
 .transfer-domain-step__lock-status {
-	font-size: 12px;
+	font-size: $font-body-extra-small;
 	display: flex;
 	align-items: center;
 	margin-left: 10px;
@@ -176,23 +208,24 @@
 	}
 
 	&.transfer-domain-step__checking {
-		color: $gray;
+		color: var( --color-neutral-light );
 	}
 
-	&.transfer-domain-step__unlocked {
-		color: $alert-green;
+	&.transfer-domain-step__unlocked,
+	&.transfer-domain-step__auth-code-valid {
+		color: var( --color-success );
 	}
 
 	&.transfer-domain-step__locked {
-		color: $alert-red;
+		color: var( --color-error );
 	}
 
 	&.transfer-domain-step__unknown {
-		color: $alert-yellow;
+		color: var( --color-warning );
 	}
 
 	&.transfer-domain-step__refresh {
-		color: $blue-wordpress;
+		color: var( --color-primary );
 		cursor: pointer;
 	}
 }
@@ -207,9 +240,18 @@
 }
 
 .transfer-domain-step__continue-text {
+	flex-grow: 1;
+
 	p {
-		color: $gray-darken-10;
-		font-size: 14px;
+		color: var( --color-neutral-40 );
+		font-size: $font-body-small;
+	}
+}
+
+input[type='text'].form-text-input {
+	&.transfer-domain-step__auth-code-input {
+		width: 200px;
+		margin-top: 15px;
 	}
 }
 
@@ -225,7 +267,7 @@
 		width: 100%;
 	}
 
-	@include breakpoint( '>660px' ) {
+	@include breakpoint-deprecated( '>660px' ) {
 		flex-direction: row;
 
 		button {
@@ -237,18 +279,18 @@
 
 .transfer-domain-step__options {
 	label {
-		color: $gray-darken-20;
+		color: var( --color-neutral-50 );
 	}
 
 	legend {
 		small {
-			font-size: 14px;
+			font-size: $font-body-small;
 			padding-left: 10px;
-			color: $blue-wordpress;
+			color: var( --color-primary );
 		}
 
-		color: $gray-dark;
+		color: var( --color-neutral-70 );
 		margin-bottom: 0;
-		font-size: 16px;
+		font-size: $font-body;
 	}
 }

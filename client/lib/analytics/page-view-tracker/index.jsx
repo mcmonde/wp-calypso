@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -7,14 +5,18 @@
 import debugFactory from 'debug';
 import PropTypes from 'prop-types';
 import React from 'react';
-import { flowRight, get, isNumber, noop } from 'lodash';
+import { get, isNumber, noop } from 'lodash';
 import { connect } from 'react-redux';
 
 /**
  * Internal dependencies
  */
 import { getSiteFragment } from 'lib/route';
-import { recordPageView } from 'state/analytics/actions';
+import {
+	recordPageViewWithClientId as recordPageView,
+	enhanceWithSiteType,
+} from 'state/analytics/actions';
+import { withEnhancers } from 'state/utils';
 import { getSelectedSiteId } from 'state/ui/selectors';
 import { getSiteSlug } from 'state/sites/selectors';
 
@@ -89,7 +91,7 @@ export class PageViewTracker extends React.Component {
 	}
 }
 
-const mapStateToProps = state => {
+const mapStateToProps = ( state ) => {
 	const selectedSiteId = getSelectedSiteId( state );
 	const selectedSiteSlug = getSiteSlug( state, selectedSiteId );
 	const currentSlug =
@@ -106,8 +108,8 @@ const mapStateToProps = state => {
 	};
 };
 
-const mapDispatchToProps = dispatch => ( {
-	recorder: flowRight( dispatch, recordPageView ),
-} );
+const mapDispatchToProps = {
+	recorder: withEnhancers( recordPageView, [ enhanceWithSiteType ] ),
+};
 
 export default connect( mapStateToProps, mapDispatchToProps )( PageViewTracker );

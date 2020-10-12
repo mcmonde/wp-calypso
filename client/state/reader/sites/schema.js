@@ -1,4 +1,6 @@
-/** @format */
+/**
+ * Internal dependencies
+ */
 import { sitesSchema } from 'state/sites/schema';
 
 // based on the normal site endpoint schema with a few extra properties
@@ -13,6 +15,8 @@ export const readerSitesSchema = {
 				feed_ID: { type: 'number' },
 				subscription: { type: 'object' },
 				is_blocked: { type: 'boolean' },
+				organization_id: { type: 'number' },
+				unseen_count: { type: 'number' },
 			},
 		},
 	},

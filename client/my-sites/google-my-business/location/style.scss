@@ -2,11 +2,11 @@
 	display: flex;
 	justify-content: space-between;
 
-	@include breakpoint( '<960px' ) {
+	@include breakpoint-deprecated( '<960px' ) {
 		flex-direction: column;
 	}
 
-	&:after {
+	&::after {
 		display: none; // Disables clearfix that messes up with Flexbox alignment
 	}
 
@@ -30,19 +30,10 @@
 	display: flex;
 }
 
-.gmb-location__logo,
 .gmb-location__picture {
 	border-radius: 50%;
 	height: 60px;
 	width: 60px;
-}
-
-.gmb-location__logo {
-	align-items: center;
-	background-color: $gray-light;
-	display: flex;
-	justify-content: center;
-	min-width: 60px; // Makes sure aspect ratio is maintained when viewport is super narrow
 }
 
 .gmb-location__description {
@@ -52,8 +43,8 @@
 }
 
 .gmb-location__name {
-	font-size: 16px;
-	font-weight: bold;
+	font-size: $font-body;
+	font-weight: 600;
 }
 
 .gmb-location__address p {
@@ -65,7 +56,7 @@
 }
 
 .gmb-location__verified-icon {
-	color: $alert-green;
+	color: var( --color-success );
 	margin-left: -2px;
 	vertical-align: text-bottom;
 }

@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -17,12 +16,17 @@ import ReaderPostOptionsMenu from 'blocks/reader-post-options-menu';
 import { shouldShowComments } from 'blocks/comments/helper';
 import { shouldShowLikes } from 'reader/like-helper';
 import { shouldShowShare } from 'blocks/reader-share/helper';
-import { userCan } from 'lib/posts/utils';
+import { userCan } from 'state/posts/utils';
 import * as stats from 'reader/stats';
 import { localize } from 'i18n-calypso';
 import ReaderVisitLink from 'blocks/reader-visit-link';
 
-const ReaderPostActions = props => {
+/**
+ * Style dependencies
+ */
+import './style.scss';
+
+const ReaderPostActions = ( props ) => {
 	const {
 		post,
 		site,
@@ -50,7 +54,7 @@ const ReaderPostActions = props => {
 
 	const listClassnames = classnames( 'reader-post-actions', className );
 
-	/* eslint-disable react/jsx-no-target-blank */
+	/* eslint-disable react/jsx-no-target-blank, wpcalypso/jsx-classname-namespace */
 	return (
 		<ul className={ listClassnames }>
 			{ showVisit && (
@@ -64,18 +68,16 @@ const ReaderPostActions = props => {
 					</ReaderVisitLink>
 				</li>
 			) }
-			{ showEdit &&
-				site &&
-				userCan( 'edit_post', post ) && (
-					<li className="reader-post-actions__item">
-						<PostEditButton
-							post={ post }
-							site={ site }
-							onClick={ onEditClick }
-							iconSize={ iconSize }
-						/>
-					</li>
-				) }
+			{ showEdit && site && userCan( 'edit_post', post ) && (
+				<li className="reader-post-actions__item">
+					<PostEditButton
+						post={ post }
+						site={ site }
+						onClick={ onEditClick }
+						iconSize={ iconSize }
+					/>
+				</li>
+			) }
 			{ shouldShowShare( post ) && (
 				<li className="reader-post-actions__item">
 					<ShareButton post={ post } position="bottom" tagName="div" iconSize={ iconSize } />
@@ -120,7 +122,7 @@ const ReaderPostActions = props => {
 			) }
 		</ul>
 	);
-	/* eslint-enable react/jsx-no-target-blank */
+	/* eslint-enable react/jsx-no-target-blank, wpcalypso/jsx-classname-namespace */
 };
 
 ReaderPostActions.propTypes = {

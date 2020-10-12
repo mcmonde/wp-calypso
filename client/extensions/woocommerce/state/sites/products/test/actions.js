@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -11,7 +9,7 @@ import { spy } from 'sinon';
  */
 import { deleteProduct } from '../actions';
 import product from './fixtures/product';
-import useNock from 'test/helpers/use-nock';
+import useNock from 'test-helpers/use-nock';
 import {
 	WOOCOMMERCE_ERROR_SET,
 	WOOCOMMERCE_PRODUCT_DELETE,
@@ -22,11 +20,13 @@ describe( 'actions', () => {
 	describe( '#deleteProduct()', () => {
 		const siteId = '123';
 
-		useNock( nock => {
+		useNock( ( nock ) => {
 			nock( 'https://public-api.wordpress.com:443' )
 				.persist()
-				.post( '/rest/v1.1/jetpack-blogs/123/rest-api/' )
-				.query( { path: '/wc/v3/products/523&_method=delete', json: true } )
+				.post( '/rest/v1.1/jetpack-blogs/123/rest-api/', {
+					path: '/wc/v3/products/523&force=true&_via_calypso&_method=delete',
+					json: true,
+				} )
 				.reply( 200, {
 					data: product,
 				} );
@@ -56,6 +56,7 @@ describe( 'actions', () => {
 				} );
 			} );
 		} );
+
 		test( 'should dispatch an error when the request fails', () => {
 			const getState = () => ( {} );
 			const dispatch = spy();

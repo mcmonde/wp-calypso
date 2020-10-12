@@ -13,7 +13,6 @@
 		"summary": { "type": "string" },
 		"totalItems": { "type": "integer" },
 		"totalPages": { "type": "integer" },
-		"oldestItemTs": { "type": "integer" },
 		"type": { "type": "string" },
 		"current": {
 			"type": "object",
@@ -24,7 +23,7 @@
 				"prev": { "type": "string" },
 				"orderedItems": {
 					"type": "array",
-					"items": { "$ref": "#/definitions/item" }
+					"items": { "$ref": "#/definitions/activity" }
 				},
 				"totalItems": { "type": "integer" },
 				"type": { "type": "string" }
@@ -32,9 +31,9 @@
 		}
 	},
 	"definitions": {
-		"item": {
+		"activity": {
 			"type": "object",
-			"required": [ "activity_id", "is_rewindable", "name", "published", "summary" ],
+			"required": [ "activity_id", "is_rewindable", "name", "summary" ],
 			"properties": {
 				"activity_id": { "type": "string" },
 				"actor": {
@@ -58,13 +57,18 @@
 					}
 				},
 				"content": { "type": "object" },
+				"first_published": { "type": "string" },
 				"formatted_content": {
 					"name": { "type": "string" },
 					"content": { "type": "object" }
 				},
 				"generator": { "type": "object" },
 				"gridicon": { "type": "string" },
+				"is_aggregate": { "type": "boolean" },
 				"is_rewindable": { "type": "boolean" },
+				"is_discarded": { "type": "boolean" },
+				"streams_have_same_actor": { "type": "boolean" },
+				"last_published": { "type": "string" },
 				"rewind_id": { "type": [ "null", "string" ] },
 				"items": {
 					"type": "array",
@@ -82,14 +86,20 @@
 						}
 					]
 				},
+				"stream_count": { "type": "integer" },
+				"streams": { "type": "array" },
 				"summary": { "type": [ "object", "string" ] },
 				"target": { "type": "object" },
 				"target_ts": { "type": "number" },
 				"totalItems": {
 					"min": 0,
-					"type": "integer"},
+					"type": "integer"
+				},
 				"type": { "type": "string" }
 			}
+		},
+		"singleActivityRequest": {
+			"$ref": "#/definitions/activity"
 		}
 	}
 }

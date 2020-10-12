@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -9,7 +7,9 @@ import { get } from 'lodash';
 /**
  * Internal Dependencies
  */
-import { isSiteAutomatedTransfer, getSiteOptions } from 'state/selectors';
+import getSiteOptions from 'state/selectors/get-site-options';
+
+import isSiteAutomatedTransfer from 'state/selectors/is-site-automated-transfer';
 
 /**
  * Indicates whether there might be an Automated Transfer process running on the backend for
@@ -20,9 +20,9 @@ import { isSiteAutomatedTransfer, getSiteOptions } from 'state/selectors';
  * However, the transfer process might not start immediately because of the transfer eligibility
  * reasons. That's where this selector comes handy.
  *
- * @param   {Object}  state  App state.
- * @param   {Number}  siteId Site of interest.
- * @returns {Boolean}        Whether there might be a transfer process happening on the backend.
+ * @param   {object}  state  App state.
+ * @param   {number}  siteId Site of interest.
+ * @returns {boolean}        Whether there might be a transfer process happening on the backend.
  */
 export default ( state, siteId ) => {
 	const siteOptions = getSiteOptions( state, siteId );

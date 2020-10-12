@@ -4,13 +4,13 @@
 	padding: 0;
 	flex-grow: 0;
 
-	@include breakpoint( ">660px" ) {
+	@include breakpoint-deprecated( '>660px' ) {
 		width: 640px;
 	}
 
 	.order__detail-header,
 	.order__details-total {
-		color: $gray-dark;
+		color: var( --color-neutral-70 );
 	}
 
 	.form-text-input,
@@ -19,6 +19,8 @@
 	}
 
 	.form-label {
+		margin-bottom: 0;
+
 		.form-text-input-with-affixes {
 			font-weight: normal;
 		}
@@ -44,14 +46,14 @@
 	justify-content: space-between;
 	margin: 0 -24px -24px;
 	padding: 24px;
-	border-top: 1px solid $gray-lighten-30;
-	background: lighten( $gray, 35% );
+	border-top: 1px solid var( --color-neutral-0 );
+	background: var( --color-neutral-0 );
 
 	.order-payment__note {
 		margin-bottom: 16px;
 		width: 100%;
 
-		@include breakpoint( ">660px" ) {
+		@include breakpoint-deprecated( '>660px' ) {
 			width: 40%;
 			margin-bottom: 0;
 		}
@@ -64,7 +66,7 @@
 	.order-payment__details {
 		margin-bottom: 0;
 
-		@include breakpoint( ">660px" ) {
+		@include breakpoint-deprecated( '>660px' ) {
 			width: 55%;
 		}
 	}
@@ -76,19 +78,19 @@
 		justify-content: space-between;
 		padding: 14px;
 		margin-bottom: 16px;
-		background: $gray-lighten-30;
-		border: 1px solid lighten( $gray, 15% );
+		background: var( --color-neutral-0 );
+		border: 1px solid var( --color-neutral-10 );
 	}
 
 	.order-payment__amount-value {
 		text-align: right;
-		font-weight: bold;
+		font-weight: 600;
 	}
 
 	.order-payment__method h3 {
-		font-size: 11px;
+		font-size: $font-body-extra-small;
 		text-transform: uppercase;
 		margin-bottom: 8px;
-		color: $gray-text-min;
+		color: var( --color-text-subtle );
 	}
 }

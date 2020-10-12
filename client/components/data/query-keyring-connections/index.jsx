@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -16,13 +14,18 @@ import { requestKeyringConnections } from 'state/sharing/keyring/actions';
 
 class QueryKeyringConnections extends Component {
 	static propTypes = {
+		forceRefresh: PropTypes.bool,
 		isRequesting: PropTypes.bool,
 		requestKeyringConnections: PropTypes.func,
 	};
 
-	componentWillMount() {
+	static defaultProps = {
+		forceRefresh: false,
+	};
+
+	UNSAFE_componentWillMount() {
 		if ( ! this.props.isRequesting ) {
-			this.props.requestKeyringConnections();
+			this.props.requestKeyringConnections( this.props.forceRefresh );
 		}
 	}
 
@@ -32,7 +35,7 @@ class QueryKeyringConnections extends Component {
 }
 
 export default connect(
-	state => ( {
+	( state ) => ( {
 		isRequesting: isKeyringConnectionsFetching( state ),
 	} ),
 	{ requestKeyringConnections }

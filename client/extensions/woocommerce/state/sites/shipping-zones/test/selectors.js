@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -36,7 +34,10 @@ const loadingMethodsAndLoadingLocationsState = {
 		woocommerce: {
 			sites: {
 				123: {
-					shippingZones: [ { id: 1, methodIds: [ 3 ] }, { id: 2, methodIds: LOADING } ],
+					shippingZones: [
+						{ id: 1, methodIds: [ 3 ] },
+						{ id: 2, methodIds: LOADING },
+					],
 					shippingZoneLocations: {
 						1: LOADING,
 						2: { country: [], continent: [], state: [], postcode: [] },
@@ -52,7 +53,10 @@ const loadedWithMethodsAndLoadingLocationsState = {
 		woocommerce: {
 			sites: {
 				123: {
-					shippingZones: [ { id: 1, methodIds: [ 3 ] }, { id: 2, methodIds: [ 7, 42 ] } ],
+					shippingZones: [
+						{ id: 1, methodIds: [ 3 ] },
+						{ id: 2, methodIds: [ 7, 42 ] },
+					],
 					shippingZoneLocations: {
 						1: LOADING,
 						2: { country: [], continent: [], state: [], postcode: [] },
@@ -68,7 +72,10 @@ const loadingMethodsAndLoadedLocationsState = {
 		woocommerce: {
 			sites: {
 				123: {
-					shippingZones: [ { id: 1, methodIds: [ 3 ] }, { id: 2, methodIds: LOADING } ],
+					shippingZones: [
+						{ id: 1, methodIds: [ 3 ] },
+						{ id: 2, methodIds: LOADING },
+					],
 					shippingZoneLocations: {
 						1: { country: [], continent: [], state: [], postcode: [] },
 						2: { country: [], continent: [], state: [], postcode: [] },
@@ -84,7 +91,10 @@ const loadedWithMethodsAndLocationsState = {
 		woocommerce: {
 			sites: {
 				123: {
-					shippingZones: [ { id: 1, methodIds: [ 3 ] }, { id: 2, methodIds: [ 7, 42 ] } ],
+					shippingZones: [
+						{ id: 1, methodIds: [ 3 ] },
+						{ id: 2, methodIds: [ 7, 42 ] },
+					],
 					shippingZoneLocations: {
 						1: { country: [], continent: [], state: [], postcode: [] },
 						2: { country: [], continent: [], state: [], postcode: [] },
@@ -199,7 +209,7 @@ describe( 'selectors', () => {
 
 	describe( '#getAPIShippingZones', () => {
 		test( 'should return null when woocommerce state is not available.', () => {
-			expect( getAPIShippingZones( preInitializedState, 123 ) ).to.be.falsey;
+			expect( getAPIShippingZones( preInitializedState, 123 ) ).to.be.undefined;
 		} );
 
 		test( 'should return the shipping zones list if they finished loading.', () => {
@@ -211,7 +221,7 @@ describe( 'selectors', () => {
 		} );
 
 		test( 'should return null when zones are loaded only for a different site.', () => {
-			expect( getAPIShippingZones( loadedEmptyState, 456 ) ).to.be.falsey;
+			expect( getAPIShippingZones( loadedEmptyState, 456 ) ).to.be.undefined;
 		} );
 
 		test( 'should get the siteId from the UI tree if not provided.', () => {

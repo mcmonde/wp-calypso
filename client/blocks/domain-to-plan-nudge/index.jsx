@@ -1,18 +1,16 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 import { localize } from 'i18n-calypso';
 import { connect } from 'react-redux';
+import formatCurrency from '@automattic/format-currency';
 
 /**
  * Internal dependencies
  */
-import Banner from 'components/banner';
+import UpsellNudge from 'blocks/upsell-nudge';
 import { getSelectedSiteId } from 'state/ui/selectors';
 import { getSite } from 'state/sites/selectors';
 import { PLAN_PERSONAL, FEATURE_NO_ADS } from 'lib/plans/constants';
@@ -25,8 +23,12 @@ import {
 	getPlansBySiteId,
 } from 'state/sites/plans/selectors';
 import QuerySitePlans from 'components/data/query-site-plans';
-import formatCurrency from 'lib/format-currency';
-import { isEligibleForDomainToPaidPlanUpsell } from 'state/selectors';
+import isEligibleForDomainToPaidPlanUpsell from 'state/selectors/is-eligible-for-domain-to-paid-plan-upsell';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class DomainToPlanNudge extends Component {
 	static propTypes = {
@@ -59,7 +61,7 @@ class DomainToPlanNudge extends Component {
 
 		const prices = discountedRawPrice ? [ rawPrice, discountedRawPrice ] : null;
 		return (
-			<Banner
+			<UpsellNudge
 				callToAction={ translate( 'Upgrade for %s', {
 					args: formatCurrency( discountedRawPrice || rawPrice, userCurrency ),
 					comment: '%s will be replaced by a formatted price, i.e $9.99',
@@ -75,6 +77,7 @@ class DomainToPlanNudge extends Component {
 				] }
 				plan={ PLAN_PERSONAL }
 				price={ prices }
+				showIcon
 				title={ translate( 'Upgrade to a Personal Plan and Save!' ) }
 			/>
 		);

@@ -9,7 +9,7 @@
 }
 
 .email-verification__status {
-	font-size: 16px;
+	font-size: $font-body;
 	font-weight: 600;
 	line-height: 21px;
 	padding-left: 50px;
@@ -27,19 +27,19 @@
 }
 
 .email-verification__sent-to {
-	color: 	$gray-darken-20;
-	font-size: 14px;
+	color: var( --color-neutral-50 );
+	font-size: $font-body-small;
 }
 
 .email-verification__heading {
-	font-size: 21px;
-	font-weight: bold;
+	font-size: $font-title-small;
+	font-weight: 600;
 	line-height: 26px;
 	margin: 0 0 10px;
 }
 
 .email-verification__status-container {
-	border-top: 1px solid $gray-lighten-20;
+	border-top: 1px solid var( --color-neutral-10 );
 	margin: 25px -24px -16px -21px;
 	padding: 24px 24px 24px 21px;
 	position: relative;
@@ -53,16 +53,25 @@
 			margin-right: 0;
 		}
 		&.is-busy:disabled {
-			color: 	$gray-darken-20;
+			color: var( --color-neutral-50 );
 		}
 	}
 
 	&.waiting .gridicon {
-		color: $alert-yellow;
+		color: var( --color-warning );
 	}
 
 	&.sent .gridicon {
-		color: $alert-green;
+		color: var( --color-success );
+	}
+}
+
+.email-verification__actions {
+	display: flex;
+	align-items: center;
+
+	a {
+		margin-left: 16px;
 	}
 }
 
@@ -76,14 +85,8 @@
 	animation: fadeOut 0.3s ease-out;
 }
 
-.domain-details-card {
-	.email-verification__card {
-		margin-bottom: 16px;
-	}
-}
-
-.notice__text {
-	word-break: break-word;
+.domain-details-card .email-verification__card {
+	margin-bottom: 16px;
 }
 
 @keyframes fadeIn {
@@ -96,7 +99,6 @@
 		bottom: 0;
 	}
 }
-
 
 @keyframes fadeOut {
 	0% {

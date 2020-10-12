@@ -1,6 +1,5 @@
-/** @format */
 /**
- * External Dependencies
+ * External dependencies
  */
 import PropTypes from 'prop-types';
 import React, { Fragment } from 'react';
@@ -9,9 +8,10 @@ import ReactDom from 'react-dom';
 import closest from 'component-closest';
 import { localize } from 'i18n-calypso';
 import classnames from 'classnames';
+import config from 'config';
 
 /**
- * Internal Dependencies
+ * Internal dependencies
  */
 import AutoDirection from 'components/auto-direction';
 import Emojify from 'components/emojify';
@@ -23,7 +23,7 @@ import TimeSince from 'components/time-since';
 import ReaderFeaturedImage from 'blocks/reader-featured-image';
 import ReaderFeaturedVideo from 'blocks/reader-featured-video';
 import ReaderCombinedCardPostPlaceholder from 'blocks/reader-combined-card/placeholders/post';
-import { isAuthorNameBlacklisted } from 'reader/lib/author-name-blacklist';
+import { isAuthorNameBlocked } from 'reader/lib/author-name-blocklist';
 import QueryReaderPost from 'components/data/query-reader-post';
 
 class ReaderCombinedCardPost extends React.Component {
@@ -38,27 +38,27 @@ class ReaderCombinedCardPost extends React.Component {
 		showFeaturedAsset: true,
 	};
 
-	handleCardClick = event => {
+	handleCardClick = ( event ) => {
 		const rootNode = ReactDom.findDOMNode( this );
 		const selection = window.getSelection && window.getSelection();
 
 		// if the click has modifier or was not primary, ignore it
 		if ( event.button > 0 || event.metaKey || event.controlKey || event.shiftKey || event.altKey ) {
-			if ( closest( event.target, '.reader-combined-card__post-title-link', true, rootNode ) ) {
+			if ( closest( event.target, '.reader-combined-card__post-title-link', rootNode ) ) {
 				recordPermalinkClick( 'card_title_with_modifier', this.props.post );
 			}
 			return;
 		}
 
 		// declarative ignore
-		if ( closest( event.target, '.ignore-click, [rel~=external]', true, rootNode ) ) {
+		if ( closest( event.target, '.ignore-click, [rel~=external]', rootNode ) ) {
 			return;
 		}
 
 		// ignore clicks on anchors inside inline content
 		if (
-			closest( event.target, 'a', true, rootNode ) &&
-			closest( event.target, '.reader-excerpt', true, rootNode )
+			closest( event.target, 'a', rootNode ) &&
+			closest( event.target, '.reader-excerpt', rootNode )
 		) {
 			return;
 		}
@@ -89,8 +89,7 @@ class ReaderCombinedCardPost extends React.Component {
 			);
 		}
 
-		const hasAuthorName =
-			has( post, 'author.name' ) && ! isAuthorNameBlacklisted( post.author.name );
+		const hasAuthorName = has( post, 'author.name' ) && ! isAuthorNameBlocked( post.author.name );
 		let featuredAsset = null;
 		if ( post.canonical_media && post.canonical_media.mediaType === 'video' ) {
 			featuredAsset = (
@@ -114,12 +113,15 @@ class ReaderCombinedCardPost extends React.Component {
 			recordPermalinkClick( 'timestamp_combined_card', post );
 		};
 
+		const isSeen = config.isEnabled( 'reader/seen-posts' ) && !! post.is_seen;
 		const classes = classnames( {
 			'reader-combined-card__post': true,
 			'is-selected': isSelected,
+			'is-seen': isSeen,
 			'has-featured-asset': !! featuredAsset,
 		} );
 
+		/* eslint-disable jsx-a11y/click-events-have-key-events,jsx-a11y/no-noninteractive-element-interactions */
 		return (
 			<li className={ classes } onClick={ this.handleCardClick }>
 				{ this.props.showFeaturedAsset && (
@@ -148,25 +150,25 @@ class ReaderCombinedCardPost extends React.Component {
 								{ post.author.name }
 							</ReaderAuthorLink>
 						) }
-						{ post.date &&
-							post.URL && (
-								<span className="reader-combined-card__timestamp">
-									{ hasAuthorName && <span>, </span> }
-									<a
-										className="reader-combined-card__timestamp-link"
-										onClick={ recordDateClick }
-										href={ post.URL }
-										target="_blank"
-										rel="noopener noreferrer"
-									>
-										<TimeSince date={ post.date } />
-									</a>
-								</span>
-							) }
+						{ post.date && post.URL && (
+							<span className="reader-combined-card__timestamp">
+								{ hasAuthorName && <span>, </span> }
+								<a
+									className="reader-combined-card__timestamp-link"
+									onClick={ recordDateClick }
+									href={ post.URL }
+									target="_blank"
+									rel="noopener noreferrer"
+								>
+									<TimeSince date={ post.date } />
+								</a>
+							</span>
+						) }
 					</div>
 				</div>
 			</li>
 		);
+		/* eslint-enable jsx-a11y/click-events-have-key-events,jsx-a11y/no-noninteractive-element-interactions */
 	}
 }
 

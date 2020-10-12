@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -15,44 +13,42 @@ import { bypassDataLayer } from 'state/data-layer/utils';
 import { dispatchRequest } from 'state/data-layer/wpcom-http/utils';
 import { errorNotice } from 'state/notices/actions';
 
-export const unlikeComment = ( { dispatch }, action ) => {
-	dispatch(
-		http(
-			{
-				method: 'POST',
-				apiVersion: '1.1',
-				path: `/sites/${ action.siteId }/comments/${ action.commentId }/likes/mine/delete`,
-			},
-			action
-		)
-	);
-};
+import { registerHandlers } from 'state/data-layer/handler-registry';
 
-export const updateCommentLikes = ( { dispatch }, { siteId, postId, commentId }, { like_count } ) =>
-	dispatch(
-		bypassDataLayer( {
-			type: COMMENTS_UNLIKE,
-			siteId,
-			postId,
-			commentId,
-			like_count,
-		} )
+export const unlikeComment = ( action ) =>
+	http(
+		{
+			method: 'POST',
+			apiVersion: '1.1',
+			path: `/sites/${ action.siteId }/comments/${ action.commentId }/likes/mine/delete`,
+		},
+		action
 	);
 
-/***
- * dispatches a error notice if creating a new comment request failed
- *
- * @param {Function} dispatch redux dispatcher
- */
-export const handleUnlikeFailure = ( { dispatch }, { siteId, postId, commentId } ) => {
+export const updateCommentLikes = ( { siteId, postId, commentId }, { like_count } ) =>
+	bypassDataLayer( {
+		type: COMMENTS_UNLIKE,
+		siteId,
+		postId,
+		commentId,
+		like_count,
+	} );
+
+export const handleUnlikeFailure = ( { siteId, postId, commentId } ) => [
 	// revert optimistic update on error
-	dispatch( bypassDataLayer( { type: COMMENTS_LIKE, siteId, postId, commentId } ) );
+	bypassDataLayer( { type: COMMENTS_LIKE, siteId, postId, commentId } ),
 	// dispatch a error notice
-	dispatch( errorNotice( translate( 'Could not unlike this comment' ) ) );
-};
+	errorNotice( translate( 'Could not unlike this comment' ) ),
+];
 
-export default {
+registerHandlers( 'state/data-layer/wpcom/sites/comments/likes/mine/delete/index.js', {
 	[ COMMENTS_UNLIKE ]: [
-		dispatchRequest( unlikeComment, updateCommentLikes, handleUnlikeFailure ),
+		dispatchRequest( {
+			fetch: unlikeComment,
+			onSuccess: updateCommentLikes,
+			onError: handleUnlikeFailure,
+		} ),
 	],
-};
+} );
+
+export default {};

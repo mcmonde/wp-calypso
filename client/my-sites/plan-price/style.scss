@@ -1,27 +1,32 @@
 .plan-price {
 	margin: 0;
-	font-size: 28px;
+	font-size: $font-title-large;
 	line-height: 1.5;
-	color: $gray-dark;
+	color: var( --color-neutral-70 );
 
 	&.is-placeholder {
-		@include placeholder( 23% );
+		@include placeholder( --color-neutral-10 );
 		width: 60px;
 		margin: 10px 0;
 		height: 21px;
 	}
 
-	@include breakpoint( "<960px" ) {
-		font-size: 24px;
+	.badge {
+		margin-left: 8px;
+		vertical-align: super;
+	}
+
+	@include breakpoint-deprecated( '<960px' ) {
+		font-size: $font-title-medium;
 	}
 }
 
 .plan-price.is-original {
-	color: $gray;
+	color: var( --color-neutral-light );
 }
 
 .plan-price.is-discounted {
-	color: $alert-green;
+	color: var( --color-success );
 }
 
 .plan-price.is-discounted,
@@ -31,29 +36,35 @@
 	margin-right: 8px;
 }
 
-.plan-price.is-original:before {
+.plan-price.is-original::before {
 	position: absolute;
-	content: "";
+	content: '';
 	left: 0;
 	top: 50%;
 	right: 0;
-	border-top: 2px solid $orange-fire;
+	border-top: 2px solid var( --color-accent );
 	transform: rotate( -16deg );
-	opacity: .9;
+	opacity: 0.9;
 }
 
 .plan-price__currency-symbol,
-.plan-price__fraction {
+.plan-price__fraction,
+.plan-price__tax-amount {
 	vertical-align: super;
-	font-size: 12px;
+	font-size: $font-body-extra-small;
 }
 
 .plan-price.is-discounted .plan-price__currency-symbol {
-	color: $alert-green;
+	color: var( --color-success );
 }
 
-.plan-price__currency-symbol {
-	color: $gray;
+.plan-price__tax-amount {
+	margin-left: 4px;
+}
+
+.plan-price__currency-symbol,
+.plan-price__tax-amount {
+	color: var( --color-text-subtle );
 }
 
 .plan-price__integer {
@@ -62,5 +73,5 @@
 }
 
 .plan-price__fraction {
-	font-weight: 500;
+	font-weight: 600;
 }

@@ -1,5 +1,4 @@
 /**
- * @format
  * @jest-environment jsdom
  */
 
@@ -16,6 +15,12 @@ import emitter from 'lib/mixins/emitter';
 import CountrySelect from 'my-sites/domains/components/form/country-select';
 import { PaymentCountrySelect } from '../';
 
+// Gets rid of warnings such as 'UnhandledPromiseRejectionWarning: Error: No available storage method found.'
+jest.mock( 'lib/user', () => () => {} );
+jest.mock( 'lib/cart/actions', () => ( {
+	setTaxCountryCode: () => {},
+} ) );
+
 describe( 'PaymentCountrySelect', () => {
 	let props;
 
@@ -23,20 +28,16 @@ describe( 'PaymentCountrySelect', () => {
 		props = {
 			name: 'test-country-select',
 			label: 'Test country select',
-			countriesList: {
-				get: function() {
-					return [
-						{
-							code: 'US',
-							name: 'United States',
-						},
-						{
-							code: 'AR',
-							name: 'Argentina',
-						},
-					];
+			countriesList: [
+				{
+					code: 'US',
+					name: 'United States',
 				},
-			},
+				{
+					code: 'AR',
+					name: 'Argentina',
+				},
+			],
 			countryCode: 'US',
 		};
 		emitter( props.countriesList );
@@ -44,7 +45,7 @@ describe( 'PaymentCountrySelect', () => {
 
 	test( 'should display a country selection component with the expected properties', () => {
 		const wrapper = shallow( <PaymentCountrySelect { ...props } /> );
-		expect( wrapper.is( CountrySelect ) );
+		expect( wrapper.is( CountrySelect ) ).toBe( true );
 		expect( wrapper.prop( 'name' ) ).toEqual( props.name );
 		expect( wrapper.prop( 'countriesList' ) ).toEqual( props.countriesList );
 		expect( wrapper.prop( 'value' ) ).toEqual( props.countryCode );

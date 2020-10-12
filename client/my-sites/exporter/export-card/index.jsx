@@ -1,9 +1,6 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import { localize } from 'i18n-calypso';
 import { flowRight } from 'lodash';
 import React, { Component } from 'react';
@@ -14,7 +11,7 @@ import { connect } from 'react-redux';
  */
 import SpinnerButton from 'components/spinner-button';
 import FoldableCard from 'components/foldable-card';
-import Interval, { EVERY_SECOND } from 'lib/interval';
+import { Interval, EVERY_SECOND } from 'lib/interval';
 import AdvancedSettings from './advanced-settings';
 import { withAnalytics, recordTracksEvent } from 'state/analytics/actions';
 import {
@@ -22,19 +19,15 @@ import {
 	exportStatusFetch,
 	setPostType,
 	startExport,
-} from 'state/site-settings/exporter/actions';
-import {
-	shouldShowProgress,
-	getSelectedPostType,
-	isExporting,
-} from 'state/site-settings/exporter/selectors';
+} from 'state/exporter/actions';
+import { shouldShowProgress, getSelectedPostType, isExporting } from 'state/exporter/selectors';
 
 class ExportCard extends Component {
-	componentWillMount() {
+	UNSAFE_componentWillMount() {
 		this.props.advancedSettingsFetch( this.props.siteId );
 	}
 
-	componentWillReceiveProps( newProps ) {
+	UNSAFE_componentWillReceiveProps( newProps ) {
 		if ( newProps.siteId !== this.props.siteId ) {
 			this.props.advancedSettingsFetch( newProps.siteId );
 		}
@@ -47,9 +40,9 @@ class ExportCard extends Component {
 			<SpinnerButton
 				className="export-card__export-button"
 				loading={ this.props.shouldShowProgress }
-				isPrimary={ true }
+				isPrimary={ false }
 				onClick={ this.props.exportAll }
-				text={ translate( 'Export All' ) }
+				text={ translate( 'Export all' ) }
 				loadingText={ translate( 'Exporting…' ) }
 			/>
 		);
@@ -60,9 +53,11 @@ class ExportCard extends Component {
 					actionButtonIcon="cog"
 					header={
 						<div>
-							<h1 className="export-card__title">{ translate( 'Export your content' ) }</h1>
+							<h1 className="export-card__title">{ translate( 'Export content' ) }</h1>
 							<h2 className="export-card__subtitle">
-								{ translate( 'Or select specific content items to export' ) }
+								{ translate(
+									'Export all (or specific) text content (pages, posts, feedback) from your site.'
+								) }
 							</h2>
 						</div>
 					}

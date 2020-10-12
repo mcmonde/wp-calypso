@@ -1,10 +1,8 @@
-/** @format */
-
 /**
  * Internal dependencies
  */
 import { isEnabled } from 'config';
-import { PLAN_BUSINESS } from 'lib/plans/constants';
+import { PLAN_BUSINESS, PLAN_ECOMMERCE } from 'lib/plans/constants';
 import { HAPPYCHAT_GROUP_WPCOM, HAPPYCHAT_GROUP_JPOP } from 'state/happychat/constants';
 import { userState } from 'state/selectors/test/fixtures/user-state';
 import getGroups from '../get-groups';
@@ -88,29 +86,32 @@ describe( 'selectors', () => {
 
 		test( 'should return WPCOM for AT sites group for jetpack site', () => {
 			const siteId = 1;
-			const state = {
-				...uiState,
-				...userState,
-				currentUser: {
-					id: 1,
-					capabilities: {
-						[ siteId ]: {
-							manage_options: true,
-						},
-					},
-				},
-				sites: {
-					items: {
-						[ siteId ]: {
-							jetpack: true,
-							options: { is_automated_transfer: true },
-							plan: { product_slug: PLAN_BUSINESS },
-						},
-					},
-				},
-			};
 
-			expect( getGroups( state, siteId ) ).toMatchObject( [ HAPPYCHAT_GROUP_WPCOM ] );
+			[ PLAN_BUSINESS, PLAN_ECOMMERCE ].forEach( ( plan ) => {
+				const state = {
+					...uiState,
+					...userState,
+					currentUser: {
+						id: 1,
+						capabilities: {
+							[ siteId ]: {
+								manage_options: true,
+							},
+						},
+					},
+					sites: {
+						items: {
+							[ siteId ]: {
+								jetpack: true,
+								options: { is_automated_transfer: true },
+								plan: { product_slug: plan },
+							},
+						},
+					},
+				};
+
+				expect( getGroups( state, siteId ) ).toMatchObject( [ HAPPYCHAT_GROUP_WPCOM ] );
+			} );
 		} );
 
 		if ( isEnabled( 'jetpack/happychat' ) ) {
@@ -131,8 +132,6 @@ describe( 'selectors', () => {
 
 				expect( getGroups( state ) ).toMatchObject( [ HAPPYCHAT_GROUP_JPOP ] );
 			} );
-		} else {
-			test.skip( 'should not return JPOP group if within the jetpack-connect section' );
 		}
 	} );
 } );

@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -7,8 +6,8 @@ import PropTypes from 'prop-types';
 import { bindActionCreators } from 'redux';
 import classNames from 'classnames';
 import { connect } from 'react-redux';
-import { first } from 'lodash';
-import Gridicon from 'gridicons';
+import { first, includes } from 'lodash';
+import Gridicon from 'components/gridicon';
 import { localize } from 'i18n-calypso';
 
 /**
@@ -20,24 +19,27 @@ import {
 } from 'woocommerce/woocommerce-services/state/label-settings/selectors';
 import {
 	areLabelsFullyLoaded,
-	getCountriesData,
 	getLabels,
 	isLabelDataFetchError,
 } from 'woocommerce/woocommerce-services/state/shipping-label/selectors';
 import {
+	ACCEPTED_USPS_ORIGIN_COUNTRIES,
+	US_MILITARY_STATES,
+	DOMESTIC_US_TERRITORIES,
+} from 'woocommerce/woocommerce-services/state/shipping-label/constants';
+import {
 	areSettingsGeneralLoaded,
 	getStoreLocation,
 } from 'woocommerce/state/sites/settings/general/selectors';
-import Button from 'components/button';
+import { Button, Dialog } from '@automattic/components';
 import { createNote } from 'woocommerce/state/sites/orders/notes/actions';
-import Dialog from 'components/dialog';
 import FormFieldset from 'components/forms/form-fieldset';
 import FormLabel from 'components/forms/form-label';
 import FormInputCheckbox from 'components/forms/form-checkbox';
 import FormTextInput from 'components/forms/form-text-input';
 import { isOrderFinished } from 'woocommerce/lib/order-status';
 import { isOrderUpdating } from 'woocommerce/state/sites/orders/selectors';
-import { isWcsEnabled } from 'woocommerce/state/selectors/plugins';
+import { isWcsEnabled, isWcsInternationalLabelsEnabled } from 'woocommerce/state/selectors/plugins';
 import LabelPurchaseDialog from 'woocommerce/woocommerce-services/views/shipping-label/label-purchase-modal';
 import Notice from 'components/notice';
 import { openPrintingFlow } from 'woocommerce/woocommerce-services/state/shipping-label/actions';
@@ -63,14 +65,14 @@ class OrderFulfillment extends Component {
 		trackingNumber: '',
 	};
 
-	toggleDialog = event => {
+	toggleDialog = ( event ) => {
 		event && event.preventDefault();
 		this.setState( {
 			showDialog: ! this.state.showDialog,
 		} );
 	};
 
-	updateTrackingNumber = event => {
+	updateTrackingNumber = ( event ) => {
 		this.setState( {
 			errorMessage: false,
 			trackingNumber: event.target.value,
@@ -141,26 +143,23 @@ class OrderFulfillment extends Component {
 		}
 	};
 
-	isAddressValidForLabels( address ) {
-		const { labelCountriesData } = this.props;
-		if ( ! labelCountriesData ) {
+	isAddressValidForLabels( address, type ) {
+		if ( this.props.internationalLabelsEnabled ) {
+			// If international labels is enabled, origin must be a country with a USPS office, destination can be anywhere in the world
+			return 'destination' === type || includes( ACCEPTED_USPS_ORIGIN_COUNTRIES, address.country );
+		}
+
+		// If international labels is disabled, restrict origin and destination to "domestic", that is, US, Puerto Rico and Virgin Islands
+		if ( ! DOMESTIC_US_TERRITORIES.includes( address.country ) ) {
 			return false;
 		}
 
-		const countryData = labelCountriesData[ address.country ];
-
-		//country not supported
-		if ( ! countryData ) {
+		// Disable US military addresses too, since they require customs form
+		if ( 'US' === address.country && US_MILITARY_STATES.includes( address.state ) ) {
 			return false;
 		}
 
-		//supported country doesn't have a states data
-		if ( ! countryData.states ) {
-			return true;
-		}
-
-		//check if the address state is supported
-		return Boolean( countryData.states[ address.state ] );
+		return true;
 	}
 
 	shouldShowLabels() {
@@ -175,8 +174,8 @@ class OrderFulfillment extends Component {
 		return (
 			labelsEnabled &&
 			hasLabelsPaymentMethod &&
-			this.isAddressValidForLabels( storeAddress ) &&
-			this.isAddressValidForLabels( shipping )
+			this.isAddressValidForLabels( storeAddress, 'origin' ) &&
+			this.isAddressValidForLabels( shipping, 'destination' )
 		);
 	}
 
@@ -301,11 +300,11 @@ export default connect(
 		const hasLabelsPaymentMethod =
 			wcsEnabled && labelsLoaded && getSelectedPaymentMethodId( state, site.ID );
 		const storeAddress = labelsLoaded && getStoreLocation( state );
-		const labelCountriesData = getCountriesData( state, order.id, site.ID );
 		const isSaving = isOrderUpdating( state, order.id );
 
 		return {
 			wcsEnabled,
+			internationalLabelsEnabled: isWcsInternationalLabelsEnabled( state, site.ID ),
 			isSaving,
 			labelsLoaded,
 			labelsError: isLabelDataFetchError( state, order.id, site.ID ),
@@ -313,8 +312,7 @@ export default connect(
 			labels: getLabels( state, order.id, site.ID ),
 			hasLabelsPaymentMethod,
 			storeAddress,
-			labelCountriesData,
 		};
 	},
-	dispatch => bindActionCreators( { createNote, saveOrder, openPrintingFlow }, dispatch )
+	( dispatch ) => bindActionCreators( { createNote, saveOrder, openPrintingFlow }, dispatch )
 )( localize( OrderFulfillment ) );

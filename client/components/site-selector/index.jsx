@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -9,8 +8,7 @@ import { connect } from 'react-redux';
 import { localize } from 'i18n-calypso';
 import page from 'page';
 import classNames from 'classnames';
-import { filter, flow, get, includes, keyBy, noop, size } from 'lodash';
-import scrollIntoView from 'dom-scroll-into-view';
+import { filter, find, flow, get, includes, isEmpty, noop } from 'lodash';
 import debugFactory from 'debug';
 
 /**
@@ -20,13 +18,23 @@ import { getPreference } from 'state/preferences/selectors';
 import { getCurrentUser } from 'state/current-user/selectors';
 import { getSelectedSite } from 'state/ui/selectors';
 import { getSite, hasAllSitesList } from 'state/sites/selectors';
-import { areAllSitesSingleUser, getSites, getVisibleSites, hasLoadedSites } from 'state/selectors';
+import areAllSitesSingleUser from 'state/selectors/are-all-sites-single-user';
+import getSites from 'state/selectors/get-sites';
+import getVisibleSites from 'state/selectors/get-visible-sites';
+import hasLoadedSites from 'state/selectors/has-loaded-sites';
 import AllSites from 'blocks/all-sites';
 import Site from 'blocks/site';
 import SitePlaceholder from 'blocks/site/placeholder';
 import Search from 'components/search';
 import SiteSelectorAddSite from './add-site';
 import searchSites from 'components/search-sites';
+import scrollIntoViewport from 'lib/scroll-into-viewport';
+import { getUrlParts, getUrlFromParts, determineUrlType, format } from 'lib/url';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 const ALL_SITES = 'ALL_SITES';
 
@@ -66,6 +74,7 @@ class SiteSelector extends Component {
 		onClose: noop,
 		onSiteSelect: noop,
 		groups: false,
+		autoFocus: false,
 	};
 
 	state = {
@@ -74,7 +83,7 @@ class SiteSelector extends Component {
 		isKeyboardEngaged: false,
 	};
 
-	onSearch = terms => {
+	onSearch = ( terms ) => {
 		this.props.searchSites( terms );
 
 		this.setState( {
@@ -113,8 +122,9 @@ class SiteSelector extends Component {
 			return;
 		}
 
-		scrollIntoView( highlightedSiteElem, selectorElement, {
-			onlyScrollIfNeeded: true,
+		scrollIntoViewport( highlightedSiteElem, {
+			block: 'nearest',
+			scrollMode: 'if-needed',
 		} );
 	}
 
@@ -131,7 +141,7 @@ class SiteSelector extends Component {
 			highlightedSiteId = this.props.highlightedSiteId || this.lastMouseHover;
 			highlightedIndex = this.visibleSites.indexOf( highlightedSiteId );
 		} else {
-			debug( 'reseting highlight as mouse left site selector' );
+			debug( 'resetting highlight as mouse left site selector' );
 			highlightedSiteId = null;
 			highlightedIndex = -1;
 		}
@@ -139,7 +149,7 @@ class SiteSelector extends Component {
 		return { highlightedSiteId, highlightedIndex };
 	}
 
-	onKeyDown = event => {
+	onKeyDown = ( event ) => {
 		const visibleLength = this.visibleSites.length;
 
 		// ignore keyboard access when there are no results
@@ -205,7 +215,7 @@ class SiteSelector extends Component {
 		}
 	};
 
-	onAllSitesSelect = event => {
+	onAllSitesSelect = ( event ) => {
 		this.onSiteSelect( event, ALL_SITES );
 	};
 
@@ -228,7 +238,7 @@ class SiteSelector extends Component {
 		this.lastMouseHover = null;
 	};
 
-	onMouseMove = event => {
+	onMouseMove = ( event ) => {
 		// we need to test here if cursor position was actually moved, because
 		// mouseMove event can also be triggered by scrolling the parent element
 		// and we scroll that element via keyboard access
@@ -263,24 +273,15 @@ class SiteSelector extends Component {
 		return this.props.groups;
 	}
 
-	setSiteSelectorRef = component => ( this.siteSelectorRef = component );
+	setSiteSelectorRef = ( component ) => ( this.siteSelectorRef = component );
 
-	renderSites() {
+	sitesToBeRendered() {
 		let sites;
-
-		if ( ! this.props.hasAllSitesList ) {
-			return <SitePlaceholder key="site-placeholder" />;
-		}
 
 		if ( this.props.sitesFound ) {
 			sites = this.props.sitesFound;
 		} else {
 			sites = this.props.visibleSites;
-
-			const { showRecentSites, recentSites } = this.props;
-			if ( showRecentSites && this.shouldShowGroups() && size( recentSites ) ) {
-				sites = filter( sites, ( { ID: siteId } ) => ! includes( recentSites, siteId ) );
-			}
 		}
 
 		if ( this.props.filter ) {
@@ -288,7 +289,68 @@ class SiteSelector extends Component {
 		}
 
 		if ( this.props.hideSelected && this.props.selected ) {
-			sites = sites.filter( site => site.slug !== this.props.selected );
+			sites = sites.filter( ( site ) => site.slug !== this.props.selected );
+		}
+
+		return sites;
+	}
+
+	shouldRenderRecentSites() {
+		return this.props.showRecentSites && this.shouldShowGroups() && ! this.props.sitesFound;
+	}
+
+	renderAllSites() {
+		if ( ! this.props.showAllSites || this.props.sitesFound || ! this.props.allSitesPath ) {
+			return null;
+		}
+
+		this.visibleSites.push( ALL_SITES );
+
+		const isHighlighted = this.isHighlighted( ALL_SITES );
+
+		return (
+			<AllSites
+				key="selector-all-sites"
+				sites={ this.props.sites }
+				onSelect={ this.onAllSitesSelect }
+				onMouseEnter={ this.onAllSitesHover }
+				isHighlighted={ isHighlighted }
+				isSelected={ this.isSelected( ALL_SITES ) }
+			/>
+		);
+	}
+
+	renderRecentSites( sites ) {
+		if ( ! this.shouldRenderRecentSites() ) {
+			return null;
+		}
+
+		const recentSites = [];
+		for ( const siteId of this.props.recentSites ) {
+			const site = find( sites, { ID: siteId } );
+			if ( site ) {
+				recentSites.push( site );
+			}
+		}
+
+		if ( isEmpty( recentSites ) ) {
+			return null;
+		}
+
+		const renderedRecentSites = recentSites.map( this.renderSite, this );
+
+		return <div className="site-selector__recent">{ renderedRecentSites }</div>;
+	}
+
+	renderSites( sites ) {
+		if ( ! this.props.hasAllSitesList ) {
+			return <SitePlaceholder key="site-placeholder" />;
+		}
+
+		// Filter recentSites
+		if ( this.shouldRenderRecentSites() ) {
+			const recentSites = this.props.recentSites;
+			sites = filter( sites, ( { ID: siteId } ) => ! includes( recentSites, siteId ) );
 		}
 
 		// Render sites
@@ -303,25 +365,6 @@ class SiteSelector extends Component {
 		}
 
 		return siteElements;
-	}
-
-	renderAllSites() {
-		if ( this.props.showAllSites && ! this.props.sitesFound && this.props.allSitesPath ) {
-			this.visibleSites.push( ALL_SITES );
-
-			const isHighlighted = this.isHighlighted( ALL_SITES );
-
-			return (
-				<AllSites
-					key="selector-all-sites"
-					sites={ this.props.sites }
-					onSelect={ this.onAllSitesSelect }
-					onMouseEnter={ this.onAllSitesHover }
-					isHighlighted={ isHighlighted }
-					isSelected={ this.isSelected( ALL_SITES ) }
-				/>
-			);
-		}
 	}
 
 	renderSite( site ) {
@@ -346,28 +389,6 @@ class SiteSelector extends Component {
 		);
 	}
 
-	renderRecentSites() {
-		const sitesById = keyBy( this.props.sites, 'ID' );
-		const sites = this.props.recentSites.map( siteId => sitesById[ siteId ] );
-
-		if (
-			! sites ||
-			this.props.sitesFound ||
-			! this.shouldShowGroups() ||
-			this.props.visibleSiteCount <= 11
-		) {
-			return null;
-		}
-
-		const recentSites = sites.map( this.renderSite, this );
-
-		if ( ! recentSites ) {
-			return null;
-		}
-
-		return <div className="site-selector__recent">{ recentSites }</div>;
-	}
-
 	render() {
 		// Render an empty div.site-selector element as a placeholder. It's useful for lazy
 		// rendering of the selector in sidebar while keeping the on-appear animation work.
@@ -385,6 +406,8 @@ class SiteSelector extends Component {
 
 		this.visibleSites = [];
 
+		const sites = this.sitesToBeRendered();
+
 		return (
 			<div
 				className={ selectorClass }
@@ -392,9 +415,9 @@ class SiteSelector extends Component {
 				onMouseLeave={ this.onMouseLeave }
 			>
 				<Search
-					ref="siteSearch"
 					onSearch={ this.onSearch }
 					delaySearch={ true }
+					// eslint-disable-next-line jsx-a11y/no-autofocus
 					autoFocus={ this.props.autoFocus }
 					disabled={ ! this.props.hasLoadedSites }
 					onSearchClose={ this.props.onClose }
@@ -402,34 +425,33 @@ class SiteSelector extends Component {
 				/>
 				<div className="site-selector__sites" ref={ this.setSiteSelectorRef }>
 					{ this.renderAllSites() }
-					{ this.renderRecentSites() }
-					{ this.renderSites() }
-					{ hiddenSitesCount > 0 &&
-						! this.props.sitesFound && (
-							<span className="site-selector__hidden-sites-message">
-								{ this.props.translate(
-									'%(hiddenSitesCount)d more hidden site. {{a}}Change{{/a}}.{{br/}}Use search to access it.',
-									'%(hiddenSitesCount)d more hidden sites. {{a}}Change{{/a}}.{{br/}}Use search to access them.',
-									{
-										count: hiddenSitesCount,
-										args: {
-											hiddenSitesCount: hiddenSitesCount,
-										},
-										components: {
-											br: <br />,
-											a: (
-												<a
-													href="https://dashboard.wordpress.com/wp-admin/index.php?page=my-blogs&show=hidden"
-													className="site-selector__manage-hidden-sites"
-													target="_blank"
-													rel="noopener noreferrer"
-												/>
-											),
-										},
-									}
-								) }
-							</span>
-						) }
+					{ this.renderRecentSites( sites ) }
+					{ this.renderSites( sites ) }
+					{ hiddenSitesCount > 0 && ! this.props.sitesFound && (
+						<span className="site-selector__hidden-sites-message">
+							{ this.props.translate(
+								'%(hiddenSitesCount)d more hidden site. {{a}}Change{{/a}}.{{br/}}Use search to access it.',
+								'%(hiddenSitesCount)d more hidden sites. {{a}}Change{{/a}}.{{br/}}Use search to access them.',
+								{
+									count: hiddenSitesCount,
+									args: {
+										hiddenSitesCount: hiddenSitesCount,
+									},
+									components: {
+										br: <br />,
+										a: (
+											<a
+												href="https://dashboard.wordpress.com/wp-admin/index.php?page=my-blogs&show=hidden"
+												className="site-selector__manage-hidden-sites"
+												target="_blank"
+												rel="noopener noreferrer"
+											/>
+										),
+									},
+								}
+							) }
+						</span>
+					) }
 				</div>
 				{ this.props.showAddNewSite && <SiteSelectorAddSite /> }
 			</div>
@@ -459,7 +481,31 @@ const navigateToSite = ( siteId, { allSitesPath, allSitesSingleUser, siteBasePat
 			// There is currently no "all sites" version of the insights page
 			return path.replace( /^\/stats\/insights\/?$/, '/stats/day' );
 		} else if ( siteBasePath ) {
-			return getSiteBasePath( site ) + '/' + site.slug;
+			const base = getSiteBasePath( site );
+
+			// Record original URL type. The original URL should be a path-absolute URL, e.g. `/posts`.
+			const urlType = determineUrlType( base );
+
+			// Get URL parts and modify the path.
+			const { protocol, hostname, port, pathname: urlPathname, search } = getUrlParts( base );
+			const newPathname = `${ urlPathname }/${ site.slug }`;
+
+			try {
+				// Get an absolute URL from the original URL, the modified path, and some defaults.
+				const absoluteUrl = getUrlFromParts( {
+					protocol: protocol || window.location.protocol,
+					hostname: hostname || window.location.hostname,
+					port: port || window.location.port,
+					pathname: newPathname,
+					search,
+				} );
+
+				// Format the absolute URL down to the original URL type.
+				return format( absoluteUrl, urlType );
+			} catch {
+				// Invalid URLs will cause `getUrlFromParts` to throw. Return `null` in that case.
+				return null;
+			}
 		}
 	}
 
@@ -479,6 +525,10 @@ const navigateToSite = ( siteId, { allSitesPath, allSitesSingleUser, siteBasePat
 			path = '/domains/manage';
 		}
 
+		if ( path.match( /^\/email\// ) ) {
+			path = '/email';
+		}
+
 		if ( path.match( /^\/store\/stats\// ) ) {
 			const isStore = site.jetpack && site.options && site.options.woocommerce_is_active;
 			if ( ! isStore ) {
@@ -486,11 +536,16 @@ const navigateToSite = ( siteId, { allSitesPath, allSitesSingleUser, siteBasePat
 			}
 		}
 
+		// Jetpack Cloud: default to /backups/ when in the details of a particular backup
+		if ( path.match( /^\/backup\/.*\/(download|restore|detail)/ ) ) {
+			path = '/backup';
+		}
+
 		return path;
 	}
 };
 
-const mapState = state => {
+const mapState = ( state ) => {
 	const user = getCurrentUser( state );
 	const visibleSiteCount = get( user, 'visible_site_count', 0 );
 
@@ -508,6 +563,8 @@ const mapState = state => {
 	};
 };
 
-export default flow( localize, searchSites, connect( mapState, { navigateToSite } ) )(
-	SiteSelector
-);
+export default flow(
+	localize,
+	searchSites,
+	connect( mapState, { navigateToSite } )
+)( SiteSelector );

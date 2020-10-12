@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -9,21 +7,17 @@ import React from 'react';
 /**
  * Internal dependencies
  */
-import MeSidebarNavigation from 'me/sidebar-navigation';
-import Main from 'components/main';
-import GetAppsIllustration from './illustration.jsx';
-import DesktopDownloadCard from './desktop-download-card.jsx';
-import MobileDownloadCard from './mobile-download-card.jsx';
-import PageViewTracker from 'lib/analytics/page-view-tracker';
+import MeSidebarNavigation from 'calypso/me/sidebar-navigation';
+import Main from 'calypso/components/main';
+import PageViewTracker from 'calypso/lib/analytics/page-view-tracker';
+import GetAppsBlock from 'calypso/blocks/get-apps';
 
 export const GetApps = () => {
 	return (
 		<Main className="get-apps">
 			<PageViewTracker path="/me/get-apps" title="Me > Get Apps" />
 			<MeSidebarNavigation />
-			<GetAppsIllustration />
-			<MobileDownloadCard />
-			<DesktopDownloadCard />
+			<GetAppsBlock />
 		</Main>
 	);
 };

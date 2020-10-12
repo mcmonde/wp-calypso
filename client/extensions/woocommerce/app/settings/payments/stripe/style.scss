@@ -1,20 +1,20 @@
 .stripe__connect-account {
 	.stripe__connect-account-heading {
-		font-size: 14px;
+		font-size: $font-body-small;
 		font-weight: 600;
 		margin-bottom: 8px;
 	}
 
 	.stripe__connect-account-body {
-		background: $gray-light;
+		background: var( --color-neutral-0 );
 		display: flex;
 		margin-bottom: 16px;
 		padding: 12px;
 
 		.stripe__connect-account-logo-container {
 			align-items: center;
-			background: $white;
-			border: 1px solid $gray-lighten-20;
+			background: var( --color-surface );
+			border: 1px solid var( --color-neutral-10 );
 			display: flex;
 			height: 46px;
 			justify-content: center;
@@ -32,34 +32,34 @@
 			flex-direction: column;
 
 			.stripe__connect-account-name {
-				font-size: 14px;
+				font-size: $font-body-small;
 				font-weight: 400;
 				margin-bottom: 1px;
 				margin-right: 4px;
 			}
 
 			.stripe__connect-account-email {
-				color: $gray-text-min;
+				color: var( --color-text-subtle );
 			}
 
 			.stripe__connect-account-status {
-				border-radius: 3px;
-				color: $white;
-				font-size: 12px;
+				border-radius: 2px;
+				color: var( --color-text-inverted );
+				font-size: $font-body-extra-small;
 				margin-right: 8px;
 				padding: 3px 8px;
 
 				&.account-activated {
-					background-color: $alert-green;
+					background-color: var( --color-success );
 				}
 
 				&.account-not-activated {
-					background-color: $alert-yellow;
+					background-color: var( --color-warning );
 				}
 			}
 
 			.stripe__connect-account-disconnect {
-				font-size: 12px;
+				font-size: $font-body-extra-small;
 				padding-top: 3px;
 				padding-bottom: 0;
 			}
@@ -71,12 +71,16 @@
 	ul {
 		margin-bottom: 16px;
 	}
+	.form-fieldset {
+		margin-left: 40px;
+	}
 }
 
 .stripe__method-edit-header {
-	font-size: 18px;
+	font-size: $font-title-small;
 	justify-content: space-between;
-	padding: 0 0 16px 0;
+	padding: 0 0 16px;
+	font-weight: 600;
 
 	&.placeholder {
 		margin-bottom: 16px;
@@ -86,7 +90,7 @@
 }
 
 .stripe__method-edit-body {
-	padding: 0 0 16px 0;
+	padding: 0 0 16px;
 
 	&.placeholder {
 		height: 60px;

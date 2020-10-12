@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -9,7 +8,6 @@ import i18n from 'i18n-calypso';
  * Internal dependencies
  */
 import { sectionify } from 'lib/route';
-import userSettings from 'lib/user-settings';
 import { trackPageLoad, setPageTitle } from 'reader/controller-helper';
 import AsyncLoad from 'components/async-load';
 
@@ -22,7 +20,7 @@ const exported = {
 		const mcKey = 'following_manage';
 		const { q: sitesQuery, s: subsQuery, sort: subsSortOrder, showMoreResults } = context.query;
 
-		setPageTitle( context, i18n.translate( 'Manage Followed Sites' ) );
+		setPageTitle( context, i18n.translate( 'Manage followed sites' ) );
 
 		trackPageLoad( basePath, fullAnalyticsPageTitle, mcKey );
 
@@ -36,7 +34,6 @@ const exported = {
 				showMoreResults={ Boolean( showMoreResults ) }
 				subsSortOrder={ subsSortOrder }
 				context={ context }
-				userSettings={ userSettings }
 			/>
 		);
 		next();

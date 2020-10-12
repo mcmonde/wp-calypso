@@ -1,13 +1,13 @@
-/** @format */
 /**
  * External dependencies
  */
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { localize } from 'i18n-calypso';
+import { localize, getLocaleSlug } from 'i18n-calypso';
 import classNames from 'classnames';
 import { get, isUndefined, omitBy } from 'lodash';
+import Gridicon from 'components/gridicon';
 
 /**
  * Internal Dependencies
@@ -21,122 +21,116 @@ import {
 	RESULT_TYPE,
 	RESULT_VIDEO,
 } from './constants';
-import Button from 'components/button';
-import Dialog from 'components/dialog';
-import ResizableIframe from 'components/resizable-iframe';
+import { Button } from '@automattic/components';
 import { decodeEntities, preventWidows } from 'lib/formatting';
 import { recordTracksEvent } from 'state/analytics/actions';
-import { getSearchQuery } from 'state/inline-help/selectors';
-import { requestGuidedTour } from 'state/ui/guided-tours/actions';
+import getSearchQuery from 'state/inline-help/selectors/get-search-query';
+import { requestGuidedTour } from 'state/guided-tours/actions';
+import { openSupportArticleDialog } from 'state/inline-support-article/actions';
+
+const amendYouTubeLink = ( link = '' ) =>
+	link.replace( 'youtube.com/embed/', 'youtube.com/watch?v=' );
 
 class InlineHelpRichResult extends Component {
 	static propTypes = {
+		setDialogState: PropTypes.func.isRequired,
+		closePopover: PropTypes.func.isRequired,
+		searchQuery: PropTypes.string,
 		result: PropTypes.object,
+		type: PropTypes.string,
+		postId: PropTypes.number,
+		title: PropTypes.string,
+		description: PropTypes.string,
+		tour: PropTypes.string,
+	};
+
+	buttonLabels = {
+		article: this.props.translate( 'Read more' ),
+		video: this.props.translate( 'Watch a video' ),
+		tour: this.props.translate( 'Start Tour' ),
+	};
+
+	buttonIcons = {
+		tour: 'list-ordered',
+		video: 'video',
+		article: 'reader',
 	};
 
 	state = {
 		showDialog: false,
 	};
 
-	handleClick = event => {
-		event.preventDefault();
-		const { href } = event.target;
-		const { type } = this.props;
-		const tour = get( this.props.result, RESULT_TOUR );
+	handleClick = ( event ) => {
+		const isLocaleEnglish = 'en' === getLocaleSlug();
+		const { type, tour, link, searchQuery, postId } = this.props;
+
 		const tracksData = omitBy(
 			{
-				search_query: this.props.searchQuery,
+				search_query: searchQuery,
 				tour,
-				result_url: href,
+				result_url: link,
+				location: 'inline-help-popover',
 			},
 			isUndefined
 		);
 
 		this.props.recordTracksEvent( `calypso_inlinehelp_${ type }_open`, tracksData );
+		this.props.closePopover();
 
 		if ( type === RESULT_TOUR ) {
+			event.preventDefault();
 			this.props.requestGuidedTour( tour );
 		} else if ( type === RESULT_VIDEO ) {
-			if ( event.metaKey ) {
-				window.open( href, '_blank' );
-			} else {
-				this.setState( { showDialog: ! this.state.showDialog } );
-			}
-		} else {
-			if ( ! href ) {
-				return;
-			}
-			if ( event.metaKey ) {
-				window.open( href, '_blank' );
-			} else {
-				window.location = href;
-			}
-		}
-	};
-
-	onCancel = () => {
-		this.setState( { showDialog: ! this.state.showDialog } );
-	};
-
-	renderDialog = () => {
-		const { showDialog } = this.state;
-		const link = get( this.props.result, RESULT_LINK );
-		const iframeClasses = classNames( 'inline-help__richresult__dialog__video' );
-		return (
-			<Dialog
-				additionalClassNames="inline-help__richresult__dialog"
-				isVisible={ showDialog }
-				onCancel={ this.onCancel }
-				onClose={ this.onCancel }
-			>
-				<div className={ iframeClasses }>
-					<ResizableIframe
-						src={ link + '?rel=0&amp;showinfo=0&amp;autoplay=1' }
-						frameBorder="0"
-						seamless
-						allowFullScreen
-						autoPlay
-						width="640"
-						height="360"
-					/>
-				</div>
-			</Dialog>
-		);
+			event.preventDefault();
+			this.props.setDialogState( {
+				showDialog: true,
+				dialogType: 'video',
+				videoLink: link,
+			} );
+		} else if ( type === RESULT_ARTICLE && postId && isLocaleEnglish ) {
+			// Until we can deliver localized inline support article content, we send the
+			// the user to the localized support blog, if one exists.
+			event.preventDefault();
+			this.props.openSupportArticleDialog( { postId, postUrl: link } );
+		} // else falls back on href
 	};
 
 	render() {
-		const { type } = this.props;
-		const { translate, result } = this.props;
-		const title = get( result, RESULT_TITLE );
-		const description = get( result, RESULT_DESCRIPTION );
-		const link = get( result, RESULT_LINK );
+		const { type, title, description, link } = this.props;
+		const buttonLabel = get( this.buttonLabels, type, '' );
+		const buttonIcon = get( this.buttonIcons, type );
 		const classes = classNames( 'inline-help__richresult__title' );
+
 		return (
 			<div>
-				<h2 className={ classes }>{ preventWidows( decodeEntities( title ) ) }</h2>
+				<h2 className={ classes } tabIndex="-1">
+					{ preventWidows( decodeEntities( title ) ) }
+				</h2>
 				<p>{ preventWidows( decodeEntities( description ) ) }</p>
 				<Button primary onClick={ this.handleClick } href={ link }>
-					{
-						{
-							article: translate( 'Read more' ),
-							video: translate( 'Watch a video' ),
-							tour: translate( 'Start Tour' ),
-						}[ type ]
-					}
+					{ buttonIcon && <Gridicon icon={ buttonIcon } size={ 12 } /> }
+					{ buttonIcon && buttonLabel && ' ' }
+					{ buttonLabel }
 				</Button>
-				{ type === RESULT_VIDEO && this.renderDialog() }
 			</div>
 		);
 	}
 }
 
-const mapStateToProps = ( state, ownProps ) => ( {
+const mapStateToProps = ( state, { result } ) => ( {
 	searchQuery: getSearchQuery( state ),
-	type: get( ownProps.result, RESULT_TYPE, RESULT_ARTICLE ),
+	type: get( result, RESULT_TYPE, RESULT_ARTICLE ),
+	title: get( result, RESULT_TITLE ),
+	link: amendYouTubeLink( get( result, RESULT_LINK ) ),
+	description: get( result, RESULT_DESCRIPTION ),
+	tour: get( result, RESULT_TOUR ),
+	postId: get( result, 'post_id' ),
 } );
+
 const mapDispatchToProps = {
 	recordTracksEvent,
 	requestGuidedTour,
+	openSupportArticleDialog,
 };
 
 export default connect( mapStateToProps, mapDispatchToProps )( localize( InlineHelpRichResult ) );

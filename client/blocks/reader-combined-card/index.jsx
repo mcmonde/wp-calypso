@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External Dependencies
  */
@@ -11,7 +10,7 @@ import { connect } from 'react-redux';
 /**
  * Internal Dependencies
  */
-import Card from 'components/card';
+import { Card } from '@automattic/components';
 import { getStreamUrl } from 'reader/route';
 import ReaderAvatar from 'blocks/reader-avatar';
 import ReaderSiteStreamLink from 'blocks/reader-site-stream-link';
@@ -25,6 +24,11 @@ import FollowButton from 'reader/follow-button';
 import { getPostsByKeys } from 'state/reader/posts/selectors';
 import ReaderPostOptionsMenu from 'blocks/reader-post-options-menu';
 import PostBlocked from 'blocks/reader-post-card/blocked';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class ReaderCombinedCardComponent extends React.Component {
 	static propTypes = {
@@ -50,18 +54,18 @@ class ReaderCombinedCardComponent extends React.Component {
 		this.recordRenderTrack();
 	}
 
-	componentWillReceiveProps( nextProps ) {
+	componentDidUpdate( prevProps ) {
 		if (
-			this.props.postKey.feedId !== nextProps.postKey.feedId ||
-			this.props.postKey.blogId !== nextProps.postKey.blogId ||
-			size( this.props.posts ) !== size( nextProps.posts )
+			this.props.postKey.feedId !== prevProps.postKey.feedId ||
+			this.props.postKey.blogId !== prevProps.postKey.blogId ||
+			size( this.props.posts ) !== size( prevProps.posts )
 		) {
-			this.recordRenderTrack( nextProps );
+			this.recordRenderTrack();
 		}
 	}
 
-	recordRenderTrack = ( props = this.props ) => {
-		const { postKey, posts } = props;
+	recordRenderTrack = () => {
+		const { postKey, posts } = this.props;
 
 		recordTrack( 'calypso_reader_combined_card_render', {
 			blog_id: postKey.blogId,
@@ -89,9 +93,10 @@ class ReaderCombinedCardComponent extends React.Component {
 		const feedIcon = get( feed, 'image' );
 		const streamUrl = getStreamUrl( feedId, siteId );
 		const siteName = getSiteName( { site, post: posts[ 0 ] } );
-		const isSelectedPost = post => keysAreEqual( keyForPost( post ), selectedPostKey );
+		const isSelectedPost = ( post ) => keysAreEqual( keyForPost( post ), selectedPostKey );
 		const followUrl = ( feed && feed.URL ) || ( site && site.URL );
-		const mediaCount = filter( posts, post => post && ! isEmpty( post.canonical_media ) ).length;
+		const mediaCount = filter( posts, ( post ) => post && ! isEmpty( post.canonical_media ) )
+			.length;
 
 		// Handle blocked sites here rather than in the post lifecycle, because we don't have the posts there
 		if ( posts[ 0 ] && ! posts[ 0 ].is_external && includes( blockedSites, +posts[ 0 ].site_ID ) ) {
@@ -125,10 +130,9 @@ class ReaderCombinedCardComponent extends React.Component {
 							} ) }
 						</p>
 					</div>
-					{ this.props.showFollowButton &&
-						followUrl && (
-							<FollowButton siteUrl={ followUrl } followSource={ this.props.followSource } />
-						) }
+					{ this.props.showFollowButton && followUrl && (
+						<FollowButton siteUrl={ followUrl } followSource={ this.props.followSource } />
+					) }
 				</header>
 				<ul className="reader-combined-card__post-list">
 					{ posts.map( ( post, i ) => (
@@ -154,6 +158,7 @@ class ReaderCombinedCardComponent extends React.Component {
 						showReportSite={ true }
 						showReportPost={ false }
 						post={ posts[ 0 ] }
+						posts={ posts }
 					/>
 				</div>
 				{ feedId && <QueryReaderFeed feedId={ +feedId } includeMeta={ false } /> }
@@ -163,23 +168,45 @@ class ReaderCombinedCardComponent extends React.Component {
 	}
 }
 
-export function combinedCardPostKeyToKeys( postKey ) {
+export function combinedCardPostKeyToKeys( postKey, memoized = null ) {
 	if ( ! postKey || ! postKey.postIds ) {
 		return [];
 	}
 
 	const feedId = postKey.feedId;
 	const blogId = postKey.blogId;
-	return postKey.postIds.map( postId => ( { feedId, blogId, postId } ) );
+
+	if ( memoized && memoized.lastPostIds === postKey.postIds ) {
+		return memoized.lastPostKeys;
+	}
+
+	const keys = postKey.postIds.map( ( postId ) => ( { feedId, blogId, postId } ) );
+
+	if ( memoized ) {
+		memoized.lastPostIds = postKey.postIds;
+		memoized.lastPostKeys = keys;
+	}
+
+	return keys;
 }
 
 export const ReaderCombinedCard = localize( ReaderCombinedCardComponent );
 
-export default connect( ( state, ownProps ) => {
-	const postKeys = combinedCardPostKeyToKeys( ownProps.postKey );
+// React-redux's `connect` allows for a mapStateToProps that returns a function,
+// rather than an object, binding it to a particular component instance.
+// This allows for memoization, which we strategically use here to maintain
+// references and avoid re-rendering large sections of the component tree.
+function mapStateToProps( st, ownProps ) {
+	const memoized = {};
 
-	return {
-		posts: getPostsByKeys( state, postKeys ),
-		postKeys,
+	return ( state ) => {
+		const postKeys = combinedCardPostKeyToKeys( ownProps.postKey, memoized );
+
+		return {
+			posts: getPostsByKeys( state, postKeys ),
+			postKeys,
+		};
 	};
-} )( ReaderCombinedCard );
+}
+
+export default connect( mapStateToProps )( ReaderCombinedCard );

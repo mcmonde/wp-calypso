@@ -1,37 +1,31 @@
-/** @format */
-
 /**
  * External dependencies
  */
-import React from 'react';
+import React, { Fragment } from 'react';
 import PropTypes from 'prop-types';
-import Gridicon from 'gridicons';
+import Gridicon from 'calypso/components/gridicon';
 import { connect } from 'react-redux';
 import { localize } from 'i18n-calypso';
 
 /**
  * Internal dependencies
  */
-import Button from 'components/button';
-import PopoverMenu from 'components/popover/menu';
-import PopoverMenuItem from 'components/popover/menu-item';
-import { recordGoogleEvent } from 'state/analytics/actions';
+import { Button } from '@automattic/components';
+import PopoverMenu from 'calypso/components/popover/menu';
+import PopoverMenuItem from 'calypso/components/popover/menu-item';
+import { recordGoogleEvent } from 'calypso/state/analytics/actions';
 
 class AddProfileLinksButtons extends React.Component {
 	static propTypes = {
-		showingForm: PropTypes.bool,
+		showingForm: PropTypes.string,
 		showPopoverMenu: PropTypes.bool,
+		onShowAddWordPress: PropTypes.func.isRequired,
+		onShowAddOther: PropTypes.func.isRequired,
 	};
 
-	static defaultProps = {
-		showingForm: false,
-	};
+	popoverContext = React.createRef();
 
-	state = {
-		popoverPosition: 'top',
-	};
-
-	recordClickEvent = action => {
+	recordClickEvent = ( action ) => {
 		this.props.recordGoogleEvent( 'Me', 'Clicked on ' + action );
 	};
 
@@ -45,35 +39,35 @@ class AddProfileLinksButtons extends React.Component {
 		this.props.onShowAddOther();
 	};
 
-	setPopoverContext = button => ( this.popoverMenuButton = button );
-
 	render() {
-		return (
-			<div>
-				<PopoverMenu
-					isVisible={ this.props.showPopoverMenu }
-					onClose={ this.props.onClosePopoverMenu }
-					position={ this.state.popoverPosition }
-					context={ this.popoverMenuButton }
-				>
-					<PopoverMenuItem onClick={ this.handleAddWordPressSiteButtonClick }>
-						{ this.props.translate( 'Add WordPress Site' ) }
-					</PopoverMenuItem>
-					<PopoverMenuItem onClick={ this.handleOtherSiteButtonClick }>
-						{ this.props.translate( 'Add URL' ) }
-					</PopoverMenuItem>
-				</PopoverMenu>
+		const { translate } = this.props;
 
+		return (
+			<Fragment>
 				<Button
+					ref={ this.popoverContext }
 					compact
-					ref={ this.setPopoverContext }
-					className="popover-icon"
+					disabled={ !! this.props.showingForm }
 					onClick={ this.props.onShowPopoverMenu }
 				>
 					<Gridicon icon="add-outline" />
-					{ this.props.translate( 'Add' ) }
+					<span>{ translate( 'Add' ) }</span>
 				</Button>
-			</div>
+				{ this.props.showPopoverMenu && (
+					<PopoverMenu
+						isVisible
+						onClose={ this.props.onClosePopoverMenu }
+						context={ this.popoverContext.current }
+					>
+						<PopoverMenuItem onClick={ this.handleAddWordPressSiteButtonClick }>
+							{ translate( 'Add WordPress Site' ) }
+						</PopoverMenuItem>
+						<PopoverMenuItem onClick={ this.handleOtherSiteButtonClick }>
+							{ translate( 'Add URL' ) }
+						</PopoverMenuItem>
+					</PopoverMenu>
+				) }
+			</Fragment>
 		);
 	}
 }

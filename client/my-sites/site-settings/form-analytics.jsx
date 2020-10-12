@@ -1,53 +1,47 @@
-/** @format */
-
 /**
  * External dependencies
  */
-import config from 'config';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { find, flowRight, partialRight, pick, overSome } from 'lodash';
+import { find, flowRight, partialRight, pick } from 'lodash';
 
 /**
  * Internal dependencies
  */
+import { hasSiteAnalyticsFeature } from './utils';
 import wrapSettingsForm from './wrap-settings-form';
-import Card from 'components/card';
-import Button from 'components/button';
-import SectionHeader from 'components/section-header';
+import { Card } from '@automattic/components';
 import ExternalLink from 'components/external-link';
-import Banner from 'components/banner';
+import SupportInfo from 'components/support-info';
+import UpsellNudge from 'blocks/upsell-nudge';
 import CompactFormToggle from 'components/forms/form-toggle/compact';
 import { getPlugins } from 'state/plugins/installed/selectors';
+import FormFieldset from 'components/forms/form-fieldset';
 import FormLabel from 'components/forms/form-label';
 import FormSettingExplanation from 'components/forms/form-setting-explanation';
 import FormTextInput from 'components/forms/form-text-input';
 import FormTextValidation from 'components/forms/form-input-validation';
 import FormAnalyticsStores from './form-analytics-stores';
 import JetpackModuleToggle from 'my-sites/site-settings/jetpack-module-toggle';
-import Notice from 'components/notice';
-import NoticeAction from 'components/notice/notice-action';
-import { isBusiness, isEnterprise, isJetpackBusiness, isJetpackPremium } from 'lib/products-values';
-import {
-	getSiteOption,
-	isJetpackMinimumVersion,
-	isJetpackSite,
-	siteSupportsGoogleAnalyticsIPAnonymization,
-	siteSupportsGoogleAnalyticsBasicEcommerceTracking,
-	siteSupportsGoogleAnalyticsEnhancedEcommerceTracking,
-} from 'state/sites/selectors';
-import { isJetpackModuleActive } from 'state/selectors';
-import { getSelectedSite, getSelectedSiteId, getSelectedSiteSlug } from 'state/ui/selectors';
-import { FEATURE_GOOGLE_ANALYTICS, TYPE_BUSINESS, TERM_ANNUALLY } from 'lib/plans/constants';
+import { recordTracksEvent } from 'state/analytics/actions';
+import { isJetpackSite } from 'state/sites/selectors';
+import getCurrentRouteParameterized from 'state/selectors/get-current-route-parameterized';
+import isJetpackModuleActive from 'state/selectors/is-jetpack-module-active';
+import { getSelectedSite, getSelectedSiteId } from 'state/ui/selectors';
+import { FEATURE_GOOGLE_ANALYTICS, TYPE_PREMIUM, TERM_ANNUALLY } from 'lib/plans/constants';
 import { findFirstSimilarPlanKey } from 'lib/plans';
 import QueryJetpackModules from 'components/data/query-jetpack-modules';
+import SettingsSectionHeader from 'my-sites/site-settings/settings-section-header';
+import { localizeUrl } from 'lib/i18n-utils';
+import { OPTIONS_JETPACK_SECURITY } from 'my-sites/plans-v2/constants';
+import { getPathToDetails } from 'my-sites/plans-v2/utils';
 
-const validateGoogleAnalyticsCode = code => ! code || code.match( /^UA-\d+-\d+$/i );
-const hasBusinessPlan = overSome( isBusiness, isEnterprise, isJetpackBusiness );
+const validateGoogleAnalyticsCode = ( code ) => ! code || code.match( /^UA-\d+-\d+$/i );
 
 export class GoogleAnalyticsForm extends Component {
 	state = {
 		isCodeValid: true,
+		loggedGoogleAnalyticsModified: false,
 	};
 
 	handleFieldChange = ( key, value ) => {
@@ -56,7 +50,7 @@ export class GoogleAnalyticsForm extends Component {
 		updateFields( { wga: updatedWgaFields } );
 	};
 
-	handleCodeChange = event => {
+	handleCodeChange = ( event ) => {
 		const code = event.target.value.trim();
 
 		this.setState( {
@@ -65,9 +59,12 @@ export class GoogleAnalyticsForm extends Component {
 		this.handleFieldChange( 'code', code );
 	};
 
-	handleToggleChange = key => {
-		const { fields } = this.props;
+	handleToggleChange = ( key ) => {
+		const { fields, path } = this.props;
 		const value = fields.wga ? ! fields.wga[ key ] : false;
+
+		this.props.recordTracksEvent( 'calypso_google_analytics_setting_changed', { key, path } );
+
 		this.handleFieldChange( key, value );
 	};
 
@@ -93,92 +90,83 @@ export class GoogleAnalyticsForm extends Component {
 			handleSubmitForm,
 			isRequestingSettings,
 			isSavingSettings,
-			jetpackVersionSupportsModule,
+			path,
 			showUpgradeNudge,
 			site,
 			sitePlugins,
 			siteId,
 			siteIsJetpack,
-			siteSlug,
-			siteSupportsBasicEcommerceTracking,
-			siteSupportsEnhancedEcommerceTracking,
-			siteSupportsIPAnonymization,
 			translate,
+			trackTracksEvent,
 			uniqueEventTracker,
 		} = this.props;
 		const placeholderText = isRequestingSettings ? translate( 'Loading' ) : '';
-		const isJetpackUnsupported = siteIsJetpack && ! jetpackVersionSupportsModule;
 		const analyticsSupportUrl = siteIsJetpack
 			? 'https://jetpack.com/support/google-analytics/'
-			: 'https://support.wordpress.com/google-analytics/';
+			: 'https://wordpress.com/support/google-analytics/';
 
 		const wooCommercePlugin = find( sitePlugins, { slug: 'woocommerce' } );
 		const wooCommerceActive = wooCommercePlugin ? wooCommercePlugin.active : false;
-		const showAnalyticsForStores =
-			config.isEnabled( 'jetpack/google-analytics-for-stores' ) &&
-			siteIsJetpack &&
-			wooCommerceActive &&
-			siteSupportsBasicEcommerceTracking;
-		const showAnonymizeIP =
-			config.isEnabled( 'jetpack/google-analytics-anonymize-ip' ) &&
-			siteIsJetpack &&
-			siteSupportsIPAnonymization;
-		const showEnhancedAnalyticsForStores =
-			config.isEnabled( 'jetpack/google-analytics-for-stores-enhanced' ) &&
-			siteIsJetpack &&
-			siteSupportsEnhancedEcommerceTracking;
 
 		const nudgeTitle = siteIsJetpack
-			? translate( 'Enable Google Analytics by upgrading to Jetpack Professional' )
-			: translate( 'Enable Google Analytics by upgrading to the Business plan' );
+			? translate( 'Connect your site to Google Analytics' )
+			: translate( 'Connect your site to Google Analytics in seconds with the Premium plan' );
+
+		const plan = siteIsJetpack
+			? OPTIONS_JETPACK_SECURITY
+			: findFirstSimilarPlanKey( site.plan.product_slug, {
+					type: TYPE_PREMIUM,
+					...( siteIsJetpack ? { term: TERM_ANNUALLY } : {} ),
+			  } );
+
+		const href = siteIsJetpack
+			? getPathToDetails( '/plans', {}, OPTIONS_JETPACK_SECURITY, TERM_ANNUALLY, site.slug )
+			: null;
+
+		const nudge = (
+			<UpsellNudge
+				description={
+					siteIsJetpack
+						? translate( "Monitor your site's views, clicks, and other important metrics" )
+						: translate(
+								"Add your unique tracking ID to monitor your site's performance in Google Analytics."
+						  )
+				}
+				event={ 'google_analytics_settings' }
+				feature={ FEATURE_GOOGLE_ANALYTICS }
+				plan={ plan }
+				href={ href }
+				showIcon={ true }
+				title={ nudgeTitle }
+			/>
+		);
 
 		return (
 			<form id="analytics" onSubmit={ handleSubmitForm }>
 				{ siteIsJetpack && <QueryJetpackModules siteId={ siteId } /> }
 
-				{ isJetpackUnsupported &&
-					! showUpgradeNudge && (
-						<Notice
-							status="is-warning"
-							showDismiss={ false }
-							text={ translate( 'Google Analytics require a newer version of Jetpack.' ) }
-						>
-							<NoticeAction href={ `/plugins/jetpack/${ siteSlug }` }>
-								{ translate( 'Update Now' ) }
-							</NoticeAction>
-						</Notice>
-					) }
-
-				<SectionHeader label={ translate( 'Google Analytics' ) }>
-					{ ! showUpgradeNudge && (
-						<Button
-							primary
-							compact
-							disabled={ this.isSubmitButtonDisabled() }
-							onClick={ handleSubmitForm }
-						>
-							{ isSavingSettings ? translate( 'Saving…' ) : translate( 'Save Settings' ) }
-						</Button>
-					) }
-				</SectionHeader>
+				<SettingsSectionHeader
+					disabled={ this.isSubmitButtonDisabled() }
+					isSaving={ isSavingSettings }
+					onButtonClick={ handleSubmitForm }
+					showButton={ ! showUpgradeNudge }
+					title={ translate( 'Google Analytics' ) }
+				/>
 
 				{ showUpgradeNudge && site && site.plan ? (
-					<Banner
-						description={ translate(
-							"Add your unique tracking ID to monitor your site's performance in Google Analytics."
-						) }
-						event={ 'google_analytics_settings' }
-						feature={ FEATURE_GOOGLE_ANALYTICS }
-						plan={ findFirstSimilarPlanKey( site.plan.product_slug, {
-							type: TYPE_BUSINESS,
-							...( siteIsJetpack ? { term: TERM_ANNUALLY } : {} ),
-						} ) }
-						title={ nudgeTitle }
-					/>
+					nudge
 				) : (
 					<Card className="analytics-settings site-settings__analytics-settings">
 						{ siteIsJetpack && (
-							<fieldset>
+							<FormFieldset>
+								<SupportInfo
+									text={ translate(
+										'Reports help you track the path visitors take' +
+											' through your site, and goal conversion lets you' +
+											' measure how visitors complete specific tasks.'
+									) }
+									link="https://jetpack.com/support/google-analytics/"
+								/>
 								<JetpackModuleToggle
 									siteId={ siteId }
 									moduleSlug="google-analytics"
@@ -187,10 +175,10 @@ export class GoogleAnalyticsForm extends Component {
 									) }
 									disabled={ isRequestingSettings || isSavingSettings }
 								/>
-							</fieldset>
+							</FormFieldset>
 						) }
 
-						<fieldset>
+						<FormFieldset>
 							<FormLabel htmlFor="wgaCode">
 								{ translate( 'Google Analytics Tracking ID', { context: 'site setting' } ) }
 							</FormLabel>
@@ -201,8 +189,17 @@ export class GoogleAnalyticsForm extends Component {
 								onChange={ this.handleCodeChange }
 								placeholder={ placeholderText }
 								disabled={ isRequestingSettings || ! enableForm }
-								onClick={ eventTracker( 'Clicked Analytics Key Field' ) }
-								onKeyPress={ uniqueEventTracker( 'Typed In Analytics Key Field' ) }
+								onFocus={ () => {
+									trackTracksEvent( 'calypso_google_analytics_key_field_focused', { path } );
+									eventTracker( 'Focused Analytics Key Field' )();
+								} }
+								onKeyPress={ () => {
+									if ( ! this.state.loggedGoogleAnalyticsModified ) {
+										trackTracksEvent( 'calypso_google_analytics_key_field_modified', { path } );
+										this.setState( { loggedGoogleAnalyticsModified: true } );
+									}
+									uniqueEventTracker( 'Typed In Analytics Key Field' )();
+								} }
 								isError={ ! this.state.isCodeValid }
 							/>
 							{ ! this.state.isCodeValid && (
@@ -219,9 +216,9 @@ export class GoogleAnalyticsForm extends Component {
 							>
 								{ translate( 'Where can I find my Tracking ID?' ) }
 							</ExternalLink>
-						</fieldset>
-						{ showAnonymizeIP && (
-							<fieldset>
+						</FormFieldset>
+						{ siteIsJetpack && (
+							<FormFieldset>
 								<CompactFormToggle
 									checked={ fields.wga ? Boolean( fields.wga.anonymize_ip ) : false }
 									disabled={ isRequestingSettings || ! enableForm }
@@ -243,13 +240,12 @@ export class GoogleAnalyticsForm extends Component {
 										{ translate( 'Learn more' ) }
 									</ExternalLink>
 								</FormSettingExplanation>
-							</fieldset>
+							</FormFieldset>
 						) }
-						{ showAnalyticsForStores && (
+						{ siteIsJetpack && wooCommerceActive && (
 							<FormAnalyticsStores
 								fields={ fields }
 								handleToggleChange={ this.handleToggleChange }
-								showEnhanced={ showEnhancedAnalyticsForStores }
 							/>
 						) }
 						<p>
@@ -270,7 +266,13 @@ export class GoogleAnalyticsForm extends Component {
 								'Learn more about using {{a}}Google Analytics with WordPress.com{{/a}}.',
 								{
 									components: {
-										a: <a href={ analyticsSupportUrl } target="_blank" rel="noopener noreferrer" />,
+										a: (
+											<a
+												href={ localizeUrl( analyticsSupportUrl ) }
+												target="_blank"
+												rel="noopener noreferrer"
+											/>
+										),
 									},
 								}
 							) }
@@ -287,55 +289,41 @@ export class GoogleAnalyticsForm extends Component {
 		if ( ! this.props.site ) {
 			return null;
 		}
-		// Only show Google Analytics for business users.
+		// Only show Google Analytics for users with a premium or above plan.
 		return this.form();
 	}
 }
 
-const mapStateToProps = state => {
+const mapStateToProps = ( state ) => {
 	const site = getSelectedSite( state );
 	const siteId = getSelectedSiteId( state );
-	const siteSlug = getSelectedSiteSlug( state );
-	const isGoogleAnalyticsEligible =
-		site && site.plan && ( hasBusinessPlan( site.plan ) || isJetpackPremium( site.plan ) );
-	const jetpackManagementUrl = getSiteOption( state, siteId, 'admin_url' );
+	const isGoogleAnalyticsEligible = hasSiteAnalyticsFeature( site );
 	const jetpackModuleActive = isJetpackModuleActive( state, siteId, 'google-analytics' );
-	const jetpackVersionSupportsModule = isJetpackMinimumVersion( state, siteId, '4.6-alpha' );
-	const siteSupportsIPAnonymization = siteSupportsGoogleAnalyticsIPAnonymization( state, siteId );
-	const siteSupportsBasicEcommerceTracking = siteSupportsGoogleAnalyticsBasicEcommerceTracking(
-		state,
-		siteId
-	);
-	const siteSupportsEnhancedEcommerceTracking = siteSupportsGoogleAnalyticsEnhancedEcommerceTracking(
-		state,
-		siteId
-	);
 	const siteIsJetpack = isJetpackSite( state, siteId );
-	const googleAnalyticsEnabled =
-		site &&
-		( ! siteIsJetpack || ( siteIsJetpack && jetpackModuleActive && jetpackVersionSupportsModule ) );
+	const googleAnalyticsEnabled = site && ( ! siteIsJetpack || jetpackModuleActive );
 	const sitePlugins = site ? getPlugins( state, [ site.ID ] ) : [];
+	const path = getCurrentRouteParameterized( state, siteId );
 
 	return {
+		enableForm: isGoogleAnalyticsEligible && googleAnalyticsEnabled,
+		path,
+		showUpgradeNudge: ! isGoogleAnalyticsEligible,
 		site,
 		siteId,
-		siteSlug,
 		siteIsJetpack,
-		showUpgradeNudge: ! isGoogleAnalyticsEligible,
-		enableForm: isGoogleAnalyticsEligible && googleAnalyticsEnabled,
-		jetpackManagementUrl,
-		jetpackVersionSupportsModule,
 		sitePlugins,
-		siteSupportsBasicEcommerceTracking,
-		siteSupportsEnhancedEcommerceTracking,
-		siteSupportsIPAnonymization,
 	};
 };
 
-const connectComponent = connect( mapStateToProps, null, null, { pure: false } );
+const mapDispatchToProps = {
+	recordTracksEvent,
+};
+
+const connectComponent = connect( mapStateToProps, mapDispatchToProps, null, { pure: false } );
 
 const getFormSettings = partialRight( pick, [ 'wga' ] );
 
-export default flowRight( connectComponent, wrapSettingsForm( getFormSettings ) )(
-	GoogleAnalyticsForm
-);
+export default flowRight(
+	connectComponent,
+	wrapSettingsForm( getFormSettings )
+)( GoogleAnalyticsForm );

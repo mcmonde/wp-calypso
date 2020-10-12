@@ -1,13 +1,14 @@
 /**
- * @format
  * @jest-environment jsdom
  */
+
+/* eslint jest/expect-expect: ["error", { "assertFunctionNames": ["TestUtils.*"] }] */
 
 /**
  * External dependencies
  */
 import { expect } from 'chai';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 import React from 'react';
 import TestUtils from 'react-dom/test-utils';
 import ReactDom from 'react-dom';
@@ -23,14 +24,14 @@ describe( 'index', () => {
 	} );
 
 	test( 'should render beginning content if passed a `minContent` prop', () => {
-		var range = TestUtils.renderIntoDocument(
+		const range = TestUtils.renderIntoDocument(
 			<FormRange minContent={ <Gridicon icon="minus-small" /> } />
 		);
 		TestUtils.findRenderedDOMComponentWithClass( range, 'gridicons-minus-small' );
 	} );
 
 	test( 'should not render ending content if not passed a `maxContent` prop', () => {
-		var range = TestUtils.renderIntoDocument(
+		let range = TestUtils.renderIntoDocument(
 				<FormRange minContent={ <Gridicon icon="minus-small" /> } />
 			),
 			content = TestUtils.scryRenderedDOMComponentsWithClass( range, 'range__content' );
@@ -40,14 +41,14 @@ describe( 'index', () => {
 	} );
 
 	test( 'should render ending content if passed a `maxContent` prop', () => {
-		var range = TestUtils.renderIntoDocument(
+		const range = TestUtils.renderIntoDocument(
 			<FormRange maxContent={ <Gridicon icon="plus-small" /> } />
 		);
 		TestUtils.findRenderedDOMComponentWithClass( range, 'gridicons-plus-small' );
 	} );
 
 	test( 'should not render beginning content if not passed a `minContent` prop', () => {
-		var range = TestUtils.renderIntoDocument(
+		let range = TestUtils.renderIntoDocument(
 				<FormRange maxContent={ <Gridicon icon="plus-small" /> } />
 			),
 			content = TestUtils.scryRenderedDOMComponentsWithClass( range, 'range__content' );
@@ -57,7 +58,7 @@ describe( 'index', () => {
 	} );
 
 	test( 'should render a value label if passed a truthy `showValueLabel` prop', () => {
-		var range = TestUtils.renderIntoDocument(
+		let range = TestUtils.renderIntoDocument(
 				<FormRange value={ 8 } showValueLabel={ true } readOnly={ true } />
 			),
 			label = TestUtils.findRenderedDOMComponentWithClass( range, 'range__label' );

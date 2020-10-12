@@ -16,15 +16,15 @@
 		border-top: 1px;
 		border-right: 1px;
 		border-left: 1px;
-		border-color: $alert-red;
+		border-color: var( --color-error );
 		border-style: solid;
 
 		&:last-child {
-			border-bottom: 1px solid $alert-red;
+			border-bottom: 1px solid var( --color-error );
 		}
 
 		&.is-expanded {
-			border: 1px solid $alert-red;
+			border: 1px solid var( --color-error );
 		}
 	}
 }
@@ -34,9 +34,9 @@
 	display: flex;
 	width: 100%;
 
-	@include breakpoint( '<480px' ) {
+	@include breakpoint-deprecated( '<480px' ) {
 		padding: 4px 0;
-		border-bottom: 1px solid $gray-light;
+		border-bottom: 1px solid var( --color-neutral-0 );
 
 		&:last-child {
 			border-bottom: 0;
@@ -46,19 +46,19 @@
 	&.shipping-services__entry-header-container {
 		display: inline-block;
 		box-sizing: border-box;
-		border-bottom: 1px solid lighten( $gray, 30% );
+		border-bottom: 1px solid var( --color-neutral-0 );
 		padding-bottom: 8px;
 		margin-bottom: 4px;
 
 		.shipping-services__entry-header {
 			display: inline-block;
 			margin-left: 0;
-			font-weight: bold;
+			font-weight: 600;
 		}
 
 		.shipping-services__entry-price-adjustment {
 			float: right;
-			@include breakpoint( '>480px' ) {
+			@include breakpoint-deprecated( '>480px' ) {
 				padding-right: 8px;
 			}
 		}
@@ -80,14 +80,14 @@
 
 	.shipping-services__entry-title {
 		flex-basis: 70%;
-		font-size: 13px;
+		font-size: $font-body-small;
 	}
 
 	.form-text-input {
 		flex-basis: 10%;
 		margin: 8px;
 		padding: 6px 12px;
-		font-size: 13px;
+		font-size: $font-body-small;
 		min-width: 42px;
 	}
 
@@ -95,13 +95,13 @@
 		flex-basis: 20%;
 		padding: 6px 32px 5px 14px;
 		line-height: 22px;
-		font-size: 13px;
+		font-size: $font-body-small;
 		box-shadow: none;
 
 		&:disabled {
-			color: lighten( $gray, 10% );
-			background-color: $gray-light;
-			border-color: lighten( $gray, 30% );
+			color: var( --color-neutral-20 );
+			background-color: var( --color-neutral-0 );
+			border-color: var( --color-neutral-0 );
 		}
 	}
 
@@ -114,6 +114,6 @@
 }
 
 .shipping-services__delivery-estimate {
-	color: darken( $gray, 10% );
+	color: var( --color-neutral-40 );
 	margin-left: 3px;
 }

@@ -1,16 +1,14 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
+import { isWithinBreakpoint } from '@automattic/viewport';
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { get, map, reduce, throttle } from 'lodash';
+import { isEmpty, map, reduce, throttle } from 'lodash';
 import { localize } from 'i18n-calypso';
 import classNames from 'classnames';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 import { Env } from 'tinymce/tinymce';
 
 /**
@@ -18,29 +16,36 @@ import { Env } from 'tinymce/tinymce';
  */
 import { serialize as serializeContactForm } from 'components/tinymce/plugins/contact-form/shortcode-utils';
 import { serialize as serializeSimplePayment } from 'components/tinymce/plugins/simple-payments/shortcode-utils';
-import MediaActions from 'lib/media/actions';
-import MediaLibrarySelectedStore from 'lib/media/library-selected-store';
 import { getMimePrefix } from 'lib/media/utils';
-import MediaValidationStore from 'lib/media/validation-store';
-import { isWithinBreakpoint } from 'lib/viewport';
 import markup from 'post-editor/media-modal/markup';
-import { getSelectedSite } from 'state/ui/selectors';
+import { getSelectedSite, getSelectedSiteId } from 'state/ui/selectors';
+import canCurrentUser from 'state/selectors/can-current-user';
 import {
 	fieldAdd,
 	fieldRemove,
 	fieldUpdate,
 	settingsUpdate,
-} from 'state/ui/editor/contact-form/actions';
-import { blockSave } from 'state/ui/editor/save-blockers/actions';
+} from 'state/editor/contact-form/actions';
+import { getEditorContactForm } from 'state/editor/contact-form/selectors';
+import { blockSave } from 'state/editor/save-blockers/actions';
 import AddImageDialog from './add-image-dialog';
 import AddLinkDialog from './add-link-dialog';
-import Button from 'components/button';
+import { Button } from '@automattic/components';
 import ContactFormDialog from 'components/tinymce/plugins/contact-form/dialog';
 import isDropZoneVisible from 'state/selectors/is-drop-zone-visible';
 import EditorMediaModal from 'post-editor/editor-media-modal';
 import MediaLibraryDropZone from 'my-sites/media-library/drop-zone';
 import config from 'config';
+import getMediaErrors from 'state/selectors/get-media-errors';
+import getMediaLibrarySelectedItems from 'state/selectors/get-media-library-selected-items';
 import SimplePaymentsDialog from 'components/tinymce/plugins/simple-payments/dialog';
+import { withLocalizedMoment } from 'components/localized-moment';
+import { setMediaLibrarySelectedItems } from 'state/media/actions';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 /**
  * Module constant
@@ -102,11 +107,11 @@ export class EditorHtmlToolbar extends Component {
 		document.removeEventListener( 'click', this.clickOutsideInsertContentMenu );
 	}
 
-	bindButtonsRef = div => {
+	bindButtonsRef = ( div ) => {
 		this.buttons = div;
 	};
 
-	bindInsertContentButtonsRef = div => {
+	bindInsertContentButtonsRef = ( div ) => {
 		this.insertContentButtons = div;
 	};
 
@@ -143,7 +148,7 @@ export class EditorHtmlToolbar extends Component {
 		}
 	};
 
-	hideToolbarFadeOnFullScroll = event => {
+	hideToolbarFadeOnFullScroll = ( event ) => {
 		const { scrollLeft, scrollWidth, clientWidth } = event.target;
 		// 10 is bit of tolerance in case the scroll stops some pixels short of the toolbar width
 		const isScrolledFull = scrollLeft >= scrollWidth - clientWidth - 10;
@@ -153,7 +158,7 @@ export class EditorHtmlToolbar extends Component {
 		}
 	};
 
-	clickOutsideInsertContentMenu = event => {
+	clickOutsideInsertContentMenu = ( event ) => {
 		if (
 			this.state.showInsertContentMenu &&
 			! this.insertContentButtons.contains( event.target )
@@ -163,7 +168,9 @@ export class EditorHtmlToolbar extends Component {
 	};
 
 	splitEditorContent() {
-		const { content: { selectionEnd, selectionStart, value } } = this.props;
+		const {
+			content: { selectionEnd, selectionStart, value },
+		} = this.props;
 		return {
 			before: value.substring( 0, selectionStart ),
 			inner: value.substring( selectionStart, selectionEnd ),
@@ -205,7 +212,11 @@ export class EditorHtmlToolbar extends Component {
 
 	updateEditorContentFirefox( before, newContent, after ) {
 		const fullContent = before + newContent + after;
-		const { content, content: { selectionEnd, value }, onToolbarChangeContent } = this.props;
+		const {
+			content,
+			content: { selectionEnd, value },
+			onToolbarChangeContent,
+		} = this.props;
 		this.props.content.value = fullContent;
 		content.focus();
 		document.execCommand( 'insertText', false, newContent );
@@ -216,7 +227,10 @@ export class EditorHtmlToolbar extends Component {
 
 	updateEditorContentIE11( before, newContent, after ) {
 		const fullContent = before + newContent + after;
-		const { content: { selectionEnd, value }, onToolbarChangeContent } = this.props;
+		const {
+			content: { selectionEnd, value },
+			onToolbarChangeContent,
+		} = this.props;
 		this.props.content.value = fullContent;
 		onToolbarChangeContent( fullContent );
 		this.setCursorPosition( selectionEnd, fullContent.length - value.length );
@@ -252,7 +266,7 @@ export class EditorHtmlToolbar extends Component {
 		const { openTags } = this.state;
 		const { before, after } = this.splitEditorContent();
 		this.updateEditorContent( before, this.closeHtmlTag( tag ), after );
-		this.setState( { openTags: openTags.filter( openTag => openTag !== tag.name ) } );
+		this.setState( { openTags: openTags.filter( ( openTag ) => openTag !== tag.name ) } );
 	}
 
 	insertHtmlTagOpenClose( tag ) {
@@ -288,7 +302,9 @@ export class EditorHtmlToolbar extends Component {
 	}
 
 	insertHtmlTag( tag ) {
-		const { content: { selectionEnd, selectionStart } } = this.props;
+		const {
+			content: { selectionEnd, selectionStart },
+		} = this.props;
 		if ( selectionEnd === selectionStart ) {
 			this.isTagOpen( tag.name ) ? this.insertHtmlTagClose( tag ) : this.insertHtmlTagOpen( tag );
 		} else {
@@ -328,7 +344,7 @@ export class EditorHtmlToolbar extends Component {
 		this.insertHtmlTag( { name: 'ins', attributes: { datetime } } );
 	};
 
-	onClickImage = attributes => {
+	onClickImage = ( attributes ) => {
 		this.insertHtmlTagSelfClosed( { name: 'img', attributes } );
 	};
 
@@ -362,7 +378,7 @@ export class EditorHtmlToolbar extends Component {
 		this.setState( { openTags: [] } );
 	};
 
-	onInsertMedia = media => {
+	onInsertMedia = ( media ) => {
 		this.insertCustomContent( media );
 	};
 
@@ -453,26 +469,25 @@ export class EditorHtmlToolbar extends Component {
 		this.setState( { showSimplePaymentsDialog: false } );
 	};
 
-	changeSimplePaymentsDialogTab = tab => {
+	changeSimplePaymentsDialogTab = ( tab ) => {
 		this.setState( {
 			simplePaymentsDialogTab: tab,
 		} );
 	};
 
-	insertSimplePayment = productData => {
+	insertSimplePayment = ( productData ) => {
 		this.insertCustomContent( serializeSimplePayment( productData ), { paragraph: true } );
 		this.closeSimplePaymentsDialog();
 	};
 
 	onFilesDrop = () => {
-		const { site } = this.props;
+		const { mediaValidationErrors, selectedItems, site } = this.props;
 		// Find selected images. Non-images will still be uploaded, but not
 		// inserted directly into the post contents.
-		const selectedItems = MediaLibrarySelectedStore.getAll( site.ID );
 		const isSingleImage =
 			1 === selectedItems.length && 'image' === getMimePrefix( selectedItems[ 0 ] );
 
-		if ( isSingleImage && ! MediaValidationStore.hasErrors( site.ID ) ) {
+		if ( isSingleImage && isEmpty( mediaValidationErrors ) ) {
 			// For single image upload, insert into post content, blocking save
 			// until the image has finished upload
 			if ( selectedItems[ 0 ].transient ) {
@@ -480,17 +495,17 @@ export class EditorHtmlToolbar extends Component {
 			}
 
 			this.onInsertMedia( markup.get( site, selectedItems[ 0 ] ) );
-			MediaActions.setLibrarySelectedItems( site.ID, [] );
+			this.props.setMediaLibrarySelectedItems( site.ID, [] );
 		} else {
 			// In all other cases, show the media modal list view
 			this.openMediaModal();
 		}
 	};
 
-	isTagOpen = tag => -1 !== this.state.openTags.indexOf( tag );
+	isTagOpen = ( tag ) => -1 !== this.state.openTags.indexOf( tag );
 
 	renderAddEverythingDropdown = () => {
-		const { translate } = this.props;
+		const { translate, canUserUploadFiles } = this.props;
 
 		const insertContentClasses = classNames( 'editor-html-toolbar__insert-content-dropdown', {
 			'is-visible': this.state.showInsertContentMenu,
@@ -498,51 +513,49 @@ export class EditorHtmlToolbar extends Component {
 
 		return (
 			<div className={ insertContentClasses }>
-				<div
+				<button
 					className="editor-html-toolbar__insert-content-dropdown-item"
 					onClick={ this.openMediaModal }
 				>
 					<Gridicon icon="image" />
-					<span data-e2e-insert-type="media">{ translate( 'Media' ) }</span>
-				</div>
+					<span data-e2e-insert-type="media">{ translate( 'Media library' ) }</span>
+				</button>
 
-				{ config.isEnabled( 'external-media/google-photos' ) && (
-					<div
+				{ config.isEnabled( 'external-media/google-photos' ) && canUserUploadFiles && (
+					<button
 						className="editor-html-toolbar__insert-content-dropdown-item"
 						onClick={ this.openGoogleModal }
 					>
 						<Gridicon icon="shutter" />
-						<span data-e2e-insert-type="google-media">{ translate( 'Media from Google' ) }</span>
-					</div>
+						<span data-e2e-insert-type="google-media">{ translate( 'Google Photos' ) }</span>
+					</button>
 				) }
 
-				{ config.isEnabled( 'external-media/free-photo-library' ) && (
-					<div
+				{ config.isEnabled( 'external-media/free-photo-library' ) && canUserUploadFiles && (
+					<button
 						className="editor-html-toolbar__insert-content-dropdown-item"
 						onClick={ this.openPexelsModal }
 					>
 						<Gridicon icon="image-multiple" />
-						<span data-e2e-insert-type="pexels">{ translate( 'Free photo library' ) }</span>
-					</div>
+						<span data-e2e-insert-type="pexels">{ translate( 'Pexels free photos' ) }</span>
+					</button>
 				) }
 
-				<div
+				<button
 					className="editor-html-toolbar__insert-content-dropdown-item"
 					onClick={ this.openContactFormDialog }
 				>
 					<Gridicon icon="mention" />
 					<span data-e2e-insert-type="contact-form">{ translate( 'Contact form' ) }</span>
-				</div>
+				</button>
 
-				{ config.isEnabled( 'simple-payments' ) && (
-					<div
-						className="editor-html-toolbar__insert-content-dropdown-item"
-						onClick={ this.openSimplePaymentsDialog }
-					>
-						<Gridicon icon="money" />
-						<span data-e2e-insert-type="payment-button">{ translate( 'Payment button' ) }</span>
-					</div>
-				) }
+				<button
+					className="editor-html-toolbar__insert-content-dropdown-item"
+					onClick={ this.openSimplePaymentsDialog }
+				>
+					<Gridicon icon="money" />
+					<span data-e2e-insert-type="payment-button">{ translate( 'Payment button' ) }</span>
+				</button>
 			</div>
 		);
 	};
@@ -692,11 +705,18 @@ export class EditorHtmlToolbar extends Component {
 	}
 }
 
-const mapStateToProps = state => ( {
-	contactForm: get( state, 'ui.editor.contactForm', {} ),
-	isDropZoneVisible: isDropZoneVisible( state ),
-	site: getSelectedSite( state ),
-} );
+const mapStateToProps = ( state ) => {
+	const site = getSelectedSite( state );
+
+	return {
+		contactForm: getEditorContactForm( state ) ?? {},
+		isDropZoneVisible: isDropZoneVisible( state ),
+		site,
+		canUserUploadFiles: canCurrentUser( state, getSelectedSiteId( state ), 'upload_files' ),
+		mediaValidationErrors: getMediaErrors( state, site?.ID ),
+		selectedItems: getMediaLibrarySelectedItems( state, site?.ID ),
+	};
+};
 
 const mapDispatchToProps = {
 	blockSave,
@@ -704,6 +724,10 @@ const mapDispatchToProps = {
 	fieldRemove,
 	fieldUpdate,
 	settingsUpdate,
+	setMediaLibrarySelectedItems,
 };
 
-export default connect( mapStateToProps, mapDispatchToProps )( localize( EditorHtmlToolbar ) );
+export default connect(
+	mapStateToProps,
+	mapDispatchToProps
+)( localize( withLocalizedMoment( EditorHtmlToolbar ) ) );

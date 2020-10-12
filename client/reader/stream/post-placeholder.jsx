@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -7,7 +6,7 @@ import React from 'react';
 /**
  * Internal dependencies
  */
-import Card from 'components/card';
+import { Card } from '@automattic/components';
 
 class PostPlaceholder extends React.PureComponent {
 	render() {
@@ -16,9 +15,9 @@ class PostPlaceholder extends React.PureComponent {
 			<Card tagName="article" className="reader__card is-placeholder">
 				<div className="reader__post-header">
 					<h1 className="reader__post-title">
-						<a className="reader__post-title-link" target="_blank" rel="noopener noreferrer">
+						<div className="reader__post-title-link">
 							<span className="reader__placeholder-text">Loading interesting posts…</span>
-						</a>
+						</div>
 					</h1>
 					<div className="reader__post-byline">
 						<span className="site-icon" height="16" width="16" />

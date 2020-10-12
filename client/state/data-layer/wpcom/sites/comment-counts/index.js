@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -9,11 +7,12 @@ import { mapValues } from 'lodash';
  * Internal dependencies
  */
 import { COMMENT_COUNTS_REQUEST, COMMENT_COUNTS_UPDATE } from 'state/action-types';
-import { mergeHandlers } from 'state/action-watchers/utils';
 import { http } from 'state/data-layer/wpcom-http/actions';
-import { dispatchRequestEx } from 'state/data-layer/wpcom-http/utils';
+import { dispatchRequest } from 'state/data-layer/wpcom-http/utils';
 
-export const fetchCommentCounts = action => {
+import { registerHandlers } from 'state/data-layer/handler-registry';
+
+export const fetchCommentCounts = ( action ) => {
 	const { siteId, postId } = action;
 
 	return http(
@@ -30,7 +29,7 @@ export const fetchCommentCounts = action => {
 };
 
 export const updateCommentCounts = ( action, response ) => {
-	const intResponse = mapValues( response, value => parseInt( value ) );
+	const intResponse = mapValues( response, ( value ) => parseInt( value ) );
 	const {
 		all,
 		approved,
@@ -55,14 +54,12 @@ export const updateCommentCounts = ( action, response ) => {
 	};
 };
 
-const countHandlers = {
+registerHandlers( 'state/data-layer/wpcom/sites/comment-counts/index.js', {
 	[ COMMENT_COUNTS_REQUEST ]: [
-		dispatchRequestEx( {
+		dispatchRequest( {
 			fetch: fetchCommentCounts,
 			onSuccess: updateCommentCounts,
 			onError: () => {},
 		} ),
 	],
-};
-
-export default mergeHandlers( countHandlers );
+} );

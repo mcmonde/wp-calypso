@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -26,7 +24,7 @@ class PostsList extends Component {
 		translate: PropTypes.func.isRequired,
 	};
 
-	addPost = ( { push } ) => post =>
+	addPost = ( { push } ) => ( post ) =>
 		push( {
 			id: post.ID,
 			siteId: post.site_ID,
@@ -36,7 +34,7 @@ class PostsList extends Component {
 
 	removePost = ( { remove }, index ) => () => remove( index );
 
-	changePostOrder = ( { move } ) => newOrder => {
+	changePostOrder = ( { move } ) => ( newOrder ) => {
 		if ( newOrder.length < 2 ) {
 			return;
 		}
@@ -70,38 +68,37 @@ class PostsList extends Component {
 					</p>
 					<SearchAutocomplete
 						onSelect={ this.addPost( fields ) }
-						exclude={ map( posts, post => post.id ) }
+						exclude={ map( posts, ( post ) => post.id ) }
 					>
 						<RecentPostsDropdown
 							onSelect={ this.addPost( fields ) }
-							exclude={ map( posts, post => post.id ) }
+							exclude={ map( posts, ( post ) => post.id ) }
 						/>
 					</SearchAutocomplete>
 				</FormFieldset>
 
-				{ !! posts.length &&
-					! requesting && (
-						<FormFieldset>
-							<p className={ explanationTextClass }>
-								{ translate(
-									"You can reorder the zone's content by dragging it to a different location on the list."
-								) }
-							</p>
-							<SortableList direction="vertical" onChange={ this.changePostOrder( fields ) }>
-								{ posts.map( ( post, index ) => (
-									<PostCard
-										key={ post.id }
-										postId={ post.id }
-										postTitle={ post.title }
-										siteId={ post.siteId }
-										remove={ this.removePost( fields, index ) }
-									/>
-								) ) }
-							</SortableList>
-						</FormFieldset>
-					) }
+				{ !! posts.length && ! requesting && (
+					<FormFieldset>
+						<p className={ explanationTextClass }>
+							{ translate(
+								"You can reorder the zone's content by dragging it to a different location on the list."
+							) }
+						</p>
+						<SortableList direction="vertical" onChange={ this.changePostOrder( fields ) }>
+							{ posts.map( ( post, index ) => (
+								<PostCard
+									key={ post.id }
+									postId={ post.id }
+									postTitle={ post.title }
+									siteId={ post.siteId }
+									remove={ this.removePost( fields, index ) }
+								/>
+							) ) }
+						</SortableList>
+					</FormFieldset>
+				) }
 
-				{ requesting && times( 3, index => <PostPlaceholder key={ index } /> ) }
+				{ requesting && times( 3, ( index ) => <PostPlaceholder key={ index } /> ) }
 			</div>
 		);
 	}

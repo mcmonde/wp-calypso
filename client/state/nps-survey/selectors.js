@@ -1,9 +1,6 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import { get } from 'lodash';
 
 /**
@@ -12,12 +9,15 @@ import { get } from 'lodash';
 import { NOT_SUBMITTED, SUBMITTING, SUBMIT_FAILURE, SUBMITTED } from './constants';
 import { getSectionName } from 'state/ui/selectors';
 
-const SECTION_NAME_WHITELIST = [
+import 'state/nps-survey/init';
+
+const ALLOWED_SECTION_NAMES = [
 	'discover',
 	'menus',
 	'people',
 	'plugins',
-	'posts-pages',
+	'posts',
+	'pages',
 	'reader',
 	'reader-activities',
 	'reader-list',
@@ -34,7 +34,7 @@ export function isSessionEligibleForNpsSurvey( state ) {
 
 export function isSectionEligibleForNpsSurvey( state ) {
 	const sectionName = getSectionName( state );
-	return SECTION_NAME_WHITELIST.indexOf( sectionName ) > -1;
+	return ALLOWED_SECTION_NAMES.indexOf( sectionName ) > -1;
 }
 
 export function isSectionAndSessionEligibleForNpsSurvey( state ) {
@@ -83,4 +83,8 @@ export function hasAnsweredNpsSurvey( state ) {
 
 export function hasAnsweredNpsSurveyWithNoScore( state ) {
 	return ! isNpsSurveyNotSubmitted( state ) && ! Number.isInteger( getNpsSurveyScore( state ) );
+}
+
+export function isAvailableForConciergeSession( state ) {
+	return get( state.npsSurvey, 'isAvailableForConciergeSession', false );
 }

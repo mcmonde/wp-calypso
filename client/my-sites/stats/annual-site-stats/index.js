@@ -1,19 +1,16 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { localize } from 'i18n-calypso';
-import { find } from 'lodash';
+import { find, includes } from 'lodash';
 
 /**
  * Internal dependencies
  */
-import Card from 'components/card';
+import { Card } from '@automattic/components';
 import SectionHeader from 'components/section-header';
 import { getSelectedSiteId } from 'state/ui/selectors';
 import { getSiteStatsNormalizedData } from 'state/stats/lists/selectors';
@@ -21,6 +18,12 @@ import { getSiteSlug } from 'state/sites/selectors';
 import StatsModulePlaceholder from 'my-sites/stats/stats-module/placeholder';
 import ErrorPanel from 'my-sites/stats/stats-error';
 import QuerySiteStats from 'components/data/query-site-stats';
+import { withLocalizedMoment } from 'components/localized-moment';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class AnnualSiteStats extends Component {
 	static propTypes = {
@@ -84,6 +87,18 @@ class AnnualSiteStats extends Component {
 		);
 	}
 
+	formatTableValue( key, value ) {
+		const { numberFormat } = this.props;
+		const singleDecimal = [ 'avg_comments', 'avg_likes' ];
+		if ( includes( singleDecimal, key ) ) {
+			return numberFormat( value, 1 );
+		}
+		if ( 'year' === key ) {
+			return value;
+		}
+		return numberFormat( value );
+	}
+
 	renderTable( data, strings ) {
 		const keys = Object.keys( strings );
 		/* eslint-disable wpcalypso/jsx-classname-namespace */
@@ -93,7 +108,7 @@ class AnnualSiteStats extends Component {
 					<table cellPadding="0" cellSpacing="0">
 						<thead>
 							<tr>
-								{ keys.map( key => (
+								{ keys.map( ( key ) => (
 									<th scope="col" key={ key }>
 										{ strings[ key ] }
 									</th>
@@ -107,7 +122,7 @@ class AnnualSiteStats extends Component {
 										const Cell = j === 0 ? 'th' : 'td';
 										return (
 											<Cell scope={ j === 0 ? 'row' : null } key={ j }>
-												{ row[ key ] }
+												{ this.formatTableValue( key, row[ key ] ) }
 											</Cell>
 										);
 									} ) }
@@ -125,13 +140,13 @@ class AnnualSiteStats extends Component {
 		const { translate } = this.props;
 		return {
 			year: translate( 'Year' ),
-			total_posts: translate( 'Total Posts' ),
-			total_comments: translate( 'Total Comments' ),
-			avg_comments: translate( 'Avg Comments per Post' ),
-			total_likes: translate( 'Total Likes' ),
-			avg_likes: translate( 'Avg Likes per Post' ),
-			total_words: translate( 'Total Words' ),
-			avg_words: translate( 'Avg Words per Post' ),
+			total_posts: translate( 'Total posts' ),
+			total_comments: translate( 'Total comments' ),
+			avg_comments: translate( 'Avg comments per post' ),
+			total_likes: translate( 'Total likes' ),
+			avg_likes: translate( 'Avg likes per post' ),
+			total_words: translate( 'Total words' ),
+			avg_words: translate( 'Avg words per post' ),
 		};
 	}
 
@@ -144,8 +159,9 @@ class AnnualSiteStats extends Component {
 		if ( now.month() === 0 ) {
 			previousYear = now.subtract( 1, 'months' ).format( 'YYYY' );
 		}
-		const currentYearData = years && find( years, y => y.year === currentYear );
-		const previousYearData = previousYear && years && find( years, y => y.year === previousYear );
+		const currentYearData = years && find( years, ( y ) => y.year === currentYear );
+		const previousYearData =
+			previousYear && years && find( years, ( y ) => y.year === previousYear );
 		const isLoading = ! years;
 		const isError = ! isLoading && years.errors;
 		const hasData = isWidget ? currentYearData || previousYearData : years;
@@ -161,7 +177,7 @@ class AnnualSiteStats extends Component {
 				{ isWidget && (
 					<SectionHeader
 						href={ viewAllLink }
-						label={ translate( 'Annual Site Stats', { args: [ currentYear ] } ) }
+						label={ translate( 'Annual site stats', { args: [ currentYear ] } ) }
 					/>
 				) }
 				<Card className="stats-module">
@@ -171,16 +187,14 @@ class AnnualSiteStats extends Component {
 					{ isWidget && currentYearData && this.renderWidgetContent( currentYearData, strings ) }
 					{ isWidget && previousYearData && this.renderWidgetContent( previousYearData, strings ) }
 					{ ! isWidget && years && this.renderTable( years, strings ) }
-					{ isWidget &&
-						years &&
-						years.length && (
-							<div className="module-expand">
-								<a href={ viewAllLink }>
-									{ translate( 'View All', { context: 'Stats: Button label to expand a panel' } ) }
-									<span className="right" />
-								</a>
-							</div>
-						) }
+					{ isWidget && years && years.length !== 0 && (
+						<div className="module-expand">
+							<a href={ viewAllLink }>
+								{ translate( 'View all', { context: 'Stats: Button label to expand a panel' } ) }
+								<span className="right" />
+							</a>
+						</div>
+					) }
 				</Card>
 			</div>
 		);
@@ -188,7 +202,7 @@ class AnnualSiteStats extends Component {
 	}
 }
 
-export default connect( state => {
+export default connect( ( state ) => {
 	const statType = 'statsInsights';
 	const siteId = getSelectedSiteId( state );
 	const siteSlug = getSiteSlug( state, siteId );
@@ -199,4 +213,4 @@ export default connect( state => {
 		siteId,
 		siteSlug,
 	};
-} )( localize( AnnualSiteStats ) );
+} )( localize( withLocalizedMoment( AnnualSiteStats ) ) );

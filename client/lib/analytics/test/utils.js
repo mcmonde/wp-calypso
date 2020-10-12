@@ -1,8 +1,20 @@
-/** @format */
 /**
  * Internal dependencies
  */
-import { shouldReportOmitBlogId } from '../utils';
+import { shouldReportOmitBlogId, hashPii } from '../utils';
+
+describe( 'hashPii', () => {
+	test( 'should return a valid sha256 string', () => {
+		expect( hashPii( '1234' ) ).toEqual(
+			// $ echo -n "1234" | sha256sum
+			'03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4'
+		);
+		expect( hashPii( 'arbitrary-value' ) ).toEqual(
+			// $ echo -n "arbitrary-value" | sha256sum
+			'3a47516f249c9b46170c634638b6cf625121ae39c3cb104716c40f87945f72b0'
+		);
+	} );
+} );
 
 describe( '#shouldReportOmitBlogId', () => {
 	test( 'should allow blog_id reporting for correctly reported site-specific paths', () => {
@@ -26,9 +38,6 @@ describe( '#shouldReportOmitBlogId', () => {
 		expect( shouldReportOmitBlogId( '/tag' ) ).toBe( true );
 	} );
 	test( 'always returns false when :site is in the path', () => {
-		expect(
-			shouldReportOmitBlogId( '/me/purchases/:site/:purchaseId/cancel-privacy-protection' )
-		).toBe( false );
 		expect( shouldReportOmitBlogId( '/me/concierge/:site/book' ) ).toBe( false );
 		expect( shouldReportOmitBlogId( '/following/:site' ) ).toBe( false );
 	} );

@@ -1,18 +1,25 @@
-/** @format */
 /**
  * Internal dependencies
  */
 import wpcom from 'lib/wp';
 import {
+	READER_LIST_CREATE,
 	READER_LIST_DISMISS_NOTICE,
+	READER_LIST_ITEMS_REQUEST,
+	READER_LIST_ITEMS_RECEIVE,
+	READER_LIST_ITEM_DELETE_FEED,
+	READER_LIST_ITEM_DELETE_SITE,
+	READER_LIST_ITEM_DELETE_TAG,
 	READER_LIST_REQUEST,
 	READER_LIST_REQUEST_SUCCESS,
 	READER_LIST_REQUEST_FAILURE,
 	READER_LIST_UPDATE,
 	READER_LIST_UPDATE_SUCCESS,
 	READER_LIST_UPDATE_FAILURE,
-	READER_LIST_UPDATE_TITLE,
-	READER_LIST_UPDATE_DESCRIPTION,
+	READER_LIST_ITEM_ADD_FEED,
+	READER_LIST_ITEM_ADD_FEED_RECEIVE,
+	READER_LIST_ITEM_ADD_TAG,
+	READER_LIST_ITEM_ADD_TAG_RECEIVE,
 	READER_LISTS_RECEIVE,
 	READER_LISTS_REQUEST,
 	READER_LISTS_REQUEST_SUCCESS,
@@ -23,13 +30,20 @@ import {
 	READER_LISTS_UNFOLLOW,
 	READER_LISTS_UNFOLLOW_SUCCESS,
 	READER_LISTS_UNFOLLOW_FAILURE,
-} from 'state/action-types';
+} from 'state/reader/action-types';
+
+import 'state/data-layer/wpcom/read/lists';
+import 'state/data-layer/wpcom/read/lists/items';
+import 'state/data-layer/wpcom/read/lists/feeds/delete';
+import 'state/data-layer/wpcom/read/lists/tags/delete';
+import 'state/data-layer/wpcom/read/lists/feeds/new';
+import 'state/reader/init';
 
 /**
  * Returns an action object to signal that list objects have been received.
  *
  * @param  {Array}  lists Lists received
- * @return {Object}       Action object
+ * @returns {object}       Action object
  */
 export function receiveLists( lists ) {
 	return {
@@ -41,10 +55,10 @@ export function receiveLists( lists ) {
 /**
  * Triggers a network request to fetch the current user's lists.
  *
- * @return {Function}        Action thunk
+ * @returns {Function}        Action thunk
  */
 export function requestSubscribedLists() {
-	return dispatch => {
+	return ( dispatch ) => {
 		dispatch( {
 			type: READER_LISTS_REQUEST,
 		} );
@@ -54,14 +68,14 @@ export function requestSubscribedLists() {
 				error ? reject( error ) : resolve( data );
 			} );
 		} )
-			.then( data => {
+			.then( ( data ) => {
 				dispatch( receiveLists( data.lists ) );
 				dispatch( {
 					type: READER_LISTS_REQUEST_SUCCESS,
 					data,
 				} );
 			} )
-			.catch( error => {
+			.catch( ( error ) => {
 				dispatch( {
 					type: READER_LISTS_REQUEST_FAILURE,
 					error,
@@ -70,15 +84,19 @@ export function requestSubscribedLists() {
 	};
 }
 
+export function createReaderList( list ) {
+	return { type: READER_LIST_CREATE, list };
+}
+
 /**
  * Triggers a network request to fetch a single Reader list.
  *
- * @param  {String}  owner List owner
- * @param  {String}  slug List slug
- * @return {Function}        Action thunk
+ * @param  {string}  owner List owner
+ * @param  {string}  slug List slug
+ * @returns {Function}        Action thunk
  */
 export function requestList( owner, slug ) {
-	return dispatch => {
+	return ( dispatch ) => {
 		dispatch( {
 			type: READER_LIST_REQUEST,
 		} );
@@ -99,32 +117,38 @@ export function requestList( owner, slug ) {
 				}
 			} );
 		} )
-			.then( data => {
-				dispatch( {
-					type: READER_LIST_REQUEST_SUCCESS,
-					data,
-				} );
+			.then( ( data ) => {
+				dispatch( receiveReaderList( data ) );
 			} )
-			.catch( errorInfo => {
-				dispatch( {
-					type: READER_LIST_REQUEST_FAILURE,
-					error: errorInfo.error,
-					owner: errorInfo.owner,
-					slug: errorInfo.slug,
-				} );
-			} );
+			.catch( ( errorInfo ) => dispatch( handleReaderListRequestFailure( errorInfo ) ) );
+	};
+}
+
+export function receiveReaderList( data ) {
+	return {
+		type: READER_LIST_REQUEST_SUCCESS,
+		data,
+	};
+}
+
+export function handleReaderListRequestFailure( errorInfo ) {
+	return {
+		type: READER_LIST_REQUEST_FAILURE,
+		error: errorInfo.error,
+		owner: errorInfo.owner,
+		slug: errorInfo.slug,
 	};
 }
 
 /**
  * Triggers a network request to follow a list.
  *
- * @param  {String}  owner List owner
- * @param  {String}  slug List slug
- * @return {Function} Action promise
+ * @param  {string}  owner List owner
+ * @param  {string}  slug List slug
+ * @returns {Function} Action promise
  */
 export function followList( owner, slug ) {
-	return dispatch => {
+	return ( dispatch ) => {
 		dispatch( {
 			type: READER_LISTS_FOLLOW,
 			owner,
@@ -138,13 +162,13 @@ export function followList( owner, slug ) {
 				error ? reject( error ) : resolve( data );
 			} );
 		} )
-			.then( data => {
+			.then( ( data ) => {
 				dispatch( {
 					type: READER_LISTS_FOLLOW_SUCCESS,
 					data,
 				} );
 			} )
-			.catch( error => {
+			.catch( ( error ) => {
 				dispatch( {
 					type: READER_LISTS_FOLLOW_FAILURE,
 					error,
@@ -156,12 +180,12 @@ export function followList( owner, slug ) {
 /**
  * Triggers a network request to unfollow a list.
  *
- * @param  {String}  owner List owner
- * @param  {String}  slug List slug
- * @return {Function} Action promise
+ * @param  {string}  owner List owner
+ * @param  {string}  slug List slug
+ * @returns {Function} Action promise
  */
 export function unfollowList( owner, slug ) {
-	return dispatch => {
+	return ( dispatch ) => {
 		dispatch( {
 			type: READER_LISTS_UNFOLLOW,
 			owner,
@@ -175,13 +199,13 @@ export function unfollowList( owner, slug ) {
 				error ? reject( error ) : resolve( data );
 			} );
 		} )
-			.then( data => {
+			.then( ( data ) => {
 				dispatch( {
 					type: READER_LISTS_UNFOLLOW_SUCCESS,
 					data,
 				} );
 			} )
-			.catch( error => {
+			.catch( ( error ) => {
 				dispatch( {
 					type: READER_LISTS_UNFOLLOW_FAILURE,
 					error,
@@ -193,54 +217,54 @@ export function unfollowList( owner, slug ) {
 /**
  * Triggers a network request to update a list's details.
  *
- * @param  {Object}  list List details to save
- * @return {Function} Action promise
+ * @param   {object} list List details to save
+ * @returns {object} Action object
  */
-export function updateListDetails( list ) {
+export function updateReaderList( list ) {
 	if ( ! list || ! list.owner || ! list.slug || ! list.title ) {
 		throw new Error( 'List owner, slug and title are required' );
 	}
 
-	const preparedOwner = decodeURIComponent( list.owner );
-	const preparedSlug = decodeURIComponent( list.slug );
-	const preparedList = Object.assign( {}, list, { owner: preparedOwner, slug: preparedSlug } );
+	return {
+		type: READER_LIST_UPDATE,
+		list,
+	};
+}
 
-	return dispatch => {
-		dispatch( {
-			type: READER_LIST_UPDATE,
-			list,
-		} );
+/**
+ * Handle updated list object from the API.
+ *
+ * @param   {object} data List to save
+ * @returns {object} Action object
+ */
+export function receiveUpdatedListDetails( data ) {
+	return {
+		type: READER_LIST_UPDATE_SUCCESS,
+		data,
+	};
+}
 
-		return new Promise( ( resolve, reject ) => {
-			wpcom.undocumented().readListsUpdate( preparedList, ( error, data ) => {
-				if ( error ) {
-					dispatch( {
-						type: READER_LIST_UPDATE_FAILURE,
-						list,
-						error,
-					} );
-					reject( error );
-				} else {
-					dispatch( {
-						type: READER_LIST_UPDATE_SUCCESS,
-						list,
-						data,
-					} );
-					resolve();
-				}
-			} );
-		} );
+/**
+ * Handle an error from the list update API.
+ *
+ * @param   {Error}  error Error during the list update process
+ * @returns {object} Action object
+ */
+export function handleUpdateListDetailsError( error ) {
+	return {
+		type: READER_LIST_UPDATE_FAILURE,
+		error,
 	};
 }
 
 /**
  * Trigger an action to dismiss a list update notice.
  *
- * @param  {Integer}  listId List ID
- * @return {Function} Action thunk
+ * @param  {number}  listId List ID
+ * @returns {Function} Action thunk
  */
 export function dismissListNotice( listId ) {
-	return dispatch => {
+	return ( dispatch ) => {
 		dispatch( {
 			type: READER_LIST_DISMISS_NOTICE,
 			listId,
@@ -248,39 +272,91 @@ export function dismissListNotice( listId ) {
 	};
 }
 
-/**
- * Trigger an action to update a list title.
- *
- * @param  {Integer}  listId List ID
- * @param  {String}  newTitle List title
- * @return {Function} Action thunk
- */
-export function updateTitle( listId, newTitle ) {
-	return dispatch => {
-		dispatch( {
-			type: READER_LIST_UPDATE_TITLE,
-			listId,
-			title: newTitle,
-		} );
-	};
-}
+export const requestReaderListItems = ( listOwner, listSlug ) => ( {
+	type: READER_LIST_ITEMS_REQUEST,
+	listOwner,
+	listSlug,
+} );
 
-/**
- * Trigger an action to update a list description.
- *
- * @param  {Integer}  listId List ID
- * @param  {String}  newDescription List description
- * @return {Function} Action thunk
- */
-export function updateDescription( listId, newDescription ) {
-	return dispatch => {
-		dispatch( {
-			type: READER_LIST_UPDATE_DESCRIPTION,
-			listId,
-			description: newDescription,
-		} );
-	};
-}
+export const receiveReaderListItems = ( listId, listItems ) => ( {
+	type: READER_LIST_ITEMS_RECEIVE,
+	listId,
+	listItems,
+} );
+
+export const deleteReaderListFeed = ( listId, listOwner, listSlug, feedId ) => ( {
+	type: READER_LIST_ITEM_DELETE_FEED,
+	listId,
+	listOwner,
+	listSlug,
+	feedId,
+} );
+
+export const deleteReaderListSite = ( listId, listOwner, listSlug, siteId ) => ( {
+	type: READER_LIST_ITEM_DELETE_SITE,
+	listId,
+	listOwner,
+	listSlug,
+	siteId,
+} );
+
+export const deleteReaderListTag = ( listId, listOwner, listSlug, tagId, tagSlug ) => ( {
+	type: READER_LIST_ITEM_DELETE_TAG,
+	listId,
+	listOwner,
+	listSlug,
+	tagId,
+	tagSlug,
+} );
+
+export const addReaderListFeed = ( listId, listOwner, listSlug, feedId ) => ( {
+	type: READER_LIST_ITEM_ADD_FEED,
+	listId,
+	listOwner,
+	listSlug,
+	feedId,
+} );
+
+export const addReaderListFeedByUrl = ( listId, listOwner, listSlug, feedUrl ) => ( {
+	type: READER_LIST_ITEM_ADD_FEED,
+	listId,
+	listOwner,
+	listSlug,
+	feedUrl,
+} );
+
+export const addReaderListSite = ( listId, listOwner, listSlug, siteId ) => ( {
+	type: READER_LIST_ITEM_ADD_FEED,
+	listId,
+	listOwner,
+	listSlug,
+	siteId,
+} );
+
+export const addReaderListTag = ( listId, listOwner, listSlug, tagSlug ) => ( {
+	type: READER_LIST_ITEM_ADD_TAG,
+	listId,
+	listOwner,
+	listSlug,
+	tagSlug,
+} );
+
+export const receiveAddReaderListFeed = ( listId, listOwner, listSlug, feedId ) => ( {
+	type: READER_LIST_ITEM_ADD_FEED_RECEIVE,
+	listId,
+	listOwner,
+	listSlug,
+	feedId,
+} );
+
+export const receiveAddReaderListTag = ( listId, listOwner, listSlug, tagSlug, tagId ) => ( {
+	type: READER_LIST_ITEM_ADD_TAG_RECEIVE,
+	listId,
+	listOwner,
+	listSlug,
+	tagSlug,
+	tagId,
+} );
 
 function createQuery( owner, slug ) {
 	const preparedOwner = decodeURIComponent( owner );

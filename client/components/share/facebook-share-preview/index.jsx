@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -11,7 +10,12 @@ import { isNull } from 'lodash';
 /**
  * Internal dependencies
  */
-import FacebookPreview from 'components/seo/facebook-preview';
+import { FacebookPreview } from '@automattic/social-previews';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 export class FacebookSharePreview extends PureComponent {
 	static propTypes = {

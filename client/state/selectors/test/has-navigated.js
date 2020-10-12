@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -8,7 +6,7 @@ import { expect } from 'chai';
 /**
  * Internal dependencies
  */
-import { hasNavigated } from 'state/selectors';
+import hasNavigated from 'state/selectors/has-navigated';
 import { ROUTE_SET } from 'state/action-types';
 
 describe( 'hasNavigated()', () => {
@@ -20,7 +18,12 @@ describe( 'hasNavigated()', () => {
 
 	test( 'should return true if more than one ROUTE_SET has occurred', () => {
 		const state = {
-			ui: { actionLog: [ { type: ROUTE_SET, path: 'a' }, { type: ROUTE_SET, path: 'b' } ] },
+			ui: {
+				actionLog: [
+					{ type: ROUTE_SET, path: 'a' },
+					{ type: ROUTE_SET, path: 'b' },
+				],
+			},
 		};
 
 		expect( hasNavigated( state ) ).to.be.true;

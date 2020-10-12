@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -12,11 +10,13 @@ import { isEmpty } from 'lodash';
 /**
  * Internal dependencies
  */
-import { getContactDetailsCache, isRequestingContactDetailsCache } from 'state/selectors';
+import getContactDetailsCache from 'state/selectors/get-contact-details-cache';
+
+import isRequestingContactDetailsCache from 'state/selectors/is-requesting-contact-details-cache';
 import { requestContactDetailsCache } from 'state/domains/management/actions';
 
 class QueryContactDetailsCache extends Component {
-	componentWillMount() {
+	UNSAFE_componentWillMount() {
 		if ( this.props.isRequesting || ! isEmpty( this.props.contactDetailsCache ) ) {
 			return;
 		}
@@ -34,7 +34,7 @@ QueryContactDetailsCache.propTypes = {
 };
 
 export default connect(
-	state => ( {
+	( state ) => ( {
 		contactDetailsCache: getContactDetailsCache( state ),
 		isRequesting: isRequestingContactDetailsCache( state ),
 	} ),

@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -24,10 +23,10 @@ import { errorNotice } from 'state/notices/actions';
  * We need placehodler id to be unique in the context of siteId, postId for that specific user,
  * date milliseconds will do for that purpose.
  *
- * @param   {String}           commentText     text of the comment
- * @param   {Number}           postId          post identifier
- * @param   {Number|undefined} parentCommentId parent comment identifier
- * @returns {Object}                           comment placeholder
+ * @param   {string}           commentText     text of the comment
+ * @param   {number}           postId          post identifier
+ * @param   {number|undefined} parentCommentId parent comment identifier
+ * @returns {object}                           comment placeholder
  */
 export const createPlaceholderComment = ( commentText, postId, parentCommentId ) => ( {
 	ID: 'placeholder-' + new Date().getTime(),
@@ -46,24 +45,24 @@ export const createPlaceholderComment = ( commentText, postId, parentCommentId )
  * We need placeholder id to be unique in the context of siteId and postId for that specific user,
  * date milliseconds will do for that purpose.
  *
- * @param {Function} dispatch redux dispatcher
- * @param {Object}   action   redux action
- * @param {String}   path     comments resource path
+ * @param {object}   action   redux action
+ * @param {string}   path     comments resource path
+ * @returns {Array}	actions
  */
-export const dispatchNewCommentRequest = ( dispatch, action, path ) => {
+export const dispatchNewCommentRequest = ( action, path ) => {
 	const { siteId, postId, parentCommentId, commentText } = action;
 	const placeholder = createPlaceholderComment( commentText, postId, parentCommentId );
 
 	// Insert a placeholder
-	dispatch( {
-		type: COMMENTS_RECEIVE,
-		siteId,
-		postId,
-		comments: [ placeholder ],
-		skipSort: !! parentCommentId,
-	} );
+	return [
+		{
+			type: COMMENTS_RECEIVE,
+			siteId,
+			postId,
+			comments: [ placeholder ],
+			skipSort: !! parentCommentId,
+		},
 
-	dispatch(
 		http( {
 			method: 'POST',
 			apiVersion: '1.1',
@@ -76,70 +75,62 @@ export const dispatchNewCommentRequest = ( dispatch, action, path ) => {
 				placeholderId: placeholder.ID,
 			},
 			onFailure: { ...action, placeholderId: placeholder.ID },
-		} )
-	);
+		} ),
+	];
 };
 
 /**
  * updates the placeholder comments with server values
  *
  * @param {Function} dispatch redux dispatcher
- * @param {Object}   action   redux action
- * @param {Object}   comment  updated comment from the request response
+ * @param {object}   comment  updated comment from the request response
+ * @returns {Function} thunk
  */
 export const updatePlaceholderComment = (
-	{ dispatch },
 	{ siteId, postId, parentCommentId, placeholderId, refreshCommentListQuery },
 	comment
 ) => {
-	// remove placeholder from state
-	dispatch(
-		bypassDataLayer( { type: COMMENTS_DELETE, siteId, postId, commentId: placeholderId } )
-	);
-	// add new comment to state with updated values from server
-	dispatch( {
-		type: COMMENTS_RECEIVE,
-		siteId,
-		postId,
-		comments: [ comment ],
-		skipSort: !! parentCommentId,
-		meta: {
-			comment: {
-				context: 'add', //adds a hint for the counts reducer.
+	const actions = [
+		// remove placeholder from state
+		bypassDataLayer( { type: COMMENTS_DELETE, siteId, postId, commentId: placeholderId } ),
+		// add new comment to state with updated values from server
+		{
+			type: COMMENTS_RECEIVE,
+			siteId,
+			postId,
+			comments: [ comment ],
+			skipSort: !! parentCommentId,
+			meta: {
+				comment: {
+					context: 'add', //adds a hint for the counts reducer.
+				},
 			},
 		},
-	} );
-	// increment comments count
-	dispatch( { type: COMMENTS_COUNT_INCREMENT, siteId, postId } );
+		// increment comments count
+		{ type: COMMENTS_COUNT_INCREMENT, siteId, postId },
+	];
 
 	if ( !! refreshCommentListQuery ) {
-		dispatch( requestCommentsList( refreshCommentListQuery ) );
+		actions.push( requestCommentsList( refreshCommentListQuery ) );
 	}
+
+	return actions;
 };
 
 /**
  * dispatches a error notice if creating a new comment request failed
  *
- * @param {Function} dispatch redux dispatcher
- * @param {Function} getState access the redux state
- * @param {Number}   siteId   site identifier
- * @param {Number}   postId   post identifier
+ * @param {object}   action   redux action
+ * @param {object} rawError plain error object
+ * @returns {Function} thunk
  */
 export const handleWriteCommentFailure = (
-	{ dispatch, getState },
 	{ siteId, postId, parentCommentId, placeholderId },
 	rawError
-) => {
+) => ( dispatch, getState ) => {
 	// Dispatch error notice
 	const post = getSitePost( getState(), siteId, postId );
-	const postTitle =
-		post &&
-		post.title &&
-		post.title
-			.trim()
-			.slice( 0, 20 )
-			.trim()
-			.concat( '…' );
+	const postTitle = post && post.title && post.title.trim().slice( 0, 20 ).trim().concat( '…' );
 	const error = postTitle
 		? translate( 'Could not add a reply to “%(postTitle)s”', { args: { postTitle } } )
 		: translate( 'Could not add a reply to this post' );

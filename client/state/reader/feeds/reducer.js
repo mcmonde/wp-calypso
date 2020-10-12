@@ -1,8 +1,7 @@
-/** @format */
 /**
  * External Dependencies
  */
-import { assign, keyBy, map, omit, omitBy, reduce } from 'lodash';
+import { assign, keyBy, map, omit, omitBy, reduce, merge, forEach } from 'lodash';
 
 /**
  * Internal Dependencies
@@ -12,10 +11,13 @@ import {
 	READER_FEED_REQUEST_SUCCESS,
 	READER_FEED_REQUEST_FAILURE,
 	READER_FEED_UPDATE,
-	SERIALIZE,
-} from 'state/action-types';
-import { combineReducers, createReducer } from 'state/utils';
-import { decodeEntities } from 'lib/formatting';
+	READER_SEEN_MARK_AS_SEEN_RECEIVE,
+	READER_SEEN_MARK_AS_UNSEEN_RECEIVE,
+	READER_SEEN_MARK_ALL_AS_SEEN_RECEIVE,
+} from 'state/reader/action-types';
+import { SERIALIZE } from 'state/action-types';
+import { combineReducers, withSchemaValidation, withoutPersistence } from 'state/utils';
+import { decodeEntities, stripHTML } from 'lib/formatting';
 import { itemsSchema } from './schema';
 import { safeLink } from 'lib/post-normalizer/utils';
 
@@ -46,9 +48,11 @@ function adaptFeed( feed ) {
 		feed_URL: safeLink( feed.feed_URL ),
 		is_following: feed.is_following,
 		subscribers_count: feed.subscribers_count,
-		description: feed.description && decodeEntities( feed.description ),
+		description: feed.description && decodeEntities( stripHTML( feed.description ) ),
 		last_update: feed.last_update,
 		image: feed.image,
+		organization_id: feed.organization_id,
+		unseen_count: feed.unseen_count,
 	};
 }
 
@@ -64,16 +68,55 @@ function handleFeedUpdate( state, action ) {
 	return assign( {}, state, keyBy( feeds, 'feed_ID' ) );
 }
 
-export const items = createReducer(
-	{},
-	{
-		[ SERIALIZE ]: handleSerialize,
-		[ READER_FEED_REQUEST_SUCCESS ]: handleRequestSuccess,
-		[ READER_FEED_REQUEST_FAILURE ]: handleRequestFailure,
-		[ READER_FEED_UPDATE ]: handleFeedUpdate,
-	},
-	itemsSchema
-);
+export const items = withSchemaValidation( itemsSchema, ( state = {}, action ) => {
+	switch ( action.type ) {
+		case SERIALIZE:
+			return handleSerialize( state, action );
+		case READER_FEED_REQUEST_SUCCESS:
+			return handleRequestSuccess( state, action );
+		case READER_FEED_REQUEST_FAILURE:
+			return handleRequestFailure( state, action );
+		case READER_FEED_UPDATE:
+			return handleFeedUpdate( state, action );
+
+		case READER_SEEN_MARK_AS_SEEN_RECEIVE: {
+			const existingEntry = state[ action.feedId ];
+			if ( ! existingEntry ) {
+				return state;
+			}
+
+			return {
+				...state,
+				[ action.feedId ]: merge( {}, existingEntry, {
+					unseen_count: Math.max( existingEntry.unseen_count - action.globalIds.length, 0 ),
+				} ),
+			};
+		}
+
+		case READER_SEEN_MARK_AS_UNSEEN_RECEIVE: {
+			const existingEntry = state[ action.feedId ];
+			if ( ! existingEntry ) {
+				return state;
+			}
+
+			return {
+				...state,
+				[ action.feedId ]: merge( {}, existingEntry, {
+					unseen_count: Math.max( existingEntry.unseen_count + action.globalIds.length, 0 ),
+				} ),
+			};
+		}
+
+		case READER_SEEN_MARK_ALL_AS_SEEN_RECEIVE: {
+			forEach( action.feedIds, ( feedId ) => {
+				state[ feedId ] = { ...state[ feedId ], unseen_count: 0 };
+			} );
+			return { ...state };
+		}
+	}
+
+	return state;
+} );
 
 export function queuedRequests( state = {}, action ) {
 	switch ( action.type ) {
@@ -89,14 +132,14 @@ export function queuedRequests( state = {}, action ) {
 	return state;
 }
 
-export const lastFetched = createReducer(
-	{},
-	{
-		[ READER_FEED_REQUEST_SUCCESS ]: ( state, action ) => ( {
-			...state,
-			[ action.payload.feed_ID ]: Date.now(),
-		} ),
-		[ READER_FEED_UPDATE ]: ( state, action ) => {
+export const lastFetched = withoutPersistence( ( state = {}, action ) => {
+	switch ( action.type ) {
+		case READER_FEED_REQUEST_SUCCESS:
+			return {
+				...state,
+				[ action.payload.feed_ID ]: Date.now(),
+			};
+		case READER_FEED_UPDATE: {
 			const updates = reduce(
 				action.payload,
 				( memo, feed ) => {
@@ -106,9 +149,11 @@ export const lastFetched = createReducer(
 				{}
 			);
 			return assign( {}, state, updates );
-		},
+		}
 	}
-);
+
+	return state;
+} );
 
 export default combineReducers( {
 	items,

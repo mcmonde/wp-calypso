@@ -1,8 +1,12 @@
-/** @format */
 /**
  * External dependencies
  */
 import React from 'react';
+
+/**
+ * Internal dependencies
+ */
+import FormTextarea from 'components/forms/form-textarea';
 
 const TranslatableTextarea = ( {
 	originalString,
@@ -16,7 +20,7 @@ const TranslatableTextarea = ( {
 		<span className="community-translator__string-description">{ title }</span>
 		<span>
 			<dfn>{ originalString }</dfn>
-			<textarea
+			<FormTextarea
 				id={ fieldName }
 				name={ fieldName }
 				value={ value }

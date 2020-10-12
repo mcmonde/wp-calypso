@@ -1,13 +1,12 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import page from 'page';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { localize } from 'i18n-calypso';
+import { localize, translate } from 'i18n-calypso';
+import { parse as parseQs, stringify as stringifyQs } from 'qs';
+import { find } from 'lodash';
 
 /**
  * Internal dependencies
@@ -17,6 +16,7 @@ import StatsPeriodNavigation from './stats-period-navigation';
 import Main from 'components/main';
 import StatsNavigation from 'blocks/stats-navigation';
 import SidebarNavigation from 'my-sites/sidebar-navigation';
+import FormattedHeader from 'components/formatted-header';
 import DatePicker from './stats-date-picker';
 import Countries from './stats-countries';
 import ChartTabs from './stats-chart-tabs';
@@ -24,126 +24,146 @@ import StatsModule from './stats-module';
 import statsStrings from './stats-strings';
 import titlecase from 'to-title-case';
 import PageViewTracker from 'lib/analytics/page-view-tracker';
-import StatsFirstView from './stats-first-view';
 import StickyPanel from 'components/sticky-panel';
+import JetpackBackupCredsBanner from 'blocks/jetpack-backup-creds-banner';
 import JetpackColophon from 'components/jetpack-colophon';
-import config from 'config';
 import { getSelectedSiteId, getSelectedSiteSlug } from 'state/ui/selectors';
-import { getSiteOption, isJetpackSite } from 'state/sites/selectors';
-import { recordGoogleEvent } from 'state/analytics/actions';
+import { isJetpackSite, getSitePlanSlug, getSiteOption } from 'state/sites/selectors';
+import { recordGoogleEvent, recordTracksEvent, withAnalytics } from 'state/analytics/actions';
 import PrivacyPolicyBanner from 'blocks/privacy-policy-banner';
-import ChecklistBanner from './checklist-banner';
-import QuerySiteSettings from 'components/data/query-site-settings';
-import GoogleMyBusinessStatsNudge from 'blocks/google-my-business-stats-nudge';
-import { isGoogleMyBusinessStatsNudgeVisible as isGoogleMyBusinessStatsNudgeVisibleSelector } from 'state/selectors';
+import QuerySiteKeyrings from 'components/data/query-site-keyrings';
+import QueryKeyringConnections from 'components/data/query-keyring-connections';
+import memoizeLast from 'lib/memoize-last';
+import isJetpackModuleActive from 'state/selectors/is-jetpack-module-active';
+import QueryJetpackModules from 'components/data/query-jetpack-modules';
+import EmptyContent from 'components/empty-content';
+import { activateModule } from 'state/jetpack/modules/actions';
+import canCurrentUser from 'state/selectors/can-current-user';
+import getCurrentRouteParameterized from 'state/selectors/get-current-route-parameterized';
+import Banner from 'components/banner';
+import isVipSite from 'state/selectors/is-vip-site';
+
+function updateQueryString( query = {} ) {
+	return {
+		...parseQs( window.location.search.substring( 1 ) ),
+		...query,
+	};
+}
+
+const memoizedQuery = memoizeLast( ( period, endOf ) => ( {
+	period,
+	date: endOf.format( 'YYYY-MM-DD' ),
+} ) );
+
+const CHARTS = [
+	{
+		attr: 'views',
+		legendOptions: [ 'visitors' ],
+		gridicon: 'visible',
+		label: translate( 'Views', { context: 'noun' } ),
+	},
+	{
+		attr: 'visitors',
+		gridicon: 'user',
+		label: translate( 'Visitors', { context: 'noun' } ),
+	},
+	{
+		attr: 'likes',
+		gridicon: 'star',
+		label: translate( 'Likes', { context: 'noun' } ),
+	},
+	{
+		attr: 'comments',
+		gridicon: 'comment',
+		label: translate( 'Comments', { context: 'noun' } ),
+	},
+];
+
+const getActiveTab = ( chartTab ) => find( CHARTS, { attr: chartTab } ) || CHARTS[ 0 ];
 
 class StatsSite extends Component {
-	constructor( props ) {
-		super( props );
-		this.state = {
-			chartTab: this.props.chartTab,
-			tabSwitched: false,
-		};
-	}
+	static defaultProps = {
+		chartTab: 'views',
+	};
 
-	componentWillReceiveProps( nextProps ) {
-		if ( ! this.state.tabSwitched && this.state.chartTab !== nextProps.chartTab ) {
-			this.setState( {
-				tabSwitched: true,
-				chartTab: nextProps.chartTab,
-			} );
+	// getDerivedStateFromProps will set the state both on init and tab switch
+	state = {
+		activeTab: null,
+		activeLegend: null,
+	};
+
+	static getDerivedStateFromProps( props, state ) {
+		// when switching from one tab to another or when initializing the component,
+		// reset the active legend charts to the defaults for that tab. The legends
+		// can be then toggled on and off by the user in `onLegendClick`.
+		const activeTab = getActiveTab( props.chartTab );
+		if ( activeTab !== state.activeTab ) {
+			return {
+				activeTab,
+				activeLegend: activeTab.legendOptions || [],
+			};
 		}
+		return null;
 	}
 
-	barClick = bar => {
+	getAvailableLegend() {
+		const activeTab = getActiveTab( this.props.chartTab );
+		return activeTab.legendOptions || [];
+	}
+
+	barClick = ( bar ) => {
 		this.props.recordGoogleEvent( 'Stats', 'Clicked Chart Bar' );
-		page.redirect( this.props.path + '?startDate=' + bar.data.period );
+		const updatedQs = stringifyQs( updateQueryString( { startDate: bar.data.period } ) );
+		page.redirect( `${ window.location.pathname }?${ updatedQs }` );
 	};
 
-	switchChart = tab => {
-		if ( ! tab.loading && tab.attr !== this.state.chartTab ) {
+	onChangeLegend = ( activeLegend ) => this.setState( { activeLegend } );
+
+	switchChart = ( tab ) => {
+		if ( ! tab.loading && tab.attr !== this.props.chartTab ) {
 			this.props.recordGoogleEvent( 'Stats', 'Clicked ' + titlecase( tab.attr ) + ' Tab' );
-			this.setState( {
-				chartTab: tab.attr,
-				tabSwitched: true,
-			} );
+			// switch the tab by navigating to route with updated query string
+			const updatedQs = stringifyQs( updateQueryString( { tab: tab.attr } ) );
+			page.show( `${ window.location.pathname }?${ updatedQs }` );
 		}
 	};
 
-	render() {
-		const {
-			date,
-			hasPodcasts,
-			isGoogleMyBusinessStatsNudgeVisible,
-			isJetpack,
-			siteId,
-			slug,
-			translate,
-		} = this.props;
+	renderStats() {
+		const { date, hasWordAds, siteId, slug, isAdmin, isJetpack, isVip } = this.props;
 
-		const charts = [
-			{
-				attr: 'views',
-				legendOptions: [ 'visitors' ],
-				gridicon: 'visible',
-				label: translate( 'Views', { context: 'noun' } ),
-			},
-			{ attr: 'visitors', gridicon: 'user', label: translate( 'Visitors', { context: 'noun' } ) },
-			{ attr: 'likes', gridicon: 'star', label: translate( 'Likes', { context: 'noun' } ) },
-			{
-				attr: 'comments',
-				gridicon: 'comment',
-				label: translate( 'Comments', { context: 'noun' } ),
-			},
-		];
 		const queryDate = date.format( 'YYYY-MM-DD' );
 		const { period, endOf } = this.props.period;
 		const moduleStrings = statsStrings();
-		let videoList;
-		let podcastList;
+		let fileDownloadList;
 
-		const query = {
-			period: period,
-			date: endOf.format( 'YYYY-MM-DD' ),
-		};
+		const query = memoizedQuery( period, endOf );
 
-		// Video plays, and tags and categories are not supported in JetPack Stats
+		// File downloads are not yet supported in Jetpack Stats
 		if ( ! isJetpack ) {
-			videoList = (
+			fileDownloadList = (
 				<StatsModule
-					path="videoplays"
-					moduleStrings={ moduleStrings.videoplays }
+					path="filedownloads"
+					moduleStrings={ moduleStrings.filedownloads }
 					period={ this.props.period }
 					query={ query }
-					statType="statsVideoPlays"
+					statType="statsFileDownloads"
 					showSummaryLink
-				/>
-			);
-		}
-		if ( config.isEnabled( 'manage/stats/podcasts' ) && hasPodcasts ) {
-			podcastList = (
-				<StatsModule
-					path="podcastdownloads"
-					moduleStrings={ moduleStrings.podcastdownloads }
-					period={ this.props.period }
-					query={ query }
-					statType="statsPodcastDownloads"
-					showSummaryLink
+					useShortLabel={ true }
 				/>
 			);
 		}
 
 		return (
-			<Main wideLayout={ true }>
-				<QuerySiteSettings siteId={ siteId } />
-				<DocumentHead title={ translate( 'Stats' ) } />
-				<PageViewTracker
-					path={ `/stats/${ period }/:site` }
-					title={ `Stats > ${ titlecase( period ) }` }
-				/>
+			<>
 				<PrivacyPolicyBanner />
-				<StatsFirstView />
 				<SidebarNavigation />
+				<JetpackBackupCredsBanner event={ 'stats-backup-credentials' } />
+				<FormattedHeader
+					brandFont
+					className="stats__section-header"
+					headerText={ translate( 'Stats and Insights' ) }
+					align="left"
+				/>
 				<StatsNavigation
 					selectedItem={ 'traffic' }
 					interval={ period }
@@ -151,18 +171,34 @@ class StatsSite extends Component {
 					slug={ slug }
 				/>
 				<div id="my-stats-content">
-					{ config.isEnabled( 'onboarding-checklist' ) && <ChecklistBanner siteId={ siteId } /> }
-					{ isGoogleMyBusinessStatsNudgeVisible && (
-						<GoogleMyBusinessStatsNudge siteSlug={ slug } siteId={ siteId } />
-					) }
 					<ChartTabs
+						activeTab={ getActiveTab( this.props.chartTab ) }
+						activeLegend={ this.state.activeLegend }
+						availableLegend={ this.getAvailableLegend() }
+						onChangeLegend={ this.onChangeLegend }
 						barClick={ this.barClick }
 						switchTab={ this.switchChart }
-						charts={ charts }
+						charts={ CHARTS }
 						queryDate={ queryDate }
 						period={ this.props.period }
-						chartTab={ this.state.chartTab }
+						chartTab={ this.props.chartTab }
 					/>
+					{ ! isVip && isAdmin && ! hasWordAds && (
+						<Banner
+							className="stats__upsell-nudge"
+							icon="star"
+							title={ translate( 'Start earning money now' ) }
+							description={ translate(
+								'Accept payments for just about anything and turn your website into a reliable source of income with payments and ads.'
+							) }
+							href={ `/earn/${ slug }` }
+							event="stats_earn_nudge"
+							tracksImpressionName="calypso_upgrade_nudge_impression"
+							tracksClickName="calypso_upgrade_nudge_cta_click"
+							showIcon={ true }
+							jetpack={ false }
+						/>
+					) }
 					<StickyPanel className="stats__sticky-navigation">
 						<StatsPeriodNavigation
 							date={ date }
@@ -196,7 +232,7 @@ class StatsSite extends Component {
 								statType="statsSearchTerms"
 								showSummaryLink
 							/>
-							{ videoList }
+							{ fileDownloadList }
 						</div>
 						<div className="stats__module-column">
 							<Countries
@@ -232,35 +268,88 @@ class StatsSite extends Component {
 								className="stats__author-views"
 								showSummaryLink
 							/>
-							{ podcastList }
+							<StatsModule
+								path="videoplays"
+								moduleStrings={ moduleStrings.videoplays }
+								period={ this.props.period }
+								query={ query }
+								statType="statsVideoPlays"
+								showSummaryLink
+							/>
 						</div>
 					</div>
 				</div>
 				<JetpackColophon />
+			</>
+		);
+	}
+
+	enableStatsModule = () => {
+		const { siteId, path } = this.props;
+		this.props.enableJetpackStatsModule( siteId, path );
+	};
+
+	renderEnableStatsModule() {
+		return (
+			<EmptyContent
+				illustration="/calypso/images/illustrations/illustration-404.svg"
+				title={ translate( 'Looking for stats?' ) }
+				line={ translate(
+					'Enable site stats to see detailed information about your traffic, likes, comments, and subscribers.'
+				) }
+				action={ translate( 'Enable Site Stats' ) }
+				actionCallback={ this.enableStatsModule }
+			/>
+		);
+	}
+
+	render() {
+		const { isJetpack, siteId, showEnableStatsModule } = this.props;
+		const { period } = this.props.period;
+
+		return (
+			<Main wideLayout={ true }>
+				<QueryKeyringConnections />
+				{ isJetpack && <QueryJetpackModules siteId={ siteId } /> }
+				{ siteId && <QuerySiteKeyrings siteId={ siteId } /> }
+				<DocumentHead title={ translate( 'Stats and Insights' ) } />
+				<PageViewTracker
+					path={ `/stats/${ period }/:site` }
+					title={ `Stats > ${ titlecase( period ) }` }
+				/>
+				{ showEnableStatsModule ? this.renderEnableStatsModule() : this.renderStats() }
 			</Main>
 		);
 	}
 }
+const enableJetpackStatsModule = ( siteId, path ) =>
+	withAnalytics(
+		recordTracksEvent( 'calypso_jetpack_module_toggle', {
+			module: 'stats',
+			path,
+			toggled: 'on',
+		} ),
+		activateModule( siteId, 'stats' )
+	);
 
 export default connect(
-	state => {
+	( state ) => {
 		const siteId = getSelectedSiteId( state );
 		const isJetpack = isJetpackSite( state, siteId );
+		const isVip = isVipSite( state, siteId );
+		const showEnableStatsModule =
+			siteId && isJetpack && isJetpackModuleActive( state, siteId, 'stats' ) === false;
 		return {
+			isAdmin: canCurrentUser( state, siteId, 'manage_options' ),
 			isJetpack,
-			hasPodcasts:
-				// Podcasting category slug
-				// TODO: remove when settings API is updated for new option
-				!! getSiteOption( state, siteId, 'podcasting_archive' ) ||
-				// Podcasting category ID
-				!! getSiteOption( state, siteId, 'podcasting_category_id' ),
-			isGoogleMyBusinessStatsNudgeVisible: isGoogleMyBusinessStatsNudgeVisibleSelector(
-				state,
-				siteId
-			),
+			hasWordAds: getSiteOption( state, siteId, 'wordads' ),
 			siteId,
+			isVip,
 			slug: getSelectedSiteSlug( state ),
+			planSlug: getSitePlanSlug( state, siteId ),
+			showEnableStatsModule,
+			path: getCurrentRouteParameterized( state, siteId ),
 		};
 	},
-	{ recordGoogleEvent }
+	{ recordGoogleEvent, enableJetpackStatsModule }
 )( localize( StatsSite ) );

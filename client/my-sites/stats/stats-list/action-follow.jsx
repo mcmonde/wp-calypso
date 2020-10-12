@@ -1,15 +1,11 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import React from 'react';
 import createReactClass from 'create-react-class';
 import { localize } from 'i18n-calypso';
 import classNames from 'classnames';
 import debugFactory from 'debug';
-const debug = debugFactory( 'calypso:stats:action-follow' );
 
 /**
  * Internal dependencies
@@ -17,16 +13,18 @@ const debug = debugFactory( 'calypso:stats:action-follow' );
 /* eslint-disable no-restricted-imports */
 import observe from 'lib/mixins/data-observe';
 /* eslint-enable no-restricted-imports */
-import analytics from 'lib/analytics';
-import Gridicon from 'gridicons';
+import { gaRecordEvent } from 'lib/analytics/ga';
+import Gridicon from 'components/gridicon';
+
+const debug = debugFactory( 'calypso:stats:action-follow' );
 
 const StatsActionFollow = createReactClass( {
 	displayName: 'StatsActionFollow',
 
 	mixins: [ observe( 'followSite' ) ],
 
-	clickHandler: function( event ) {
-		var site = this.props.followSite,
+	clickHandler: function ( event ) {
+		let site = this.props.followSite,
 			gaEvent;
 
 		event.stopPropagation();
@@ -41,14 +39,11 @@ const StatsActionFollow = createReactClass( {
 			site.unfollow();
 		}
 
-		analytics.ga.recordEvent(
-			'Stats',
-			'Clicked ' + gaEvent + ' in ' + this.props.moduleName + ' List'
-		);
+		gaRecordEvent( 'Stats', 'Clicked ' + gaEvent + ' in ' + this.props.moduleName + ' List' );
 	},
 
-	render: function() {
-		var site = this.props.followSite,
+	render: function () {
+		let site = this.props.followSite,
 			following = site.is_following,
 			wrapperClass = classNames( 'module-content-list-item-action-wrapper', {
 				follow: ! following,
@@ -57,10 +52,10 @@ const StatsActionFollow = createReactClass( {
 			label = following
 				? this.props.translate( 'Following', {
 						context: 'Stats: Follow action / Following status',
-					} )
+				  } )
 				: this.props.translate( 'Follow', {
 						context: 'Stats: Follow action / Following status',
-					} ),
+				  } ),
 			gridiconType = following ? 'reader-following' : 'reader-follow',
 			wrapperClassSet;
 

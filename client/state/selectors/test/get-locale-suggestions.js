@@ -1,9 +1,7 @@
-/** @format */
-
 /**
  * Internal dependencies
  */
-import { getLocaleSuggestions } from 'state/selectors';
+import getLocaleSuggestions from 'state/selectors/get-locale-suggestions';
 
 describe( 'getLocaleSuggestions()', () => {
 	test( 'should return null if no items found', () => {

@@ -1,9 +1,5 @@
-// child components
-@import 'placeholder';
-@import 'expand';
-
 .stats-module {
-	.upgrade-nudge.card {
+	.upsell-nudge.card {
 		margin: 16px;
 	}
 }
@@ -34,16 +30,15 @@
 
 .stats-insights__nonperiodic {
 	&.has-no-recent {
-		color: $gray-dark;
-		font-weight: 300;
+		color: var( --color-neutral-70 );
 
 		p {
-			@include breakpoint( "<660px" ) {
+			@include breakpoint-deprecated( '<660px' ) {
 				margin-left: 24px;
 				margin-right: 24px;
 			}
 
-			@include breakpoint( "<480px" ) {
+			@include breakpoint-deprecated( '<480px' ) {
 				text-align: center;
 			}
 		}
@@ -60,12 +55,12 @@
 .stats-section-title {
 	@include heading;
 
-	@include breakpoint( "<660px" ) {
+	@include breakpoint-deprecated( '<660px' ) {
 		margin-left: 24px;
 		margin-right: 24px;
 	}
 
-	@include breakpoint( "<480px" ) {
+	@include breakpoint-deprecated( '<480px' ) {
 		text-align: center;
 	}
 }
@@ -77,7 +72,7 @@
 	line-height: 40px;
 	display: block;
 
-	@include breakpoint( "<480px" ) {
+	@include breakpoint-deprecated( '<480px' ) {
 		line-height: 48px;
 	}
 
@@ -88,45 +83,45 @@
 
 	a {
 		@extend %mobile-link-element;
-		border-top: 1px solid $gray-light;
+		border-top: 1px solid var( --color-border-subtle );
 		display: block;
-		font-size: 14px;
+		font-size: $font-body-small;
 		padding: 0 24px;
 		position: relative;
 
 		// Hover state
-		@include breakpoint( ">480px" ) {
+		@include breakpoint-deprecated( '>480px' ) {
 			&:hover {
-				background: $gray-light;
-				border-top-color: $white;
+				background: var( --color-neutral-0 );
+				border-top-color: var( --color-border-inverted );
 			}
 		}
 
 		// Focus state
 		&:focus {
-			background: $gray-light;
-			border-top-color: $white;
+			background: var( --color-neutral-0 );
+			border-top-color: var( --color-border-inverted );
 		}
 
-		@include breakpoint( ">960px" ) {
+		@include breakpoint-deprecated( '>960px' ) {
 			.stats__module-list & {
-				font-size: 12px;
+				font-size: $font-body-extra-small;
 			}
 		}
 	}
 
 	.right {
-		color: $gray;
+		color: var( --color-neutral-light );
 		position: absolute;
-			right: 24px;
-			top: 0;
+		right: 24px;
+		top: 0;
 	}
 }
 
 // Module Header
 
 .module-header {
-	background: $white;
+	background: var( --color-surface );
 	height: 40px;
 	line-height: 40px;
 	padding-left: 24px;
@@ -149,7 +144,7 @@
 	@extend %mobile-interface-element;
 	@extend %placeholder;
 
-	color: $gray-dark;
+	color: var( --color-neutral-70 );
 	font-weight: 600;
 	height: 40px; // 1
 	overflow: hidden; // 1
@@ -161,17 +156,17 @@
 // 2: So the focus outline isn't covered by the fading pseudo-element
 
 ul.module-header-actions {
-	background: $white;
+	background: var( --color-surface );
 	height: 40px;
 	list-style: none;
 	margin: 0;
 	position: absolute;
-		right: 0;
-		top: 0;
+	right: 0;
+	top: 0;
 
 	// Fade really long module titles
 	&::before {
-		@include stats-fade-text($white);
+		@include stats-fade-text( rgba( var( --color-surface-rgb ), 0 ), var( --color-surface ) );
 	}
 
 	.module-header-action {
@@ -200,14 +195,14 @@ ul.module-header-actions {
 		.stats-module.is-loading &::before,
 		.stats-module.is-loading &:hover,
 		.stats-module.is-loading & {
-			color: $gray-light;
-			fill: $gray-light;
+			color: var( --color-neutral-0 );
+			fill: var( --color-neutral-0 );
 		}
 	}
 
 	.module-header-action-link {
 		@extend %mobile-interface-element;
-		color: $gray;
+		color: var( --color-neutral-light );
 		display: inline-block;
 		height: 40px;
 		line-height: 40px;
@@ -222,24 +217,23 @@ ul.module-header-actions {
 	}
 
 	// Hover state
-	@include breakpoint( ">480px" ) {
+	@include breakpoint-deprecated( '>480px' ) {
 		.stats-module:hover & .module-header-action-link {
-			color: $blue-wordpress;
+			color: var( --color-primary );
 		}
 
 		.module-header & .module-header-action-link:hover {
-			color: $link-highlight;
+			color: var( --color-link-dark );
 		}
 	}
 
 	// Focus state
 	.module-header & .module-header-action-link:focus {
-		color: $link-highlight;
+		color: var( --color-link-dark );
 	}
 
 	// Info button
 	.toggle-info {
-
 		&,
 		.stats-module.is-loading & {
 			display: none;
@@ -252,26 +246,26 @@ ul.module-header-actions {
 
 	// Toggle
 	.toggle-services .gridicon {
-		transition: .2s transform ease-out;
-		transform: translate3d(0,0,0);
+		transition: 0.2s transform ease-out;
+		transform: translate3d( 0, 0, 0 );
 	}
 
 	.stats-module.is-expanded & .toggle-services .gridicon {
-		transform: rotate(180deg);
+		transform: rotate( 180deg );
 	}
 }
 
-.module-content .upgrade-nudge.card {
-	 margin: 16px;
+.module-content .upsell-nudge.card {
+	margin: 16px;
 }
 
 // Module Content Text
 
 .module-content-text {
 	box-sizing: border-box;
-	color: $gray-dark;
-	font-size: 13px;
-	padding: 16px 16px 0 16px;
+	color: var( --color-neutral-70 );
+	font-size: $font-body-small;
+	padding: 16px 16px 0;
 	min-height: 1em;
 	width: 100%;
 	text-align: center;
@@ -279,14 +273,14 @@ ul.module-header-actions {
 	a {
 		display: block;
 
-		@include breakpoint( ">480px" ) {
+		@include breakpoint-deprecated( '>480px' ) {
 			display: inline;
 		}
 	}
 
-	@include breakpoint( ">960px" ) {
+	@include breakpoint-deprecated( '>960px' ) {
 		.stats__module-list & {
-			font-size: 12px;
+			font-size: $font-body-extra-small;
 		}
 	}
 
@@ -298,9 +292,9 @@ ul.module-header-actions {
 
 	// Hidden info box
 	&-info {
-		background: $gray-light;
-		box-shadow: inset 0 1px 0 $gray-light;
-		color: $gray-dark;
+		background: var( --color-neutral-0 );
+		box-shadow: inset 0 1px 0 var( --color-neutral-0 );
+		color: var( --color-neutral-70 );
 		display: none;
 		position: relative;
 
@@ -320,12 +314,12 @@ ul.module-header-actions {
 
 	// Representation of what the published status looks like within a list of posts and pages
 	.legend.published {
-		border-left: 4px solid $orange-jazzy;
+		border-left: 4px solid var( --color-primary );
 		padding-left: 12px;
 	}
 
 	.legend.achievement {
-		color: $alert-yellow;
+		color: var( --color-warning );
 	}
 
 	// Hide legends if there is no data
@@ -343,17 +337,17 @@ ul.module-header-actions {
 		list-style: none;
 
 		li {
-			font-size: 14px;
+			font-size: $font-body-small;
 			line-height: 2em;
 
-			@include breakpoint( ">960px" ) {
+			@include breakpoint-deprecated( '>960px' ) {
 				.stats__module-list & {
-					font-size: 12px;
+					font-size: $font-body-extra-small;
 				}
 			}
 
-			@include breakpoint( "<480px" ) {
-				border-bottom: 1px solid $gray-light;
+			@include breakpoint-deprecated( '<480px' ) {
+				border-bottom: 1px solid var( --color-border-subtle );
 
 				&:last-child {
 					border: 0;
@@ -366,9 +360,9 @@ ul.module-header-actions {
 			@extend %mobile-link-element;
 			display: block;
 			position: relative;
-			padding: 6px 0 6px 0;
+			padding: 6px 0;
 
-			@include breakpoint( "<480px" ) {
+			@include breakpoint-deprecated( '<480px' ) {
 				padding-top: 12px;
 				padding-bottom: 12px;
 			}
@@ -403,9 +397,9 @@ ul.module-header-actions {
 	// 2: Make right padding much greater to accommodate for increased gradient
 	td,
 	th {
-		border-bottom: 1px solid $gray-light;
-		border-right: 1px solid $gray-light;
-		font-size: 12px;
+		border-bottom: 1px solid var( --color-border-subtle );
+		border-right: 1px solid var( --color-border-subtle );
+		font-size: $font-body-extra-small;
 		padding: 8px 12px;
 		white-space: nowrap; // 1
 
@@ -425,7 +419,7 @@ ul.module-header-actions {
 	}
 
 	tbody th:first-child {
-		background: $white;
+		background: var( --color-surface );
 		position: absolute;
 		z-index: z-index( 'root', '.module-content-table tbody th:first-child' );
 	}
@@ -436,10 +430,10 @@ ul.module-header-actions {
 		 */
 		th:first-child {
 			width: 34px; // 24 (margin-left) + 12 (margin-right) + 1 (border) + 34 = 70
-			transform: translateX(-70px);
-			background: $white;
+			transform: translateX( -70px );
+			background: var( --color-surface );
 			position: fixed;
-			z-index: z-index('root', '.module-content-table tbody th:first-child');
+			z-index: z-index( 'root', '.module-content-table tbody th:first-child' );
 		}
 
 		.module-content-table-scroll {
@@ -455,22 +449,22 @@ ul.module-header-actions {
 	// Left this modifier as-is because these tables are likely going to change
 	// a lot or otherwise be removed, and at least it's directly dependent on
 	// being associated with a td in this structure
-	@include breakpoint( ">480px" ) {
+	@include breakpoint-deprecated( '>480px' ) {
 		.stats-module & td.has-no-data:hover, // 1
 		tbody tr:hover td,
 		tbody tr:hover th {
-			background: $gray-light;
+			background: var( --color-neutral-0 );
 		}
 
 		.stats-module & td.highest-count:hover,
 		tbody tr td:hover {
-			background: $gray-light;
-			color: $gray-dark;
+			background: var( --color-neutral-0 );
+			color: var( --color-neutral-70 );
 		}
 	}
 
 	.stats-module & td.highest-count {
-		color: $alert-yellow;
+		color: var( --color-warning );
 		position: relative;
 	}
 
@@ -485,18 +479,18 @@ ul.module-header-actions {
 
 	.stats-detail-weeks__value {
 		display: block;
-		font-size: 12px;
+		font-size: $font-body-extra-small;
 
 		&.is-rising {
-			color: $alert-green;
+			color: var( --color-success );
 		}
 
 		&.is-falling {
-			color: $alert-red;
+			color: var( --color-error );
 		}
 
 		&.is-same {
-			color: $gray;
+			color: var( --color-neutral-light );
 		}
 
 		&.is-rising,
@@ -513,13 +507,13 @@ ul.module-header-actions {
 
 	thead th,
 	.stats-detail-weeks__date {
-		color: $gray;
+		color: var( --color-text-subtle );
 	}
 
 	.stats-detail-weeks__date {
 		display: block;
-		font-size: 11px;
-		letter-spacing: .1em;
+		font-size: $font-body-extra-small;
+		letter-spacing: 0.1em;
 		text-transform: uppercase;
 	}
 
@@ -528,12 +522,12 @@ ul.module-header-actions {
 	// 2: Much wider to show horizontal scrolling better (since the window loads scrolled to the left)
 	&::before,
 	&::after {
-		content: "";
+		content: '';
 		display: block;
 		position: absolute;
-			bottom: 16px; // 1
-			left: 0;
-			top: 0;
+		bottom: 16px; // 1
+		left: 0;
+		top: 0;
 		width: 20px;
 		z-index: z-index( 'root', '.module-content-table::after' );
 	}
@@ -542,13 +536,13 @@ ul.module-header-actions {
 		left: auto;
 		right: 0;
 		width: 60px; // 2
-		@include long-content-fade( $color: $white, $size: 15% );
+		@include long-content-fade( $size: 15% );
 	}
 }
 
-.stats-module__all-time-nav{
+.stats-module__all-time-nav {
 	.stats-section-title {
-		margin: 0 16px 16px 16px;
+		margin: 0 16px 16px;
 	}
 }
 
@@ -557,8 +551,41 @@ ul.module-header-actions {
 	flex-direction: row;
 	justify-content: center;
 	align-items: center;
+
+	.button.stats-download-csv {
+		color: var( --color-text-subtle );
+
+		&[disabled],
+		&.disabled {
+			color: var( --color-neutral-20 );
+		}
+
+		&:hover:not( [disabled] ) {
+			color: var( --color-text );
+		}
+	}
 }
 
 .stats-module__header.is-refreshing {
 	animation: loading-fade 1.6s ease-in-out infinite;
+}
+
+.stats-module__availability-warning {
+	padding: 12px 20px 0;
+	display: flex;
+
+	.gridicon {
+		fill: var( --color-text-subtle );
+	}
+}
+
+.stats-module__availability-warning-message {
+	font-size: $font-body-small;
+	margin-left: 8px;
+	margin-bottom: 0;
+	color: var( --color-text-subtle );
+}
+
+.stats__module-list .stats-module__availability-warning-message {
+	font-size: $font-body-extra-small;
 }

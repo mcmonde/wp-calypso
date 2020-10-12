@@ -1,32 +1,37 @@
-/** @format */
+/**
+ * External dependencies
+ */
+import { mapValues } from 'lodash';
 
 /**
  * Internal dependencies
  */
-
 import wpcom from 'lib/wp';
+import { createProductObject } from './assembler';
 import {
 	PRODUCTS_LIST_RECEIVE,
 	PRODUCTS_LIST_REQUEST,
 	PRODUCTS_LIST_REQUEST_FAILURE,
 } from 'state/action-types';
 
+import 'state/products-list/init';
+
 export function receiveProductsList( productsList ) {
 	return {
 		type: PRODUCTS_LIST_RECEIVE,
-		productsList,
+		productsList: mapValues( productsList, createProductObject ),
 	};
 }
 
 export function requestProductsList() {
-	return dispatch => {
+	return ( dispatch ) => {
 		dispatch( { type: PRODUCTS_LIST_REQUEST } );
 
 		return wpcom
 			.undocumented()
 			.getProducts()
-			.then( productsList => dispatch( receiveProductsList( productsList ) ) )
-			.catch( error =>
+			.then( ( productsList ) => dispatch( receiveProductsList( productsList ) ) )
+			.catch( ( error ) =>
 				dispatch( {
 					type: PRODUCTS_LIST_REQUEST_FAILURE,
 					error,

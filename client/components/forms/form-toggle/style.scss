@@ -2,7 +2,7 @@
 // FormToggle
 // ==========================================================================
 
-.form-toggle[type="checkbox"] {
+.form-toggle[type='checkbox'] {
 	display: none;
 }
 
@@ -18,32 +18,33 @@
 	align-self: flex-start;
 	outline: 0;
 	cursor: pointer;
-	transition: all .4s ease, box-shadow 0s;
+	transition: all 0.4s ease, box-shadow 0s;
 
-	&:before,
-	&:after {
+	&::before,
+	&::after {
 		position: relative;
 		display: block;
-		content: "";
+		content: '';
 		width: 20px;
 		height: 20px;
 	}
-	&:after {
+	&::after {
 		left: 0;
 		border-radius: 50%;
-		background: $white;
-		transition: all .2s ease;
+		background: var( --color-surface );
+		transition: all 0.2s ease;
 	}
-	&:before {
+	&::before {
 		display: none;
 	}
-	.accessible-focus &:focus{
-		box-shadow: 0 0 0 2px $blue-medium;
+	.accessible-focus &:focus {
+		box-shadow: 0 0 0 2px var( --color-primary );
 	}
 }
 
-.form-toggle__label {
+.form-toggle__label.form-label {
 	cursor: pointer;
+	font-weight: 400;
 
 	.is-disabled & {
 		cursor: default;
@@ -57,29 +58,29 @@
 
 .form-toggle {
 	.accessible-focus &:focus {
-		+ .form-toggle__label .form-toggle__switch {
-			box-shadow: 0 0 0 2px $blue-medium;
+		+ .form-toggle__label.form-label .form-toggle__switch {
+			box-shadow: 0 0 0 2px var( --color-primary );
 		}
-		&:checked + .form-toggle__label .form-toggle__switch {
-			box-shadow: 0 0 0 2px $blue-light;
+		&:checked + .form-toggle__label.form-label .form-toggle__switch {
+			box-shadow: 0 0 0 2px var( --color-primary-light );
 		}
 	}
 
-	& + .form-toggle__label .form-toggle__switch {
-		background: $gray-lighten-10;
+	& + .form-toggle__label.form-label .form-toggle__switch {
+		background: var( --color-neutral-20 );
 	}
 
 	&:not( :disabled ) {
 		+ .form-toggle__label:hover .form-toggle__switch {
-			background: $gray-lighten-20;
+			background: var( --color-neutral-10 );
 		}
 	}
 
-	&:checked{
-		+ .form-toggle__label .form-toggle__switch {
-			background: $blue-medium;
+	&:checked {
+		+ .form-toggle__label.form-label .form-toggle__switch {
+			background: var( --color-primary );
 
-			&:after {
+			&::after {
 				left: 16px;
 			}
 		}
@@ -87,46 +88,36 @@
 
 	&:checked:not( :disabled ) {
 		+ .form-toggle__label:hover .form-toggle__switch {
-			background: $blue-light;
+			background: var( --color-primary-light );
 		}
 	}
 
 	&:disabled {
-		+ label.form-toggle__label span.form-toggle__switch {
+		+ label.form-toggle__label.form-label span.form-toggle__switch {
 			opacity: 0.25;
 			cursor: default;
 		}
 	}
-}
 
-// Classes for toggle state before action is complete (updating plugin or something)
-.form-toggle.is-toggling {
-	+ .form-toggle__label .form-toggle__switch {
-		background: $blue-medium;
-	}
-	&:checked {
-		+ .form-toggle__label .form-toggle__switch {
-			background: $gray-lighten-20;
+	&.is-toggling {
+		+ .form-toggle__label.form-label {
+			color: var( --color-neutral );
+			animation: loading-fade 1.6s ease-in-out infinite;
 		}
-	}
-}
-
-.form-toggle.is-compact {
-	+ .form-toggle__label .form-toggle__switch {
-		border-radius: 8px;
-		width: 24px;
-		height: 16px;
-
-		&:before,
-		&:after {
-			width: 12px;
-			height: 12px;
+		+ .form-toggle__label.form-label .form-toggle__switch {
+			background: var( --color-primary );
+			animation: loading-fade 1.6s ease-in-out infinite;
+			&::after {
+				left: 16px;
+			}
 		}
-	}
-	&:checked {
-		+ .form-toggle__label .form-toggle__switch {
-			&:after{
-				left: 8px;
+		&:checked {
+			+ .form-toggle__label.form-label .form-toggle__switch {
+				background: var( --color-neutral-10 );
+				animation: loading-fade 1.6s ease-in-out infinite;
+				&::after {
+					left: 0;
+				}
 			}
 		}
 	}

@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -99,7 +97,7 @@ const locations = [
 const createEditState = ( { zoneLocations, locationEdits } ) =>
 	createState( {
 		site: {
-			shippingZones: Object.keys( zoneLocations ).map( zoneId => ( {
+			shippingZones: Object.keys( zoneLocations ).map( ( zoneId ) => ( {
 				id: Number( zoneId ),
 				methodIds: [],
 			} ) ),
@@ -1100,7 +1098,7 @@ describe( 'selectors', () => {
 				},
 			} );
 
-			expect( getCurrentSelectedCountryZoneOwner( state ) ).to.be.nil;
+			expect( getCurrentSelectedCountryZoneOwner( state ) ).to.not.be.ok;
 		} );
 
 		test( 'should return null when there are no other zones that have the current country', () => {
@@ -1130,7 +1128,7 @@ describe( 'selectors', () => {
 				},
 			} );
 
-			expect( getCurrentSelectedCountryZoneOwner( state ) ).to.be.nil;
+			expect( getCurrentSelectedCountryZoneOwner( state ) ).to.not.be.ok;
 		} );
 
 		test( 'should return null when there are no other zones that own the *whole* country', () => {
@@ -1152,7 +1150,7 @@ describe( 'selectors', () => {
 				locationEdits: initialStateWithEmptyTempEdits,
 			} );
 
-			expect( getCurrentSelectedCountryZoneOwner( state ) ).to.be.nil;
+			expect( getCurrentSelectedCountryZoneOwner( state ) ).to.not.be.ok;
 		} );
 
 		test( 'should return the zone ID that owns the current country', () => {

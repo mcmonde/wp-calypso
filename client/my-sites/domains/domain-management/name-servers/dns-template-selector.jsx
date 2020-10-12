@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -9,10 +7,10 @@ import React from 'react';
 /**
  * Internal dependencies
  */
-import SegmentedControl from 'components/segmented-control';
+import SimplifiedSegmentedControl from 'components/segmented-control/simplified';
 
 class DnsTemplateSelector extends React.PureComponent {
-	handleOnSelect = option => {
+	handleOnSelect = ( option ) => {
 		this.props.onTemplateClick( option.label );
 	};
 
@@ -20,9 +18,9 @@ class DnsTemplateSelector extends React.PureComponent {
 		const { templates } = this.props;
 
 		return (
-			<SegmentedControl
+			<SimplifiedSegmentedControl
 				primary={ true }
-				options={ templates.map( template => {
+				options={ templates.map( ( template ) => {
 					return {
 						value: template.dnsTemplateService,
 						label: template.name,

@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -37,8 +35,8 @@ function getMatchReasonPhrasesMap( tld ) {
 		[
 			'tld-common',
 			tld === 'com'
-				? translate( 'Most common extension, ".com"' )
-				: translate( 'Common extension, ".%(tld)s"', { args: { tld } } ),
+				? translate( '".com" is the most common extension' )
+				: translate( '".%(tld)s" is a common extension', { args: { tld } } ),
 		],
 	] );
 }
@@ -47,6 +45,6 @@ export function parseMatchReasons( domain, matchReasons ) {
 	const matchReasonsMap = getMatchReasonPhrasesMap( getTld( domain ) );
 
 	return sortMatchReasons( matchReasons )
-		.filter( matchReason => matchReasonsMap.has( matchReason ) )
-		.map( matchReason => matchReasonsMap.get( matchReason ) );
+		.filter( ( matchReason ) => matchReasonsMap.has( matchReason ) )
+		.map( ( matchReason ) => matchReasonsMap.get( matchReason ) );
 }

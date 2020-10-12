@@ -1,11 +1,11 @@
-/** @format */
 /**
  * External dependencies
  */
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
-import { moment } from 'i18n-calypso';
+import moment from 'moment';
 import classNames from 'classnames';
+import { connect } from 'react-redux';
 
 /**
  * Internal dependencies
@@ -13,8 +13,8 @@ import classNames from 'classnames';
 import InputChrono from 'components/input-chrono';
 import DatePicker from 'components/date-picker';
 import QuerySiteSettings from 'components/data/query-site-settings';
-import User from 'lib/user';
 import EventsTooltip from 'components/date-picker/events-tooltip';
+import { getCurrentUserLocale } from 'state/current-user/selectors';
 
 /**
  * Local dependencies
@@ -23,7 +23,11 @@ import Clock from './clock';
 import Header from './header';
 import { convertDateToUserLocation, convertDateToGivenOffset } from './utils';
 
-const user = new User();
+/**
+ * Style dependencies
+ */
+import './style.scss';
+
 const noop = () => {};
 
 class PostSchedule extends Component {
@@ -38,6 +42,7 @@ class PostSchedule extends Component {
 		onMonthChange: PropTypes.func,
 		onDayMouseEnter: PropTypes.func,
 		onDayMouseLeave: PropTypes.func,
+		userLocale: PropTypes.string,
 	};
 
 	static defaultProps = {
@@ -56,7 +61,7 @@ class PostSchedule extends Component {
 		showTooltip: false,
 	};
 
-	componentWillMount() {
+	UNSAFE_componentWillMount() {
 		if ( ! this.props.selectedDay ) {
 			return this.setState( {
 				localizedDate: null,
@@ -71,7 +76,7 @@ class PostSchedule extends Component {
 		} );
 	}
 
-	componentWillReceiveProps( nextProps ) {
+	UNSAFE_componentWillReceiveProps( nextProps ) {
 		if ( this.props.selectedDay === nextProps.selectedDay ) {
 			return;
 		}
@@ -85,9 +90,9 @@ class PostSchedule extends Component {
 		} );
 	}
 
-	locale() {
+	getLocaleUtils() {
 		return {
-			formatMonthTitle: function() {
+			formatMonthTitle: function () {
 				return;
 			},
 		};
@@ -98,7 +103,7 @@ class PostSchedule extends Component {
 	}
 
 	getEventsFromPosts( postsList = [] ) {
-		return postsList.map( post => {
+		return postsList.map( ( post ) => {
 			const localDate = this.getDateToUserLocation( post.date );
 
 			return {
@@ -117,13 +122,13 @@ class PostSchedule extends Component {
 		);
 	}
 
-	setCurrentMonth = date => {
+	setCurrentMonth = ( date ) => {
 		date = moment( date );
 		this.props.onMonthChange( date );
 		this.setState( { calendarViewDate: date } );
 	};
 
-	setViewDate = date => {
+	setViewDate = ( date ) => {
 		this.setState( { calendarViewDate: moment( date ) } );
 	};
 
@@ -131,7 +136,7 @@ class PostSchedule extends Component {
 		return moment( this.state.localizedDate || this.getDateToUserLocation() );
 	}
 
-	updateDate = date => {
+	updateDate = ( date ) => {
 		const convertedDate = convertDateToGivenOffset(
 			date,
 			this.props.timezone,
@@ -175,7 +180,6 @@ class PostSchedule extends Component {
 	};
 
 	renderInputChrono() {
-		const lang = user.getLanguage();
 		const date = this.getCurrentDate();
 		let chronoText;
 
@@ -196,7 +200,7 @@ class PostSchedule extends Component {
 				<InputChrono
 					value={ chronoText }
 					placeholder={ date.calendar() }
-					lang={ lang ? lang.langSlug : null }
+					lang={ this.props.userLocale }
 					onSet={ this.updateDate }
 				/>
 
@@ -233,8 +237,10 @@ class PostSchedule extends Component {
 
 		return (
 			<div className={ className }>
-				{ // Used by Clock for now, likely others in the future.
-				this.props.site && <QuerySiteSettings siteId={ this.props.site.ID } /> }
+				{
+					// Used by Clock for now, likely others in the future.
+					this.props.site && <QuerySiteSettings siteId={ this.props.site.ID } />
+				}
 				<Header
 					date={ this.state.calendarViewDate }
 					onDateChange={ this.setViewDate }
@@ -245,9 +251,9 @@ class PostSchedule extends Component {
 
 				<DatePicker
 					events={ this.events() }
-					locale={ this.locale() }
+					localeUtils={ this.getLocaleUtils() }
 					disabledDays={ this.props.disabledDays }
-					enableOutsideDays={ this.props.enableOutsideDays }
+					showOutsideDays={ this.props.showOutsideDays }
 					modifiers={ this.props.modifiers }
 					selectedDay={ this.state.localizedDate ? this.state.localizedDate.toDate() : null }
 					timeReference={ this.getCurrentDate() }
@@ -272,4 +278,6 @@ class PostSchedule extends Component {
 	}
 }
 
-export default PostSchedule;
+export default connect( ( state ) => ( {
+	userLocale: getCurrentUserLocale( state ),
+} ) )( PostSchedule );

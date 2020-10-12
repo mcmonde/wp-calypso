@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -8,7 +6,7 @@ import { expect } from 'chai';
 /**
  * Internal dependencies
  */
-import { getSiteUrl } from 'state/selectors';
+import getSiteUrl from 'state/selectors/get-site-url';
 
 describe( 'getSiteUrl()', () => {
 	test( 'should return null if the site is unknown', () => {

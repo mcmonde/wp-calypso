@@ -6,18 +6,35 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 import { localize } from 'i18n-calypso';
+import formatCurrency from '@automattic/format-currency';
 
 /**
  * Internal dependencies
  */
-import Dialog from 'components/dialog';
+import { Dialog } from '@automattic/components';
 import FormSectionHeading from 'components/forms/form-section-heading';
-import { closeRefundDialog, confirmRefund } from 'woocommerce/woocommerce-services/state/shipping-label/actions';
-import { isLoaded, getShippingLabel } from 'woocommerce/woocommerce-services/state/shipping-label/selectors';
-import formatCurrency from 'lib/format-currency';
+import { withLocalizedMoment } from 'components/localized-moment';
+import {
+	closeRefundDialog,
+	confirmRefund,
+} from 'woocommerce/woocommerce-services/state/shipping-label/actions';
+import {
+	isLoaded,
+	getShippingLabel,
+} from 'woocommerce/woocommerce-services/state/shipping-label/selectors';
 
 const RefundDialog = ( props ) => {
-	const { orderId, siteId, refundDialog, createdDate, refundableAmount, currency, labelId, translate, moment } = props;
+	const {
+		orderId,
+		siteId,
+		refundDialog,
+		createdDate,
+		refundableAmount,
+		currency,
+		labelId,
+		translate,
+		moment,
+	} = props;
 
 	const getRefundableAmount = () => {
 		return formatCurrency( refundableAmount, currency );
@@ -43,13 +60,14 @@ const RefundDialog = ( props ) => {
 			additionalClassNames="label-refund-modal woocommerce wcc-root"
 			isVisible={ Boolean( refundDialog && refundDialog.labelId === labelId ) }
 			onClose={ onClose }
-			buttons={ buttons }>
-			<FormSectionHeading>
-				{ translate( 'Request a refund' ) }
-			</FormSectionHeading>
+			buttons={ buttons }
+		>
+			<FormSectionHeading>{ translate( 'Request a refund' ) }</FormSectionHeading>
 			<p>
-				{ translate( 'You can request a refund for a shipping label that has not been used to ship a package. ' +
-					'It will take at least 14 days to process.' ) }
+				{ translate(
+					'You can request a refund for a shipping label that has not been used to ship a package. ' +
+						'It will take at least 14 days to process.'
+				) }
 			</p>
 			<dl>
 				<dt>{ translate( 'Purchase date' ) }</dt>
@@ -86,4 +104,7 @@ const mapDispatchToProps = ( dispatch ) => {
 	return bindActionCreators( { closeRefundDialog, confirmRefund }, dispatch );
 };
 
-export default connect( mapStateToProps, mapDispatchToProps )( localize( RefundDialog ) );
+export default connect(
+	mapStateToProps,
+	mapDispatchToProps
+)( localize( withLocalizedMoment( RefundDialog ) ) );

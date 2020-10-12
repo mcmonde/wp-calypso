@@ -1,99 +1,64 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import PropTypes from 'prop-types';
-import React from 'react';
-import { throttle } from 'lodash';
+import React, { useLayoutEffect, useState } from 'react';
+import { numberFormat } from 'i18n-calypso';
 
 /**
  * Internal dependencies
  */
 import Label from './label';
 
-export default class extends React.Component {
-	static displayName = 'ModuleChartXAxis';
+const ModuleChartXAxis = ( { data, isRtl, labelWidth, chartWidth } ) => {
+	const dataCount = data.length || 1;
+	const [ spacing, setSpacing ] = useState( labelWidth );
+	const [ divisor, setDivisor ] = useState( 1 );
 
-	static propTypes = {
-		labelWidth: PropTypes.number.isRequired,
-		data: PropTypes.array.isRequired,
-	};
+	useLayoutEffect( () => {
+		const resize = () => {
+			const width = chartWidth;
+			const newSpacing = width / dataCount;
 
-	state = {
-		divisor: 1,
-		spacing: this.props.labelWidth,
-	};
+			setSpacing( newSpacing );
+			setDivisor( Math.ceil( labelWidth / newSpacing ) );
+		};
 
-	// Add listener for window resize
-	componentDidMount() {
-		this.resizeThrottled = throttle( this.resize, 400 );
-		window.addEventListener( 'resize', this.resizeThrottled );
-		this.resize();
-	}
+		resize();
 
-	// Remove listener
-	componentWillUnmount() {
-		if ( this.resizeThrottled.cancel ) {
-			this.resizeThrottled.cancel();
-		}
-		window.removeEventListener( 'resize', this.resizeThrottled );
-	}
+		window.addEventListener( 'resize', resize );
 
-	componentWillReceiveProps( nextProps ) {
-		this.resize( nextProps );
-	}
+		return () => {
+			window.removeEventListener( 'resize', resize );
+		};
+	}, [ dataCount, labelWidth, chartWidth ] );
 
-	resize = nextProps => {
-		let props = this.props;
-		if ( nextProps && ! ( nextProps instanceof Event ) ) {
-			props = nextProps;
+	const labels = data.map( function ( item, index ) {
+		const x = index * spacing + ( spacing - labelWidth ) / 2,
+			rightIndex = data.length - index - 1;
+		let label;
+
+		if ( rightIndex % divisor === 0 ) {
+			label = (
+				<Label isRtl={ isRtl } key={ index } label={ item.label } width={ labelWidth } x={ x } />
+			);
 		}
 
-		const node = this.refs.axis;
+		return label;
+	} );
 
-		/**
-		 * Overflow needs to be hidden to calculate the desired width,
-		 * but visible to display each labels' overflow :/
-		 */
+	return (
+		<div className="chart__x-axis">
+			{ labels }
+			<div className="chart__x-axis-label chart__x-axis-width-spacer">{ numberFormat( 1e5 ) }</div>
+		</div>
+	);
+};
 
-		node.style.overflow = 'hidden';
-		const width = node.clientWidth;
-		node.style.overflow = 'visible';
+ModuleChartXAxis.propTypes = {
+	data: PropTypes.array.isRequired,
+	isRtl: PropTypes.bool,
+	labelWidth: PropTypes.number.isRequired,
+};
 
-		const dataCount = props.data.length || 1;
-		const spacing = width / dataCount;
-		const labelWidth = props.labelWidth;
-		const divisor = Math.ceil( labelWidth / spacing );
-
-		this.setState( {
-			divisor: divisor,
-			spacing: spacing,
-		} );
-	};
-
-	render() {
-		const data = this.props.data;
-
-		const labels = data.map( function( item, index ) {
-			const x = index * this.state.spacing + ( this.state.spacing - this.props.labelWidth ) / 2,
-				rightIndex = data.length - index - 1;
-			let label;
-
-			if ( rightIndex % this.state.divisor === 0 ) {
-				label = (
-					<Label key={ index } label={ item.label } width={ this.props.labelWidth } x={ x } />
-				);
-			}
-
-			return label;
-		}, this );
-
-		return (
-			<div ref="axis" className="chart__x-axis">
-				{ labels }
-			</div>
-		);
-	}
-}
+export default ModuleChartXAxis;

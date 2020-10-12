@@ -1,32 +1,29 @@
 /**
  * External dependencies
  */
-import { filter } from 'lodash';
+import { filter, last } from 'lodash';
 
 /**
  * Internal dependencies
  */
-import { getSiteSettings } from 'state/site-settings/selectors';
+import { getSiteKeyringsForService } from 'state/site-keyrings/selectors';
 import { getAvailableExternalAccounts } from 'state/sharing/selectors';
 
-function isConnected( externalUser, siteSettings ) {
-	return externalUser.keyringConnectionId === siteSettings.google_my_business_keyring_id &&
-		externalUser.ID === siteSettings.google_my_business_location_id;
-}
-
 export default function getGoogleMyBusinessLocations( state, siteId ) {
-	const siteSettings = getSiteSettings( state, siteId );
+	const googleMyBusinessSiteKeyring = last(
+		getSiteKeyringsForService( state, siteId, 'google_my_business' )
+	);
 
-	if ( ! siteSettings ) {
+	if ( ! googleMyBusinessSiteKeyring ) {
 		return [];
 	}
 
 	const externalUsers = filter( getAvailableExternalAccounts( state, 'google_my_business' ), {
-		isExternal: true,
+		keyringConnectionId: googleMyBusinessSiteKeyring.keyring_id,
 	} );
 
-	externalUsers.forEach( externalUser => {
-		externalUser.isConnected = isConnected( externalUser, siteSettings );
+	externalUsers.forEach( ( externalUser ) => {
+		externalUser.isConnected = externalUser.ID === googleMyBusinessSiteKeyring.external_user_id;
 	} );
 
 	return externalUsers;

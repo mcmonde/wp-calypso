@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * Internal dependencies
  */
@@ -19,52 +17,59 @@ import {
 	withAnalytics,
 } from 'state/analytics/actions';
 
-export function uploadGravatar( { dispatch }, action ) {
+import { registerHandlers } from 'state/data-layer/handler-registry';
+
+export function uploadGravatar( action ) {
 	const { email, file } = action;
-	dispatch(
-		http(
-			{
-				method: 'POST',
-				path: '/gravatar-upload',
-				body: {},
-				apiNamespace: 'wpcom/v2',
-				formData: [ [ 'account', email ], [ 'filedata', file ] ],
-			},
-			action
-		)
+	return http(
+		{
+			method: 'POST',
+			path: '/gravatar-upload',
+			body: {},
+			apiNamespace: 'wpcom/v2',
+			formData: [
+				[ 'account', email ],
+				[ 'filedata', file ],
+			],
+		},
+		action
 	);
 }
 
-export function announceSuccess( { dispatch }, { file } ) {
-	const fileReader = new FileReader();
-	fileReader.addEventListener( 'load', () => {
-		dispatch( {
-			type: GRAVATAR_UPLOAD_RECEIVE,
-			src: fileReader.result,
+export function announceSuccess( { file } ) {
+	return ( dispatch ) => {
+		const fileReader = new FileReader();
+		fileReader.addEventListener( 'load', () => {
+			dispatch( {
+				type: GRAVATAR_UPLOAD_RECEIVE,
+				src: fileReader.result,
+			} );
+			dispatch(
+				withAnalytics( recordTracksEvent( 'calypso_edit_gravatar_upload_success' ), {
+					type: GRAVATAR_UPLOAD_REQUEST_SUCCESS,
+				} )
+			);
 		} );
-		dispatch(
-			withAnalytics( recordTracksEvent( 'calypso_edit_gravatar_upload_success' ), {
-				type: GRAVATAR_UPLOAD_REQUEST_SUCCESS,
-			} )
-		);
-	} );
-	fileReader.readAsDataURL( file );
+		fileReader.readAsDataURL( file );
+	};
 }
 
-export function announceFailure( { dispatch } ) {
-	dispatch(
-		withAnalytics(
-			composeAnalytics(
-				recordTracksEvent( 'calypso_edit_gravatar_upload_failure' ),
-				bumpStat( 'calypso_gravatar_update_error', 'unsuccessful_http_response' )
-			),
-			{ type: GRAVATAR_UPLOAD_REQUEST_FAILURE }
-		)
+export function announceFailure() {
+	return withAnalytics(
+		composeAnalytics(
+			recordTracksEvent( 'calypso_edit_gravatar_upload_failure' ),
+			bumpStat( 'calypso_gravatar_update_error', 'unsuccessful_http_response' )
+		),
+		{ type: GRAVATAR_UPLOAD_REQUEST_FAILURE }
 	);
 }
 
-export default {
+registerHandlers( 'state/data-layer/wpcom/gravatar-upload/index.js', {
 	[ GRAVATAR_UPLOAD_REQUEST ]: [
-		dispatchRequest( uploadGravatar, announceSuccess, announceFailure ),
+		dispatchRequest( {
+			fetch: uploadGravatar,
+			onSuccess: announceSuccess,
+			onError: announceFailure,
+		} ),
 	],
-};
+} );

@@ -1,9 +1,6 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import { omit, mapValues } from 'lodash';
 
 /**
@@ -23,8 +20,10 @@ import {
 } from 'state/action-types';
 import wp from 'lib/wp';
 
+import 'state/jetpack/init';
+
 export const activateModule = ( siteId, moduleSlug, silent = false ) => {
-	return dispatch => {
+	return ( dispatch ) => {
 		dispatch( {
 			type: JETPACK_MODULE_ACTIVATE,
 			siteId,
@@ -43,7 +42,7 @@ export const activateModule = ( siteId, moduleSlug, silent = false ) => {
 					silent,
 				} );
 			} )
-			.catch( error => {
+			.catch( ( error ) => {
 				dispatch( {
 					type: JETPACK_MODULE_ACTIVATE_FAILURE,
 					siteId,
@@ -56,7 +55,7 @@ export const activateModule = ( siteId, moduleSlug, silent = false ) => {
 };
 
 export const deactivateModule = ( siteId, moduleSlug, silent = false ) => {
-	return dispatch => {
+	return ( dispatch ) => {
 		dispatch( {
 			type: JETPACK_MODULE_DEACTIVATE,
 			siteId,
@@ -75,7 +74,7 @@ export const deactivateModule = ( siteId, moduleSlug, silent = false ) => {
 					silent,
 				} );
 			} )
-			.catch( error => {
+			.catch( ( error ) => {
 				dispatch( {
 					type: JETPACK_MODULE_DEACTIVATE_FAILURE,
 					siteId,
@@ -91,9 +90,9 @@ export const deactivateModule = ( siteId, moduleSlug, silent = false ) => {
  * Returns an action object used in signalling that the available modules
  * in a Jetpack site were received.
  *
- * @param  {Number}   siteId    Site ID
- * @param  {Object[]} modules Object of modules indexed by slug
- * @return {Object}             Action object
+ * @param  {number}   siteId    Site ID
+ * @param  {object[]} modules Object of modules indexed by slug
+ * @returns {object}             Action object
  */
 export function receiveJetpackModules( siteId, modules ) {
 	return {
@@ -103,8 +102,8 @@ export function receiveJetpackModules( siteId, modules ) {
 	};
 }
 
-export const fetchModuleList = siteId => {
-	return dispatch => {
+export const fetchModuleList = ( siteId ) => {
+	return ( dispatch ) => {
 		dispatch( {
 			type: JETPACK_MODULES_REQUEST,
 			siteId,
@@ -114,7 +113,7 @@ export const fetchModuleList = siteId => {
 			.undocumented()
 			.getJetpackModules( siteId )
 			.then( ( { data } ) => {
-				const modules = mapValues( data, module => ( {
+				const modules = mapValues( data, ( module ) => ( {
 					active: module.activated,
 					...omit( module, 'activated' ),
 				} ) );
@@ -125,7 +124,7 @@ export const fetchModuleList = siteId => {
 					siteId,
 				} );
 			} )
-			.catch( error => {
+			.catch( ( error ) => {
 				dispatch( {
 					type: JETPACK_MODULES_REQUEST_FAILURE,
 					siteId,

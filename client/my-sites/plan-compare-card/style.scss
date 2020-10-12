@@ -12,29 +12,24 @@
 
 .plan-compare-card__features {
 	padding: 16px 24px;
-	font-size: 14px;
-	color: $gray-text-min;
+	font-size: $font-body-small;
+	color: var( --color-text-subtle );
 }
 
 .plan-compare-card__header {
 	text-align: center;
-	border-radius: 4px 4px 0 0;
-}
-
-.plan-compare-card__actions {
-	border-radius: 0 0 4px 4px;
 }
 
 .plan-compare-card__title {
-	font-size: 16px;
-	font-weight: 500;
-	color: lighten( $gray-dark, 10% );
+	font-size: $font-body;
+	font-weight: 600;
+	color: var( --color-neutral-60 );
 }
 
 .plan-compare-card__line {
-	font-size: 12px;
-	font-weight: normal;
-	color: $gray-text-min;
+	font-size: $font-body-extra-small;
+	font-weight: 400;
+	color: var( --color-text-subtle );
 	font-style: italic;
 }
 
@@ -46,8 +41,8 @@
 .plan-compare-card__button.is-current {
 	width: 100%;
 	border-width: 1px;
-	border-color: $blue-medium;
-	color: $blue-medium;
+	border-color: var( --color-accent );
+	color: var( --color-accent );
 	font-weight: 400;
 }
 
@@ -60,13 +55,12 @@
 }
 
 .plan-compare-card-item {
-	display: flex;
 	list-style-type: none;
 }
 
 .plan-compare-card-item.is-highlight {
-	color: $alert-green;
-	margin-left: 0px;
+	color: var( --color-success );
+	margin-left: 0;
 }
 
 .plan-compare-card-item.is-unavailable {
@@ -76,8 +70,7 @@
 
 .plan-compare-card__item-checkmark {
 	margin-right: 6px;
-	vertical-align: middle;
-	line-height: 16px;
+	vertical-align: text-bottom;
 }
 
 .plan-compare-card__button-checkmark {

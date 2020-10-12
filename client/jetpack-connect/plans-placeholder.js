@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -10,26 +8,25 @@ import { times, random } from 'lodash';
  * Internal dependencies
  */
 import Main from 'components/main';
+import FormattedHeader from 'components/formatted-header';
 
 /* eslint-disable wpcalypso/jsx-classname-namespace */
 const placeholderContent = (
 	<Main className="jetpack-connect__hide-plan-icons" wideLayout>
 		<div className="jetpack-connect__plans placeholder">
-			<header className="formatted-header">
-				<h1 className="formatted-header__title">
-					<span className="placeholder-text">Your site is now connected!</span>
-				</h1>
-				<p className="formatted-header__subtitle">
+			<FormattedHeader
+				headerText={ <span className="placeholder-text">Your site is now connected!</span> }
+				subHeaderText={
 					<span className="placeholder-text">Now pick a plan that's right for you.</span>
-				</p>
-			</header>
+				}
+			/>
 
 			<div className="plans-wrapper">
 				<div className="plan-features plan-features--signup">
 					<table className="plan-features__table">
 						<tbody>
 							<tr className="plan-features__row">
-								{ times( 3, cellKey => (
+								{ times( 3, ( cellKey ) => (
 									<td className="plan-features__table-item has-border-top" key={ cellKey }>
 										<div className="plan-features__header-wrapper">
 											<header className="plan-features__header">
@@ -48,11 +45,13 @@ const placeholderContent = (
 										<div className="plan-features__actions">
 											<div className="plan-features__actions-buttons">
 												<div className="placeholder-text">
-													Upgrade<br />Your Plan
+													Upgrade
+													<br />
+													Your Plan
 												</div>
 											</div>
 										</div>
-										{ times( 5, featureKey => (
+										{ times( 5, ( featureKey ) => (
 											<div className="plan-features__item" key={ featureKey }>
 												<span className="placeholder-text">
 													Test feature { random( 1, Number.MAX_SAFE_INTEGER ) }

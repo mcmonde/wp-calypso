@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -26,7 +24,7 @@ class MediaLibraryListNoResults extends React.Component {
 	};
 
 	getLabel = () => {
-		var label;
+		let label;
 
 		switch ( this.props.filter ) {
 			case 'images':

@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External Dependencies
  */
@@ -20,6 +19,7 @@ import PostPlaceholder from 'reader/stream/post-placeholder';
 class PostResults extends Component {
 	static propTypes = {
 		query: PropTypes.string,
+		streamKey: PropTypes.string,
 	};
 
 	placeholderFactory = ( { key, ...rest } ) => {
@@ -37,7 +37,9 @@ class PostResults extends Component {
 		const { query, translate } = this.props;
 		const emptyContent = <EmptyContent query={ query } />;
 		const transformStreamItems =
-			! query || query === '' ? postKey => ( { ...postKey, isRecommendation: true } ) : identity;
+			! query || query === ''
+				? ( postKey ) => ( { ...postKey, isRecommendation: true } )
+				: identity;
 
 		return (
 			<Stream

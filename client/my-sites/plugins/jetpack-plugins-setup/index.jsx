@@ -1,9 +1,6 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import React from 'react';
 import page from 'page';
 import { bindActionCreators } from 'redux';
@@ -14,10 +11,7 @@ import { localize } from 'i18n-calypso';
 /**
  * Internal dependencies
  */
-import Card from 'components/card';
-import CompactCard from 'components/card/compact';
-import FeatureExample from 'components/feature-example';
-import Button from 'components/button';
+import { CompactCard } from '@automattic/components';
 import Notice from 'components/notice';
 import NoticeAction from 'components/notice/notice-action';
 import Spinner from 'components/spinner';
@@ -26,7 +20,7 @@ import PageViewTracker from 'lib/analytics/page-view-tracker';
 import PluginIcon from 'my-sites/plugins/plugin-icon/plugin-icon';
 import JetpackManageErrorPage from 'my-sites/jetpack-manage-error-page';
 import PluginItem from 'my-sites/plugins/plugin-item/plugin-item';
-import analytics from 'lib/analytics';
+import { recordTracksEvent } from 'lib/analytics/tracks';
 import {
 	JETPACK_CONTACT_SUPPORT,
 	JETPACK_SERVICE_AKISMET,
@@ -35,11 +29,16 @@ import {
 } from 'lib/url/support';
 import { getSiteFileModDisableReason } from 'lib/site/utils';
 
+/**
+ * Style dependencies
+ */
+import './style.scss';
+
 // Redux actions & selectors
 import { getSelectedSite, getSelectedSiteId } from 'state/ui/selectors';
-import { getJetpackSiteRemoteManagementUrl, isRequestingSites } from 'state/sites/selectors';
-import { hasInitializedSites } from 'state/selectors';
-import { getPlugin } from 'state/plugins/wporg/selectors';
+import { isRequestingSites } from 'state/sites/selectors';
+import hasInitializedSites from 'state/selectors/has-initialized-sites';
+import { getAllPlugins as getAllWporgPlugins } from 'state/plugins/wporg/selectors';
 import { fetchPluginData } from 'state/plugins/wporg/actions';
 import { requestSites } from 'state/sites/actions';
 import { installPlugin } from 'state/plugins/premium/actions';
@@ -64,33 +63,36 @@ class PlansSetup extends React.Component {
 	static displayName = 'PlanSetup';
 	sentTracks = false;
 
-	trackConfigFinished = ( eventName, options = null ) => {
+	trackConfigFinished = ( eventName, options = {} ) => {
 		if ( ! this.sentTracks ) {
-			analytics.tracks.recordEvent( eventName, options );
+			recordTracksEvent( eventName, {
+				location: 'jetpackPluginSetup',
+				...options,
+			} );
 		}
 		this.sentTracks = true;
 	};
 
 	trackManualInstall = () => {
-		analytics.tracks.recordEvent( 'calypso_plans_autoconfig_click_manual_error' );
+		recordTracksEvent( 'calypso_plans_autoconfig_click_manual_error' );
 	};
 
 	trackManagePlans = () => {
-		analytics.tracks.recordEvent( 'calypso_plans_autoconfig_click_manage_plans' );
+		recordTracksEvent( 'calypso_plans_autoconfig_click_manage_plans' );
 	};
 
 	trackContactSupport = () => {
-		analytics.tracks.recordEvent( 'calypso_plans_autoconfig_click_contact_support' );
+		recordTracksEvent( 'calypso_plans_autoconfig_click_contact_support' );
 	};
 
 	// plugins for Jetpack sites require additional data from the wporg-data store
-	addWporgDataToPlugins = plugins => {
-		return plugins.map( plugin => {
-			const pluginData = getPlugin( this.props.wporg, plugin.slug );
+	addWporgDataToPlugins = ( plugins ) => {
+		return plugins.map( ( plugin ) => {
+			const pluginData = this.props.wporgPlugins?.[ plugin.slug ];
 			if ( ! pluginData ) {
 				this.props.fetchPluginData( plugin.slug );
 			}
-			return Object.assign( {}, plugin, pluginData );
+			return { ...plugin, ...pluginData };
 		} );
 	};
 
@@ -109,12 +111,11 @@ class PlansSetup extends React.Component {
 				return next();
 			}
 			if ( window.confirm( confirmText ) ) {
-				// eslint-disable-line no-aler
 				next();
 			} else {
 				// save off the current path just in case context changes after this call
 				const currentPath = context.canonicalPath;
-				setTimeout( function() {
+				setTimeout( function () {
 					page.replace( currentPath, null, false, false );
 				}, 0 );
 			}
@@ -131,7 +132,6 @@ class PlansSetup extends React.Component {
 			site &&
 			site.jetpack &&
 			site.canUpdateFiles &&
-			site.canManage &&
 			this.allPluginsHaveWporgData() &&
 			! this.props.isInstalling &&
 			this.props.nextPlugin
@@ -140,24 +140,18 @@ class PlansSetup extends React.Component {
 		}
 	}
 
-	warnIfNotFinished = event => {
+	warnIfNotFinished = ( event ) => {
 		const site = this.props.selectedSite;
-		if (
-			! site ||
-			! site.jetpack ||
-			! site.canUpdateFiles ||
-			! site.canManage ||
-			this.props.isFinished
-		) {
+		if ( ! site || ! site.jetpack || ! site.canUpdateFiles || this.props.isFinished ) {
 			return;
 		}
-		analytics.tracks.recordEvent( 'calypso_plans_autoconfig_user_interrupt' );
+		recordTracksEvent( 'calypso_plans_autoconfig_user_interrupt' );
 		const beforeUnloadText = this.props.translate( "We haven't finished installing your plugins." );
 		( event || window.event ).returnValue = beforeUnloadText;
 		return beforeUnloadText;
 	};
 
-	startNextPlugin = plugin => {
+	startNextPlugin = ( plugin ) => {
 		// We're already installing.
 		if ( this.props.isInstalling ) {
 			return;
@@ -167,9 +161,9 @@ class PlansSetup extends React.Component {
 		const site = this.props.selectedSite;
 
 		// Merge wporg info into the plugin object
-		plugin = Object.assign( {}, plugin, getPlugin( this.props.wporg, plugin.slug ) );
+		plugin = { ...plugin, ...this.props.wporgPlugins?.[ plugin.slug ] };
 
-		const getPluginFromStore = function() {
+		const getPluginFromStore = function () {
 			const sitePlugin = PluginsStore.getSitePlugin( site, plugin.slug );
 			if ( ! sitePlugin && PluginsStore.isFetchingSite( site ) ) {
 				// if the Plugins are still being fetched, we wait. We are not using flux
@@ -185,14 +179,14 @@ class PlansSetup extends React.Component {
 	};
 
 	renderNoJetpackSiteSelected = () => {
-		this.trackConfigFinished( 'calypso_plans_autoconfig_error_wordpresscom', {
-			referrer: document.referrer,
+		this.trackConfigFinished( 'calypso_plans_autoconfig_error', {
+			error: 'wordpresscom',
 		} );
 		return (
 			<JetpackManageErrorPage
 				siteId={ this.props.siteId }
 				title={ this.props.translate(
-					'Oh no! You need to select a jetpack site to be able to setup your plan'
+					'Oh no! You need to select a Jetpack site to be able to setup your plan'
 				) }
 				illustration={ '/calypso/images/jetpack/jetpack-manage.svg' }
 			/>
@@ -207,18 +201,20 @@ class PlansSetup extends React.Component {
 
 		if ( reasons && reasons.length > 0 ) {
 			reason = reasons[ 0 ];
-			this.trackConfigFinished( 'calypso_plans_autoconfig_error_filemod', { error: reason } );
-		} else if ( ! site.hasMinimumJetpackVersion ) {
-			reason = translate( 'You need to update your version of Jetpack.' );
-			this.trackConfigFinished( 'calypso_plans_autoconfig_error_jpversion', {
-				jetpack_version: site.options.jetpack_version,
+			this.trackConfigFinished( 'calypso_plans_autoconfig_error', {
+				error: 'cannot_update_files',
+				reason,
 			} );
 		} else if ( ! site.isMainNetworkSite ) {
 			reason = translate( "We can't install plugins on multisite sites." );
-			this.trackConfigFinished( 'calypso_plans_autoconfig_error_multisite' );
+			this.trackConfigFinished( 'calypso_plans_autoconfig_error', {
+				error: 'secondary_network_site',
+			} );
 		} else if ( site.options.is_multi_network ) {
 			reason = translate( "We can't install plugins on multi-network sites." );
-			this.trackConfigFinished( 'calypso_plans_autoconfig_error_multinetwork' );
+			this.trackConfigFinished( 'calypso_plans_autoconfig_error', {
+				error: 'multinetwork',
+			} );
 		}
 
 		return (
@@ -244,8 +240,8 @@ class PlansSetup extends React.Component {
 	};
 
 	renderPluginsPlaceholders = () => {
-		const placeholderCount = !! this.props.whitelist ? 1 : 2;
-		return range( placeholderCount ).map( i => <PluginItem key={ 'placeholder-' + i } /> );
+		const placeholderCount = this.props.forSpecificPlugin ? 1 : 2;
+		return range( placeholderCount ).map( ( i ) => <PluginItem key={ 'placeholder-' + i } /> );
 	};
 
 	renderPlugins = ( hidden = false ) => {
@@ -257,7 +253,7 @@ class PlansSetup extends React.Component {
 		const plugins = this.addWporgDataToPlugins( this.props.plugins );
 
 		return plugins.map( ( item, i ) => {
-			const plugin = Object.assign( {}, item, getPlugin( this.props.wporg, item.slug ) );
+			const plugin = { ...item, ...this.props.wporgPlugins?.[ item.slug ] };
 
 			/* eslint-disable wpcalypso/jsx-classname-namespace */
 			return (
@@ -286,12 +282,13 @@ class PlansSetup extends React.Component {
 		} );
 	};
 
-	renderStatus = plugin => {
+	renderStatus = ( plugin ) => {
 		if ( plugin.error ) {
 			return this.renderStatusError( plugin );
 		}
 
 		if ( 'done' === plugin.status ) {
+			// eslint-disable-next-line wpcalypso/jsx-classname-namespace
 			return <div className="plugin-item__finished">{ this.getStatusText( plugin ) }</div>;
 		}
 
@@ -305,7 +302,7 @@ class PlansSetup extends React.Component {
 		return <Notice { ...statusProps } text={ this.getStatusText( plugin ) } />;
 	};
 
-	getStatusText = plugin => {
+	getStatusText = ( plugin ) => {
 		const { translate } = this.props;
 		switch ( plugin.status ) {
 			case 'done':
@@ -321,7 +318,7 @@ class PlansSetup extends React.Component {
 		}
 	};
 
-	renderStatusError = plugin => {
+	renderStatusError = ( plugin ) => {
 		const { translate } = this.props;
 
 		// This state isn't quite an error
@@ -355,6 +352,8 @@ class PlansSetup extends React.Component {
 			</NoticeAction>
 		);
 
+		const errorMessage = get( plugin, 'error.message', '' );
+
 		switch ( plugin.status ) {
 			case 'install':
 				return (
@@ -384,40 +383,51 @@ class PlansSetup extends React.Component {
 					/>
 				);
 			default:
-				const errorMessage = get( plugin, 'error.message', '' ).replace( /<.[^<>]*?>/g, '' );
 				return (
-					<Notice { ...statusProps } text={ errorMessage || translate( 'An error occured.' ) } />
+					<Notice
+						{ ...statusProps }
+						text={
+							errorMessage
+								? errorMessage.replace( /<.[^<>]*?>/g, '' )
+								: translate( 'An error occured.' )
+						}
+					/>
 				);
 		}
 	};
 
-	renderActions = plugin => {
+	renderActions = ( plugin ) => {
 		if ( plugin.status === 'wait' ) {
 			return null;
 		} else if ( plugin.error !== null ) {
 			return null;
 		} else if ( plugin.status !== 'done' ) {
+			/* eslint-disable wpcalypso/jsx-classname-namespace */
 			return (
 				<div className="plugin-item__actions">
 					<Spinner />
 				</div>
 			);
+			/* eslint-enable wpcalypso/jsx-classname-namespace */
 		}
 
 		return null;
 	};
 
-	renderErrorMessage = plugins => {
+	renderErrorMessage = ( plugins ) => {
 		let noticeText;
 		const { translate } = this.props;
 		const pluginsWithErrors = this.addWporgDataToPlugins( plugins );
 
 		const tracksData = {};
-		pluginsWithErrors.map( item => {
+		pluginsWithErrors.map( ( item ) => {
 			tracksData[ item.slug ] = item.error.name + ': ' + item.error.message;
 		} );
 
-		this.trackConfigFinished( 'calypso_plans_autoconfig_error_plugin', tracksData );
+		this.trackConfigFinished( 'calypso_plans_autoconfig_error', {
+			...tracksData,
+			error: 'plugin',
+		} );
 
 		if ( pluginsWithErrors.length === 1 ) {
 			noticeText = translate(
@@ -459,7 +469,7 @@ class PlansSetup extends React.Component {
 			return null;
 		}
 
-		const pluginsWithErrors = filter( this.props.plugins, item => {
+		const pluginsWithErrors = filter( this.props.plugins, ( item ) => {
 			const errorCode = get( item, 'error.code', null );
 			return errorCode && errorCode !== 'already_registered';
 		} );
@@ -525,31 +535,9 @@ class PlansSetup extends React.Component {
 			return this.renderNoJetpackPlan();
 		}
 
-		let turnOnManage;
-		if ( site && ! site.canManage ) {
-			const manageUrl = this.props.remoteManagementUrl + '&section=plugins-setup';
-			turnOnManage = (
-				<Card className="jetpack-plugins-setup__need-manage">
-					<p>
-						{ translate(
-							'{{strong}}Jetpack Manage must be enabled for us to auto-configure your %(plan)s plan.{{/strong}} This will allow WordPress.com to communicate with your site and auto-configure the features unlocked with your new plan. Or you can opt out.', // eslint-disable-line max-len
-							{
-								args: { plan: site.plan.product_name_short },
-								components: { strong: <strong /> },
-							}
-						) }
-					</p>
-					<Button primary href={ manageUrl }>
-						{ translate( 'Enable Manage' ) }
-					</Button>
-					<Button href={ JETPACK_SUPPORT }>{ translate( 'Manual Installation' ) }</Button>
-				</Card>
-			);
-		}
-
 		return (
 			<div className="jetpack-plugins-setup">
-				<PageViewTracker path="/plugins/setup/:site" title="Jetpack Plugins Setup" />;
+				<PageViewTracker path="/plugins/setup/:site" title="Jetpack Plugins Setup" />
 				<QueryPluginKeys siteId={ site.ID } />
 				<h1 className="jetpack-plugins-setup__header">
 					{ translate( 'Setting up your %(plan)s Plan', {
@@ -559,13 +547,8 @@ class PlansSetup extends React.Component {
 				<p className="jetpack-plugins-setup__description">
 					{ translate( "We need to install a few plugins for you. It won't take long!" ) }
 				</p>
-				{ turnOnManage }
-				{ ! turnOnManage && this.renderSuccess() }
-				{ turnOnManage ? (
-					<FeatureExample>{ this.renderPlugins( true ) }</FeatureExample>
-				) : (
-					this.renderPlugins( false )
-				) }
+				{ this.renderSuccess() }
+				{ this.renderPlugins( false ) }
 			</div>
 		);
 	}
@@ -575,23 +558,22 @@ export default connect(
 	( state, ownProps ) => {
 		const siteId = getSelectedSiteId( state );
 		const selectedSite = getSelectedSite( state );
-		const whitelist = ownProps.whitelist || false;
+		const forSpecificPlugin = ownProps.forSpecificPlugin || false;
 
 		return {
-			wporg: state.plugins.wporg.items,
+			wporgPlugins: getAllWporgPlugins( state ),
 			isRequesting: isRequesting( state, siteId ),
 			hasRequested: hasRequested( state, siteId ),
-			isInstalling: isInstalling( state, siteId, whitelist ),
-			isFinished: isFinished( state, siteId, whitelist ),
-			plugins: getPluginsForSite( state, siteId, whitelist ),
-			activePlugin: getActivePlugin( state, siteId, whitelist ),
-			nextPlugin: getNextPlugin( state, siteId, whitelist ),
+			isInstalling: isInstalling( state, siteId, forSpecificPlugin ),
+			isFinished: isFinished( state, siteId, forSpecificPlugin ),
+			plugins: getPluginsForSite( state, siteId, forSpecificPlugin ),
+			activePlugin: getActivePlugin( state, siteId, forSpecificPlugin ),
+			nextPlugin: getNextPlugin( state, siteId, forSpecificPlugin ),
 			selectedSite: selectedSite,
 			isRequestingSites: isRequestingSites( state ),
-			remoteManagementUrl: getJetpackSiteRemoteManagementUrl( state, siteId ),
 			sitesInitialized: hasInitializedSites( state ),
 			siteId,
 		};
 	},
-	dispatch => bindActionCreators( { requestSites, fetchPluginData, installPlugin }, dispatch )
+	( dispatch ) => bindActionCreators( { requestSites, fetchPluginData, installPlugin }, dispatch )
 )( localize( PlansSetup ) );

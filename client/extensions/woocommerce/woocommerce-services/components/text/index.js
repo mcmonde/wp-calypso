@@ -17,22 +17,18 @@ const renderTitle = ( title ) => {
 		return null;
 	}
 
-	return (
-		<FormLegend dangerouslySetInnerHTML={ sanitizeHTML( title ) } />
-	);
+	return <FormLegend dangerouslySetInnerHTML={ sanitizeHTML( title ) } />;
 };
 
 const renderText = ( text ) => {
-	return (
-		<span dangerouslySetInnerHTML={ sanitizeHTML( text ) } />
-	);
+	return <span dangerouslySetInnerHTML={ sanitizeHTML( text ) } />;
 };
 
 const Text = ( { id, title, className, value } ) => {
 	return (
 		<FormFieldset>
 			{ renderTitle( title ) }
-			<p id={ id } className={ className } >
+			<p id={ id } className={ className }>
 				{ renderText( value ) }
 			</p>
 		</FormFieldset>

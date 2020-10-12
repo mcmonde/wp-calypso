@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -26,10 +25,11 @@ export default function EmptySearchRecommendedPost( { post } ) {
 		recordAction( 'search_page_rec_site_click' );
 	}
 
-	const site = { title: post.site_name };
+	const site = { title: post && post.site_name };
 
+	/* eslint-disable  wpcalypso/jsx-classname-namespace */
 	return (
-		<div className="search-stream__recommendation-list-item" key={ post.global_ID }>
+		<div className="search-stream__recommendation-list-item" key={ post && post.global_ID }>
 			<RelatedPostCard
 				post={ post }
 				site={ site }

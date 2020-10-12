@@ -1,24 +1,25 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import PropTypes from 'prop-types';
 import { localize } from 'i18n-calypso';
 import React from 'react';
 import { connect } from 'react-redux';
+import { get } from 'lodash';
 
 /**
  * Internal dependencies
  */
-import Dialog from 'components/dialog';
+import { Dialog } from '@automattic/components';
 import FormButton from 'components/forms/form-button';
 import FormSettings from './settings';
 import Navigation from './navigation';
 import FieldList from './field-list';
+import { getSelectedSiteId } from 'state/ui/selectors';
+import { getEditorPostId } from 'state/editor/selectors';
+import { getEditorContactForm } from 'state/editor/contact-form/selectors';
+import { getEditedPost } from 'state/posts/selectors';
 import { getCurrentUser } from 'state/current-user/selectors';
-import PostEditStore from 'lib/posts/post-edit-store';
 import { validateFormFields, validateSettingsToEmail } from './validations';
 
 class ContactFormDialog extends React.Component {
@@ -88,7 +89,7 @@ class ContactFormDialog extends React.Component {
 		const {
 			activeTab,
 			currentUser: { email },
-			post: { title, type: postType },
+			post,
 			contactForm: { to, subject, fields },
 			showDialog,
 			onChangeTabs,
@@ -98,6 +99,9 @@ class ContactFormDialog extends React.Component {
 			onFieldRemove,
 			onSettingsUpdate,
 		} = this.props;
+
+		const title = get( post, 'title', null );
+		const postType = get( post, 'type', null );
 
 		const content =
 			activeTab === 'fields' ? (
@@ -120,10 +124,13 @@ class ContactFormDialog extends React.Component {
 	}
 }
 
-export default connect( state => {
+export default connect( ( state ) => {
+	const siteId = getSelectedSiteId( state );
+	const postId = getEditorPostId( state );
+
 	return {
-		post: PostEditStore.get() || {},
+		post: getEditedPost( state, siteId, postId ),
 		currentUser: getCurrentUser( state ),
-		contactForm: state.ui.editor.contactForm,
+		contactForm: getEditorContactForm( state ),
 	};
 } )( localize( ContactFormDialog ) );

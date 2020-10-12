@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -7,13 +6,15 @@ import { find } from 'lodash';
 /**
  * Internal dependencies
  */
-import { READER_FOLLOW_TAG_REQUEST } from 'state/action-types';
+import { READER_FOLLOW_TAG_REQUEST } from 'state/reader/action-types';
 import { receiveTags as receiveTagsAction } from 'state/reader/tags/items/actions';
 import { http } from 'state/data-layer/wpcom-http/actions';
-import { dispatchRequestEx } from 'state/data-layer/wpcom-http/utils';
+import { dispatchRequest } from 'state/data-layer/wpcom-http/utils';
 import { fromApi as transformTagFromApi } from 'state/data-layer/wpcom/read/tags/utils';
 import { errorNotice } from 'state/notices/actions';
 import { translate } from 'i18n-calypso';
+
+import { registerHandlers } from 'state/data-layer/handler-registry';
 
 export function requestFollowTag( action ) {
 	return http( {
@@ -32,7 +33,10 @@ function fromApi( response ) {
 
 	const addedTag = find( response.tags, { ID: response.added_tag } );
 
-	return transformTagFromApi( { tag: addedTag } ).map( tag => ( { ...tag, isFollowing: true } ) );
+	return transformTagFromApi( { tag: addedTag } ).map( ( tag ) => ( {
+		...tag,
+		isFollowing: true,
+	} ) );
 }
 
 export function receiveFollowTag( action, addedTag ) {
@@ -58,13 +62,13 @@ export function receiveError( action, error ) {
 	return errorNotice( errorText );
 }
 
-export default {
+registerHandlers( 'state/data-layer/wpcom/read/tags/mine/new/index.js', {
 	[ READER_FOLLOW_TAG_REQUEST ]: [
-		dispatchRequestEx( {
+		dispatchRequest( {
 			fetch: requestFollowTag,
 			onSuccess: receiveFollowTag,
 			onError: receiveError,
 			fromApi,
 		} ),
 	],
-};
+} );

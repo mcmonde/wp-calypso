@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -62,7 +61,11 @@ export class OrderStatus extends Component {
 	};
 
 	render() {
-		const { order: { status }, showPayment = true, showShipping = true } = this.props;
+		const {
+			order: { status },
+			showPayment = true,
+			showShipping = true,
+		} = this.props;
 		const classes = `order-status__item is-${ status }`;
 		const paymentLabel = this.getPaymentLabel();
 		const shippingLabel = this.getShippingLabel();

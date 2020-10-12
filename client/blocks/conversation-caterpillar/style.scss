@@ -2,26 +2,21 @@
 	display: flex;
 }
 
-.conversation-caterpillar__gravatars,
 .conversation-caterpillar__count {
-	display: flex;
-	flex-shrink: 0;
-}
-
-.conversation-caterpillar__count {
+	align-items: center;
 	cursor: pointer;
-	color: $blue-medium;
+	color: var( --color-primary );
 	display: flex;
 	margin-left: 8px;
 	flex: 1 1 auto;
-	font-size: 14px;
+	font-size: $font-body-small;
 	font-weight: 400;
 	overflow: hidden;
 	position: relative;
 	white-space: nowrap;
 
 	&:hover {
-		color: $blue-light;
+		color: var( --color-primary-light );
 	}
 
 	&::after {
@@ -31,33 +26,8 @@
 		z-index: 1;
 	}
 
-	@include breakpoint( "<660px" ) {
+	@include breakpoint-deprecated( '<660px' ) {
 		padding: 0;
 		text-align: left;
 	}
-}
-
-.conversation-caterpillar__gravatar {
-	cursor: pointer;
-	border: 2px solid $white;
-	height: 24px;
-	margin-left: -8px;
-	vertical-align: middle;
-	width: 24px;
-
-	&:first-child {
-		margin-left: -2px;
-	}
-
-	&.is-hidden-on-small-screens {
-		display: none;
-
-		@include breakpoint( ">660px" ) {
-   			display: inline;
-   		}
-	}
-}
-
-.conversations__stream .conversation-caterpillar {
-	margin-top: 20px;
 }

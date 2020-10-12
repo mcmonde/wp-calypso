@@ -1,5 +1,4 @@
 /**
- * @format
  * @jest-environment jsdom
  */
 
@@ -17,7 +16,6 @@ import React from 'react';
 import { EditorCategoriesTagsAccordion } from 'post-editor/editor-categories-tags/accordion';
 
 jest.mock( 'components/info-popover', () => require( 'components/empty-component' ) );
-jest.mock( 'lib/user', () => () => {} );
 jest.mock( 'post-editor/editor-term-selector', () => require( 'components/empty-component' ) );
 
 describe( 'EditorCategoriesTagsAccordion', () => {

@@ -1,30 +1,33 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import PropTypes from 'prop-types';
 import { localize } from 'i18n-calypso';
 import React from 'react';
 import { connect } from 'react-redux';
 import { get, map } from 'lodash';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 
 /**
  * Internal dependencies
  */
+import FormLabel from 'components/forms/form-label';
 import FormRadio from 'components/forms/form-radio';
 import QueryPostFormats from 'components/data/query-post-formats';
-import { recordStat, recordEvent } from 'lib/posts/stats';
+import { recordEditorStat, recordEditorEvent } from 'state/posts/stats';
 import AccordionSection from 'components/accordion/section';
 import EditorThemeHelp from 'post-editor/editor-theme-help';
 import { getSelectedSiteId } from 'state/ui/selectors';
 import { getPostFormats } from 'state/post-formats/selectors';
-import { getEditorPostId } from 'state/ui/editor/selectors';
+import { getEditorPostId } from 'state/editor/selectors';
 import { getEditedPostValue } from 'state/posts/selectors';
-import { getSiteDefaultPostFormat } from 'state/selectors';
+import getSiteDefaultPostFormat from 'state/selectors/get-site-default-post-format';
 import { editPost } from 'state/posts/actions';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 const ICONS = {
 	aside: 'aside',
@@ -71,12 +74,12 @@ class EditorPostFormats extends React.Component {
 		return formats;
 	}
 
-	onChange = event => {
+	onChange = ( event ) => {
 		const format = event.target.value;
 
 		this.props.editPost( this.props.siteId, this.props.postId, { format } );
-		recordStat( 'post_format_changed' );
-		recordEvent( 'Changed Post Format', format );
+		this.props.recordEditorStat( 'post_format_changed' );
+		this.props.recordEditorEvent( 'Changed Post Format', format );
 	};
 
 	renderPostFormats() {
@@ -85,20 +88,22 @@ class EditorPostFormats extends React.Component {
 		return map( this.getPostFormats(), ( postFormatLabel, postFormatSlug ) => {
 			return (
 				<li key={ postFormatSlug } className="editor-post-formats__format">
-					<label>
+					<FormLabel>
 						<FormRadio
 							name="format"
 							value={ postFormatSlug }
 							checked={ postFormatSlug === selectedFormat }
 							onChange={ this.onChange }
+							label={
+								<>
+									<span className={ 'editor-post-formats__format-icon' }>
+										<Gridicon icon={ getPostFormatIcon( postFormatSlug ) } size={ 18 } />
+									</span>
+									{ postFormatLabel }
+								</>
+							}
 						/>
-						<span className="editor-post-formats__format-label">
-							<span className={ 'editor-post-formats__format-icon' }>
-								<Gridicon icon={ getPostFormatIcon( postFormatSlug ) } size={ 18 } />
-							</span>
-							{ postFormatLabel }
-						</span>
-					</label>
+					</FormLabel>
 				</li>
 			);
 		} );
@@ -116,7 +121,7 @@ class EditorPostFormats extends React.Component {
 }
 
 export default connect(
-	state => {
+	( state ) => {
 		const siteId = getSelectedSiteId( state );
 		const postId = getEditorPostId( state );
 		const postFormats = getPostFormats( state, siteId );
@@ -126,5 +131,5 @@ export default connect(
 
 		return { siteId, postId, postFormats, formatValue };
 	},
-	{ editPost }
+	{ editPost, recordEditorStat, recordEditorEvent }
 )( localize( EditorPostFormats ) );

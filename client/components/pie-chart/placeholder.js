@@ -1,28 +1,27 @@
-/** @format */
-
 /**
  * External dependencies
  */
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
+import { localize } from 'i18n-calypso';
 
 const SVG_SIZE = 300;
 
 class PieChartPlaceholder extends Component {
 	static propTypes = {
-		title: PropTypes.bool,
+		title: PropTypes.oneOfType( [ PropTypes.string, PropTypes.func ] ),
 	};
 
 	static defaultProps = {
-		title: false,
+		title: null,
 	};
 
 	render() {
-		const { title } = this.props;
+		const { title, translate } = this.props;
 		return (
-			<div className={ 'pie-chart__placeholder' }>
+			<div className="pie-chart__placeholder">
 				<svg
-					className={ 'pie-chart__placeholder-drawing' }
+					className="pie-chart__placeholder-drawing"
 					viewBox={ `0 0 ${ SVG_SIZE } ${ SVG_SIZE }` }
 					preserveAspectRatio={ 'xMidYMid meet' }
 				>
@@ -35,10 +34,15 @@ class PieChartPlaceholder extends Component {
 						/>
 					</g>
 				</svg>
-				{ title && <div className={ 'pie-chart__placeholder-title' } /> }
+
+				{ title && (
+					<h2 className="pie-chart__placeholder-title">
+						{ 'string' === typeof title ? title : title( translate, 0 ) }
+					</h2>
+				) }
 			</div>
 		);
 	}
 }
 
-export default PieChartPlaceholder;
+export default localize( PieChartPlaceholder );

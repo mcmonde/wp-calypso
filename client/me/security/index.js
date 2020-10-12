@@ -1,58 +1,46 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import page from 'page';
 
 /**
  * Internal dependencies
  */
-import config from 'config';
-import meController from 'me/controller';
-import controller from './controller';
-import { makeLayout, render as clientRender } from 'controller';
+import config from 'calypso/config';
+import { makeLayout, render as clientRender } from 'calypso/controller';
+import { sidebar } from 'calypso/me/controller';
+import {
+	accountRecovery,
+	connectedApplications,
+	password,
+	securityCheckup,
+	socialLogin,
+	twoStep,
+} from './controller';
 
-export default function() {
-	page( '/me/security', meController.sidebar, controller.password, makeLayout, clientRender );
+export default function () {
+	const useCheckupMenu = config.isEnabled( 'security/security-checkup' );
 
-	if ( config.isEnabled( 'signup/social-management' ) ) {
-		page(
-			'/me/security/social-login',
-			meController.sidebar,
-			controller.socialLogin,
-			makeLayout,
-			clientRender
-		);
+	const mainPageFunction = useCheckupMenu ? securityCheckup : password;
+	page( '/me/security', sidebar, mainPageFunction, makeLayout, clientRender );
+
+	if ( useCheckupMenu ) {
+		page( '/me/security/password', sidebar, password, makeLayout, clientRender );
 	}
 
-	page(
-		'/me/security/two-step',
-		meController.sidebar,
-		controller.twoStep,
-		makeLayout,
-		clientRender
-	);
+	if ( config.isEnabled( 'signup/social-management' ) ) {
+		page( '/me/security/social-login', sidebar, socialLogin, makeLayout, clientRender );
+	}
+
+	page( '/me/security/two-step', sidebar, twoStep, makeLayout, clientRender );
+
 	page(
 		'/me/security/connected-applications',
-		meController.sidebar,
-		controller.connectedApplications,
+		sidebar,
+		connectedApplications,
 		makeLayout,
 		clientRender
 	);
-	page(
-		'/me/security/connected-applications/:application_id',
-		meController.sidebar,
-		controller.connectedApplication,
-		makeLayout,
-		clientRender
-	);
-	page(
-		'/me/security/account-recovery',
-		meController.sidebar,
-		controller.accountRecovery,
-		makeLayout,
-		clientRender
-	);
+
+	page( '/me/security/account-recovery', sidebar, accountRecovery, makeLayout, clientRender );
 }

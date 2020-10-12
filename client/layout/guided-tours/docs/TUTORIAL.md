@@ -50,22 +50,34 @@ We only want our tour to show for users who have registered in the past 7 days. 
 
 Now we're ready to actually start writing our tour.
 
+<!--eslint ignore no-heading-punctuation-->
+
 ### Scaffolding, etc.
 
-First we'll need to create a file for our tour, then add our essential boilerplate, which comprises the imports and the `makeTour` wrapping. For instance:
+First we'll need to create a directory tour, under `tours`. In there, we create two files: `meta.js` and `index.js`.
+`meta.js` contains the metadata for a tour. Here's an empty boilerplate:
 
-```JavaScript
+```javascript
+/**
+ * Internal dependencies
+ */
+import { and } from 'layout/guided-tours/utils';
+
+export default {};
+```
+
+For `index.js`, this is the essential boilerplate, which comprises the imports and the `makeTour` wrapping:
+
+```javascript
 /**
  * External dependencies
  */
 import React from 'react';
-import {
-	overEvery as and,
-} from 'lodash';
 
 /**
  * Internal dependencies
  */
+import meta from './meta';
 import {
 	makeTour,
 	Tour,
@@ -74,17 +86,25 @@ import {
 	Quit,
 	Continue,
 } from 'layout/guided-tours/config-elements';
-import {
-	isNewUser,
-	isEnabled,
-	isSelectedSitePreviewable,
-} from 'state/ui/guided-tours/contexts';
+import { isNewUser, isEnabled, isSelectedSitePreviewable } from 'state/guided-tours/contexts';
 
-export const TutorialSitePreviewTour = makeTour(
-);
+export const TutorialSitePreviewTour = makeTour();
 ```
 
-Now add that tour to the [tour list](../config.js):
+Now add that tour to the [config list](../config.js):
+
+```diff
+ …
+ import { SiteTitleTour } from 'layout/guided-tours/tours/site-title-tour';
++import { TutorialSitePreviewTourMeta } from 'layout/guided-tours/tours/tutorial-site-preview-tour/meta';
+
+ export default {
+		 …
+		 siteTitle: SiteTitleTour,
++    tutorialSitePreview: TutorialSitePreviewTourMeta,
+```
+
+And to the [tour list](../all-tours.js):
 
 ```diff
  …
@@ -97,29 +117,21 @@ Now add that tour to the [tour list](../config.js):
 +    tutorialSitePreview: TutorialSitePreviewTour,
 ```
 
-And add a [feature flag](https://github.com/Automattic/wp-calypso/blob/master/config/development.json) for the appropriate environment(s), such as `"guided-tours/tutorial-site-preview": true,`.
+And add a [feature flag](https://github.com/Automattic/wp-calypso/blob/HEAD/config/development.json) for the appropriate environment(s), such as `"guided-tours/tutorial-site-preview": true,`.
 
 **Important:** use the feature flag to ensure that the tour is only triggered in environments where all the required features are available. E.g. especially the `desktop` environment may differ from general Calypso because of the different context that it runs in and the different release cycles.
 
 ### The Tour element
 
-Now in between the `makeTour` parantheses, create the tour element:
+Now we need to configure the metadata for the tour. In `meta.js`:
 
-```JSX
-export const TutorialSitePreviewTour = makeTour(
-<Tour
-	name="sitePreview"
-	version="20170104"
-	path="/stats"
-	when={ and(
-		isEnabled( 'guided-tours/main' ),
-				isSelectedSitePreviewable,
-		isNewUser,
-		) }
-	>
-	<!-- this is where the tour steps go ... -->
-</Tour>
-);
+```javascript
+export default {
+	name: 'sitePreview',
+	version: '20170104',
+	path: '/stats',
+	when: and( isEnabled( 'guided-tours/main' ), isSelectedSitePreviewable, isNewUser ),
+};
 ```
 
 - `name` is the tour's name. It must match the key used in [config.js](../config.js), as we use it to refer to the tour inside the Guided Tours system (`combineTours`) and to force the tour to start via the query arg (`?tour=<TOURNAME>`).
@@ -128,13 +140,24 @@ export const TutorialSitePreviewTour = makeTour(
 - `when` is a boolean function that the framework tests to see whether the tour should be triggered or not. The first check should be checking whether the feature flag for this tour is enabled.
 - `isSelectedSitePreviewable` guards us against showing this step if the current site cannot be previewed.
 
+We can now use this data in the tour visual component. In `index.js`:
+
+```JSX
+export const TutorialSitePreviewTour = makeTour(
+  <Tour { ...meta } >
+    <!-- this is where the tour steps go ... -->
+  </Tour>
+);
+```
+
 ### Add an A/B Test
 
 To assess the impact of a tour, it can be helpful to run it as an A/B test. If the user is in the test group we trigger the tour. If they're in the control group we don't trigger the tour. After you've collected some data, you'll hopefully be able to gauge the impact that the tour has on the metric(s) you're interested in.
 
 Open up `client/lib/abtest/active-tests.js` and add a new test such as this one:
 
-```JavaScript
+```javascript
+export default {
 	designShowcaseWelcomeTour: {
 		datestamp: '20170101',
 		variations: {
@@ -144,22 +167,25 @@ Open up `client/lib/abtest/active-tests.js` and add a new test such as this one:
 		defaultVariation: 'disabled',
 		allowExistingUsers: true,
 	},
+};
 ```
 
 Note that we've set the `enabled` variation to 0% so we don't show the tour to any user until we've tested it thoroughly.
 
 Now we need to make sure the tour only triggers if the user in the `enabled` variant.
 
-First, add an import for `isAbTestInVariant` to the list of things we import from `state/ui/guided-tours/contexts`.
+First, add an import for `isAbTestInVariant` to the list of things we import from `state/guided-tours/contexts` in `meta.js`.
 
-Now, use the import in the `Tour` element's `when` attribute like so:
+Now, use the import in the `when` property like so:
 
-```JavaScript
-when={ and(
-	isNewUser,
-	isEnabled( 'guided-tours/main' ),
-	isAbTestInVariant( 'tutorialSitePreviewTour', 'enabled' ),
-	) }
+```javascript
+export default {
+	when: and(
+		isNewUser,
+		isEnabled( 'guided-tours/main' ),
+		isAbTestInVariant( 'tutorialSitePreviewTour', 'enabled' )
+	),
+};
 ```
 
 **Important:** note that we want to put the call to `isAbTestInVariant` last — it puts users into an A/B test variant, and having later parts of the function return false would taint our results. We want to assign the user to an A/B test variant if and only if the tour would have triggered based on all the other conditions.
@@ -272,7 +298,7 @@ If neither the code chunk nor the site data required for `/settings` are availab
 
 _The [fix][pr-10521]:_ We make Guided Tours "subscribe" to the corresponding data requests using its all-purpose [`actionLog`][action-log]: simply add the action type signaling the satisfaction of a data need — _e.g._, `RECEIVE_FOOS` or `REQUEST_FOOS_SUCCESS` — to the log's [white list][relevant-types]. Any change to `actionLog` triggers all of Guided Tours' view layer to update, thereby allowing a correct and timely positioning of steps.
 
-[async-load]: https://github.com/Automattic/wp-calypso/blob/master/client/components/async-load/README.md
+[async-load]: https://github.com/Automattic/wp-calypso/blob/HEAD/client/components/async-load/README.md
 [async-load-usage]: https://github.com/Automattic/wp-calypso/blob/791003963e72c39589073b4de634bf946d1d288f/client/post-editor/editor-sidebar/index.jsx#L43
 [pr-10521]: https://github.com/Automattic/wp-calypso/pull/10521
 [action-log]: https://github.com/Automattic/wp-calypso/tree/791003963e72c39589073b4de634bf946d1d288f/client/state/ui/action-log

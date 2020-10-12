@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -7,7 +5,7 @@
 import phone from 'phone';
 import i18n from 'i18n-calypso';
 
-export default function( phoneNumber ) {
+export default function ( phoneNumber ) {
 	const phoneNumberWithoutPlus = phoneNumber.replace( /\+/, '' );
 
 	if ( phoneNumberWithoutPlus.length === 0 ) {
@@ -38,6 +36,7 @@ export default function( phoneNumber ) {
 		};
 	}
 
+	// phone module validates mobile numbers
 	if ( ! phone( phoneNumber ).length ) {
 		return {
 			error: 'phone_number_invalid',

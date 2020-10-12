@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -10,27 +9,34 @@ import { localize } from 'i18n-calypso';
 /**
  * Internal dependencies
  */
-import Button from 'components/button';
-import config from 'config';
-import ProfileGravatar from 'me/profile-gravatar';
-import { addCreditCard, billingHistory, purchasesRoot } from 'me/purchases/paths';
-import Sidebar from 'layout/sidebar';
-import SidebarFooter from 'layout/sidebar/footer';
-import SidebarHeading from 'layout/sidebar/heading';
-import SidebarItem from 'layout/sidebar/item';
-import SidebarMenu from 'layout/sidebar/menu';
-import SidebarRegion from 'layout/sidebar/region';
-import userFactory from 'lib/user';
-import userUtilities from 'lib/user/utils';
-import { getCurrentUser } from 'state/current-user/selectors';
-import { logoutUser } from 'state/login/actions';
-import { recordGoogleEvent } from 'state/analytics/actions';
-import { setNextLayoutFocus } from 'state/ui/layout-focus/actions';
+import { Button } from '@automattic/components';
+import config from 'calypso/config';
+import ProfileGravatar from 'calypso/me/profile-gravatar';
+import {
+	addCreditCard,
+	billingHistory,
+	upcomingCharges,
+	pendingPayments,
+	myMemberships,
+	purchasesRoot,
+} from 'calypso/me/purchases/paths';
+import Sidebar from 'calypso/layout/sidebar';
+import SidebarFooter from 'calypso/layout/sidebar/footer';
+import SidebarHeading from 'calypso/layout/sidebar/heading';
+import SidebarItem from 'calypso/layout/sidebar/item';
+import SidebarMenu from 'calypso/layout/sidebar/menu';
+import SidebarRegion from 'calypso/layout/sidebar/region';
+import user from 'calypso/lib/user';
+import userUtilities from 'calypso/lib/user/utils';
+import { getCurrentUser } from 'calypso/state/current-user/selectors';
+import { logoutUser } from 'calypso/state/logout/actions';
+import { recordGoogleEvent } from 'calypso/state/analytics/actions';
+import { setNextLayoutFocus } from 'calypso/state/ui/layout-focus/actions';
 
 /**
- * Module variables
+ * Style dependencies
  */
-const user = userFactory();
+import './style.scss';
 
 class MeSidebar extends React.Component {
 	onNavigate = () => {
@@ -38,8 +44,8 @@ class MeSidebar extends React.Component {
 		window.scrollTo( 0, 0 );
 	};
 
-	onSignOut = () => {
-		const currentUser = this.props.currentUser;
+	onSignOut = async () => {
+		const { currentUser } = this.props;
 
 		// If user is using en locale, redirect to app promo page on sign out
 		const isEnLocale = currentUser && currentUser.localeSlug === 'en';
@@ -51,12 +57,15 @@ class MeSidebar extends React.Component {
 		}
 
 		if ( config.isEnabled( 'login/wp-login' ) ) {
-			this.props.logoutUser( redirectTo ).then(
-				( { redirect_to } ) => user.clear( () => ( location.href = redirect_to || '/' ) ),
+			try {
+				const { redirect_to } = await this.props.logoutUser( redirectTo );
+				await user().clear();
+				window.location.href = redirect_to || '/';
+			} catch {
 				// The logout endpoint might fail if the nonce has expired.
 				// In this case, redirect to wp-login.php?action=logout to get a new nonce generated
-				() => userUtilities.logout( redirectTo )
-			);
+				userUtilities.logout( redirectTo );
+			}
 		} else {
 			userUtilities.logout( redirectTo );
 		}
@@ -70,6 +79,7 @@ class MeSidebar extends React.Component {
 			'/me': 'profile',
 			'/me/security/account-recovery': 'security',
 			'/me/security/connected-applications': 'security',
+			'/me/security/password': 'security',
 			'/me/security/social-login': 'security',
 			'/me/security/two-step': 'security',
 			'me/privacy': 'privacy',
@@ -80,7 +90,11 @@ class MeSidebar extends React.Component {
 			[ purchasesRoot ]: 'purchases',
 			[ billingHistory ]: 'purchases',
 			[ addCreditCard ]: 'purchases',
+			[ upcomingCharges ]: 'purchases',
+			[ pendingPayments ]: 'purchases',
+			[ myMemberships ]: 'purchases',
 			'/me/chat': 'happychat',
+			'/me/site-blocks': 'site-blocks',
 		};
 		const filteredPath = context.path.replace( /\/\d+$/, '' ); // Remove ID from end of path
 		let selected;
@@ -100,16 +114,16 @@ class MeSidebar extends React.Component {
 		return (
 			<Sidebar>
 				<SidebarRegion>
-					<ProfileGravatar user={ this.props.currentUser } />
+					<ProfileGravatar inSidebar user={ this.props.currentUser } />
 
 					<div className="sidebar__me-signout">
 						<Button
 							compact
 							className="sidebar__me-signout-button"
 							onClick={ this.onSignOut }
-							title={ translate( 'Sign out of WordPress.com' ) }
+							title={ translate( 'Log out of WordPress.com' ) }
 						>
-							{ translate( 'Sign Out' ) }
+							{ translate( 'Log out' ) }
 						</Button>
 					</div>
 
@@ -122,7 +136,7 @@ class MeSidebar extends React.Component {
 									config.isEnabled( 'me/my-profile' ) ? '/me' : '//wordpress.com/me/public-profile'
 								}
 								label={ translate( 'My Profile' ) }
-								icon="user"
+								materialIcon="person"
 								onNavigate={ this.onNavigate }
 							/>
 
@@ -132,7 +146,7 @@ class MeSidebar extends React.Component {
 									config.isEnabled( 'me/account' ) ? '/me/account' : '//wordpress.com/me/account'
 								}
 								label={ translate( 'Account Settings' ) }
-								icon="cog"
+								materialIcon="settings"
 								onNavigate={ this.onNavigate }
 								preloadSectionName="account"
 							/>
@@ -141,7 +155,7 @@ class MeSidebar extends React.Component {
 								selected={ selected === 'purchases' }
 								link={ purchasesRoot }
 								label={ translate( 'Manage Purchases' ) }
-								icon="credit-card"
+								materialIcon="credit_card"
 								onNavigate={ this.onNavigate }
 								preloadSectionName="purchases"
 							/>
@@ -150,21 +164,19 @@ class MeSidebar extends React.Component {
 								selected={ selected === 'security' }
 								link={ '/me/security' }
 								label={ translate( 'Security' ) }
-								icon="lock"
+								materialIcon="lock"
 								onNavigate={ this.onNavigate }
 								preloadSectionName="security"
 							/>
 
-							{ config.isEnabled( 'me/privacy' ) && (
-								<SidebarItem
-									selected={ selected === 'privacy' }
-									link={ '/me/privacy' }
-									label={ translate( 'Privacy' ) }
-									icon="visible"
-									onNavigate={ this.onNavigate }
-									preloadSectionName="privacy"
-								/>
-							) }
+							<SidebarItem
+								selected={ selected === 'privacy' }
+								link={ '/me/privacy' }
+								label={ translate( 'Privacy' ) }
+								materialIcon="visibility"
+								onNavigate={ this.onNavigate }
+								preloadSectionName="privacy"
+							/>
 
 							<SidebarItem
 								selected={ selected === 'notifications' }
@@ -174,9 +186,18 @@ class MeSidebar extends React.Component {
 										: '//wordpress.com/me/notifications'
 								}
 								label={ translate( 'Notification Settings' ) }
-								icon="bell"
+								materialIcon="notifications"
 								onNavigate={ this.onNavigate }
 								preloadSectionName="notification-settings"
+							/>
+
+							<SidebarItem
+								selected={ selected === 'site-blocks' }
+								link={ '/me/site-blocks' }
+								label={ translate( 'Blocked Sites' ) }
+								materialIcon="block"
+								onNavigate={ this.onNavigate }
+								preloadSectionName="site-blocks"
 							/>
 						</ul>
 					</SidebarMenu>
@@ -203,7 +224,7 @@ class MeSidebar extends React.Component {
 const enhance = flow(
 	localize,
 	connect(
-		state => ( {
+		( state ) => ( {
 			currentUser: getCurrentUser( state ),
 		} ),
 		{

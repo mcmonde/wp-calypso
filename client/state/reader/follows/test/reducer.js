@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -25,11 +24,10 @@ import {
 	READER_RECORD_FOLLOW,
 	READER_RECORD_UNFOLLOW,
 	READER_FOLLOWS_RECEIVE,
-	SERIALIZE,
-	DESERIALIZE,
 	READER_FOLLOW_ERROR,
 	READER_SITE_REQUEST_SUCCESS,
-} from 'state/action-types';
+} from 'state/reader/action-types';
+import { SERIALIZE, DESERIALIZE } from 'state/action-types';
 
 const exampleFollow = {
 	is_following: true,
@@ -136,23 +134,32 @@ describe( 'reducer', () => {
 			} );
 		} );
 
-		test( 'should only SERIALIZE followed items', () => {
+		test( 'should only SERIALIZE followed items with an ID', () => {
 			const original = deepFreeze( {
 				'discover.wordpress.com': {
+					ID: 1,
 					feed_URL: 'http://discover.wordpress.com',
 					URL: 'http://discover.wordpress.com',
 					is_following: false,
 					blog_ID: 123,
 				},
 				'dailypost.wordpress.com': {
+					ID: 2,
 					feed_URL: 'http://dailypost.wordpress.com',
 					URL: 'http://dailypost.wordpress.com',
 					is_following: true,
 					blog_ID: 124,
 				},
+				'in-flight.wordpress.com': {
+					feed_URL: 'http://in-flight.wordpress.com',
+					URL: 'http://in-flight.wordpress.com',
+					is_following: true,
+					blog_ID: 125,
+				},
 			} );
 			expect( items( original, { type: SERIALIZE } ) ).toEqual( {
 				'dailypost.wordpress.com': {
+					ID: 2,
 					feed_URL: 'http://dailypost.wordpress.com',
 					URL: 'http://dailypost.wordpress.com',
 					is_following: true,
@@ -255,7 +262,7 @@ describe( 'reducer', () => {
 				},
 			} );
 
-			[ 'instantly', 'daily', 'weekly' ].forEach( frequency => {
+			[ 'instantly', 'daily', 'weekly' ].forEach( ( frequency ) => {
 				const state = items( original, updateNewPostEmailSubscription( 123, frequency ) );
 				expect( state ).toEqual( {
 					'example.com': {
@@ -273,7 +280,7 @@ describe( 'reducer', () => {
 		} );
 
 		test( 'should not update when passed identical updated post email subscription info', () => {
-			[ 'instantly', 'daily', 'weekly' ].forEach( frequency => {
+			[ 'instantly', 'daily', 'weekly' ].forEach( ( frequency ) => {
 				const original = deepFreeze( {
 					'example.com': {
 						...exampleFollow,
@@ -302,7 +309,7 @@ describe( 'reducer', () => {
 				},
 			} );
 
-			[ 'instantly', 'daily', 'weekly' ].forEach( frequency => {
+			[ 'instantly', 'daily', 'weekly' ].forEach( ( frequency ) => {
 				const state = items( original, updateNewPostEmailSubscription( 456, frequency ) );
 				expect( state ).toBe( original );
 			} );

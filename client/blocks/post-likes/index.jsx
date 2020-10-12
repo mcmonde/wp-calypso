@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -13,8 +11,14 @@ import { localize } from 'i18n-calypso';
  */
 import Gravatar from 'components/gravatar';
 import QueryPostLikes from 'components/data/query-post-likes';
-import { getPostLikes, countPostLikes } from 'state/selectors';
+import { countPostLikes } from 'state/posts/selectors/count-post-likes';
+import { getPostLikes } from 'state/posts/selectors/get-post-likes';
 import { recordGoogleEvent } from 'state/analytics/actions';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class PostLikes extends React.PureComponent {
 	static defaultProps = {
@@ -26,7 +30,7 @@ class PostLikes extends React.PureComponent {
 		this.props.recordGoogleEvent( 'Post Likes', 'Clicked on Gravatar' );
 	};
 
-	renderLike = like => {
+	renderLike = ( like ) => {
 		const { showDisplayNames } = this.props;
 
 		const likeUrl = like.site_ID && like.site_visible ? '/read/blogs/' + like.site_ID : null;
@@ -72,7 +76,17 @@ class PostLikes extends React.PureComponent {
 	}
 
 	render() {
-		const { likeCount, likes, postId, postType, siteId, translate, showDisplayNames } = this.props;
+		const {
+			likeCount,
+			likes,
+			postId,
+			postType,
+			siteId,
+			translate,
+			showDisplayNames,
+			onMouseEnter,
+			onMouseLeave,
+		} = this.props;
 
 		let noLikesLabel;
 
@@ -85,9 +99,10 @@ class PostLikes extends React.PureComponent {
 		const isLoading = ! likes;
 
 		const classes = classnames( 'post-likes', { 'has-display-names': showDisplayNames } );
+		const extraProps = { onMouseEnter, onMouseLeave };
 
 		return (
-			<div className={ classes }>
+			<div className={ classes } { ...extraProps }>
 				<QueryPostLikes siteId={ siteId } postId={ postId } needsLikers={ true } />
 				{ isLoading && (
 					<span key="placeholder" className="post-likes__count is-loading">

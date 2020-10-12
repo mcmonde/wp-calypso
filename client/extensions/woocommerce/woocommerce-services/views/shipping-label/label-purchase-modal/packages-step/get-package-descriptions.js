@@ -20,12 +20,16 @@ export default ( selected, all, addNames ) => {
 
 		if ( isEnvelope ) {
 			return pckgName
-				? translate( 'Envelope %(packageNum)d: %(packageName)s', { args: { packageNum: pckgCount, packageName: pckgName } } )
+				? translate( 'Envelope %(packageNum)d: %(packageName)s', {
+						args: { packageNum: pckgCount, packageName: pckgName },
+				  } )
 				: translate( 'Envelope %(packageNum)d', { args: { packageNum: pckgCount } } );
 		}
 
 		return pckgName
-			? translate( 'Package %(packageNum)d: %(packageName)s', { args: { packageNum: pckgCount, packageName: pckgName } } )
+			? translate( 'Package %(packageNum)d: %(packageName)s', {
+					args: { packageNum: pckgCount, packageName: pckgName },
+			  } )
 			: translate( 'Package %(packageNum)d', { args: { packageNum: pckgCount } } );
 	} );
 };

@@ -1,5 +1,4 @@
 /**
- * @format
  * @jest-environment jsdom
  */
 
@@ -22,10 +21,10 @@ const DUMMY_SITE_ID = 1,
 describe( 'MediaStore', () => {
 	let Dispatcher, sandbox, MediaStore, handler;
 
-	beforeAll( function() {
+	beforeAll( function () {
 		Dispatcher = require( 'dispatcher' );
 
-		sandbox = sinon.sandbox.create();
+		sandbox = sinon.createSandbox();
 		sandbox.spy( Dispatcher, 'register' );
 		sandbox.stub( Dispatcher, 'waitFor' ).returns( true );
 
@@ -38,7 +37,7 @@ describe( 'MediaStore', () => {
 		MediaStore._pointers = {};
 	} );
 
-	afterAll( function() {
+	afterAll( function () {
 		sandbox.restore();
 	} );
 
@@ -118,10 +117,13 @@ describe( 'MediaStore', () => {
 			expect( MediaStore.dispatchToken ).to.be.a( 'string' );
 		} );
 
-		test( 'should emit a change event when receiving updates', done => {
-			MediaStore.once( 'change', done );
+		// eslint-disable-next-line jest/expect-expect
+		test( 'should emit a change event when receiving updates', () => {
+			return new Promise( ( done ) => {
+				MediaStore.once( 'change', done );
 
-			dispatchReceiveMediaItems();
+				dispatchReceiveMediaItems();
+			} );
 		} );
 
 		test( 'should blank an item when REMOVE_MEDIA_ITEM is dispatched', () => {
@@ -165,23 +167,6 @@ describe( 'MediaStore', () => {
 			expect( MediaStore.get( DUMMY_SITE_ID, DUMMY_MEDIA_ID ) ).to.eql( {
 				ID: DUMMY_MEDIA_ID,
 			} );
-		} );
-
-		test( 'should clear all pointers when CHANGE_MEDIA_SOURCE called', () => {
-			MediaStore._pointers = {
-				[ DUMMY_SITE_ID ]: {
-					[ DUMMY_MEDIA_ID + 1 ]: DUMMY_MEDIA_ID,
-				},
-			};
-
-			handler( {
-				action: {
-					type: 'CHANGE_MEDIA_SOURCE',
-					siteId: DUMMY_SITE_ID,
-				},
-			} );
-
-			expect( MediaStore._pointers[ DUMMY_SITE_ID ] ).to.eql( {} );
 		} );
 	} );
 } );

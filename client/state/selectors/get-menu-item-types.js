@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -9,7 +7,8 @@ import { endsWith, filter, find, get } from 'lodash';
 /**
  * Internal dependencies
  */
-import { getRawSite, getSiteAdminUrl } from 'state/sites/selectors';
+import { getSiteAdminUrl } from 'state/sites/selectors';
+import getRawSite from 'state/selectors/get-raw-site';
 import { getPostTypes } from 'state/post-types/selectors';
 
 function getDefaultItemTypes( state, siteId ) {
@@ -84,11 +83,11 @@ export default function getMenuItemTypes( state, siteId ) {
 	const postTypes = getPostTypes( state, siteId );
 	const postTypesItems = filter(
 		postTypes,
-		type =>
+		( type ) =>
 			find( defaultItems, { name: type.name } ) === undefined &&
 			type.api_queryable === true &&
 			type.map_meta_cap === true
-	).map( type => {
+	).map( ( type ) => {
 		const notFoundLabel = get( type, [ 'labels', 'not_found' ], '' );
 		return {
 			name: type.name,

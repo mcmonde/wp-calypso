@@ -1,21 +1,19 @@
-/** @format */
 /**
  * Internal dependencies
  */
 import makeJsonSchemaParser from 'lib/make-json-schema-parser';
-import { dispatchRequestEx } from 'state/data-layer/wpcom-http/utils';
+import { registerHandlers } from 'state/data-layer/handler-registry';
+import { dispatchRequest } from 'state/data-layer/wpcom-http/utils';
 import { http } from 'state/data-layer/wpcom-http/actions';
-import { mergeHandlers } from 'state/action-watchers/utils';
 import { recordTracksEvent, withAnalytics } from 'state/analytics/actions';
+import { requestRewindState } from 'state/rewind/state/actions';
 import { REWIND_STATE_REQUEST, REWIND_STATE_UPDATE } from 'state/action-types';
 import { rewindStatus } from './schema';
 import { transformApi } from './api-transformer';
 
-import downloads from './downloads';
+const getType = ( o ) => ( o && o.constructor && o.constructor.name ) || typeof o;
 
-const getType = o => ( o && o.constructor && o.constructor.name ) || typeof o;
-
-const fetchRewindState = action =>
+const fetchRewindState = ( action ) =>
 	http(
 		{
 			apiNamespace: 'wpcom/v2',
@@ -42,15 +40,8 @@ const updateRewindState = ( { siteId }, data ) => {
 		return stateUpdate;
 	}
 
-	const delayedStateRequest = dispatch =>
-		setTimeout(
-			() =>
-				dispatch( {
-					type: REWIND_STATE_REQUEST,
-					siteId,
-				} ),
-			3000
-		);
+	const delayedStateRequest = ( dispatch ) =>
+		setTimeout( () => dispatch( requestRewindState( siteId ) ), 3000 );
 
 	return [ stateUpdate, delayedStateRequest ];
 };
@@ -99,9 +90,9 @@ const setUnknownState = ( { siteId }, error ) => {
 	);
 };
 
-export default mergeHandlers( downloads, {
+registerHandlers( 'state/data-layer/wpcom/sites/rewind', {
 	[ REWIND_STATE_REQUEST ]: [
-		dispatchRequestEx( {
+		dispatchRequest( {
 			fetch: fetchRewindState,
 			onSuccess: updateRewindState,
 			onError: setUnknownState,

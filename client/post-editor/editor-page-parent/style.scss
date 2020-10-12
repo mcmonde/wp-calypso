@@ -1,7 +1,6 @@
-/** @format */
 
 .editor-page-parent .post-selector {
-	margin: 8px 0 0 0;
+	margin: 8px 0 0;
 }
 
 .editor-page-parent .post-selector__results {
@@ -13,9 +12,10 @@
 }
 
 .editor-page-parent__label-text {
-	color: $gray;
+	color: var( --color-neutral-light );
 	display: block;
-	font-size: 11px;
+	font-size: $font-body-extra-small;
+	font-weight: 400;
 	margin-bottom: 4px;
 	text-transform: uppercase;
 }
@@ -23,8 +23,8 @@
 .editor-page-parent__top-level-label,
 .editor-page-parent__top-level-description,
 .editor-page-parent__parent-tree-selector .form-legend {
-	color: $gray-darken-10;
-	font-size: 13px;
+	color: var( --color-neutral-40 );
+	font-size: $font-body-small;
 }
 
 .editor-page-parent__top-level-description {

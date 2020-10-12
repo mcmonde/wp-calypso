@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -11,14 +9,19 @@ import { localize } from 'i18n-calypso';
 /**
  * Internal dependencies
  */
-import { addLocaleToWpcomUrl } from 'lib/i18n-utils';
+import { localizeUrl } from 'lib/i18n-utils';
 import safeProtocolUrl from 'lib/safe-protocol-url';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
+
+/**
+ * Style dependencies
+ */
+import './link-item.scss';
 
 function LoggedOutFormBackLink( props ) {
 	const { locale, oauth2Client, translate, recordClick } = props;
 
-	let url = addLocaleToWpcomUrl( 'https://wordpress.com', locale );
+	let url = localizeUrl( 'https://wordpress.com', locale );
 	let message = translate( 'Back to WordPress.com' );
 
 	if ( oauth2Client ) {

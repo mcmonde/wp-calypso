@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * Internal dependencies
  */
@@ -9,7 +7,9 @@ import {
 	ORDER_TRANSACTION_SET,
 } from 'state/action-types';
 
-export const fetchOrderTransaction = orderId => ( {
+import 'state/data-layer/wpcom/me/transactions/order';
+
+export const fetchOrderTransaction = ( orderId ) => ( {
 	type: ORDER_TRANSACTION_FETCH,
 	orderId,
 } );

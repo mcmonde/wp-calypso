@@ -1,4 +1,3 @@
-/** @format */
 /**
  * Internal dependencies
  */
@@ -11,6 +10,15 @@ describe( 'plansLink', () => {
 
 	test( 'should append monthly to url when required', () => {
 		expect( plansLink( '/plans', undefined, 'monthly' ) ).toBe( '/plans/monthly' );
+	} );
+
+	test( 'should append intervalType to URL when forceInterval is true', () => {
+		expect( plansLink( '/plans', 'example.com', 'monthly', true ) ).toBe(
+			'/plans/monthly/example.com'
+		);
+		expect( plansLink( '/plans', 'example.com', 'yearly', true ) ).toBe(
+			'/plans/yearly/example.com'
+		);
 	} );
 
 	test( 'should append site slug if provided', () => {

@@ -1,21 +1,18 @@
-/** @format */
-
 /**
  * Internal dependencies
  */
-
 import { http } from 'state/data-layer/wpcom-http/actions';
 import { dispatchRequest } from 'state/data-layer/wpcom-http/utils';
 import { VIDEO_EDITOR_UPDATE_POSTER } from 'state/action-types';
-import { setPosterUrl, showError, showUploadProgress } from 'state/ui/editor/video-editor/actions';
+import { setPosterUrl, showError, showUploadProgress } from 'state/editor/video-editor/actions';
 
-/**
- * Updates the poster for a video.
- *
- * @param  {Object} store Redux store
- * @param  {Object} action Action object
- */
-export const updatePoster = ( { dispatch }, action ) => {
+import { registerHandlers } from 'state/data-layer/handler-registry';
+import { getSelectedSiteId } from 'state/ui/selectors';
+import getMediaItem from 'state/selectors/get-media-item';
+import { dispatchFluxUpdateMediaItem } from 'state/media/utils/flux-adapter';
+import { assign } from 'lodash';
+
+const fetch = ( action ) => {
 	if ( ! ( 'file' in action.params || 'atTime' in action.params ) ) {
 		return;
 	}
@@ -31,34 +28,44 @@ export const updatePoster = ( { dispatch }, action ) => {
 		atTime !== undefined && { body: { at_time: atTime } }
 	);
 
-	dispatch( http( params, action ) );
+	return http( params, action );
 };
 
-export const receivePosterUrl = ( { dispatch }, action, { poster: posterUrl } ) => {
+const onSuccess = ( action, { poster: posterUrl } ) => ( dispatch, getState ) => {
 	dispatch( setPosterUrl( posterUrl ) );
+
+	const currentState = getState();
+
+	const siteId = getSelectedSiteId( currentState );
+	const mediaItem = getMediaItem( currentState, siteId, action.meta.mediaId );
+
+	// Photon does not support URLs with a querystring component.
+	const urlBeforeQuery = ( posterUrl || '' ).split( '?' )[ 0 ];
+
+	const updatedMediaItem = assign( {}, mediaItem, {
+		thumbnails: {
+			fmt_hd: urlBeforeQuery,
+			fmt_dvd: urlBeforeQuery,
+			fmt_std: urlBeforeQuery,
+		},
+	} );
+
+	dispatchFluxUpdateMediaItem( siteId, updatedMediaItem );
 };
 
-export const receivePosterError = ( { dispatch } ) => {
-	dispatch( showError() );
+const onError = () => showError();
+
+const onProgress = ( action, progress ) => {
+	const hasProgressData = 'loaded' in progress && 'total' in progress;
+	const percentage = hasProgressData
+		? Math.min( Math.round( ( progress.loaded / ( Number.EPSILON + progress.total ) ) * 100 ), 100 )
+		: 0;
+
+	return showUploadProgress( percentage );
 };
 
-export const receiveUploadProgress = ( { dispatch }, action, progress ) => {
-	let percentage = 0;
+const dispatchUpdatePosterRequest = dispatchRequest( { fetch, onSuccess, onError, onProgress } );
 
-	if ( 'loaded' in progress && 'total' in progress ) {
-		percentage = Math.min( Math.round( progress.loaded / progress.total * 100 ), 100 );
-	}
-
-	dispatch( showUploadProgress( percentage ) );
-};
-
-export const dispatchPosterRequest = dispatchRequest(
-	updatePoster,
-	receivePosterUrl,
-	receivePosterError,
-	{ onProgress: receiveUploadProgress }
-);
-
-export default {
-	[ VIDEO_EDITOR_UPDATE_POSTER ]: [ dispatchPosterRequest ],
-};
+registerHandlers( 'state/data-layer/wpcom/videos/poster/index.js', {
+	[ VIDEO_EDITOR_UPDATE_POSTER ]: [ dispatchUpdatePosterRequest ],
+} );

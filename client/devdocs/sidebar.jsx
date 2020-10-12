@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -53,8 +51,8 @@ export default class DevdocsSidebar extends React.PureComponent {
 							className="devdocs__navigation-item"
 							icon="pencil"
 							label="Contributing"
-							link="/devdocs/.github/CONTRIBUTING.md"
-							selected={ this.isItemSelected( '/devdocs/.github/CONTRIBUTING.md' ) }
+							link="/devdocs/docs/CONTRIBUTING.md"
+							selected={ this.isItemSelected( '/devdocs/docs/CONTRIBUTING.md' ) }
 						/>
 						<SidebarItem
 							className="devdocs__navigation-item"
@@ -67,8 +65,8 @@ export default class DevdocsSidebar extends React.PureComponent {
 							className="devdocs__navigation-item"
 							icon="ink"
 							label="Color"
-							link="https://dotcombrand.wordpress.com/color/"
-							selected={ this.isItemSelected( 'https://dotcombrand.wordpress.com/color/' ) }
+							link="/devdocs/docs/color.md"
+							selected={ this.isItemSelected( '/devdocs/docs/color.md' ) }
 						/>
 						<SidebarItem
 							className="devdocs__navigation-item"
@@ -83,6 +81,20 @@ export default class DevdocsSidebar extends React.PureComponent {
 							label="Icons"
 							link="/devdocs/docs/icons.md"
 							selected={ this.isItemSelected( '/devdocs/docs/icons.md' ) }
+						/>
+						<SidebarItem
+							className="devdocs__navigation-item"
+							icon="image"
+							label="Illustrations"
+							link="/devdocs/illustrations"
+							selected={ this.isItemSelected( '/devdocs/illustrations' ) }
+						/>
+						<SidebarItem
+							className="devdocs__navigation-item"
+							icon="globe"
+							label="Internationalization"
+							link="/devdocs/docs/i18n.md"
+							selected={ this.isItemSelected( '/devdocs/docs/i18n.md' ) }
 						/>
 					</ul>
 
@@ -109,6 +121,13 @@ export default class DevdocsSidebar extends React.PureComponent {
 							label="Playground"
 							link="/devdocs/playground"
 							selected={ this.isItemSelected( '/devdocs/playground', false ) }
+						/>
+						<SidebarItem
+							className="devdocs__navigation-item"
+							icon="image-multiple"
+							label="WordPress Components"
+							link="/devdocs/wordpress-components-gallery"
+							selected={ this.isItemSelected( '/devdocs/wordpress-components-gallery', false ) }
 						/>
 					</ul>
 

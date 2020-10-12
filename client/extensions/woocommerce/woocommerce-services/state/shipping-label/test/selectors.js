@@ -6,7 +6,7 @@ import { expect } from 'chai';
 /**
  * Internal dependencies
  */
-import { getRatesErrors, getCountriesData, getTotalPriceBreakdown } from '../selectors';
+import { getRatesErrors, getTotalPriceBreakdown, isAddressUsable } from '../selectors';
 
 describe( '#getRatesErrors', () => {
 	// when there are selected rates
@@ -72,27 +72,33 @@ describe( '#getRatesErrors', () => {
 	const firstBoxRatesWithError = {
 		box_1: {
 			rates: [],
-			errors: [ {
-				code: 'ERROR 1',
-				message: 'There was an error!',
-			} ],
+			errors: [
+				{
+					code: 'ERROR 1',
+					message: 'There was an error!',
+				},
+			],
 		},
 	};
 	const firstBoxRatesWithUserMessageError = {
 		box_1: {
 			rates: [],
-			errors: [ {
-				code: 'ERROR 1',
-				userMessage: 'This is a friendly error message!',
-			} ],
+			errors: [
+				{
+					code: 'ERROR 1',
+					userMessage: 'This is a friendly error message!',
+				},
+			],
 		},
 	};
 	const firstBoxRatesWithErrorButNoErrorMessage = {
 		box_1: {
 			rates: [],
-			errors: [ {
-				code: 'ERROR 1',
-			} ],
+			errors: [
+				{
+					code: 'ERROR 1',
+				},
+			],
 		},
 	};
 	const firstBoxRatesWithMultipleErrors = {
@@ -128,14 +134,9 @@ describe( '#getRatesErrors', () => {
 		};
 		const result = getRatesErrors( rates );
 
-		it( 'should return the server error and a form error', () => {
+		it( 'should return the server error', () => {
 			expect( result ).to.eql( {
-				server: {
-					box_1: [ 'There was an error!' ],
-				},
-				form: {
-					box_1: 'Please choose a rate',
-				},
+				box_1: [ 'There was an error!' ],
 			} );
 		} );
 
@@ -147,7 +148,7 @@ describe( '#getRatesErrors', () => {
 		const resultWithUserMessage = getRatesErrors( ratesWithUserMessage );
 
 		it( 'should return the `userMessage` if it exists', () => {
-			expect( resultWithUserMessage.server ).to.eql( {
+			expect( resultWithUserMessage ).to.eql( {
 				box_1: [ 'This is a friendly error message!' ],
 			} );
 		} );
@@ -160,7 +161,7 @@ describe( '#getRatesErrors', () => {
 		const resultWithErrorAndNoMessage = getRatesErrors( ratesWithNoMessage );
 
 		it( 'should return the the default error message if no error message sent', () => {
-			expect( resultWithErrorAndNoMessage.server ).to.eql( {
+			expect( resultWithErrorAndNoMessage ).to.eql( {
 				box_1: [ "We couldn't get a rate for this package, please try again." ],
 			} );
 		} );
@@ -174,12 +175,9 @@ describe( '#getRatesErrors', () => {
 			};
 			const resultWithMultipleErrors = getRatesErrors( ratesWithMultipleErrors );
 
-			it( 'should return array with each server error', () => {
-				expect( resultWithMultipleErrors.server ).to.eql( {
-					box_1: [
-						'Error 1',
-						'Error 2',
-					],
+			it( 'should return all the errors', () => {
+				expect( resultWithMultipleErrors ).to.eql( {
+					box_1: [ 'Error 1', 'Error 2' ],
 				} );
 			} );
 		} );
@@ -195,14 +193,9 @@ describe( '#getRatesErrors', () => {
 			};
 			const result = getRatesErrors( rates );
 
-			it( 'should return a null form error and no server errors', () => {
+			it( 'should return no error', () => {
 				expect( result ).to.eql( {
-					server: {
-						box_1: [],
-					},
-					form: {
-						box_1: null,
-					},
+					box_1: [],
 				} );
 			} );
 		} );
@@ -216,14 +209,9 @@ describe( '#getRatesErrors', () => {
 			};
 			const result = getRatesErrors( rates );
 
-			it( 'should return a form error and no server errors', () => {
+			it( 'should return an error', () => {
 				expect( result ).to.eql( {
-					server: {
-						box_1: [],
-					},
-					form: {
-						box_1: 'Please choose a rate',
-					},
+					box_1: [ 'Please choose a rate' ],
 				} );
 			} );
 		} );
@@ -236,24 +224,14 @@ describe( '#getRatesErrors', () => {
 					box_1: '',
 					box_2: Object.assign( {}, secondBoxSelectedValues ),
 				},
-				available: Object.assign( {},
-					firstBoxRatesWithError,
-					secondBoxRatesWithNoServerErrors
-				),
+				available: Object.assign( {}, firstBoxRatesWithError, secondBoxRatesWithNoServerErrors ),
 			};
 			const result = getRatesErrors( rates );
 
-			it( 'should return the server error for the first box', () => {
-				expect( result.server ).to.eql( {
+			it( 'should return an error only for the first box', () => {
+				expect( result ).to.eql( {
 					box_1: [ 'There was an error!' ],
 					box_2: [],
-				} );
-			} );
-
-			it( 'should return the form error for the second box', () => {
-				expect( result.form ).to.eql( {
-					box_1: 'Please choose a rate',
-					box_2: null,
 				} );
 			} );
 		} );
@@ -264,24 +242,14 @@ describe( '#getRatesErrors', () => {
 					box_1: '',
 					box_2: '',
 				},
-				available: Object.assign( {},
-					firstBoxRatesWithError,
-					secondBoxRatesWithNoServerErrors
-				),
+				available: Object.assign( {}, firstBoxRatesWithError, secondBoxRatesWithNoServerErrors ),
 			};
 			const result = getRatesErrors( rates );
 
-			it( 'should return the server error for the first box', () => {
-				expect( result.server ).to.eql( {
+			it( 'should return the server error for the first box and the form error for the second', () => {
+				expect( result ).to.eql( {
 					box_1: [ 'There was an error!' ],
-					box_2: [],
-				} );
-			} );
-
-			it( 'should return no error for the second box', () => {
-				expect( result.form ).to.eql( {
-					box_1: 'Please choose a rate',
-					box_2: 'Please choose a rate',
+					box_2: [ 'Please choose a rate' ],
 				} );
 			} );
 		} );
@@ -291,8 +259,21 @@ describe( '#getRatesErrors', () => {
 describe( 'Shipping label selectors', () => {
 	const siteId = 1;
 	const orderId = 1;
-	const getFullState = ( labelsState ) => (
-		{
+	const getFullState = ( labelsState ) => {
+		const countries = [
+			{
+				code: 'US',
+				name: 'United States',
+				states: [
+					{
+						code: 'CA',
+						name: 'California',
+					},
+				],
+			},
+		];
+
+		return {
 			extensions: {
 				woocommerce: {
 					woocommerceServices: {
@@ -302,35 +283,23 @@ describe( 'Shipping label selectors', () => {
 							},
 						},
 					},
-				},
-			},
-		}
-	);
-
-	it( 'getCountriesData - returns null if labels not loaded', () => {
-		const state = getFullState( { loaded: false } );
-		const result = getCountriesData( state, orderId, siteId );
-		expect( result ).to.eql( null );
-	} );
-
-	it( 'getCountriesData - returns the countries data if they exist', () => {
-		const state = getFullState( {
-			loaded: true,
-			storeOptions: {
-				countriesData: {
-					US: {
-						CA: 'California',
+					sites: {
+						[ siteId ]: {
+							data: {
+								locations: [
+									{
+										code: 'NA',
+										name: 'North America',
+										countries,
+									},
+								],
+							},
+						},
 					},
 				},
 			},
-		} );
-		const result = getCountriesData( state, orderId, siteId );
-		expect( result ).to.eql( {
-			US: {
-				CA: 'California',
-			},
-		} );
-	} );
+		};
+	};
 
 	it( 'getTotalPriceBreakdown - returns null if the form is not loaded', () => {
 		const state = getFullState( { loaded: false } );
@@ -375,15 +344,17 @@ describe( 'Shipping label selectors', () => {
 					},
 					available: {
 						default_box: {
-							rates: [ {
-								carrier_id: 'usps',
-								is_selected: false,
-								rate: 6.61,
-								rate_id: 'rate_f2afdd2045d84b8394a47730cf264bfa',
-								retail_rate: 7.8,
-								service_id: 'Priority',
-								title: 'USPS - Priority Mail',
-							} ],
+							rates: [
+								{
+									carrier_id: 'usps',
+									is_selected: false,
+									rate: 6.61,
+									rate_id: 'rate_f2afdd2045d84b8394a47730cf264bfa',
+									retail_rate: 7.8,
+									service_id: 'Priority',
+									title: 'USPS - Priority Mail',
+								},
+							],
 						},
 					},
 				},
@@ -402,15 +373,17 @@ describe( 'Shipping label selectors', () => {
 					},
 					available: {
 						default_box: {
-							rates: [ {
-								carrier_id: 'usps',
-								is_selected: false,
-								rate: 6.61,
-								rate_id: 'rate_f2afdd2045d84b8394a47730cf264bfa',
-								retail_rate: 7.8,
-								service_id: 'Priority',
-								title: 'USPS - Priority Mail',
-							} ],
+							rates: [
+								{
+									carrier_id: 'usps',
+									is_selected: false,
+									rate: 6.61,
+									rate_id: 'rate_f2afdd2045d84b8394a47730cf264bfa',
+									retail_rate: 7.8,
+									service_id: 'Priority',
+									title: 'USPS - Priority Mail',
+								},
+							],
 						},
 					},
 				},
@@ -432,26 +405,30 @@ describe( 'Shipping label selectors', () => {
 					},
 					available: {
 						box1: {
-							rates: [ {
-								carrier_id: 'usps',
-								is_selected: false,
-								rate: 6.61,
-								rate_id: 'rate_f2afdd2045d84b8394a47730cf264bfa',
-								retail_rate: 7.8,
-								service_id: 'Priority',
-								title: 'USPS - Priority Mail',
-							} ],
+							rates: [
+								{
+									carrier_id: 'usps',
+									is_selected: false,
+									rate: 6.61,
+									rate_id: 'rate_f2afdd2045d84b8394a47730cf264bfa',
+									retail_rate: 7.8,
+									service_id: 'Priority',
+									title: 'USPS - Priority Mail',
+								},
+							],
 						},
 						box2: {
-							rates: [ {
-								carrier_id: 'usps',
-								is_selected: false,
-								rate: 21.18,
-								rate_id: 'rate_f2afdd2045d84b8394a47730cf264bfb',
-								retail_rate: 23.85,
-								service_id: 'Express',
-								title: 'USPS - Express Mail',
-							} ],
+							rates: [
+								{
+									carrier_id: 'usps',
+									is_selected: false,
+									rate: 21.18,
+									rate_id: 'rate_f2afdd2045d84b8394a47730cf264bfb',
+									retail_rate: 23.85,
+									service_id: 'Express',
+									title: 'USPS - Express Mail',
+								},
+							],
 						},
 					},
 				},
@@ -473,26 +450,30 @@ describe( 'Shipping label selectors', () => {
 					},
 					available: {
 						box1: {
-							rates: [ {
-								carrier_id: 'usps',
-								is_selected: false,
-								rate: 6.61,
-								rate_id: 'rate_f2afdd2045d84b8394a47730cf264bfa',
-								retail_rate: 7.8,
-								service_id: 'Priority',
-								title: 'USPS - Priority Mail',
-							} ],
+							rates: [
+								{
+									carrier_id: 'usps',
+									is_selected: false,
+									rate: 6.61,
+									rate_id: 'rate_f2afdd2045d84b8394a47730cf264bfa',
+									retail_rate: 7.8,
+									service_id: 'Priority',
+									title: 'USPS - Priority Mail',
+								},
+							],
 						},
 						box2: {
-							rates: [ {
-								carrier_id: 'usps',
-								is_selected: false,
-								rate: 21.18,
-								rate_id: 'rate_f2afdd2045d84b8394a47730cf264bfb',
-								retail_rate: 23.85,
-								service_id: 'Express',
-								title: 'USPS - Express Mail',
-							} ],
+							rates: [
+								{
+									carrier_id: 'usps',
+									is_selected: false,
+									rate: 21.18,
+									rate_id: 'rate_f2afdd2045d84b8394a47730cf264bfb',
+									retail_rate: 23.85,
+									service_id: 'Express',
+									title: 'USPS - Express Mail',
+								},
+							],
 						},
 					},
 				},
@@ -505,5 +486,68 @@ describe( 'Shipping label selectors', () => {
 		] );
 		expect( result.discount ).to.eql( 3.86 );
 		expect( result.total ).to.eql( 27.79 );
+	} );
+
+	const getAddressState = ( group, values = {} ) => {
+		return getFullState( {
+			form: {
+				[ group ]: {
+					values: {
+						company: 'Automaggic',
+						address_2: '',
+						city: 'Cupertino',
+						state: 'CA',
+						postcode: '95014-0642',
+						country: 'US',
+						phone: '',
+						name: 'Peter Anderson',
+						address: 'Apple Park Way1',
+						...values,
+					},
+				},
+			},
+		} );
+	};
+
+	it( 'isAddressUsable - returns no errors with correct data', () => {
+		const group = 'destination';
+		const state = getAddressState( group );
+
+		const result = isAddressUsable( state, orderId, group, siteId );
+		expect( result ).to.equal( true );
+	} );
+
+	const incorrectAddressValues = [
+		// name        value         shouldFail
+		[ 'company', '', false ],
+		[ 'address', '', true ],
+		[ 'address_2', '', false ],
+		[ 'city', '', true ],
+		[ 'postcode', '95014-064', true ],
+		[ 'postcode', '', true ],
+		[ 'country', '', true ],
+		[ 'country', 'Wonderland', false ],
+		[ 'phone', '', false ],
+		[ 'name', '', true ],
+		[ 'state', '', true ],
+
+		// States are selected in a dropdown and individual values are not validated
+		[ 'state', 'QQ', false ],
+	];
+
+	incorrectAddressValues.forEach( ( row ) => {
+		const [ name, value, shouldFail ] = row;
+
+		const verb = shouldFail ? 'triggers' : 'does not trigger';
+		const description = `isAddressUsable - ${ verb } an error with incorrect ${ name }`;
+		it( description, () => {
+			const group = 'destination';
+			const state = getAddressState( group, {
+				[ name ]: value,
+			} );
+
+			const result = isAddressUsable( state, orderId, group, siteId );
+			expect( result ).to.equal( ! shouldFail );
+		} );
 	} );
 } );

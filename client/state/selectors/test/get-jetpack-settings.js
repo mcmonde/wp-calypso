@@ -1,9 +1,7 @@
-/** @format */
-
 /**
  * Internal dependencies
  */
-import { getJetpackSettings } from 'state/selectors';
+import getJetpackSettings from 'state/selectors/get-jetpack-settings';
 import { settings as SETTINGS_FIXTURE } from './fixtures/jetpack-settings';
 
 describe( 'getJetpackSettings()', () => {

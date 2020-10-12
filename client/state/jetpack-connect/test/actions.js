@@ -1,12 +1,11 @@
 /**
- * @format
  * @jest-environment jsdom
  */
 /**
  * Internal dependencies
  */
 import * as actions from '../actions';
-import useNock from 'test/helpers/use-nock';
+import useNock from 'test-helpers/use-nock';
 import wpcom from 'lib/wp';
 import {
 	JETPACK_CONNECT_AUTHORIZE,
@@ -22,10 +21,8 @@ import {
 	JETPACK_CONNECT_SSO_VALIDATION_ERROR,
 	JETPACK_CONNECT_SSO_VALIDATION_REQUEST,
 	JETPACK_CONNECT_SSO_VALIDATION_SUCCESS,
-	SITE_RECEIVE,
-} from 'state/action-types';
-
-jest.mock( 'lib/localforage', () => require( 'lib/localforage/localforage-bypass' ) );
+} from 'state/jetpack-connect/action-types';
+import { SITE_RECEIVE } from 'state/action-types';
 
 describe( '#confirmJetpackInstallStatus()', () => {
 	test( 'should dispatch confirm status action when called', () => {
@@ -81,7 +78,7 @@ describe( '#authorize()', () => {
 
 	describe( 'success', () => {
 		const mySitesPath = '/rest/v1.1/me/sites';
-		useNock( nock => {
+		useNock( ( nock ) => {
 			nock( 'https://public-api.wordpress.com:443' )
 				.persist()
 				.get( '/rest/v1.1/jetpack-blogs/' + client_id + '/jetpack-login' )
@@ -178,7 +175,7 @@ describe( '#authorize()', () => {
 	} );
 
 	describe( 'failure', () => {
-		useNock( nock => {
+		useNock( ( nock ) => {
 			nock( 'https://public-api.wordpress.com:443' )
 				.persist()
 				.get( '/rest/v1.1/jetpack-blogs/' + client_id + '/jetpack-login' )
@@ -190,12 +187,10 @@ describe( '#authorize()', () => {
 				} )
 				.reply(
 					400,
-					/* eslint-disable indent */
 					{
 						error: 'not_verified',
 						message: 'Could not verify your request.',
 					},
-					/* eslint-enable indent */
 					{ 'Content-Type': 'application/json' }
 				);
 		} );
@@ -248,7 +243,7 @@ describe( '#validateSSONonce()', () => {
 	};
 
 	describe( 'success', () => {
-		useNock( nock => {
+		useNock( ( nock ) => {
 			nock( 'https://public-api.wordpress.com:443' )
 				.persist()
 				.post( '/rest/v1.1/jetpack-blogs/' + siteId + '/sso-validate', {
@@ -256,13 +251,11 @@ describe( '#validateSSONonce()', () => {
 				} )
 				.reply(
 					200,
-					/* eslint-disable indent */
 					{
 						success: true,
 						blog_details: blogDetails,
 						shared_details: sharedDetails,
 					},
-					/* eslint-enable indent */
 					{ 'Content-Type': 'application/json' }
 				);
 		} );
@@ -293,7 +286,7 @@ describe( '#validateSSONonce()', () => {
 	} );
 
 	describe( 'failure', () => {
-		useNock( nock => {
+		useNock( ( nock ) => {
 			nock( 'https://public-api.wordpress.com:443' )
 				.persist()
 				.post( '/rest/v1.1/jetpack-blogs/' + siteId + '/sso-validate', {
@@ -301,12 +294,10 @@ describe( '#validateSSONonce()', () => {
 				} )
 				.reply(
 					400,
-					/* eslint-disable indent */
 					{
 						error: 'invalid_input',
 						message: 'sso_nonce is a required parameter for this endpoint',
 					},
-					/* eslint-enable indent */
 					{ 'Content-Type': 'application/json' }
 				);
 		} );
@@ -334,7 +325,7 @@ describe( '#authorizeSSO()', () => {
 	const ssoUrl = 'http://example.wordpress.com';
 
 	describe( 'success', () => {
-		useNock( nock => {
+		useNock( ( nock ) => {
 			nock( 'https://public-api.wordpress.com:443' )
 				.persist()
 				.post( '/rest/v1.1/jetpack-blogs/' + siteId + '/sso-authorize', {
@@ -368,22 +359,16 @@ describe( '#authorizeSSO()', () => {
 	} );
 
 	describe( 'failure', () => {
-		useNock( nock => {
+		useNock( ( nock ) => {
 			nock( 'https://public-api.wordpress.com:443' )
 				.persist()
 				.post( '/rest/v1.1/jetpack-blogs/' + siteId + '/sso-authorize', {
 					sso_nonce: ssoNonce,
 				} )
-				.reply(
-					400,
-					/* eslint-disable indent */
-					{
-						error: 'invalid_input',
-						message: 'sso_nonce is a required parameter for this endpoint',
-					},
-					/* eslint-enable indent */
-					{ 'Content-Type': 'application/json' }
-				);
+				.reply( 400, {
+					error: 'invalid_input',
+					message: 'sso_nonce is a required parameter for this endpoint',
+				} );
 		} );
 
 		test( 'should dispatch receive action when request completes', async () => {
@@ -412,8 +397,8 @@ describe( '#createAccount()', () => {
 		const userData = { username: 'happyuser' };
 		const data = { bearer_token: '1234 abcd' };
 		jest.spyOn( wpcom, 'undocumented' ).mockImplementation( () => ( {
-			async usersNew() {
-				return data;
+			usersNew() {
+				return Promise.resolve( data );
 			},
 		} ) );
 
@@ -427,8 +412,8 @@ describe( '#createAccount()', () => {
 		const userData = { username: 'happyuser' };
 		const error = { code: 'user_exists' };
 		jest.spyOn( wpcom, 'undocumented' ).mockImplementation( () => ( {
-			async usersNew() {
-				throw error;
+			usersNew() {
+				return Promise.reject( error );
 			},
 		} ) );
 
@@ -448,8 +433,8 @@ describe( '#createSocialAccount()', () => {
 			message: 'An error message',
 		};
 		jest.spyOn( wpcom, 'undocumented' ).mockImplementation( () => ( {
-			async usersSocialNew() {
-				throw error;
+			usersSocialNew() {
+				return Promise.reject( error );
 			},
 		} ) );
 
@@ -464,11 +449,11 @@ describe( '#createSocialAccount()', () => {
 		const bearerToken = 'foobar';
 		const username = 'a_happy_user';
 		jest.spyOn( wpcom, 'undocumented' ).mockImplementation( () => ( {
-			async usersSocialNew() {
-				return {
+			usersSocialNew() {
+				return Promise.resolve( {
 					bearer_token: bearerToken,
 					username,
-				};
+				} );
 			},
 		} ) );
 

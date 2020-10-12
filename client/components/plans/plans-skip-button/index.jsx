@@ -1,28 +1,28 @@
-/** @format */
 /**
  * External dependencies
  */
 import React from 'react';
-import { connect } from 'react-redux';
 import { identity } from 'lodash';
 import { localize } from 'i18n-calypso';
 
 /**
  * Internal dependencies
  */
-import Button from 'components/button';
-import Gridicon from 'gridicons';
-import { isRtl as isRtlSelector } from 'state/selectors';
+import { Button } from '@automattic/components';
+import Gridicon from 'components/gridicon';
 
-export const PlansSkipButton = ( { onClick, isRtl, translate = identity } ) => (
+/**
+ * Style dependencies
+ */
+import './style.scss';
+
+export const PlansSkipButton = ( { onClick, translate = identity } ) => (
 	<div className="plans-skip-button">
 		<Button onClick={ onClick }>
 			{ translate( 'Start with free' ) }
-			<Gridicon icon={ isRtl ? 'arrow-left' : 'arrow-right' } size={ 18 } />
+			<Gridicon icon="arrow-right" size={ 18 } />
 		</Button>
 	</div>
 );
 
-export default connect( state => ( {
-	isRtl: isRtlSelector( state ),
-} ) )( localize( PlansSkipButton ) );
+export default localize( PlansSkipButton );

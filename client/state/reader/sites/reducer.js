@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External Dependencies
  */
@@ -8,13 +7,14 @@ import { assign, includes, keyBy, map, omit, omitBy, reduce, trim } from 'lodash
  * Internal Dependencies
  */
 import {
+	READER_SITE_BLOCKS_RECEIVE,
 	READER_SITE_REQUEST,
 	READER_SITE_REQUEST_SUCCESS,
 	READER_SITE_REQUEST_FAILURE,
 	READER_SITE_UPDATE,
-	SERIALIZE,
-} from 'state/action-types';
-import { combineReducers, createReducer } from 'state/utils';
+} from 'state/reader/action-types';
+import { SERIALIZE } from 'state/action-types';
+import { combineReducers, withSchemaValidation, withoutPersistence } from 'state/utils';
 import { readerSitesSchema } from './schema';
 import { withoutHttp } from 'lib/url';
 import { decodeEntities } from 'lib/formatting';
@@ -83,16 +83,33 @@ function handleSiteUpdate( state, action ) {
 	return assign( {}, state, keyBy( sites, 'ID' ) );
 }
 
-export const items = createReducer(
-	{},
-	{
-		[ SERIALIZE ]: handleSerialize,
-		[ READER_SITE_REQUEST_SUCCESS ]: handleRequestSuccess,
-		[ READER_SITE_REQUEST_FAILURE ]: handleRequestFailure,
-		[ READER_SITE_UPDATE ]: handleSiteUpdate,
-	},
-	readerSitesSchema
-);
+export const items = withSchemaValidation( readerSitesSchema, ( state = {}, action ) => {
+	switch ( action.type ) {
+		case SERIALIZE:
+			return handleSerialize( state, action );
+		case READER_SITE_BLOCKS_RECEIVE: {
+			if ( ! action.payload || ! action.payload.sites ) {
+				return state;
+			}
+
+			const newBlocks = keyBy( action.payload.sites, 'ID' );
+
+			// Prefer existing state if we have it - site details provided by blocks are limited (only name, URL)
+			return {
+				...newBlocks,
+				...state,
+			};
+		}
+		case READER_SITE_REQUEST_SUCCESS:
+			return handleRequestSuccess( state, action );
+		case READER_SITE_REQUEST_FAILURE:
+			return handleRequestFailure( state, action );
+		case READER_SITE_UPDATE:
+			return handleSiteUpdate( state, action );
+	}
+
+	return state;
+} );
 
 export function queuedRequests( state = {}, action ) {
 	switch ( action.type ) {
@@ -108,14 +125,14 @@ export function queuedRequests( state = {}, action ) {
 	return state;
 }
 
-export const lastFetched = createReducer(
-	{},
-	{
-		[ READER_SITE_REQUEST_SUCCESS ]: ( state, action ) => ( {
-			...state,
-			[ action.payload.ID ]: Date.now(),
-		} ),
-		[ READER_SITE_UPDATE ]: ( state, action ) => {
+export const lastFetched = withoutPersistence( ( state = {}, action ) => {
+	switch ( action.type ) {
+		case READER_SITE_REQUEST_SUCCESS:
+			return {
+				...state,
+				[ action.payload.ID ]: Date.now(),
+			};
+		case READER_SITE_UPDATE: {
 			const updates = reduce(
 				action.payload,
 				( memo, site ) => {
@@ -125,9 +142,11 @@ export const lastFetched = createReducer(
 				{}
 			);
 			return assign( {}, state, updates );
-		},
+		}
 	}
-);
+
+	return state;
+} );
 
 export default combineReducers( {
 	items,

@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -13,6 +12,11 @@ import FormRadio from 'components/forms/form-radio';
 import FormLabel from 'components/forms/form-label';
 import TranslatableString from 'components/translatable/proptype';
 
+/**
+ * Style dependencies
+ */
+import './style.scss';
+
 const FormRadioWithThumbnail = ( { label, thumbnail, ...otherProps } ) => {
 	const { cssClass, cssColor, imageUrl } = thumbnail;
 
@@ -25,8 +29,7 @@ const FormRadioWithThumbnail = ( { label, thumbnail, ...otherProps } ) => {
 				>
 					{ imageUrl && <img src={ imageUrl } alt={ label } /> }
 				</div>
-				<FormRadio { ...otherProps } />
-				<span>{ label }</span>
+				<FormRadio label={ label } { ...otherProps } />
 			</FormLabel>
 		</div>
 	);

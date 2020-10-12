@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -10,6 +9,12 @@ import { localize } from 'i18n-calypso';
  */
 import EmptyContent from 'components/empty-content';
 import { recordAction, recordGaEvent, recordTrack } from 'reader/stats';
+import { withPerformanceTrackerStop } from 'lib/performance-tracking';
+
+/**
+ * Image dependencies
+ */
+import charactersImage from 'assets/images/reader/reader-conversations-characters.svg';
 
 class ConversationsEmptyContent extends React.Component {
 	shouldComponentUpdate() {
@@ -30,7 +35,7 @@ class ConversationsEmptyContent extends React.Component {
 					onClick={ this.recordAction }
 					href="/read/search"
 				>
-					{ this.props.translate( 'Find Posts to Follow' ) }
+					{ this.props.translate( 'Find posts to follow' ) }
 				</a>
 			),
 			secondaryAction = null;
@@ -45,7 +50,7 @@ class ConversationsEmptyContent extends React.Component {
 				) }
 				action={ action }
 				secondaryAction={ secondaryAction }
-				illustration={ '/calypso/images/illustrations/illustration-conversations-empty.svg' }
+				illustration={ charactersImage }
 				illustrationWidth={ 400 }
 			/>
 		);
@@ -53,4 +58,4 @@ class ConversationsEmptyContent extends React.Component {
 	/* eslint-enable wpcalypso/jsx-classname-namespace */
 }
 
-export default localize( ConversationsEmptyContent );
+export default withPerformanceTrackerStop( localize( ConversationsEmptyContent ) );

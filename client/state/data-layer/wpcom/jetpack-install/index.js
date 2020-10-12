@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -7,7 +6,7 @@ import { includes } from 'lodash';
 /**
  * Internal dependencies
  */
-import { dispatchRequestEx } from 'state/data-layer/wpcom-http/utils';
+import { dispatchRequest } from 'state/data-layer/wpcom-http/utils';
 import { http } from 'state/data-layer/wpcom-http/actions';
 import {
 	jetpackRemoteInstallComplete,
@@ -16,9 +15,11 @@ import {
 import { JETPACK_REMOTE_INSTALL } from 'state/action-types';
 import { recordTracksEvent, withAnalytics } from 'state/analytics/actions';
 
+import { registerHandlers } from 'state/data-layer/handler-registry';
+
 export const JETPACK_REMOTE_INSTALL_RETRIES = 3;
 
-export const installJetpackPlugin = action =>
+export const installJetpackPlugin = ( action ) =>
 	http(
 		{
 			method: 'POST',
@@ -42,7 +43,12 @@ export const handleSuccess = ( { url } ) => {
 };
 
 export const handleError = ( action, error ) => {
-	const { url, user, password, meta: { dataLayer } } = action;
+	const {
+		url,
+		user,
+		password,
+		meta: { dataLayer },
+	} = action;
 	const { retryCount = 0 } = dataLayer;
 
 	const logToTracks = withAnalytics(
@@ -74,12 +80,14 @@ export const handleError = ( action, error ) => {
 	return logToTracks( jetpackRemoteInstallUpdateError( url, error.error, error.message ) );
 };
 
-export default {
+registerHandlers( 'state/data-layer/wpcom/jetpack-install/index.js', {
 	[ JETPACK_REMOTE_INSTALL ]: [
-		dispatchRequestEx( {
+		dispatchRequest( {
 			fetch: installJetpackPlugin,
 			onSuccess: handleSuccess,
 			onError: handleError,
 		} ),
 	],
-};
+} );
+
+export default {};

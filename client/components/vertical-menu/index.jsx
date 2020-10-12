@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -7,6 +5,11 @@
 import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
 import { identity, partial } from 'lodash';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 export class VerticalMenu extends PureComponent {
 	static propTypes = {

@@ -1,26 +1,24 @@
-/** @format */
 /**
  * Component which handle remote credentials for installing Jetpack
  */
 import classnames from 'classnames';
 import React, { Component, Fragment } from 'react';
 import config from 'config';
-import Gridicon from 'gridicons';
 import page from 'page';
 import { connect } from 'react-redux';
-import { includes } from 'lodash';
+import { flowRight, includes } from 'lodash';
 import { localize } from 'i18n-calypso';
 /**
  * External dependencies
  */
-import Button from 'components/button';
-import Card from 'components/card';
+import { Button, Card } from '@automattic/components';
 import FormButton from 'components/forms/form-button';
 import FormInputValidation from 'components/forms/form-input-validation';
 import FormLabel from 'components/forms/form-label';
 import FormTextInput from 'components/forms/form-text-input';
 import FormattedHeader from 'components/formatted-header';
 import FormPasswordInput from 'components/forms/form-password-input';
+import Gridicon from 'components/gridicon';
 import HelpButton from './help-button';
 import JetpackConnectNotices from './jetpack-connect-notices';
 import JetpackRemoteInstallNotices from './jetpack-remote-install-notices';
@@ -34,11 +32,9 @@ import {
 	jetpackRemoteInstall,
 	jetpackRemoteInstallUpdateError,
 } from 'state/jetpack-remote-install/actions';
-import {
-	getJetpackRemoteInstallErrorCode,
-	getJetpackRemoteInstallErrorMessage,
-	isJetpackRemoteInstallComplete,
-} from 'state/selectors';
+import getJetpackRemoteInstallErrorCode from 'state/selectors/get-jetpack-remote-install-error-code';
+import getJetpackRemoteInstallErrorMessage from 'state/selectors/get-jetpack-remote-install-error-message';
+import isJetpackRemoteInstallComplete from 'state/selectors/is-jetpack-remote-install-complete';
 import { getConnectingSite } from 'state/jetpack-connect/selectors';
 import { recordTracksEvent } from 'state/analytics/actions';
 import { REMOTE_PATH_AUTH } from './constants';
@@ -50,6 +46,7 @@ import {
 	INVALID_PERMISSIONS,
 	UNKNOWN_REMOTE_INSTALL_ERROR,
 } from './connection-notice-types';
+import WordPressLogo from 'components/wordpress-logo';
 
 export class OrgCredentialsForm extends Component {
 	state = {
@@ -58,7 +55,7 @@ export class OrgCredentialsForm extends Component {
 		isSubmitting: false,
 	};
 
-	handleSubmit = event => {
+	handleSubmit = ( event ) => {
 		const { siteToConnect } = this.props;
 		event.preventDefault();
 
@@ -73,7 +70,7 @@ export class OrgCredentialsForm extends Component {
 		this.props.jetpackRemoteInstall( siteToConnect, this.state.username, this.state.password );
 	};
 
-	componentWillReceiveProps( nextProps ) {
+	UNSAFE_componentWillReceiveProps( nextProps ) {
 		const { installError } = nextProps;
 
 		if ( installError ) {
@@ -81,7 +78,7 @@ export class OrgCredentialsForm extends Component {
 		}
 	}
 
-	componentWillMount() {
+	UNSAFE_componentWillMount() {
 		const { siteToConnect } = this.props;
 
 		if ( config.isEnabled( 'jetpack/connect/remote-install' ) ) {
@@ -130,28 +127,22 @@ export class OrgCredentialsForm extends Component {
 		return form;
 	}
 
-	getChangeHandler = field => event => {
+	getChangeHandler = ( field ) => ( event ) => {
 		this.setState( { [ field ]: event.target.value } );
 	};
 
 	getHeaderText() {
 		const { translate } = this.props;
 
-		return translate( 'Add your website credentials' );
+		return translate( 'Add your self-hosted WordPress credentials (wp-admin)' );
 	}
 
 	getSubHeaderText() {
 		const { translate } = this.props;
 		const subheader = translate(
-			'Add your WordPress administrator credentials ' +
-				'for this site. Your credentials will not be stored and are used for the purpose ' +
-				'of installing Jetpack securely. You can also skip this step entirely and install Jetpack manually.'
+			'Your login credentials are used for the purpose of securely auto-installing Jetpack and will not be stored.'
 		);
-		return (
-			<span className="jetpack-connect__install-step jetpack-connect__creds-form">
-				{ subheader }
-			</span>
-		);
+		return <span>{ subheader }</span>;
 	}
 
 	getError( installError ) {
@@ -208,10 +199,19 @@ export class OrgCredentialsForm extends Component {
 		const passwordClassName = classnames( 'jetpack-connect__password-form-input', {
 			'is-error': this.isInvalidPassword(),
 		} );
-
+		const removedProtocolURL = this.props.siteToConnect.replace( /(^\w+:|^)\/\//, '' );
 		return (
 			<Fragment>
-				<FormLabel htmlFor="username">{ translate( 'Username' ) }</FormLabel>
+				<div className="jetpack-connect__site-address">
+					<div className="jetpack-connect__globe">
+						<Gridicon size={ 24 } icon="globe" />
+					</div>{ ' ' }
+					{ removedProtocolURL }
+				</div>
+				<div className="jetpack-connect__wordpress-logo">
+					<WordPressLogo size="72" />
+				</div>
+				<FormLabel htmlFor="username">{ translate( 'WordPress username or email' ) }</FormLabel>
 				<div className="jetpack-connect__site-address-container">
 					<Gridicon size={ 24 } icon="user" />
 					<FormTextInput
@@ -227,12 +227,12 @@ export class OrgCredentialsForm extends Component {
 					{ this.isInvalidUsername() && (
 						<FormInputValidation
 							isError
-							text={ translate( 'Username does not exist. Please try again.' ) }
+							text={ translate( 'Username or email does not exist. Please try again.' ) }
 						/>
 					) }
 				</div>
 				<div className="jetpack-connect__password-container">
-					<FormLabel htmlFor="password">{ translate( 'Password' ) }</FormLabel>
+					<FormLabel htmlFor="password">{ translate( 'WordPress password' ) }</FormLabel>
 					<div className="jetpack-connect__password-form">
 						<Gridicon size={ 24 } icon="lock" />
 						<FormPasswordInput
@@ -250,6 +250,12 @@ export class OrgCredentialsForm extends Component {
 							/>
 						) }
 					</div>
+				</div>
+				<div className="jetpack-connect__note">
+					{ translate(
+						'Note: WordPress credentials are not the same as WordPress.com credentials. ' +
+							'Be sure to enter the username and password for your self-hosted WordPress site.'
+					) }
 				</div>
 			</Fragment>
 		);
@@ -301,11 +307,16 @@ export class OrgCredentialsForm extends Component {
 			{ url: siteToConnect },
 			'/jetpack/connect/instructions'
 		);
+		const manualInstallClick = () => {
+			this.props.recordTracksEvent( 'calypso_jpc_remoteinstall_instructionsclick', {
+				url: siteToConnect,
+			} );
+		};
 
 		return (
 			<LoggedOutFormLinks>
 				{ ( this.isInvalidCreds() || ! installError ) && (
-					<LoggedOutFormLinkItem href={ manualInstallUrl }>
+					<LoggedOutFormLinkItem href={ manualInstallUrl } onClick={ manualInstallClick }>
 						{ translate( 'Install Jetpack manually' ) }
 					</LoggedOutFormLinkItem>
 				) }
@@ -339,14 +350,13 @@ export class OrgCredentialsForm extends Component {
 
 		return (
 			<MainWrapper>
-				{ ! this.isInvalidCreds() &&
-					installError && (
-						<div className="jetpack-connect__notice">
-							<JetpackRemoteInstallNotices noticeType={ this.getError( installError ) } />
-						</div>
-					) }
+				{ ! this.isInvalidCreds() && installError && (
+					<div className="jetpack-connect__notice">
+						<JetpackRemoteInstallNotices noticeType={ this.getError( installError ) } />
+					</div>
+				) }
 				{ ( this.isInvalidCreds() || ! installError ) && (
-					<div>
+					<div className="jetpack-connect__site-url-entry-container">
 						{ this.renderHeadersText() }
 						<Card className="jetpack-connect__site-url-input-container">
 							{ this.isInvalidCreds() && (
@@ -365,8 +375,8 @@ export class OrgCredentialsForm extends Component {
 	}
 }
 
-export default connect(
-	state => {
+const connectComponent = connect(
+	( state ) => {
 		const jetpackConnectSite = getConnectingSite( state );
 		const siteData = jetpackConnectSite.data || {};
 		const siteToConnect = siteData.urlAfterRedirects || jetpackConnectSite.url;
@@ -383,4 +393,6 @@ export default connect(
 		jetpackRemoteInstallUpdateError,
 		recordTracksEvent,
 	}
-)( localize( OrgCredentialsForm ) );
+);
+
+export default flowRight( connectComponent, localize )( OrgCredentialsForm );

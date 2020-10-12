@@ -1,9 +1,6 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import PropTypes from 'prop-types';
 import React from 'react';
 import { connect } from 'react-redux';
@@ -15,7 +12,7 @@ import { localize } from 'i18n-calypso';
  */
 import { getEditedPost } from 'state/posts/selectors';
 import { getPostType } from 'state/post-types/selectors';
-import { getEditorPostId } from 'state/ui/editor/selectors';
+import { getEditorPostId } from 'state/editor/selectors';
 import { getSelectedSiteId } from 'state/ui/selectors';
 import { decodeEntities } from 'lib/formatting';
 import QueryPostTypes from 'components/data/query-post-types';
@@ -40,9 +37,9 @@ function EditorStatusLabelPlaceholder( { translate, siteId, typeSlug, type, clas
 
 	return (
 		<button className={ classes }>
-			{ 'post' !== typeSlug &&
-				'page' !== typeSlug &&
-				siteId && <QueryPostTypes siteId={ siteId } /> }
+			{ 'post' !== typeSlug && 'page' !== typeSlug && siteId && (
+				<QueryPostTypes siteId={ siteId } />
+			) }
 			<strong>{ label }</strong>
 		</button>
 	);
@@ -56,7 +53,7 @@ EditorStatusLabelPlaceholder.propTypes = {
 	className: PropTypes.string,
 };
 
-export default connect( state => {
+export default connect( ( state ) => {
 	const siteId = getSelectedSiteId( state );
 	const props = { siteId };
 

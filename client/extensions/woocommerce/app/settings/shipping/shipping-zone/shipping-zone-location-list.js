@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -13,7 +11,7 @@ import { isEmpty } from 'lodash';
 /**
  * Internal dependencies
  */
-import Button from 'components/button';
+import { Button } from '@automattic/components';
 import ExtendedHeader from 'woocommerce/components/extended-header';
 import List from 'woocommerce/components/list/list';
 import ListItem from 'woocommerce/components/list/list-item';
@@ -21,7 +19,6 @@ import ListHeader from 'woocommerce/components/list/list-header';
 import ListItemField from 'woocommerce/components/list/list-item-field';
 import LocationFlag from 'woocommerce/components/location-flag';
 import ShippingZoneLocationDialog from './shipping-zone-location-dialog';
-import { decodeEntities } from 'lib/formatting';
 import { bindActionCreatorsWithSiteId } from 'woocommerce/lib/redux-utils';
 import { getCurrentlyEditingShippingZoneLocationsList } from 'woocommerce/state/ui/shipping/zones/locations/selectors';
 import { openEditLocations } from 'woocommerce/state/ui/shipping/zones/locations/actions';
@@ -39,7 +36,7 @@ const ShippingZoneLocationList = ( {
 	locations,
 	actions,
 } ) => {
-	const getLocationFlag = location => {
+	const getLocationFlag = ( location ) => {
 		if ( 'continent' === location.type ) {
 			return null;
 		}
@@ -51,7 +48,7 @@ const ShippingZoneLocationList = ( {
 		return <LocationFlag code={ location.code } />;
 	};
 
-	const getLocationDescription = location => {
+	const getLocationDescription = ( location ) => {
 		switch ( location.type ) {
 			case 'continent':
 				if (
@@ -103,7 +100,7 @@ const ShippingZoneLocationList = ( {
 			<ListItem key={ index } className="shipping-zone__location">
 				<ListItemField className="shipping-zone__location-title">
 					{ getLocationFlag( location ) }
-					{ decodeEntities( location.name ) }
+					{ location.name }
 				</ListItemField>
 				<ListItemField className="shipping-zone__location-summary">
 					{ getLocationDescription( location ) }

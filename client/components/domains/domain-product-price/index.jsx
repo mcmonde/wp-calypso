@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -13,9 +11,13 @@ import { localize } from 'i18n-calypso';
 /**
  * Internal dependencies
  */
-import { abtest } from 'lib/abtest';
 import { currentUserHasFlag, getCurrentUser } from 'state/current-user/selectors';
 import { DOMAINS_WITH_PLANS_ONLY } from 'state/current-user/constants';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class DomainProductPrice extends React.Component {
 	static propTypes = {
@@ -24,72 +26,153 @@ class DomainProductPrice extends React.Component {
 		freeWithPlan: PropTypes.bool,
 		requiresPlan: PropTypes.bool,
 		domainsWithPlansOnly: PropTypes.bool.isRequired,
+		isMappingProduct: PropTypes.bool,
+		salePrice: PropTypes.string,
 	};
 
-	renderFreeWithPlan() {
-		return (
-			<div
-				className={ classnames( 'domain-product-price', 'is-free-domain', {
-					'no-price': this.props.domainsWithPlansOnly,
-				} ) }
-			>
-				{ ! this.props.domainsWithPlansOnly && this.renderFreeWithPlanPrice() }
-				<span className="domain-product-price__free-text">
-					{ this.props.translate( 'Free with your plan' ) }
-				</span>
-			</div>
-		);
+	static defaultProps = {
+		isMappingProduct: false,
+	};
+
+	renderFreeWithPlanText() {
+		const { isMappingProduct, isEligibleVariantForDomainTest, translate } = this.props;
+
+		let message;
+		switch ( this.props.rule ) {
+			case 'FREE_WITH_PLAN':
+				message = translate( 'First year free with your plan' );
+				if ( isMappingProduct ) {
+					message = translate( 'Free with your plan' );
+				}
+				break;
+			case 'INCLUDED_IN_HIGHER_PLAN':
+				if ( isEligibleVariantForDomainTest ) {
+					message = translate( 'Registration fee: {{del}}%(cost)s{{/del}} {{span}}Free{{/span}}', {
+						args: { cost: this.props.price },
+						components: {
+							del: <del />,
+							span: <span className="domain-product-price__free-price" />,
+						},
+					} );
+				} else {
+					message = translate( 'First year included in paid plans' );
+				}
+
+				if ( isMappingProduct ) {
+					message = translate( 'Included in paid plans' );
+				}
+				break;
+			case 'UPGRADE_TO_HIGHER_PLAN_TO_BUY':
+				message = translate( 'Personal plan required' );
+				break;
+		}
+
+		return <div className="domain-product-price__free-text">{ message }</div>;
 	}
 
 	renderFreeWithPlanPrice() {
-		return (
-			<span className="domain-product-price__price">
-				{ this.props.translate( '%(cost)s {{small}}/year{{/small}}', {
+		if ( this.props.isMappingProduct ) {
+			return;
+		}
+
+		const priceText = this.props.isEligibleVariantForDomainTest
+			? this.props.translate( 'Renews at %(cost)s / year', {
+					args: { cost: this.props.price },
+			  } )
+			: this.props.translate( 'Renewal: %(cost)s {{small}}/year{{/small}}', {
 					args: { cost: this.props.price },
 					components: { small: <small /> },
-				} ) }
-			</span>
+			  } );
+
+		return <div className="domain-product-price__price">{ priceText }</div>;
+	}
+
+	renderFreeWithPlan() {
+		const className = classnames( 'domain-product-price', 'is-free-domain', {
+			'domain-product-price__domain-step-copy-updates': this.props.isEligibleVariantForDomainTest,
+		} );
+
+		return (
+			<div className={ className }>
+				{ this.renderFreeWithPlanText() }
+				{ this.renderFreeWithPlanPrice() }
+			</div>
 		);
 	}
 
 	renderFree() {
+		const { isEligibleVariantForDomainTest, translate } = this.props;
+
+		const className = classnames( 'domain-product-price', {
+			'domain-product-price__domain-step-copy-updates': isEligibleVariantForDomainTest,
+		} );
+
+		const productPriceClassName = classnames( 'domain-product-price__price', {
+			'domain-product-price__free-price': isEligibleVariantForDomainTest,
+		} );
+
 		return (
-			<div className="domain-product-price">
-				<span className="domain-product-price__price">{ this.props.translate( 'Free' ) }</span>
+			<div className={ className }>
+				<div className={ productPriceClassName }>
+					<span>{ translate( 'Free', { context: 'Adjective refers to subdomain' } ) }</span>
+				</div>
 			</div>
 		);
 	}
 
-	renderIncludedInPremium() {
-		const { translate } = this.props;
+	renderSalePrice() {
+		const { price, salePrice, translate } = this.props;
 
-		const shouldShowStrikethrough = abtest( 'signupDomainStrikethruPrice' ) === 'enabled';
+		const className = classnames( 'domain-product-price', 'is-free-domain', {
+			'domain-product-price__domain-step-copy-updates': this.props.isEligibleVariantForDomainTest,
+		} );
 
 		return (
-			<div className="domain-product-price domain-product-price__is-with-plans-only">
-				{ shouldShowStrikethrough && (
-					<span className="domain-product-price__strikethrough-price">
-						{ this.props.translate( '%(cost)s /year', {
-							args: { cost: this.props.price },
-						} ) }
-					</span>
-				) }
-				<span className={ shouldShowStrikethrough && 'domain-product-price__included-in-plan' }>
-					{ translate( 'Included in paid plans' ) }
-				</span>
+			<div className={ className }>
+				<div className="domain-product-price__sale-price">{ salePrice }</div>
+				<div className="domain-product-price__renewal-price">
+					{ translate( 'Renews at: %(cost)s {{small}}/year{{/small}}', {
+						args: { cost: price },
+						components: { small: <small /> },
+					} ) }
+				</div>
 			</div>
 		);
 	}
 
 	renderPrice() {
+		const { salePrice, isEligibleVariantForDomainTest, price, translate } = this.props;
+		if ( salePrice ) {
+			return this.renderSalePrice();
+		}
+
+		const className = classnames( 'domain-product-price', {
+			'is-free-domain': isEligibleVariantForDomainTest,
+			'domain-product-price__domain-step-copy-updates': isEligibleVariantForDomainTest,
+		} );
+
+		const productPriceClassName = isEligibleVariantForDomainTest
+			? ''
+			: 'domain-product-price__price';
+
+		const renewalPrice = isEligibleVariantForDomainTest && (
+			<div className="domain-product-price__renewal-price">
+				{ translate( 'Renews at: %(cost)s {{small}}/year{{/small}}', {
+					args: { cost: price },
+					components: { small: <small /> },
+				} ) }
+			</div>
+		);
+
 		return (
-			<div className="domain-product-price">
-				<span className="domain-product-price__price">
-					{ this.props.translate( '%(cost)s {{small}}/year{{/small}}', {
-						args: { cost: this.props.price },
+			<div className={ className }>
+				<span className={ productPriceClassName }>
+					{ translate( '%(cost)s {{small}}/year{{/small}}', {
+						args: { cost: price },
 						components: { small: <small /> },
 					} ) }
 				</span>
+				{ renewalPrice }
 			</div>
 		);
 	}
@@ -107,9 +190,9 @@ class DomainProductPrice extends React.Component {
 			case 'FREE_DOMAIN':
 				return this.renderFree();
 			case 'FREE_WITH_PLAN':
+			case 'INCLUDED_IN_HIGHER_PLAN':
+			case 'UPGRADE_TO_HIGHER_PLAN_TO_BUY':
 				return this.renderFreeWithPlan();
-			case 'INCLUDED_IN_PREMIUM':
-				return this.renderIncludedInPremium();
 			case 'PRICE':
 			default:
 				return this.renderPrice();
@@ -117,7 +200,7 @@ class DomainProductPrice extends React.Component {
 	}
 }
 
-export default connect( state => ( {
+export default connect( ( state ) => ( {
 	domainsWithPlansOnly: getCurrentUser( state )
 		? currentUserHasFlag( state, DOMAINS_WITH_PLANS_ONLY )
 		: true,

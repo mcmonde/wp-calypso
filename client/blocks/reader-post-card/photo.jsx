@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External Dependencies
  */
@@ -19,7 +18,7 @@ class PostPhoto extends React.Component {
 		cardWidth: 800,
 	};
 
-	handleClick = event => {
+	handleClick = ( event ) => {
 		if ( this.props.isExpanded ) {
 			this.props.onClick( event );
 			return;
@@ -51,7 +50,7 @@ class PostPhoto extends React.Component {
 		}
 	};
 
-	handleWidthDivLoaded = ref => {
+	handleWidthDivLoaded = ( ref ) => {
 		this.widthDivRef = ref;
 	};
 
@@ -84,8 +83,11 @@ class PostPhoto extends React.Component {
 			const cardWidth = this.state.cardWidth;
 			const { width: naturalWidth, height: naturalHeight } = imageSize;
 
-			newHeight = Math.min( naturalHeight / naturalWidth * cardWidth, this.getMaxPhotoHeight() );
-			newWidth = naturalWidth / naturalHeight * newHeight;
+			newHeight = Math.min(
+				( naturalHeight / naturalWidth ) * cardWidth,
+				this.getMaxPhotoHeight()
+			);
+			newWidth = ( naturalWidth / naturalHeight ) * newHeight;
 			featuredImageStyle.height = newHeight;
 			featuredImageStyle.width = newWidth;
 		}

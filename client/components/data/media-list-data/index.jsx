@@ -1,30 +1,24 @@
-/** @format */
-
 /**
  * External dependencies
  */
 
-import { assign, isEqual } from 'lodash';
+import { isEqual } from 'lodash';
 import PropTypes from 'prop-types';
 import React from 'react';
+import { connect } from 'react-redux';
 
 /**
  * Internal dependencies
  */
 import MediaActions from 'lib/media/actions';
-import MediaListStore from 'lib/media/list-store';
 import passToChildren from 'lib/react-pass-to-children';
 import utils from './utils';
+import { setQuery } from 'state/media/actions';
+import { fetchNextMediaPage } from 'state/media/thunks';
+import getMediaSortedByDate from 'state/selectors/get-media-sorted-by-date';
+import hasNextMediaPage from 'state/selectors/has-next-media-page';
 
-function getStateData( siteId ) {
-	return {
-		media: MediaListStore.getAll( siteId ),
-		mediaHasNextPage: MediaListStore.hasNextPage( siteId ),
-		mediaFetchingNextPage: MediaListStore.isFetchingNextPage( siteId ),
-	};
-}
-
-export default class extends React.Component {
+export class MediaListData extends React.Component {
 	static displayName = 'MediaListData';
 
 	static propTypes = {
@@ -35,28 +29,21 @@ export default class extends React.Component {
 		search: PropTypes.string,
 	};
 
-	state = getStateData( this.props.siteId );
-
-	componentWillMount() {
+	UNSAFE_componentWillMount() {
 		MediaActions.setQuery( this.props.siteId, this.getQuery() );
-		MediaListStore.on( 'change', this.updateStateData );
-		this.updateStateData();
+		this.props.setQuery( this.props.siteId, this.getQuery() );
 	}
 
-	componentWillUnmount() {
-		MediaListStore.off( 'change', this.updateStateData );
-	}
-
-	componentWillReceiveProps( nextProps ) {
-		var nextQuery = this.getQuery( nextProps );
+	UNSAFE_componentWillReceiveProps( nextProps ) {
+		const nextQuery = this.getQuery( nextProps );
 
 		if ( this.props.siteId !== nextProps.siteId || ! isEqual( nextQuery, this.getQuery() ) ) {
 			MediaActions.setQuery( nextProps.siteId, nextQuery );
-			this.setState( getStateData( nextProps.siteId ) );
+			this.props.setQuery( nextProps.siteId, nextQuery );
 		}
 	}
 
-	getQuery = props => {
+	getQuery = ( props ) => {
 		const query = {};
 
 		props = props || this.props;
@@ -78,25 +65,35 @@ export default class extends React.Component {
 		if ( props.source ) {
 			query.source = props.source;
 			query.path = 'recent';
+
+			if ( props.source === 'google_photos' ) {
+				// Add any query params specific to Google Photos
+				return utils.getGoogleQuery( query, props );
+			}
 		}
 
 		return query;
 	};
 
 	fetchData = () => {
-		MediaActions.fetchNextPage( this.props.siteId );
-	};
-
-	updateStateData = () => {
-		this.setState( getStateData( this.props.siteId ) );
+		this.props.fetchNextMediaPage( this.props.siteId );
 	};
 
 	render() {
-		return passToChildren(
-			this,
-			assign( {}, this.state, {
-				mediaOnFetchNextPage: this.fetchData,
-			} )
-		);
+		return passToChildren( this, {
+			mediaHasNextPage: this.props.hasNextPage,
+			mediaOnFetchNextPage: this.fetchData,
+		} );
 	}
 }
+
+MediaListData.defaultProps = {
+	setQuery: () => {},
+};
+
+const mapStateToProps = ( state, ownProps ) => ( {
+	media: getMediaSortedByDate( state, ownProps.siteId ),
+	hasNextPage: hasNextMediaPage( state, ownProps.siteId ),
+} );
+
+export default connect( mapStateToProps, { fetchNextMediaPage, setQuery } )( MediaListData );

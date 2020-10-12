@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -15,7 +13,12 @@ import { map, take } from 'lodash';
 import Comment from 'my-sites/comments/comment';
 import Notice from 'components/notice';
 import NoticeAction from 'components/notice/notice-action';
-import { getSiteCommentParentDepth, getSiteCommentRepliesTree } from 'state/selectors';
+import { getSiteCommentParentDepth, getSiteCommentRepliesTree } from 'state/comments/selectors';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 export class CommentRepliesList extends Component {
 	constructor( props ) {
@@ -37,20 +40,19 @@ export class CommentRepliesList extends Component {
 
 		return (
 			<div className={ classes }>
-				{ ! showAllReplies &&
-					replies.length > 5 && (
-						<Notice
-							icon="chevron-down"
-							showDismiss={ false }
-							text={ translate( 'Show %(remainingReplies)d more replies', {
-								args: { remainingReplies: replies.length - 5 },
-							} ) }
-						>
-							<NoticeAction onClick={ this.toggleShowAllReplies }>
-								{ translate( 'Show' ) }
-							</NoticeAction>
-						</Notice>
-					) }
+				{ ! showAllReplies && replies.length > 5 && (
+					<Notice
+						icon="chevron-down"
+						showDismiss={ false }
+						text={ translate( 'Show %(remainingReplies)d more replies', {
+							args: { remainingReplies: replies.length - 5 },
+						} ) }
+					>
+						<NoticeAction onClick={ this.toggleShowAllReplies }>
+							{ translate( 'Show' ) }
+						</NoticeAction>
+					</Notice>
+				) }
 				{ map( repliesToShow, ( { commentId } ) => (
 					<Comment
 						commentId={ commentId }

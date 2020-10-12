@@ -4,7 +4,7 @@ $plan-features-sidebar-width: 272px;
 /* Breakpoints 1150px, */
 
 .plan-features__content {
-	margin: -16px -16px 0 -16px;
+	margin: -16px -16px 0;
 	padding-top: $plan-features-header-banner-height;
 }
 
@@ -17,19 +17,14 @@ $plan-features-sidebar-width: 272px;
 
 .plan-features__notice {
 	margin-bottom: 16px;
-
-	@include breakpoint( ">1040px" ) {
-		margin-bottom: 32px;
-		margin-top: -19px;
-	}
 }
 
 .plan-features__mobile {
-	color: $gray-text-min;
+	color: var( --color-text-subtle );
 	margin: 0 16px;
 	display: block;
 
-	@include breakpoint( ">660px" ) {
+	@include breakpoint-deprecated( '>660px' ) {
 		display: none;
 	}
 
@@ -37,11 +32,13 @@ $plan-features-sidebar-width: 272px;
 		box-shadow: none;
 	}
 
-	.foldable-card.card.is-expanded { //original rule has this specificity
+	.foldable-card.card.is-expanded {
+		//original rule has this specificity
 		margin: 0;
 	}
 
-	.foldable-card.is-expanded .foldable-card__content { //original rule has this specificity
+	.foldable-card.is-expanded .foldable-card__content {
+		//original rule has this specificity
 		padding: 0;
 	}
 
@@ -50,8 +47,8 @@ $plan-features-sidebar-width: 272px;
 	}
 
 	.plan-features__item {
-		border-bottom: solid 1px lighten( $gray, 27% );
-		font-size: 14px;
+		border-bottom: solid 1px var( --color-neutral-5 );
+		font-size: $font-body-small;
 	}
 
 	.plan-features__item:last-child {
@@ -67,10 +64,23 @@ $plan-features-sidebar-width: 272px;
 	height: 50px;
 }
 
+.plan-features__table.has-2-cols {
+	display: block;
+	margin-left: auto;
+	margin-right: auto;
+	max-width: 800px;
+}
+
+.plan-features__table.has-1-cols {
+	margin-left: auto;
+	margin-right: auto;
+	max-width: 337px;
+}
+
 .plan-features__mobile-plan {
-	font-size: 14px;
-	border: solid 1px lighten( $gray, 27% );
-	background-color: $white;
+	font-size: $font-body-small;
+	border: solid 1px var( --color-neutral-5 );
+	background-color: var( --color-surface );
 	margin-bottom: 24px;
 }
 
@@ -82,42 +92,39 @@ $plan-features-sidebar-width: 272px;
 }
 
 .plan-features__table {
-	font-size: 14px;
-	color: $gray-text-min;
+	font-size: $font-body-small;
+	color: var( --color-text-subtle );
 	border-spacing: 16px 0;
 	margin-top: -16px;
 	display: none;
 	table-layout: fixed;
 
-	@include breakpoint( ">660px" ) {
+	@include breakpoint-deprecated( '>660px' ) {
 		display: table;
 	}
 
-	@include breakpoint( "<1040px" ) {
+	@include breakpoint-deprecated( '<1040px' ) {
 		border-spacing: 0;
-		margin: 0 15px;
+		margin-left: 15px;
+		margin-right: 15px;
 		width: calc( 100% - 30px );
 	}
 }
 
-.plan-features__row {
-	background: $white;
-}
-
 .plan-features__table-item {
-	border-right: solid 1px lighten( $gray, 27% );
-	border-left: solid 1px lighten( $gray, 27% );
-	background-color: $white;
+	border-right: solid 1px var( --color-neutral-5 );
+	border-left: solid 1px var( --color-neutral-5 );
+	background-color: var( --color-surface );
 	position: relative;
 
 	&.is-highlighted {
-		border: 1px solid $blue-wordpress;
-		background-color: rgba( $blue-wordpress, 0.1 );
+		border: 1px solid var( --color-primary );
+		background-color: rgba( var( --color-primary-rgb ), 0.1 );
 		position: relative;
 		top: -1px;
 
 		.plan-features__item-checkmark {
-			fill: $blue-wordpress;
+			fill: var( --color-primary );
 		}
 
 		&.has-partial-border::after {
@@ -136,12 +143,12 @@ $plan-features-sidebar-width: 272px;
 		display: block;
 		height: 1px;
 		width: calc( 100% - 48px );
-		border-bottom: 1px solid lighten( $gray, 27% );
+		border-bottom: 1px solid var( --color-neutral-5 );
 		position: absolute;
 		bottom: 0;
 		margin: 0 24px;
 
-		@include breakpoint( "<1040px" ) {
+		@include breakpoint-deprecated( '<1040px' ) {
 			margin: 0 12px;
 			width: calc( 100% - 24px );
 		}
@@ -149,11 +156,11 @@ $plan-features-sidebar-width: 272px;
 }
 
 .plan-features__table-item.has-border-bottom {
-	border-bottom: solid 1px lighten( $gray, 27% );
+	border-bottom: solid 1px var( --color-neutral-5 );
 }
 
 .plan-features__table-item.has-border-top {
-	border-top: solid 1px lighten( $gray, 27% );
+	border-top: solid 1px var( --color-neutral-5 );
 }
 
 .plan-features__table-item.is-placeholder {
@@ -178,23 +185,47 @@ $plan-features-sidebar-width: 272px;
 	display: flex;
 	align-items: flex-start;
 	padding: 12px 24px 0 15px;
-	border-bottom: solid 2px $gray-lighten-20;
-	background-color: $white;
+	border-bottom: solid 2px var( --color-neutral-10 );
+	background-color: var( --color-surface );
 
-	@include breakpoint( "<960px" ) {
-		padding: 12px 12px 0 12px;
+	@include breakpoint-deprecated( '<960px' ) {
+		padding: 12px 12px 0;
 	}
 
-	&.is-personal-plan {
-		border-bottom: solid 2px $alert-yellow;
+	.plans-features-main__group.is-wpcom & {
+		&.is-blogger-plan {
+			border-bottom: solid 2px var( --color-plan-blogger );
+		}
+
+		&.is-personal-plan {
+			border-bottom: solid 2px var( --color-plan-personal );
+		}
+
+		&.is-premium-plan {
+			border-bottom: solid 2px var( --color-plan-premium );
+		}
+
+		&.is-business-plan {
+			border-bottom: solid 2px var( --color-plan-business );
+		}
+
+		&.is-ecommerce-plan {
+			border-bottom: solid 2px var( --color-plan-ecommerce );
+		}
 	}
 
-	&.is-premium-plan {
-		border-bottom: solid 2px $alert-green;
-	}
+	.plans-features-main__group.is-jetpack & {
+		&.is-personal-plan {
+			border-bottom: solid 2px var( --color-warning );
+		}
 
-	&.is-business-plan {
-		border-bottom: solid 2px $alert-purple;
+		&.is-premium-plan {
+			border-bottom: solid 2px var( --color-success );
+		}
+
+		&.is-business-plan {
+			border-bottom: solid 2px var( --color-plan-ecommerce );
+		}
 	}
 }
 
@@ -207,7 +238,7 @@ $plan-features-sidebar-width: 272px;
 }
 
 .is-section-plans .plan-features__header-figure {
-	@include breakpoint( "<1280px" ) {
+	@include breakpoint-deprecated( '<1280px' ) {
 		width: 24px;
 		height: 24px;
 		margin-right: 10px;
@@ -217,56 +248,114 @@ $plan-features-sidebar-width: 272px;
 .plan-features__header-figure,
 .plan-features__table.has-1-cols .plan-features__header-figure,
 .plan-features__table.has-2-cols .plan-features__header-figure {
-	@include breakpoint( "<1040px" ) {
+	@include breakpoint-deprecated( '<1040px' ) {
 		display: none;
 	}
 }
 
 .plan-features__header-text {
 	flex: 1;
-	padding: 6px 0 0 0;
+	padding: 6px 0 0;
 }
 
 .plan-features__header-title {
-	font-size: 22px;
-	color: $blue-wordpress;
+	font-size: $font-title-small;
+	color: var( --color-primary );
 	line-height: 0.7;
+}
 
-	@include breakpoint( "<960px" ) {
-		font-size: 20px;
-	}
+.plan-features__audience {
+	display: block;
+	color: var( --color-text-subtle );
+}
+
+.plan-features__header-price-group,
+.plan-features__header-price-group-prices {
+	display: flex;
+	flex-flow: row wrap;
+	align-items: center;
 }
 
 .plan-features__header-price-group {
-	display: flex;
-	flex-flow: row wrap;
+	width: calc( 100% + 20px );
+
+	@include breakpoint-deprecated( '<960px' ) {
+		width: calc( 100% + 10px );
+	}
+}
+
+.plan-features__header-price-group-prices {
+	max-width: calc( 100% - 20px );
+
+	@include breakpoint-deprecated( '<960px' ) {
+		max-width: calc( 100% - 10px );
+	}
+
+	.plan-price.is-discounted {
+		@include breakpoint-deprecated( '>960px' ) {
+			margin-right: 0;
+		}
+	}
+}
+
+.plan-features__header-credit-label {
+	font-size: $font-body-extra-small;
+	line-height: 20px;
+	height: 20px;
+	border-radius: 10px;
+	color: var( --color-text-inverted );
+	background: var( --color-success );
+	font-weight: 400;
+	vertical-align: middle;
+	padding: 0 8px;
+	margin-bottom: 4px;
+
+	@include breakpoint-deprecated( '>960px' ) {
+		margin-left: 4px;
+	}
+	@include breakpoint-deprecated( '>1280px' ) {
+		margin-left: 8px;
+	}
 }
 
 .plan-features__header-timeframe {
 	margin-bottom: 1.4em;
-	font-size: 12px;
+	font-size: $font-body-extra-small;
 	font-style: italic;
 	font-weight: 400;
-	color: $gray-text-min;
-	line-height: .6;
-	white-space: nowrap;
+	color: var( --color-text-subtle );
+	line-height: normal;
 
 	&.is-placeholder {
-		@include placeholder( 23% );
+		@include placeholder( --color-neutral-10 );
 		width: 140px;
 		height: 12px;
 		margin-bottom: 15px;
 
-		@include breakpoint( "<960px" ) {
+		@include breakpoint-deprecated( '<960px' ) {
 			margin-bottom: 9px;
+		}
+	}
+}
+
+.segmented-control.is-customer-type-toggle {
+	max-width: 520px;
+	margin: 8px auto 16px;
+
+	@include breakpoint-deprecated( '<480px' ) {
+		flex-wrap: wrap;
+		border-radius: 0;
+
+		.segmented-control__link {
+			border-radius: 0;
 		}
 	}
 }
 
 .info-popover.plan-features__header-tip-info {
 	position: relative;
-	top: 4px;
-	left: 3px;
+		top: 4px;
+		left: 3px;
 	margin-top: -10px;
 	margin-bottom: -10px;
 	display: inline-block;
@@ -274,23 +363,22 @@ $plan-features-sidebar-width: 272px;
 
 .plan-features__price {
 	&.is-placeholder {
-		@include placeholder( 23% );
-		width: 45px;
-		height: 25px;
-		margin-top: 9px;
-		margin-bottom: 5px;
+		@include placeholder( --color-neutral-10 );
+			width: 45px;
+			height: 25px;
+			margin-top: 9px;
+			margin-bottom: 5px;
 	}
 }
-
 .plan-features__price-jetpack {
 	&.is-placeholder {
-		@include placeholder( 23% );
-		height: 32px;
-		margin-top: 5px;
-		margin-bottom: 5px;
-		width: 140px;
+		@include placeholder( --color-neutral-10 );
+			width: 140px;
+			height: 32px;
+			margin-top: 5px;
+			margin-bottom: 5px;
 
-		@include breakpoint( "<960px" ) {
+		@include breakpoint-deprecated( '<960px' ) {
 			height: 26px;
 		}
 	}
@@ -302,7 +390,7 @@ $plan-features-sidebar-width: 272px;
 	&.is-placeholder {
 		height: 28px;
 
-		@include breakpoint( "<660px" ) {
+		@include breakpoint-deprecated( '<660px' ) {
 			height: auto;
 		}
 	}
@@ -316,12 +404,12 @@ $plan-features-sidebar-width: 272px;
 	top: 0;
 	transform: translateY( -21px );
 	padding: 0 8px;
-	background: $gray-dark;
-	font-size: 10px;
+	background: var( --color-neutral-70 );
+	font-size: $font-body-extra-small;
 	line-height: $plan-features-header-banner-height;
 	text-align: center;
 	text-transform: uppercase;
-	color: $white;
+	color: var( --color-text-inverted );
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -330,52 +418,51 @@ $plan-features-sidebar-width: 272px;
 .plan-features__summary,
 .plan-features__description {
 	margin: 0;
-	padding: 24px 24px 0 24px;
+	padding: 24px 24px 0;
 
-	@include breakpoint( "<1040px" ) {
-		padding: 12px 12px 0 12px;
+	@include breakpoint-deprecated( '<1040px' ) {
+		padding: 12px 12px 0;
 	}
 
-	@include breakpoint( "<660px" ) {
-		padding: 20px 20px 0 20px;
+	@include breakpoint-deprecated( '<660px' ) {
+		padding: 20px 20px 0;
 	}
 }
 
 .plan-features__targeted-description-heading {
 	display: block;
-	color: lighten( $gray-dark, 25% );
+	color: var( --color-text-subtle );
 }
 
 .plan-features__item {
 	display: flex;
 	margin: 0 24px;
 	padding: 12px 0;
-	font-size: 14px;
-	color: $gray-dark;
+	font-size: $font-body-small;
+	color: var( --color-neutral-70 );
 
-	@include breakpoint( "<960px" ) {
-		font-size: 12px;
+	@include breakpoint-deprecated( '<960px' ) {
+		font-size: $font-body-extra-small;
 	}
 
-	@include breakpoint( "<1040px" ) {
+	@include breakpoint-deprecated( '<1040px' ) {
 		margin: 0 12px;
 	}
 }
 
 .plan-features__item-title {
 	flex: 1 0 0;
-	margin-left: 10px;
 	width: 100%;
 }
 
 .plan-features__item-checkmark {
 	flex: 0 1 auto;
-	fill: $blue-wordpress;
+	fill: var( --color-primary );
+	margin-right: 10px;
 }
 
 .plan-features__item-tip-info {
 	flex: 0 1 auto;
-	align-self: center;
 }
 
 .popover__plan-features {
@@ -385,15 +472,15 @@ $plan-features-sidebar-width: 272px;
 }
 
 .plan-features__actions {
-	padding: 0 24px 24px 24px;
+	padding: 0 24px 24px;
 
-	@include breakpoint( "<1040px" ) {
-		padding: 0 12px 12px 12px;
+	@include breakpoint-deprecated( '<1040px' ) {
+		padding: 0 12px 12px;
 	}
 
-	@include breakpoint( "<660px" ) {
-		padding: 0 20px 20px 20px;
-		border-bottom: solid 1px $gray-light;
+	@include breakpoint-deprecated( '<660px' ) {
+		padding: 0 20px 20px;
+		border-bottom: solid 1px var( --color-neutral-0 );
 	}
 }
 
@@ -405,7 +492,7 @@ $plan-features-sidebar-width: 272px;
 	width: 100%;
 	margin-top: 8px;
 
-	@include breakpoint( "<660px" ) {
+	@include breakpoint-deprecated( '<660px' ) {
 		margin-top: 20px;
 	}
 }
@@ -416,7 +503,7 @@ $plan-features-sidebar-width: 272px;
 }
 
 .plan-features__item-title-outlined {
-	font-weight: bold;
+	font-weight: 600;
 	display: block;
 }
 
@@ -425,11 +512,12 @@ $plan-features-sidebar-width: 272px;
 	margin-left: 10px;
 }
 
-
 /*= Plans in Signup
 ========================================*/
 
-.price-toggle {
+// This is used for the monthly/yearly billing
+// which is currently us in the Jetpack flow.
+.segmented-control.price-toggle {
 	width: 250px;
 	margin: 0 auto 20px;
 
@@ -438,40 +526,106 @@ $plan-features-sidebar-width: 272px;
 	}
 }
 
+.plans-features-main__group.is-wpcom {
+	padding-top: 19px;
+}
+
+// This is the customer type buttons that let
+// you toggle the visible plans in signup.
+// The #primary id is included to increase specificity
+// and override some of the segmented-control styles.
+// This UI should really use buttons instead.
+/* stylelint-disable selector-max-id */
+body.is-section-signup #primary .segmented-control.is-customer-type-toggle {
+	margin: 0 auto 16px;
+	box-shadow: 0 1px 1px 0 rgba( 0, 0, 0, 0.14 ),
+				0 2px 1px -1px rgba( 0, 0, 0, 0.12 ),
+				0 1px 3px 0 rgba( 0, 0, 0, 0.2 );
+
+	.segmented-control__item a {
+		text-decoration: underline;
+		border: none;
+	}
+
+	.segmented-control__item.is-selected {
+		position: relative;
+
+		// This adds a little pointer arrow to the bottom
+		// of the selected segment item. It relies on the
+		// relative positioning above.
+		@include breakpoint-deprecated( '>480px' ) {
+			&::after {
+				display: block;
+				content: '';
+				width: 0;
+				height: 0;
+				border-left: 10px solid transparent;
+				border-right: 10px solid transparent;
+				border-top: 10px solid var( --color-primary-70 );
+				position: absolute;
+				bottom: -10px;
+				left: calc( 50% - 10px );
+			}
+		}
+
+		a,
+		a:hover,
+		a:focus {
+			@include breakpoint-deprecated( '<660px' ) {
+				flex-wrap: wrap;
+			}
+			cursor: default;
+			text-decoration: none;
+			background-color: var( --color-primary-70 );
+		}
+	}
+}
+/* stylelint-enable */
+
 .plans-wrapper {
 	margin: 0 auto;
 	padding: 20px 0 10px;
-	transform: translateY(-20px);
+	transform: translateY( -20px );
 	overflow-x: auto;
-}
-
-.touch {
-	.plans-wrapper {
-		overflow-x: scroll;
-		-webkit-overflow-scrolling: touch;
-	}
 }
 
 .plan-features--signup {
 	margin: 0 auto;
 
 	.jetpack-connect__plans & {
-		width: 1000px;
+		width: auto;
+
+		@include breakpoint-deprecated( '>660px' ) {
+			max-width: 1000px;
+		}
 	}
 
 	.signup__steps & {
-		width: 1100px;
+		width: auto;
+
+		@include breakpoint-deprecated( '>660px' ) {
+			max-width: 1100px;
+		}
 	}
 
 	.plan-features__table {
-		display: table !important;
-		border-spacing: 15px 0 !important;
-		width: 100%;
-		margin: 0;
+		display: none;
+
+		@include breakpoint-deprecated( '>660px' ) {
+			display: table;
+			width: 100%;
+			margin: 0 auto;
+			padding: 0 16px;
+		}
+
+		@include breakpoint-deprecated( '>1040px' ) {
+			border-spacing: 15px 0;
+			padding: 0;
+		}
 	}
 
 	.plan-features__content {
-		margin: -16px 0 0 0;
+		margin: -16px 0 0;
 	}
 
 	.plan-features__header {
@@ -479,12 +633,13 @@ $plan-features-sidebar-width: 272px;
 	}
 
 	.plan-features__header-title {
-		color: $gray-dark;
+		color: var( --color-neutral-70 );
 		margin-bottom: 5px;
 	}
 
 	.plan-features__table-item {
 		text-align: center;
+		transition: opacity 0.05s;
 	}
 
 	.plan-features__table-item.has-border-bottom {
@@ -492,14 +647,32 @@ $plan-features-sidebar-width: 272px;
 	}
 
 	.plan-features__graphic {
-		width: 100px;
-		height: 100px;
-		margin: 20px auto;
+		float: right;
+		width: 50px;
+		height: 50px;
+		margin: 16px 20px;
+
+		@include breakpoint-deprecated( '>660px' ) {
+			float: none;
+			width: 100px;
+			height: 100px;
+			margin: 20px auto;
+		}
 	}
 
 	.plan-features__pricing,
 	.plan-price.is-discounted {
-		color: $gray-dark;
+		color: var( --color-neutral-70 );
+	}
+
+	.plan-features__pricing {
+		margin: 20px 20px -12px;
+		padding: 0;
+
+		@include breakpoint-deprecated( '>660px' ) {
+			margin-bottom: 0;
+			padding: 0 12px;
+		}
 	}
 
 	.is-placeholder {
@@ -509,6 +682,11 @@ $plan-features-sidebar-width: 272px;
 
 	.plan-features__item {
 		margin: 0 15px;
+		text-align: left;
+	}
+
+	.plan-features__item-info {
+		padding: 0 5px;
 	}
 
 	.plan-features__item-title {
@@ -521,60 +699,386 @@ $plan-features-sidebar-width: 272px;
 
 	.plan-features__actions-button {
 		margin-top: 8px;
+
+		&.disabled,
+		&[disabled] {
+			color: var( --color-neutral-light );
+		}
 	}
 
-	.plan-price.is-original:before {
-		border-color: $alert-green;
+	.plan-price.is-original::before {
+		border-color: var( --color-success );
 	}
 
 	.plan-price,
 	.plan-price.is-original {
-		font-size: 1em;
+		font-size: $font-body;
 	}
 
 	.plan-features__header-price-group {
 		display: inline;
 	}
 
-	.plan-features__item-checkmark,
-	.plan-features__item-tip-info {
-		display: none;
+	.plan-features__row:last-of-type .plan-features__table-item {
+		border-bottom: solid 1px var( --color-neutral-5 );
 	}
 
-	.plan-features__row:last-of-type .plan-features__table-item {
-		border-bottom: solid 1px lighten( $gray, 27% );
+	.jetpack-connect__hide-plan-icons .jetpack-connect__plans & .plan-features__pricing {
+		@include breakpoint-deprecated( '<660px' ) {
+			padding-top: 0;
+		}
+	}
+
+	.plan-features__header-price-group-prices {
+		display: inline-block;
 	}
 }
 
-/**
- * A/B test for horizontal vs vertical scroll
- */
-.has-mobile-table.plan-features--signup {
+.plans-features-main__group.is-scrollable {
+	position: relative;
 
-	@include breakpoint( "<660px" ) {
+	.is-section-signup & {
+		width: 100vw;
+		margin-left: calc( 50% - 50vw );
 
-		.signup__steps &,
-		.jetpack-connect__plans & {
-			width: auto;
+		@media ( min-width: 1600px ) {
+			max-width: 1600px;
+			margin-left: -280px;
 		}
 
-		.plan-features__graphic {
-			float: right;
-			width: 50px;
-			height: 50px;
-			margin: 16px 20px;
+		@include breakpoint-deprecated( '<1040px' ) {
+			padding-top: 12px;
+		}
+	}
+
+	.is-section-plans & {
+		overflow: hidden;
+		width: calc( 100vw - 278px );
+		margin-left: calc( 50% - 50vw + 138px );
+
+		@include breakpoint-deprecated( '<660px' ) {
+			margin-left: 0;
+			width: 100%;
 		}
 
-		.plan-features__pricing {
-			margin: 20px 20px -12px;
+		@media ( min-width: 1800px ) {
+			max-width: 1520px;
+			margin-left: -240px;
+		}
+	}
+
+	.signup__steps & .plan-features--signup {
+		max-width: 100%;
+	}
+
+	.plan-features__content {
+		margin-left: 0;
+		margin-right: 0;
+	}
+}
+
+.plan-features__scroller-container {
+	padding: 0 0 30px;
+
+	.is-section-plans & {
+		margin: 0 0 30px;
+	}
+}
+
+.plan-features__scroller-wrapper {
+	overflow: auto;
+	-ms-overflow-style: none;
+	scrollbar-width: none;
+	scroll-snap-type: x mandatory;
+	-webkit-overflow-scrolling: touch;
+
+	&::-webkit-scrollbar {
+		height: 0;
+	}
+}
+
+.plan-features__scroller {
+	position: relative;
+	margin: 0 auto;
+
+	.plan-features__table {
+		display: table;
+		padding: 0;
+		margin: 0 auto;
+		width: 100%;
+		border-spacing: 7px 0;
+
+		.is-section-plans & {
+			border-spacing: 0;
+		}
+	}
+
+	.plan-features__header {
+		display: block;
+		position: relative;
+		text-align: left;
+		box-sizing: border-box;
+		border-top: solid 8px;
+		border-radius: 2px 2px 0 0;
+		padding-bottom: 12px;
+
+		.plans-features-main__group.is-wpcom & {
+			border-bottom: none;
 		}
 
-		.plan-features__table {
-			display: none !important;
+		&.is-blogger-plan {
+			border-color: var( --color-plan-blogger );
 		}
 
-		.jetpack-connect__hide-plan-icons .jetpack-connect__plans & .plan-features__pricing {
+		&.is-personal-plan {
+			border-color: var( --color-plan-personal );
+		}
+
+		&.is-premium-plan {
+			border-color: var( --color-plan-premium );
+		}
+
+		&.is-business-plan {
+			border-color: var( --color-plan-business );
+		}
+
+		&.is-ecommerce-plan {
+			border-color: var( --color-plan-ecommerce );
+		}
+
+		/* scroll stops */
+		.scroll-snap-enabled & {
+			scroll-snap-align: start;
+		}
+	}
+
+	.plan-features__header-title {
+		color: var( --color-text );
+		font-weight: 600;
+		font-size: $font-title-medium;
+		margin-bottom: 6px;
+	}
+
+	.plan-features__header-billing-info {
+		display: block;
+		color: var( --color-text-subtle );
+		align-items: center;
+		text-align: center;
+	}
+
+	.plan-features__pricing {
+		padding: 8px 16px;
+		margin: 0;
+		border-top: solid 1px var( --color-neutral-10 );
+
+		.plan-price {
+			font-weight: 600;
+			margin-right: 10px;
+			font-size: $font-headline-large;
+			font-family: 'Helvetica Neue', helvetica, arial, sans-serif;
+		}
+
+		.plan-price__currency-symbol {
+			font-size: $font-title-medium;
+			font-weight: 400;
+		}
+
+		.plan-price__integer {
+			font-weight: 600;
+		}
+	}
+
+	.plan-features__table-item {
+		border-top: solid 1px var( --color-neutral-5 );
+		vertical-align: middle;
+		padding: 7px 0;
+
+		.is-section-signup & {
+			border-right: none;
+			border-left: none;
+		}
+
+		&:empty {
+			background: transparent;
+			border-top: none;
+		}
+
+		&.has-border-top {
+			vertical-align: top;
+		}
+
+		&.has-border-top, &.is-top-buttons, &.is-description {
+			border-top: none;
+			border-bottom: none;
 			padding-top: 0;
 		}
+
+		&.is-description {
+			vertical-align: top;
+		}
+
+		&.is-last-feature {
+			border-bottom: solid 1px var( --color-neutral-5 );
+		}
+	}
+
+	tr:first-child .plan-features__table-item {
+		border-radius: 2px 2px 0 0;
+	}
+
+	tr:last-child .plan-features__table-item {
+		border-radius: 0 0 5px 5px;
+	}
+
+	.plan-features__actions {
+		padding-bottom: 12px;
+	}
+
+	.plan-features__item {
+		align-items: center;
+		font-size: inherit;
+		font-weight: 600;
+		min-height: 42px;
+		margin: 0;
+		padding: 0 8px 0 16px;
+	}
+
+	.plan-features__item-title {
+		padding: 0;
+	}
+
+	.plan-features__description {
+		text-align: initial;
+		padding: 0 24px;
+	}
+
+	.plan-features__item-tip-info {
+		margin-left: 10px;
+	}
+
+	.plan-features__row:last-child .plan-features__table-item {
+		border-bottom: solid 1px var( --color-neutral-5 );
+	}
+}
+
+.plan-features__scroll-left,
+.plan-features__scroll-right {
+	display: flex;
+	position: absolute;
+	top: 24px;
+	bottom: 40px;
+	width: 12%;
+	cursor: pointer;
+	overflow: hidden;
+	z-index: 1;
+}
+
+.plan-features__scroll-left {
+	left: 0;
+	cursor: w-resize;
+
+	&.disabled {
+		cursor: default;
+	}
+}
+
+.plan-features__scroll-right {
+	right: 0;
+	cursor: e-resize;
+
+	&.disabled {
+		cursor: default;
+	}
+}
+
+button.plan-features__scroll-button {
+	align-self: start;
+	margin: 180px auto 0;
+	width: 30px;
+	height: 30px;
+	padding: 0;
+	background-color: var( --color-neutral );
+	border: 0;
+	border-radius: 15px;
+	color: var( --color-text-inverted );
+	cursor: pointer;
+
+	&:hover, &:active, &:focus {
+		color: var( --color-text-inverted );
+	}
+
+	.gridicon {
+		width: 24px;
+		height: 24px;
+	}
+
+	:root body.is-section-signup .plan-features__scroller-container & {
+		background-color: var( --color-surface );
+		color: var( --color-primary );
+		padding: 0;
+	}
+
+	&:disabled, &[disabled] {
+		background-color: rgba( var( --color-neutral-rgb ), 0.5 );
+		color: var( --color-neutral-5 );
+	}
+
+	:root body.is-section-signup &:disabled, .is-section-signup &[disabled] {
+		background-color: rgba( var( --color-surface-rgb ), 0.5 );
+		color: var( --color-primary );
+	}
+
+	.plan-features__scroll-right & {
+		margin-left: 20px;
+
+		@include breakpoint-deprecated( '<480px' ) {
+			margin-left: 5px;
+		}
+	}
+
+	.plan-features__scroll-left & {
+		margin-right: 20px;
+
+		@include breakpoint-deprecated( '<480px' ) {
+			margin-right: 5px;
+		}
+	}
+}
+
+.plan-features__scroll-indicator {
+	position: absolute;
+	width: auto;
+	bottom: 0;
+	left: 50%;
+	transform: translateX( -50% );
+	white-space: nowrap;
+
+	.is-section-plans & {
+		bottom: 20px;
+	}
+}
+
+.plan-features__scroll-indicator-dot {
+	display: inline-block;
+	background: var( --color-neutral-dark );
+	opacity: 0.3;
+	width: 8px;
+	height: 8px;
+	margin: 0 2px;
+	border-radius: 2px;
+
+	.is-section-signup & {
+		background: var( --color-surface );
+		opacity: 0.5;
+	}
+
+	&.is-highlighted {
+		opacity: 1;
+	}
+}
+
+@include breakpoint-deprecated( '<480px' ) {
+	.plan-features__upgrade-launch-dialog .dialog__content p {
+		padding: 0 20px;
 	}
 }

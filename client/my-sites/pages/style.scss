@@ -1,4 +1,3 @@
-/** @format */
 
 // Page list
 
@@ -8,21 +7,21 @@
 
 	.placeholder-text {
 		color: transparent;
-		background-color: $gray-lighten-30;
+		background-color: var( --color-neutral-0 );
 		animation: loading-fade 1.6s ease-in-out infinite;
 	}
 }
 
 .pages__page-list-header {
-	background: $gray-light;
-	box-shadow: 0 0 0 1px transparentize($gray-lighten-20, 0.5), 0 1px 2px $gray-lighten-30;
-	color: $gray;
-	font-size: 11px;
+	background: var( --color-neutral-0 );
+	box-shadow: 0 0 0 1px rgba( var( --color-neutral-10-rgb ), 0.5 ), 0 1px 2px var( --color-neutral-0 );
+	color: var( --color-neutral-light );
+	font-size: $font-body-extra-small;
 	padding: 6px 11px;
 	text-transform: uppercase;
 
 	.gridicons-time {
-		color: $gray;
+		color: var( --color-neutral-light );
 		margin-right: 4px;
 		vertical-align: text-top;
 	}
@@ -36,7 +35,7 @@
 	.site-icon {
 		display: none;
 
-		@include breakpoint( '>660px' ) {
+		@include breakpoint-deprecated( '>660px' ) {
 			display: block;
 			margin-right: 10px;
 			min-width: 34px;
@@ -77,12 +76,12 @@
 }
 
 .page__hierarchy-indent {
-	background: $gray-light;
+	background: var( --color-neutral-0 );
 	position: absolute;
 	top: 0;
 	left: 0;
 	height: 100%;
-	box-shadow: 0 0 0 1px transparentize($gray-lighten-20, 0.5), 0 1px 2px $gray-lighten-30;
+	box-shadow: 0 0 0 1px rgba( var( --color-neutral-10-rgb ), 0.5 ), 0 1px 2px var( --color-neutral-0 );
 
 	&.is-indented {
 		width: 112px;
@@ -123,23 +122,28 @@
 
 .page__title,
 .page__title:visited {
-	@extend %content-font;
-	color: $gray-dark;
-	font-weight: 700;
-	font-size: 18px;
+	color: var( --color-neutral-70 );
+	font-weight: 600;
+	font-size: $font-title-small;
 	line-height: 1.2;
 
 	display: inline;
 	margin-right: 33px;
 
+	word-break: break-word;
+
 	.gridicon {
-		color: $gray;
+		color: var( --color-neutral-light );
 		margin: 2px 8px -2px 0;
 	}
 }
 .page.is-untitled .page__title {
-	color: $gray;
+	color: var( --color-neutral-light );
 	font-style: italic;
+}
+
+.page__title .info-popover {
+	margin-left: 4px;
 }
 
 .page__actions-toggle {
@@ -147,9 +151,9 @@
 }
 
 .page__popover-more-info {
-	color: $gray;
+	color: var( --color-neutral-light );
 	padding: 4px 16px 8px;
-	font-size: 12px;
+	font-size: $font-body-extra-small;
 	max-width: 150px;
 	text-align: left;
 }
@@ -157,10 +161,10 @@
 .page__delete-item.popover__menu-item {
 	&:hover,
 	&:focus {
-		background-color: $alert-red;
+		background-color: var( --color-error );
 		border: 0;
 		box-shadow: none;
-		color: $white;
+		color: var( --color-text-inverted );
 	}
 }
 
@@ -170,8 +174,8 @@
 	right: 0;
 	top: 0;
 	bottom: 0;
-	z-index: z-index('root', '.page__shadow-notice-cover');
-	background-color: rgba($gray-light, 0.8);
+	z-index: z-index( 'root', '.page__shadow-notice-cover' );
+	background-color: rgba( var( --color-neutral-0-rgb ), 0.8 );
 	display: flex;
 	align-items: center;
 	overflow: hidden;
@@ -179,16 +183,16 @@
 
 @keyframes shadow-notice-appear {
 	0% {
-		transform: translateX(50px);
+		transform: translateX( 50px );
 	}
 
 	100% {
-		transform: translateX(0);
+		transform: translateX( 0 );
 	}
 }
 
 .notice.is-compact.page__shadow-notice {
 	margin-left: auto;
 	margin-right: 24px;
-	animation: shadow-notice-appear 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275); // http://easings.net/#easeOutBack
+	animation: shadow-notice-appear 0.15s cubic-bezier( 0.175, 0.885, 0.32, 1.275 ); // http://easings.net/#easeOutBack
 }

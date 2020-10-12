@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -8,7 +6,7 @@ import PropTypes from 'prop-types';
 import { localize } from 'i18n-calypso';
 import React from 'react';
 import classNames from 'classnames';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 
 class StatsTabsTab extends React.Component {
 	static displayName = 'StatsTabsTab';
@@ -23,23 +21,24 @@ class StatsTabsTab extends React.Component {
 		tabClick: PropTypes.func,
 		compact: PropTypes.bool,
 		value: PropTypes.oneOfType( [ PropTypes.number, PropTypes.string ] ),
+		format: PropTypes.func,
 	};
 
-	clickHandler = event => {
+	clickHandler = ( event ) => {
 		if ( this.props.tabClick ) {
 			event.preventDefault();
 			this.props.tabClick( this.props );
 		}
 	};
 
-	ensureValue = value => {
-		const { loading, children } = this.props;
+	ensureValue = ( value ) => {
+		const { loading, children, numberFormat, format } = this.props;
 		if ( children ) {
 			return null;
 		}
 
 		if ( ! loading && ( value || value === 0 ) ) {
-			return this.props.numberFormat( value );
+			return format ? format( value ) : numberFormat( value );
 		}
 
 		return String.fromCharCode( 8211 );

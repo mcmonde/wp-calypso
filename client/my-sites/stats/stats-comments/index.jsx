@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -14,7 +12,7 @@ import { get, flowRight } from 'lodash';
 /**
  * Internal dependencies
  */
-import Card from 'components/card';
+import { Card } from '@automattic/components';
 import CommentTab from './comment-tab';
 import StatsErrorPanel from '../stats-error';
 import StatsModulePlaceholder from '../stats-module/placeholder';
@@ -31,6 +29,13 @@ import {
 } from 'state/stats/lists/selectors';
 import { recordGoogleEvent } from 'state/analytics/actions';
 
+/**
+ * Style dependencies
+ */
+import './style.scss';
+
+/* eslint-disable wpcalypso/jsx-classname-namespace*/
+
 class StatsComments extends Component {
 	static propTypes = {
 		commentsStatsData: PropTypes.object,
@@ -45,7 +50,7 @@ class StatsComments extends Component {
 		activeFilter: 'top-authors',
 	};
 
-	changeFilter = selection => {
+	changeFilter = ( selection ) => {
 		const filter = selection.value;
 		if ( filter === this.state.activeFilter ) {
 			return;
@@ -81,7 +86,7 @@ class StatsComments extends Component {
 		return (
 			<StatsModuleContent className="module-content-text-stat">
 				<p>
-					{ translate( 'Total posts with comment followers:' ) }{' '}
+					{ translate( 'Total posts with comment followers:' ) }{ ' ' }
 					<a href={ commentFollowURL }>{ numberFormat( commentFollowersTotal ) }</a>
 				</p>
 			</StatsModuleContent>
@@ -97,7 +102,7 @@ class StatsComments extends Component {
 		return (
 			<StatsModuleContent>
 				<p>
-					{ this.props.translate( 'Average comments per month:' ) }{' '}
+					{ this.props.translate( 'Average comments per month:' ) }{ ' ' }
 					{ this.props.numberFormat( data.monthly_comments ) }
 				</p>
 			</StatsModuleContent>
@@ -118,8 +123,8 @@ class StatsComments extends Component {
 		const commentsPosts = get( commentsStatsData, 'posts' );
 		const noData = ! commentsAuthors;
 		const selectOptions = [
-			{ value: 'top-authors', label: translate( 'Comments By Authors' ) },
-			{ value: 'top-content', label: translate( 'Comments By Posts & Pages' ) },
+			{ value: 'top-authors', label: translate( 'Comments by authors' ) },
+			{ value: 'top-content', label: translate( 'Comments by posts & pages' ) },
 		];
 
 		const classes = classNames( 'stats-module', {
@@ -137,14 +142,12 @@ class StatsComments extends Component {
 				<SectionHeader label={ translate( 'Comments' ) } />
 				<Card className={ classes }>
 					<div className="module-content">
-						{ noData &&
-							! hasError &&
-							! requestingCommentsStats && (
-								<StatsErrorPanel
-									className="is-empty-message"
-									message={ translate( 'No comments posted' ) }
-								/>
-							) }
+						{ noData && ! hasError && ! requestingCommentsStats && (
+							<StatsErrorPanel
+								className="is-empty-message"
+								message={ translate( 'No comments posted' ) }
+							/>
+						) }
 
 						<StatsModuleSelectDropdown options={ selectOptions } onSelect={ this.changeFilter } />
 
@@ -180,7 +183,7 @@ class StatsComments extends Component {
 }
 
 const connectComponent = connect(
-	state => {
+	( state ) => {
 		const siteId = getSelectedSiteId( state );
 		const siteSlug = getSiteSlug( state, siteId );
 

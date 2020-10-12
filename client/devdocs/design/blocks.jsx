@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -15,6 +14,7 @@ import Collection from 'devdocs/design/search-collection';
 import DocumentHead from 'components/data/document-head';
 import HeaderCake from 'components/header-cake';
 import Main from 'components/main';
+import ReadmeViewer from 'components/readme-viewer';
 import SearchCard from 'components/search-card';
 import { isEnabled } from 'config';
 
@@ -25,15 +25,14 @@ import AllSites from 'blocks/all-sites/docs/example';
 import CreditCardForm from 'blocks/credit-card-form/docs/example';
 import CalendarButton from 'blocks/calendar-button/docs/example';
 import CalendarPopover from 'blocks/calendar-popover/docs/example';
-import Checklist from 'blocks/checklist/docs/example';
 import AuthorSelector from 'blocks/author-selector/docs/example';
 import CommentButtons from 'blocks/comment-button/docs/example';
-import DisconnectJetpackDialog from 'blocks/disconnect-jetpack/docs/example';
 import FollowButton from 'blocks/follow-button/docs/example';
-import FollowMenu from 'blocks/follow-menu/docs/example';
 import LikeButtons from 'blocks/like-button/docs/example';
 import PostSchedule from 'components/post-schedule/docs/example';
 import PostSelector from 'my-sites/post-selector/docs/example';
+import ProductPlanOverlapNotices from 'blocks/product-plan-overlap-notices/docs/example';
+import ProductSelector from 'blocks/product-selector/docs/example';
 import Site from 'blocks/site/docs/example';
 import SitePlaceholder from 'blocks/site/docs/placeholder-example';
 import SitesDropdown from 'components/sites-dropdown/docs/example';
@@ -42,16 +41,12 @@ import Theme from 'components/theme/docs/example';
 import HappinessSupport from 'components/happiness-support/docs/example';
 import ThemesListExample from 'components/themes-list/docs/example';
 import PlanStorage from 'blocks/plan-storage/docs/example';
-import UpgradeNudge from 'my-sites/upgrade-nudge/docs/example';
 import PlanCompareCard from 'my-sites/plan-compare-card/docs/example';
-import FeatureComparison from 'my-sites/feature-comparison/docs/example';
-import DomainTip from 'my-sites/domain-tip/docs/example';
+import DomainTip from 'blocks/domain-tip/docs/example';
 import PostItem from 'blocks/post-item/docs/example';
 import PostStatus from 'blocks/post-status/docs/example';
-import PostTime from 'blocks/post-time/docs/example';
 import ReaderAuthorLink from 'blocks/reader-author-link/docs/example';
 import ReaderSiteStreamLink from 'blocks/reader-site-stream-link/docs/example';
-import ReaderFullPostHeader from 'blocks/reader-full-post/docs/header-example';
 import AuthorCompactProfile from 'blocks/author-compact-profile/docs/example';
 import RelatedPostCard from 'blocks/reader-related-card/docs/example';
 import PlanPrice from 'my-sites/plan-price/docs/example';
@@ -63,6 +58,7 @@ import PostComment from 'blocks/comments/docs/post-comment-example';
 import ReaderAvatar from 'blocks/reader-avatar/docs/example';
 import SubscriptionLengthPicker from 'blocks/subscription-length-picker/docs/example';
 import ImageEditor from 'blocks/image-editor/docs/example';
+import ImageSelector from 'blocks/image-selector/docs/example';
 import VideoEditor from 'blocks/video-editor/docs/example';
 import ReaderPostCard from 'blocks/reader-post-card/docs/example';
 import ReaderCombinedCard from 'blocks/reader-combined-card/docs/example';
@@ -78,20 +74,22 @@ import ReaderImportButton from 'blocks/reader-import-button/docs/example';
 import SharingPreviewPane from 'blocks/sharing-preview-pane/docs/example';
 import ReaderShare from 'blocks/reader-share/docs/example';
 import Login from 'blocks/login/docs/example';
-import ReaderEmailSettings from 'blocks/reader-email-settings/docs/example';
-import UploadImage from 'blocks/upload-image/docs/example';
+import LocationSearch from 'blocks/location-search/docs/example';
 import ConversationCommentList from 'blocks/conversations/docs/example';
 import SimplePaymentsDialog from 'components/tinymce/plugins/simple-payments/dialog/docs/example';
 import ConversationCaterpillar from 'blocks/conversation-caterpillar/docs/example';
 import ConversationFollowButton from 'blocks/conversation-follow-button/docs/example';
 import ColorSchemePicker from 'blocks/color-scheme-picker/docs/example';
 import UserMentions from 'blocks/user-mentions/docs/example';
+import SupportArticleDialog from 'blocks/support-article-dialog/docs/example';
+import TimeMismatchWarning from 'blocks/time-mismatch-warning/docs/example';
+import UpsellNudge from 'blocks/upsell-nudge/docs/example';
 
 export default class AppComponents extends React.Component {
 	static displayName = 'AppComponents';
 	state = { filter: '' };
 
-	onSearch = term => {
+	onSearch = ( term ) => {
 		this.setState( { filter: trim( term || '' ).toLowerCase() } );
 	};
 
@@ -108,60 +106,68 @@ export default class AppComponents extends React.Component {
 		return (
 			<Main className={ className }>
 				<DocumentHead title="Blocks" />
+
 				{ this.props.component ? (
-					<HeaderCake onClick={ this.backToComponents } backText="All Blocks">
-						{ slugToCamelCase( this.props.component ) }
-					</HeaderCake>
+					<React.Fragment>
+						<HeaderCake onClick={ this.backToComponents } backText="All Blocks">
+							{ slugToCamelCase( this.props.component ) }
+						</HeaderCake>
+						{ isEnabled( 'devdocs/color-scheme-picker' ) && (
+							<ColorSchemePicker readmeFilePath="color-scheme-picker" />
+						) }
+					</React.Fragment>
 				) : (
-					<SearchCard
-						onSearch={ this.onSearch }
-						initialValue={ this.state.filter }
-						placeholder="Search blocks…"
-						analyticsGroup="Docs"
-					/>
+					<div>
+						<ReadmeViewer readmeFilePath="/client/devdocs/blocks/README.md" />
+						<SearchCard
+							onSearch={ this.onSearch }
+							initialValue={ this.state.filter }
+							placeholder="Search blocks…"
+							analyticsGroup="Docs"
+						/>
+					</div>
 				) }
 				<Collection
 					component={ this.props.component }
 					filter={ this.state.filter }
 					section="blocks"
 				>
+					{ isEnabled( 'devdocs/color-scheme-picker' ) && (
+						<ColorSchemePicker readmeFilePath="color-scheme-picker" />
+					) }
 					<AllSites readmeFilePath="all-sites" />
 					<AuthorSelector readmeFilePath="author-selector" />
 					<CalendarButton readmeFilePath="calendar-button" />
 					<CalendarPopover readmeFilePath="calendar-popover" />
 					<CommentButtons readmeFilePath="comment-button" />
-					<Checklist readmeFilePath="checklist" />
-					<DisconnectJetpackDialog />
 					<CreditCardForm readmeFilePath="credit-card-form" />
 					<FollowButton readmeFilePath="follow-button" />
-					<FollowMenu readmeFilePath="follow-menu" />
 					<HappinessSupport />
 					<ImageEditor readmeFilePath="image-editor" />
 					<VideoEditor readmeFilePath="video-editor" />
 					<LikeButtons readmeFilePath="like-button" />
 					<Login />
+					<LocationSearch readmeFilePath="location-search" />
 					<PostEditButton />
 					<PlanStorage readmeFilePath="plan-storage" />
 					<PostSchedule />
 					<PostSelector />
+					<ProductPlanOverlapNotices readmeFilePath="product-plan-overlap-notices" />
+					<ProductSelector readmeFilePath="product-selector" />
 					<Site readmeFilePath="site" />
 					<SitePlaceholder />
 					<SitesDropdown />
 					<SiteIcon readmeFilePath="site-icon" />
 					<Theme />
 					<ThemesListExample />
-					<UpgradeNudge readmeFilePath="upgrade-nudge-expanded" />
 					<PlanCompareCard />
-					<FeatureComparison />
 					<DomainTip />
 					<RelatedPostCard />
 					<PostItem readmeFilePath="post-item" />
 					<PostStatus readmeFilePath="post-status" />
-					<PostTime readmeFilePath="post-time" />
 					<ReaderAuthorLink readmeFilePath="reader-author-link" />
 					<ReaderSubscriptionListItem />
 					<ReaderSiteStreamLink readmeFilePath="reader-site-stream-link" />
-					<ReaderFullPostHeader />
 					<AuthorCompactProfile />
 					<ReaderPostCard />
 					<ReaderCombinedCard />
@@ -182,14 +188,17 @@ export default class AppComponents extends React.Component {
 					<SimplePaymentsDialog />
 					<SubscriptionLengthPicker />
 					<ReaderShare readmeFilePath="reader-share" />
-					<ReaderEmailSettings readmeFilePath="reader-email-settings" />
-					<UploadImage readmeFilePath="upload-image" />
 					<ConversationCommentList />
 					<PostComment />
 					<ConversationCaterpillar readmeFilePath="conversation-caterpillar" />
 					<ConversationFollowButton />
-					<ColorSchemePicker readmeFilePath="color-scheme-picker" />
-					{ isEnabled( 'reader/user-mention-suggestions' ) && <UserMentions /> }
+					{ isEnabled( 'reader/user-mention-suggestions' ) && (
+						<UserMentions readmeFilePath="user-mentions" />
+					) }
+					<SupportArticleDialog />
+					<ImageSelector readmeFilePath="image-selector" />
+					<TimeMismatchWarning readmeFilePath="time-mismatch-warning" />
+					<UpsellNudge />
 				</Collection>
 			</Main>
 		);

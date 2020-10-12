@@ -1,17 +1,16 @@
-/** @format */
-
 /**
  * Internal dependencies
  */
 
 import { domainConnectAuthorize, notFoundError } from './controller';
-import { makeLayout } from 'controller';
+import { makeLayout, render as clientRender } from 'controller';
 
-export default router => {
+export default ( router ) => {
 	router(
 		'/domain-connect/authorize/v2/domainTemplates/providers/:providerId/services/:serviceId/apply',
 		domainConnectAuthorize,
-		makeLayout
+		makeLayout,
+		clientRender
 	);
-	router( '/*', notFoundError, makeLayout );
+	router( '/domain-connect/*', notFoundError, makeLayout, clientRender );
 };

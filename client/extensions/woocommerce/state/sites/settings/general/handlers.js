@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * Internal dependencies
  */
@@ -15,25 +13,25 @@ import {
 	WOOCOMMERCE_SETTINGS_GENERAL_RECEIVE,
 } from 'woocommerce/state/action-types';
 
-export const handleSettingsGeneralSuccess = ( { dispatch }, action, { data } ) => {
+export const handleSettingsGeneralSuccess = ( action, { data } ) => {
 	const { siteId } = action;
-	dispatch( {
+	return {
 		type: WOOCOMMERCE_SETTINGS_GENERAL_RECEIVE,
 		siteId,
 		data,
-	} );
+	};
 };
 
-export const handleSettingsGeneralError = ( { dispatch }, action, error ) => {
+export const handleSettingsGeneralError = ( action, error ) => {
 	const { siteId } = action;
-	dispatch( {
+	return {
 		type: WOOCOMMERCE_SETTINGS_GENERAL_RECEIVE,
 		siteId,
 		error,
-	} );
+	};
 };
 
-export const handleSettingsGeneral = ( { dispatch, getState }, action ) => {
+export const handleSettingsGeneral = ( action ) => ( dispatch, getState ) => {
 	const { siteId } = action;
 
 	if ( areSettingsGeneralLoaded( getState(), siteId ) ) {
@@ -45,10 +43,10 @@ export const handleSettingsGeneral = ( { dispatch, getState }, action ) => {
 
 /**
  * Issues a PUT request to settings/general/woocommerce_currency
- * @param {Object} store - Redux store
- * @param {Object} action - and action with the following fields: siteId, currency, successAction, failureAction
+ *
+ * @param {object} action - and action with the following fields: siteId, currency, successAction, failureAction
  */
-export const handleCurrencyUpdate = ( store, action ) => {
+export const handleCurrencyUpdate = ( { dispatch }, action ) => {
 	const { siteId, currency, successAction, failureAction } = action;
 
 	const payload = {
@@ -57,27 +55,28 @@ export const handleCurrencyUpdate = ( store, action ) => {
 
 	/**
 	 * A callback issued after a successful request
-	 * @param {Function} dispatch - dispatch function
+	 *
+	 * @param {Function} localDispatch - dispatch function
 	 * @param {Function} getState - getState function
-	 * @param {Object} data - data returned by the server
+	 * @param {object} data - data returned by the server
 	 */
-	const updatedAction = ( dispatch, getState, { data } ) => {
-		dispatch( saveCurrencySuccess( siteId, data, action ) );
-		dispatch( successAction );
+	const updatedAction = ( localDispatch, getState, { data } ) => {
+		localDispatch( saveCurrencySuccess( siteId, data, action ) );
+		localDispatch( successAction );
 	};
 
-	store.dispatch(
+	dispatch(
 		put( siteId, 'settings/general/woocommerce_currency', payload, updatedAction, failureAction )
 	);
 };
 
 export default {
 	[ WOOCOMMERCE_SETTINGS_GENERAL_REQUEST ]: [
-		dispatchRequest(
-			handleSettingsGeneral,
-			handleSettingsGeneralSuccess,
-			handleSettingsGeneralError
-		),
+		dispatchRequest( {
+			fetch: handleSettingsGeneral,
+			onSuccess: handleSettingsGeneralSuccess,
+			onError: handleSettingsGeneralError,
+		} ),
 	],
 	[ WOOCOMMERCE_CURRENCY_UPDATE ]: [ handleCurrencyUpdate ],
 };

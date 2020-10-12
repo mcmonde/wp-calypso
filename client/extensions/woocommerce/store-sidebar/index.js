@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -35,7 +33,6 @@ import { getSetStoreAddressDuringInitialSetup } from 'woocommerce/state/sites/se
 import { isLoaded as arePluginsLoaded } from 'state/plugins/installed/selectors';
 import { isStoreManagementSupportedInCalypsoForCountry } from 'woocommerce/lib/countries';
 import Sidebar from 'layout/sidebar';
-import SidebarButton from 'layout/sidebar/button';
 import SidebarItem from 'layout/sidebar/item';
 import SidebarMenu from 'layout/sidebar/menu';
 import SidebarSeparator from 'layout/sidebar/separator';
@@ -79,12 +76,12 @@ class StoreSidebar extends Component {
 		this.props.fetchSetupChoices( siteId );
 	};
 
-	isItemLinkSelected = paths => {
+	isItemLinkSelected = ( paths ) => {
 		if ( ! Array.isArray( paths ) ) {
 			paths = [ paths ];
 		}
 
-		return paths.some( function( path ) {
+		return paths.some( function ( path ) {
 			return path === this.props.path || 0 === this.props.path.indexOf( path + '/' );
 		}, this );
 	};
@@ -112,12 +109,7 @@ class StoreSidebar extends Component {
 	products = () => {
 		const { site, siteSuffix, translate } = this.props;
 		const link = '/store/products' + siteSuffix;
-		const addLink = '/store/product' + siteSuffix;
-		const selected = this.isItemLinkSelected( [
-			link,
-			addLink,
-			'/store/products/categories' + siteSuffix,
-		] );
+		const selected = this.isItemLinkSelected( [ link, '/store/products/categories' + siteSuffix ] );
 		const classes = classNames( {
 			products: true,
 			'is-placeholder': ! site,
@@ -130,11 +122,7 @@ class StoreSidebar extends Component {
 				icon="product"
 				label={ translate( 'Products' ) }
 				link={ link }
-			>
-				<SidebarButton disabled={ ! site } href={ addLink }>
-					{ translate( 'Add' ) }
-				</SidebarButton>
-			</SidebarItem>
+			/>
 		);
 	};
 
@@ -186,8 +174,7 @@ class StoreSidebar extends Component {
 
 		const { site, siteSuffix, translate } = this.props;
 		const link = '/store/promotions' + siteSuffix;
-		const addLink = '/store/promotion' + siteSuffix;
-		const selected = this.isItemLinkSelected( [ link, addLink ] );
+		const selected = this.isItemLinkSelected( [ link ] );
 		const classes = classNames( {
 			promotions: true,
 			'is-placeholder': ! site,
@@ -200,11 +187,7 @@ class StoreSidebar extends Component {
 				icon="gift"
 				label={ translate( 'Promotions' ) }
 				link={ link }
-			>
-				<SidebarButton disabled={ ! site } href={ addLink }>
-					{ translate( 'Add' ) }
-				</SidebarButton>
-			</SidebarItem>
+			/>
 		);
 	};
 

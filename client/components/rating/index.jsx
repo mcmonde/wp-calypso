@@ -1,12 +1,17 @@
-/** @format */
-
 /**
  * External dependencies
  */
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
+import { times } from 'lodash';
+import classNames from 'classnames';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 export default class Rating extends React.PureComponent {
 	static defaultProps = {
@@ -27,11 +32,7 @@ export default class Rating extends React.PureComponent {
 			height: size + 'px',
 		};
 
-		const stars = [];
-		for ( let i = 0; i < 5; i++ ) {
-			stars.push( <Gridicon key={ 'star-' + i } icon="star" style={ starStyles } /> );
-		}
-		return stars;
+		return times( 5, ( i ) => <Gridicon key={ i } icon="star" style={ starStyles } /> );
 	}
 
 	outlineStars() {
@@ -43,22 +44,15 @@ export default class Rating extends React.PureComponent {
 		const starStyles = {
 			width: size + 'px',
 			height: size + 'px',
-			fill: '#00aadc',
 		};
 
-		const stars = [];
-		for ( let i = 0; i < 5; i++ ) {
-			let allStyles = starStyles;
-			if ( i >= 5 - noFillOutlineCount ) {
-				allStyles = Object.assign( {}, starStyles, { fill: '#c8d7e1' } );
-			}
-
-			stars.push(
-				<Gridicon key={ 'star-outline-' + i } icon="star-outline" style={ allStyles } />
+		return times( 5, ( i ) => {
+			const isEmpty = i >= 5 - noFillOutlineCount;
+			const className = classNames( { 'is-empty': isEmpty } );
+			return (
+				<Gridicon key={ i } icon="star-outline" className={ className } style={ starStyles } />
 			);
-		}
-
-		return stars;
+		} );
 	}
 
 	render() {
@@ -66,7 +60,7 @@ export default class Rating extends React.PureComponent {
 
 		const totalWidth = size * 5;
 		const roundRating = Math.round( rating / 10 ) * 10;
-		const maskPosition = roundRating / 100 * totalWidth;
+		const maskPosition = ( roundRating / 100 ) * totalWidth;
 		const clipPathMaskPosition = totalWidth - maskPosition + 'px';
 		const overlayHeightPx = size + 'px';
 		const overlayStyles = {

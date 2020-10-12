@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -15,11 +14,9 @@ import {
 	READER_LISTS_UNFOLLOW_SUCCESS,
 	READER_LIST_UPDATE_SUCCESS,
 	READER_LIST_DISMISS_NOTICE,
-	READER_LIST_UPDATE_TITLE,
-	READER_LIST_UPDATE_DESCRIPTION,
 	READER_LIST_REQUEST_SUCCESS,
 	READER_LIST_REQUEST_FAILURE,
-} from 'state/action-types';
+} from 'state/reader/action-types';
 
 describe( 'reducer', () => {
 	describe( '#items()', () => {
@@ -31,7 +28,10 @@ describe( 'reducer', () => {
 		test( 'should index lists by ID', () => {
 			const state = items( null, {
 				type: READER_LISTS_RECEIVE,
-				lists: [ { ID: 841, title: 'Hello World' }, { ID: 413, title: 'Mangos and feijoas' } ],
+				lists: [
+					{ ID: 841, title: 'Hello World' },
+					{ ID: 413, title: 'Mangos and feijoas' },
+				],
 			} );
 
 			chaiExpect( state ).to.eql( {
@@ -52,37 +52,6 @@ describe( 'reducer', () => {
 			chaiExpect( state ).to.eql( {
 				841: { ID: 841, title: 'Hello World' },
 				413: { ID: 413, title: 'Mangos and feijoas' },
-			} );
-		} );
-
-		test( 'should update a list title', () => {
-			const original = deepFreeze( {
-				841: { ID: 841, title: 'Hello World' },
-			} );
-			const state = items( original, {
-				type: READER_LIST_UPDATE_TITLE,
-				listId: 841,
-				title: 'Bananas',
-			} );
-
-			chaiExpect( state ).to.eql( {
-				841: { ID: 841, title: 'Bananas' },
-			} );
-		} );
-
-		test( 'should update a list description', () => {
-			const original = deepFreeze( {
-				841: { ID: 841, title: 'Bananas' },
-			} );
-			const state = items( original, {
-				type: READER_LIST_UPDATE_DESCRIPTION,
-				listId: 841,
-				title: 'Bananas',
-				description: 'This is a list about fruit',
-			} );
-
-			chaiExpect( state ).to.eql( {
-				841: { ID: 841, title: 'Bananas', description: 'This is a list about fruit' },
 			} );
 		} );
 	} );

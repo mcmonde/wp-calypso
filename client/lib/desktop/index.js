@@ -1,35 +1,46 @@
-/** @format */
 /**
  * External dependencies
  */
 import debugFactory from 'debug';
 
-const debug = debugFactory( 'calypso:desktop' );
-import page from 'page';
-
 /**
  * Internal dependencies
  */
 import { newPost } from 'lib/paths';
-import userFactory from 'lib/user';
-const user = userFactory();
-import { ipcRenderer as ipc } from 'electron'; // From Electron
 import store from 'store';
+import user from 'lib/user';
+import { ipcRenderer as ipc } from 'electron';
 import * as oAuthToken from 'lib/oauth-token';
 import userUtilities from 'lib/user/utils';
-import location from 'lib/route/page-notifier';
 import { getStatsPathForTab } from 'lib/route';
+import { getReduxStore } from 'lib/redux-bridge';
+import { isEditorIframeLoaded } from 'state/editor/selectors';
+import isNotificationsOpen from 'state/selectors/is-notifications-open';
+import { toggleNotificationsPanel, navigate } from 'state/ui/actions';
+import { recordTracksEvent as recordTracksEventAction } from 'state/analytics/actions';
+import {
+	NOTIFY_DESKTOP_CANNOT_USE_EDITOR,
+	NOTIFY_DESKTOP_DID_REQUEST_SITE,
+	NOTIFY_DESKTOP_DID_ACTIVATE_JETPACK_MODULE,
+	NOTIFY_DESKTOP_SEND_TO_PRINTER,
+	NOTIFY_DESKTOP_NOTIFICATIONS_UNSEEN_COUNT_SET,
+	NOTIFY_DESKTOP_NEW_NOTIFICATION,
+	NOTIFY_DESKTOP_VIEW_POST_CLICKED,
+} from 'state/desktop/window-events';
+import { canCurrentUserManageSiteOptions, getSiteTitle } from 'state/sites/selectors';
+import { activateModule } from 'state/jetpack/modules/actions';
+import { requestSite } from 'state/sites/actions';
 
 /**
  * Module variables
  */
-const widgetDomain = 'https://widgets.wp.com';
+const debug = debugFactory( 'calypso:desktop' );
 
 const Desktop = {
 	/**
 	 * Bootstraps network connection status change handler.
 	 */
-	init: function() {
+	init: async function () {
 		debug( 'Registering IPC listeners' );
 
 		// Register IPC listeners
@@ -39,140 +50,325 @@ const Desktop = {
 		ipc.on( 'new-post', this.onNewPost.bind( this ) );
 		ipc.on( 'signout', this.onSignout.bind( this ) );
 		ipc.on( 'toggle-notification-bar', this.onToggleNotifications.bind( this ) );
-		ipc.on( 'cookie-auth-complete', this.onCookieAuthComplete.bind( this ) );
+		ipc.on( 'close-notifications-panel', this.onCloseNotificationsPanel.bind( this ) );
+		ipc.on( 'notification-clicked', this.onNotificationClicked.bind( this ) );
 		ipc.on( 'page-help', this.onShowHelp.bind( this ) );
+		ipc.on( 'navigate', this.onNavigate.bind( this ) );
+		ipc.on( 'request-site', this.onRequestSite.bind( this ) );
+		ipc.on( 'enable-site-option', this.onActivateJetpackSiteModule.bind( this ) );
+		ipc.on( 'enable-notification-badge', this.sendNotificationUnseenCount );
 
-		window.addEventListener( 'message', this.receiveMessage.bind( this ) );
+		window.addEventListener(
+			NOTIFY_DESKTOP_CANNOT_USE_EDITOR,
+			this.onCannotOpenEditor.bind( this )
+		);
 
-		// Send some events immediatley - this sets the app state
-		this.sendNotificationCount( store.get( 'wpnotes_unseen_count' ) );
+		window.addEventListener(
+			NOTIFY_DESKTOP_VIEW_POST_CLICKED,
+			this.onViewPostClicked.bind( this )
+		);
+
+		window.addEventListener(
+			NOTIFY_DESKTOP_NOTIFICATIONS_UNSEEN_COUNT_SET,
+			this.onUnseenCountUpdated.bind( this )
+		);
+
+		window.addEventListener( NOTIFY_DESKTOP_NEW_NOTIFICATION, this.onNewNotification.bind( this ) );
+
+		window.addEventListener( NOTIFY_DESKTOP_SEND_TO_PRINTER, this.onSendToPrinter.bind( this ) );
+
+		this.store = await getReduxStore();
+
+		this.editorLoadedStatus();
+
+		// Send some events immediately - this sets the app state
+		this.sendNotificationUnseenCount();
 		this.sendUserLoginStatus();
-
-		location( function( context ) {
-			ipc.send( 'render', context );
-		} );
 	},
 
 	selectedSite: null,
 
-	setSelectedSite: function( site ) {
+	navigate: function ( to ) {
+		this.onCloseNotificationsPanel();
+		this.store.dispatch( navigate( to ) );
+	},
+
+	toggleNotificationsPanel: function () {
+		this.store.dispatch( toggleNotificationsPanel() );
+	},
+
+	setSelectedSite: function ( site ) {
 		this.selectedSite = site;
 	},
 
-	receiveMessage: function( event ) {
-		let data;
-
-		if ( event.origin !== widgetDomain ) {
+	sendNotificationUnseenCount: function () {
+		// Used to update unseen badge count when booting the app: no-op if not connected.
+		const navigator = window.navigator;
+		const connected = typeof navigator !== 'undefined' ? !! navigator.onLine : true;
+		if ( ! connected ) {
 			return;
 		}
-
-		data = JSON.parse( event.data );
-
-		if ( data.type === 'notesIframeMessage' ) {
-			if ( data.action === 'render' ) {
-				this.sendNotificationCount( data.num_new );
-			} else if ( data.action === 'renderAllSeen' ) {
-				this.sendNotificationCount( 0 );
-			}
+		const unseenCount = store.get( 'wpnotes_unseen_count' );
+		if ( unseenCount !== null ) {
+			debug( `Sending unseen count: ${ unseenCount }` );
+			ipc.send( 'unread-notices-count', unseenCount );
 		}
 	},
 
-	sendUserLoginStatus: function() {
+	onUnseenCountUpdated: function ( event ) {
+		const { unseenCount } = event.detail;
+		debug( `Sending unseen count: ${ unseenCount }` );
+		ipc.send( 'unread-notices-count', unseenCount );
+	},
+
+	onNewNotification: function ( event ) {
+		const noteWithMeta = event.detail;
+		const { note } = noteWithMeta;
+		debug( `Received notification: ${ note.id }` );
+		const siteTitle = getSiteTitle( this.store.getState(), note.meta.ids.site );
+		ipc.send( `received-notification`, {
+			siteTitle,
+			...noteWithMeta,
+		} );
+	},
+
+	onNotificationClicked: function ( _, noteWithMeta ) {
+		const { note, isApproved } = noteWithMeta;
+		debug( `Notification ${ note.id } clicked` );
+
+		const noteId = note.id;
+		const linkType = note.type;
+		const siteId = note.meta.ids.site;
+		const postId = note.meta.ids.post;
+		const commentId = note.meta.ids.comment;
+		let fallBackToNotificationsPanel = false;
+
+		// TODO: Make this a desktop-specific Tracks event.
+		this.store.dispatch( recordTracksEventAction( 'calypso_web_push_notification_clicked' ), {
+			push_notification_note_id: noteId,
+			push_notification_type: linkType,
+		} );
+
+		// Tell the notifications panel to mark this note as read.
+		window.dispatchEvent(
+			new window.CustomEvent( 'desktop-notification-mark-as-read', {
+				detail: {
+					noteId,
+				},
+			} )
+		);
+
+		switch ( linkType ) {
+			case 'post':
+				this.navigate( `/read/blogs/${ siteId }/posts/${ postId }` );
+				break;
+			case 'comment':
+				{
+					// If the note is approved, navigate to the comment URL within Calypso.
+					// Otherwise open and display Calypso's notifications panel.
+					if ( isApproved ) {
+						this.navigate( `/read/blogs/${ siteId }/posts/${ postId }#comment-${ commentId }` );
+					} else {
+						fallBackToNotificationsPanel = true;
+					}
+				}
+				break;
+			case 'comment_like':
+				this.navigate( `/read/blogs/${ siteId }/posts/${ postId }#comment-${ commentId }` );
+				break;
+			case 'site':
+				this.navigate( `/read/blogs/${ siteId }` );
+				break;
+			default:
+				fallBackToNotificationsPanel = true;
+		}
+
+		// Fall back to notifications panel for unhandled note types.
+		if ( fallBackToNotificationsPanel ) {
+			setTimeout( () => {
+				this.navigate( '/' );
+				if ( ! isNotificationsOpen( this.store.getState() ) ) {
+					this.toggleNotificationsPanel();
+				}
+			}, 1000 );
+		}
+	},
+
+	sendUserLoginStatus: function () {
 		let status = true;
 
-		if ( user.data === false || user.data instanceof Array ) {
+		if ( user().get() === false ) {
 			status = false;
 		}
 
 		debug( 'Sending logged-in = ' + status );
 
 		ipc.send( 'user-login-status', status );
-		ipc.send( 'user-auth', user, oAuthToken.getToken() );
+		ipc.send( 'user-auth', user(), oAuthToken.getToken() );
 	},
 
-	sendNotificationCount: function( count ) {
-		debug( 'Sending notification count ' + store.get( 'wpnotes_unseen_count' ) );
-
-		ipc.send( 'unread-notices-count', count );
-	},
-
-	getNotificationLinkElement: function() {
-		return document.querySelector( '.masterbar__item-notifications' );
-	},
-
-	clearNotificationBar: function() {
-		// TODO: find a better way. seems to be react component state based
-		const notificationsLink = this.getNotificationLinkElement();
-		if (
-			notificationsLink &&
-			notificationsLink.className &&
-			notificationsLink.className.indexOf( 'is-active' ) !== -1
-		) {
-			notificationsLink.click();
-		}
-	},
-
-	onToggleNotifications: function() {
-		// TODO: find a better way of doing this - masterbar seems to use state to toggle this
+	onToggleNotifications: function () {
 		debug( 'Toggle notifications' );
 
-		const notificationsLink = this.getNotificationLinkElement();
-		if ( notificationsLink ) {
-			notificationsLink.click();
+		this.toggleNotificationsPanel();
+	},
+
+	onCloseNotificationsPanel: function () {
+		if ( isNotificationsOpen( this.store.getState() ) ) {
+			this.toggleNotificationsPanel();
 		}
 	},
 
-	onSignout: function() {
+	onSignout: function () {
 		debug( 'Signout' );
 
 		userUtilities.logout();
 	},
 
-	onShowMySites: function() {
+	onShowMySites: function () {
 		debug( 'Showing my sites' );
 		const site = this.selectedSite;
 		const siteSlug = site ? site.slug : null;
 
-		this.clearNotificationBar();
-		page( getStatsPathForTab( 'day', siteSlug ) );
+		this.navigate( getStatsPathForTab( 'day', siteSlug ) );
 	},
 
-	onShowReader: function() {
+	onShowReader: function () {
 		debug( 'Showing reader' );
 
-		this.clearNotificationBar();
-		page( '/' );
+		this.navigate( '/read' );
 	},
 
-	onShowProfile: function() {
+	onShowProfile: function () {
 		debug( 'Showing my profile' );
 
-		this.clearNotificationBar();
-		page( '/me' );
+		this.navigate( '/me' );
 	},
 
-	onNewPost: function() {
+	onNewPost: function () {
 		debug( 'New post' );
 
-		this.clearNotificationBar();
-		page( newPost( this.selectedSite ) );
+		this.navigate( newPost( this.selectedSite ) );
 	},
 
-	// now that our browser session has a valid wordpress.com cookie, let's force
-	// reload the notifications iframe so wpcom-proxy-request API calls work
-	onCookieAuthComplete: function() {
-		const iframe = document.querySelector( '#wpnt-notes-iframe2' );
-		iframe.src = iframe.src;
-	},
-
-	onShowHelp: function() {
+	onShowHelp: function () {
 		debug( 'Showing help' );
 
-		this.clearNotificationBar();
-		page( '/help' );
+		this.navigate( '/help' );
 	},
 
-	print: function( title, html ) {
+	editorLoadedStatus: function () {
+		const sendLoadedEvt = () => {
+			debug( 'Editor iframe loaded' );
+
+			const evt = new window.Event( 'editor-iframe-loaded' );
+			window.dispatchEvent( evt );
+		};
+
+		let previousLoaded = isEditorIframeLoaded( this.store.getState() );
+
+		if ( previousLoaded ) {
+			sendLoadedEvt();
+		}
+
+		this.store.subscribe( () => {
+			const state = this.store.getState();
+			const loaded = isEditorIframeLoaded( state );
+
+			if ( loaded !== previousLoaded ) {
+				if ( loaded ) {
+					sendLoadedEvt();
+				}
+
+				previousLoaded = loaded;
+			}
+		} );
+	},
+
+	onCannotOpenEditor: function ( event ) {
+		const { site, reason, editorUrl, wpAdminLoginUrl } = event.detail;
+		debug( 'Received window event: unable to load editor for site: ', site.URL );
+
+		const siteId = site.ID;
+		const state = this.store.getState();
+		const canUserManageOptions = canCurrentUserManageSiteOptions( state, siteId );
+		const payload = {
+			siteId,
+			reason,
+			editorUrl,
+			wpAdminLoginUrl,
+			origin: site.URL,
+			canUserManageOptions,
+		};
+
+		ipc.send( 'cannot-use-editor', payload );
+	},
+
+	onViewPostClicked: function ( event ) {
+		const { url } = event.detail;
+		debug( `Received window event: "View Post" clicked for URL: ${ url }` );
+
+		ipc.send( 'view-post-clicked', url );
+	},
+
+	onActivateJetpackSiteModule: function ( event, info ) {
+		const { siteId, option } = info;
+		debug( `User enabling option '${ option }' for siteId ${ siteId }` );
+
+		const response = NOTIFY_DESKTOP_DID_ACTIVATE_JETPACK_MODULE;
+		function onDidActivateJetpackSiteModule( responseEvent ) {
+			debug( 'Received Jetpack module activation response for: ', responseEvent.detail );
+
+			window.removeEventListener( response, this );
+			const { status, siteId: responseSiteId } = responseEvent.detail;
+			let { error } = responseEvent.detail;
+			if ( Number( siteId ) !== Number( responseSiteId ) ) {
+				error = `Expected response for siteId: ${ siteId }, got: ${ responseSiteId }`;
+			}
+			ipc.send( 'enable-site-option-response', { status, siteId, error } );
+		}
+		window.addEventListener(
+			response,
+			onDidActivateJetpackSiteModule.bind( onDidActivateJetpackSiteModule )
+		);
+
+		this.store.dispatch( activateModule( siteId, option ) );
+	},
+
+	onRequestSite: function ( event, siteId ) {
+		debug( 'Refreshing redux state for siteId: ', siteId );
+
+		const response = NOTIFY_DESKTOP_DID_REQUEST_SITE;
+		function onDidRequestSite( responseEvent ) {
+			debug( 'Received site request response for: ', responseEvent.detail );
+
+			window.removeEventListener( response, this );
+			const { status, siteId: responseSiteId } = responseEvent.detail;
+			let { error } = responseEvent.detail;
+			if ( Number( siteId ) !== Number( responseSiteId ) ) {
+				error = `Expected response for siteId: ${ siteId }, got: ${ responseSiteId }`;
+			}
+			ipc.send( 'request-site-response', { siteId, status, error } );
+		}
+		window.addEventListener( response, onDidRequestSite.bind( onDidRequestSite ) );
+
+		this.store.dispatch( requestSite( siteId ) );
+	},
+
+	onNavigate: function ( event, url ) {
+		debug( 'Navigating to URL: ', url );
+
+		if ( url ) {
+			this.navigate( url );
+		}
+	},
+
+	onSendToPrinter: function ( event ) {
+		const { title, contents } = event.detail;
+		this.print( title, contents );
+	},
+
+	print: function ( title, html ) {
 		ipc.send( 'print', title, html );
 	},
 };

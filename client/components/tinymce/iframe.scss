@@ -1,14 +1,18 @@
 body {
 	@extend %content-font;
 	font-family: $serif;
-	font-size: 16px;
+	font-size: $font-body;
 	line-height: 1.7;
 	margin-top: 32px;
 	margin-bottom: 72px;
+
+	&.is-gutenberg {
+		margin-bottom: 32px;
+	}
 }
 
 p {
-	margin: 0 0 24px 0;
+	margin: 0 0 24px;
 
 	.mce-content-body & {
 		/* To override lightgray/content.min.css */
@@ -29,7 +33,7 @@ a:link,
 a:visited,
 a:hover,
 a:active {
-	color: $blue-medium;
+	color: var( --color-accent );
 }
 
 code {
@@ -39,7 +43,7 @@ code {
 }
 
 pre {
-	background: $gray-light;
+	background: var( --color-neutral-0 );
 	font-family: $code;
 	padding: 8px;
 	overflow-x: auto;
@@ -102,9 +106,9 @@ a img {
 }
 
 .wp-caption-dd {
-	background: $gray-light;
-	color: $gray-darken-20;
-	font-size: 14px;
+	background: var( --color-neutral-0 );
+	color: var( --color-neutral-50 );
+	font-size: $font-body-small;
 	line-height: 1.7;
 	padding: 16px;
 }
@@ -112,10 +116,10 @@ a img {
 .wpview-body::before {
 	content: '';
 	position: absolute;
-		top: 0;
-		right: 0;
-		bottom: 0;
-		left: 0;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
 	cursor: default;
 
 	.wpview-wrap[data-mce-selected] & {
@@ -130,22 +134,22 @@ a img {
 
 blockquote {
 	padding: 16px;
-	margin: 8px 0 24px 0;
-	border-left: 2px solid $gray;
-	color: darken( $gray, 20 );
-	background: lighten( $gray, 30 );
+	margin: 8px 0 24px;
+	border-left: 2px solid var( --color-neutral-light );
+	color: var( --color-neutral-50 );
+	background: var( --color-neutral-0 );
 }
 
 caption,
 th,
 td {
-	font-weight: normal;
+	font-weight: 400;
 	text-align: left;
 }
 table,
 th,
 td {
-	border: 1px solid lighten( $gray, 20 );
+	border: 1px solid var( --color-neutral-10 );
 }
 table {
 	border-collapse: separate;
@@ -158,28 +162,33 @@ table {
 caption,
 th,
 td {
-	font-weight: normal;
+	font-weight: 400;
 	text-align: left;
 }
 th {
 	border-width: 0 1px 1px 0;
-	font-weight: 700;
+	font-weight: 600;
 }
 td {
 	border-width: 0 1px 1px 0;
 }
-th, td {
+th,
+td {
 	padding: 0.4em;
 }
-.mce-item-table, .mce-item-table td, .mce-item-table th, .mce-item-table caption {
-	border: 1px solid lighten( $gray, 20 );
+
+.mce-item-table,
+.mce-item-table td,
+.mce-item-table th,
+.mce-item-table caption {
+	border: 1px solid var( --color-neutral-10 );
 }
 
 hr {
 	border: 0;
 	height: 1px;
 	margin: 8px 0;
-	background: lighten( $gray, 20 );
+	background: var( --color-neutral-10 );
 }
 
 /* Styles for formatting the boundaries of anchors and code elements */
@@ -187,19 +196,19 @@ hr {
 	padding: 0 2px;
 	margin: 0 -2px;
 	border-radius: 2px;
-	box-shadow: 0 0 0 1px rgba( $blue-medium, 0.2 );
-	background: rgba( $blue-medium, 0.2 );
-	color: $blue-dark;
+	box-shadow: 0 0 0 1px rgba( var( --color-primary-rgb ), 0.2 );
+	background: rgba( var( --color-primary-rgb ), 0.2 );
+	color: var( --color-primary-dark );
 }
 
 .mce-content-body code {
 	padding: 2px 4px;
 	margin: 0;
 	border-radius: 2px;
-	color: $gray-dark;
-	background: $gray-lighten-30;
+	color: var( --color-neutral-70 );
+	background: var( --color-neutral-0 );
 }
 
 .mce-content-body code[data-mce-selected] {
-	background: $gray-lighten-20;
+	background: var( --color-neutral-10 );
 }

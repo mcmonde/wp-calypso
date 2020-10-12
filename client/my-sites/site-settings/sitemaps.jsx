@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -12,20 +10,18 @@ import { connect } from 'react-redux';
 /**
  * Internal dependencies
  */
-import Card from 'components/card';
-import SectionHeader from 'components/section-header';
+import { Card } from '@automattic/components';
+import SettingsSectionHeader from 'my-sites/site-settings/settings-section-header';
 import JetpackModuleToggle from 'my-sites/site-settings/jetpack-module-toggle';
 import FormFieldset from 'components/forms/form-fieldset';
 import FormSettingExplanation from 'components/forms/form-setting-explanation';
-import InfoPopover from 'components/info-popover';
+import SupportInfo from 'components/support-info';
 import ExternalLink from 'components/external-link';
 import QueryJetpackConnection from 'components/data/query-jetpack-connection';
 import { getSelectedSite, getSelectedSiteId, getSelectedSiteSlug } from 'state/ui/selectors';
-import {
-	getJetpackModule,
-	isActivatingJetpackModule,
-	isJetpackModuleActive,
-} from 'state/selectors';
+import getJetpackModule from 'state/selectors/get-jetpack-module';
+import isActivatingJetpackModule from 'state/selectors/is-activating-jetpack-module';
+import isJetpackModuleActive from 'state/selectors/is-jetpack-module-active';
 import { isJetpackSite } from 'state/sites/selectors';
 
 class Sitemaps extends Component {
@@ -56,20 +52,17 @@ class Sitemaps extends Component {
 		);
 	}
 
-	renderInfoLink( url ) {
+	renderInfoLink( link, privacyLink ) {
 		const { translate } = this.props;
 
 		return (
-			<div className="sitemaps__info-link-container site-settings__info-link-container">
-				<InfoPopover position="left">
-					{ translate(
-						'Automatically generates the files required for search engines to index your site.'
-					) }{' '}
-					<ExternalLink href={ url } icon={ false } target="_blank">
-						{ translate( 'Learn more' ) }
-					</ExternalLink>
-				</InfoPopover>
-			</div>
+			<SupportInfo
+				text={ translate(
+					'Automatically generates the files required for search engines to index your site.'
+				) }
+				link={ link }
+				privacyLink={ privacyLink }
+			/>
 		);
 	}
 
@@ -109,12 +102,12 @@ class Sitemaps extends Component {
 
 		return (
 			<div>
-				{ this.renderInfoLink( 'https://support.wordpress.com/sitemaps/' ) }
+				{ this.renderInfoLink( 'https://wordpress.com/support/sitemaps/', false ) }
 
 				{ this.isSitePublic() ? (
 					<div>
 						{ this.renderSitemapExplanation() }
-						{ sitemapTypes.map( sitemapType => {
+						{ sitemapTypes.map( ( sitemapType ) => {
 							const sitemapUrl = site.URL + '/' + sitemapType + '.xml';
 							return this.renderSitemapLink( sitemapUrl );
 						} ) }
@@ -160,7 +153,7 @@ class Sitemaps extends Component {
 
 						{ sitemapsModule &&
 							sitemapTypes.map(
-								sitemapType =>
+								( sitemapType ) =>
 									sitemapsModule.extra[ sitemapType ] &&
 									this.renderSitemapLink( sitemapsModule.extra[ sitemapType ] )
 							) }
@@ -175,7 +168,7 @@ class Sitemaps extends Component {
 
 		return (
 			<FormFieldset>
-				{ this.renderInfoLink( 'https://jetpack.com/support/sitemaps' ) }
+				{ this.renderInfoLink( 'https://jetpack.com/support/sitemaps/' ) }
 
 				<JetpackModuleToggle
 					siteId={ siteId }
@@ -196,7 +189,7 @@ class Sitemaps extends Component {
 			<div>
 				{ siteId && <QueryJetpackConnection siteId={ siteId } /> }
 
-				<SectionHeader label={ translate( 'Sitemaps' ) } />
+				<SettingsSectionHeader title={ translate( 'Sitemaps' ) } />
 
 				<Card className="sitemaps__card site-settings__traffic-settings">
 					{ siteIsJetpack ? this.renderJetpackSettings() : this.renderWpcomSettings() }
@@ -206,7 +199,7 @@ class Sitemaps extends Component {
 	}
 }
 
-export default connect( state => {
+export default connect( ( state ) => {
 	const siteId = getSelectedSiteId( state );
 
 	return {

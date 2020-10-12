@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -49,7 +47,7 @@ class FormDimensionsInput extends Component {
 		}
 	}
 
-	componentWillReceiveProps( newProps ) {
+	UNSAFE_componentWillReceiveProps( newProps ) {
 		if ( newProps.siteId !== this.props.siteId ) {
 			this.props.fetchSettingsProducts( newProps.siteId );
 		}

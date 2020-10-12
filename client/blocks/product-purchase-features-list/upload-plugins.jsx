@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -12,18 +10,23 @@ import { localize } from 'i18n-calypso';
  */
 import PurchaseDetail from 'components/purchase-detail';
 
+/**
+ * Image dependencies
+ */
+import updatesImage from 'assets/images/illustrations/updates.svg';
+
 export default localize( ( { selectedSite, translate } ) => {
 	return (
 		<div className="product-purchase-features-list__item">
 			<PurchaseDetail
-				icon={ <img alt="" src="/calypso/images/illustrations/jetpack-updates.svg" /> }
+				icon={ <img alt="" src={ updatesImage } /> }
 				title={ translate( 'Add a Plugin' ) }
 				description={ translate(
 					'Search and add plugins right from your dashboard, or upload a plugin ' +
 						'from your computer with a drag-and-drop interface.'
 				) }
 				buttonText={ translate( 'Upload a plugin now' ) }
-				href={ '/plugins/upload/' + selectedSite.slug }
+				href={ '/plugins/manage/' + selectedSite.slug }
 			/>
 		</div>
 	);

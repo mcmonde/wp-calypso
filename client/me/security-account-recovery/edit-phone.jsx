@@ -1,8 +1,8 @@
-/** @format */
 /**
  * External dependencies
  */
 import PropTypes from 'prop-types';
+import { connect } from 'react-redux';
 import { localize } from 'i18n-calypso';
 import React from 'react';
 import { isEmpty } from 'lodash';
@@ -10,16 +10,18 @@ import { isEmpty } from 'lodash';
 /**
  * Internal dependencies
  */
-import FormFieldset from 'components/forms/form-fieldset';
-import FormPhoneInput from 'components/forms/form-phone-input';
-import FormInputValidation from 'components/forms/form-input-validation';
+import FormFieldset from 'calypso/components/forms/form-fieldset';
+import FormPhoneInput from 'calypso/components/forms/form-phone-input';
+import FormInputValidation from 'calypso/components/forms/form-input-validation';
 import Buttons from './buttons';
-import { forSms as countriesList } from 'lib/countries-list';
+import getCountries from 'calypso/state/selectors/get-countries';
+import QuerySmsCountries from 'calypso/components/data/query-countries/sms';
 
 class SecurityAccountRecoveryRecoveryPhoneEdit extends React.Component {
 	static displayName = 'SecurityAccountRecoveryRecoveryPhoneEdit';
 
 	static propTypes = {
+		countriesList: PropTypes.array.isRequired,
 		storedPhone: PropTypes.shape( {
 			countryCode: PropTypes.string,
 			countryNumericCode: PropTypes.string,
@@ -41,8 +43,9 @@ class SecurityAccountRecoveryRecoveryPhoneEdit extends React.Component {
 		return (
 			<div>
 				<FormFieldset>
+					<QuerySmsCountries />
 					<FormPhoneInput
-						countriesList={ countriesList }
+						countriesList={ this.props.countriesList }
 						initialCountryCode={ havePhone ? this.props.storedPhone.countryCode : null }
 						initialPhoneNumber={ havePhone ? this.props.storedPhone.number : null }
 						phoneInputProps={ {
@@ -50,6 +53,7 @@ class SecurityAccountRecoveryRecoveryPhoneEdit extends React.Component {
 						} }
 						onChange={ this.onChange }
 					/>
+
 					{ this.state.validation && (
 						<FormInputValidation isError text={ this.state.validation } />
 					) }
@@ -87,11 +91,11 @@ class SecurityAccountRecoveryRecoveryPhoneEdit extends React.Component {
 		return true;
 	};
 
-	onChange = phoneNumber => {
+	onChange = ( phoneNumber ) => {
 		this.setState( { phoneNumber } );
 	};
 
-	onKeyUp = event => {
+	onKeyUp = ( event ) => {
 		if ( event.key === 'Enter' ) {
 			this.onSave();
 		}
@@ -104,10 +108,12 @@ class SecurityAccountRecoveryRecoveryPhoneEdit extends React.Component {
 			this.setState( {
 				validation: this.props.translate( 'Please enter a valid phone number.' ),
 			} );
+
 			return;
 		}
 
 		this.setState( { isInvalid: null } );
+
 		this.props.onSave( {
 			countryCode: phoneNumber.countryData.code,
 			countryNumericCode: phoneNumber.countryData.numericCode,
@@ -125,4 +131,6 @@ class SecurityAccountRecoveryRecoveryPhoneEdit extends React.Component {
 	};
 }
 
-export default localize( SecurityAccountRecoveryRecoveryPhoneEdit );
+export default connect( ( state ) => ( {
+	countriesList: getCountries( state, 'sms' ),
+} ) )( localize( SecurityAccountRecoveryRecoveryPhoneEdit ) );

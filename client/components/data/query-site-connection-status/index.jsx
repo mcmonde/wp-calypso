@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -11,7 +9,7 @@ import { connect } from 'react-redux';
 /**
  * Internal dependencies
  */
-import { isRequestingSiteConnectionStatus } from 'state/selectors';
+import isRequestingSiteConnectionStatus from 'state/selectors/is-requesting-site-connection-status';
 import { requestConnectionStatus } from 'state/sites/connection/actions';
 
 class QuerySiteConnectionStatus extends Component {
@@ -21,11 +19,11 @@ class QuerySiteConnectionStatus extends Component {
 		requestConnectionStatus: PropTypes.func,
 	};
 
-	componentWillMount() {
+	UNSAFE_componentWillMount() {
 		this.request( this.props );
 	}
 
-	componentWillReceiveProps( nextProps ) {
+	UNSAFE_componentWillReceiveProps( nextProps ) {
 		if ( this.props.siteId !== nextProps.siteId ) {
 			this.request( nextProps );
 		}

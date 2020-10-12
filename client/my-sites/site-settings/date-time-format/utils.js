@@ -1,10 +1,8 @@
-/** @format */
-
 /**
  * External dependencies
  */
 
-import { moment } from 'i18n-calypso';
+import moment from 'moment-timezone';
 import { has, startsWith } from 'lodash';
 
 /**
@@ -18,7 +16,7 @@ import { has, startsWith } from 'lodash';
  * @see http://momentjs.com/timezone/docs/#/using-timezones/parsing-in-zone/
  *
  * @param {string} timezoneString A timezone string.
- * @return {Object} The timezone-adjusted Moment.js object of the current date and time.
+ * @returns {object} The timezone-adjusted Moment.js object of the current date and time.
  */
 export function getLocalizedDate( timezoneString ) {
 	return startsWith( timezoneString, 'UTC' )
@@ -36,7 +34,7 @@ export function getLocalizedDate( timezoneString ) {
  * @see http://php.net/manual/en/function.date.php#refsect1-function.date-parameters
  * @see http://momentjs.com/docs/#/displaying/format/
  *
- * @type {Object}
+ * @type {object}
  */
 const phpToMomentMapping = {
 	d: 'DD',
@@ -90,9 +88,9 @@ const phpToMomentMapping = {
 /**
  * Convert a PHP datetime format string into a Moment.js one.
  *
- * @param {Object} momentDate A Moment.js object of the current date and time.
- * @param {String} formatString A PHP datetime format string
- * @return {String} A Moment.js datetime format string
+ * @param {object} momentDate A Moment.js object of the current date and time.
+ * @param {string} formatString A PHP datetime format string
+ * @returns {string} A Moment.js datetime format string
  */
 export function phpToMomentDatetimeFormat( momentDate, formatString ) {
 	const mappedFormat = formatString
@@ -130,8 +128,8 @@ export function phpToMomentDatetimeFormat( momentDate, formatString ) {
 				case 'B':
 					const utcDate = momentDate.clone().utc();
 					const swatchTime =
-						( utcDate.hours() + 1 ) % 24 + utcDate.minutes() / 60 + utcDate.seconds() / 3600;
-					return Math.floor( swatchTime * 1000 / 24 );
+						( ( utcDate.hours() + 1 ) % 24 ) + utcDate.minutes() / 60 + utcDate.seconds() / 3600;
+					return Math.floor( ( swatchTime * 1000 ) / 24 );
 				case 'I':
 					// 1 or 0
 					return `[${ momentDate.isDST() | 0 }]`;

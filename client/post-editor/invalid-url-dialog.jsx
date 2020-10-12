@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -11,7 +10,7 @@ import page from 'page';
 /**
  * Internal dependencies
  */
-import Dialog from 'components/dialog';
+import { Dialog } from '@automattic/components';
 import FormButton from 'components/forms/form-button';
 import { getSiteFragment } from 'lib/route';
 
@@ -20,19 +19,21 @@ class EditorTrashedDialog extends React.Component {
 
 	static defaultProps = {
 		onClose: noop,
-		onSave: noop,
 	};
 
 	static propTypes = {
 		onClose: PropTypes.func,
-		onSave: PropTypes.func,
 	};
 
-	isPage = () => {
+	state = {
+		isPage: this.isPage(),
+	};
+
+	isPage() {
 		return startsWith( page.current, '/page/' );
-	};
+	}
 
-	getDialogButtons = () => {
+	getDialogButtons() {
 		const newText = this.state.isPage
 			? this.props.translate( 'New Page' )
 			: this.props.translate( 'New Post' );
@@ -44,7 +45,7 @@ class EditorTrashedDialog extends React.Component {
 				{ this.props.translate( 'Close' ) }
 			</FormButton>,
 		];
-	};
+	}
 
 	startNewPage = () => {
 		const siteFragment = getSiteFragment( page.current );
@@ -52,7 +53,7 @@ class EditorTrashedDialog extends React.Component {
 		page( postSegment + siteFragment );
 	};
 
-	getStrings = isPage => {
+	getStrings( isPage ) {
 		if ( isPage ) {
 			return {
 				dialogTitle: this.props.translate( 'Invalid Page Address' ),
@@ -67,11 +68,7 @@ class EditorTrashedDialog extends React.Component {
 				'This post cannot be found. Check the web address or start a new post.'
 			),
 		};
-	};
-
-	state = {
-		isPage: this.isPage(),
-	};
+	}
 
 	render() {
 		const strings = this.getStrings( this.state.isPage );

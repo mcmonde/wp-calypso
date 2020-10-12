@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External Dependencies
  */
@@ -13,14 +12,19 @@ import DocumentHead from 'components/data/document-head';
 import ConversationsIntro from './intro';
 import ConversationsEmptyContent from 'blocks/conversations/empty';
 
-export default function( props ) {
+/**
+ * Style dependencies
+ */
+import './stream.scss';
+
+export default function ( props ) {
 	const isInternal = get( props, 'store.id' ) === 'conversations-a8c';
 	const emptyContent = <ConversationsEmptyContent />;
 	const intro = <ConversationsIntro isInternal={ isInternal } />;
 	return (
 		<Stream
-			postsStore={ props.store }
 			key="conversations"
+			streamKey={ props.streamKey }
 			shouldCombineCards={ false }
 			className="conversations__stream"
 			followSource="conversations"

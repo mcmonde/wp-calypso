@@ -1,9 +1,6 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import PropTypes from 'prop-types';
 import React from 'react';
 import classnames from 'classnames';
@@ -16,9 +13,8 @@ import { get, noop } from 'lodash';
 import resizeImageUrl from 'lib/resize-image-url';
 import safeImageUrl from 'lib/safe-image-url';
 import { getNormalizedPost } from 'state/posts/selectors';
-import { getEditorPath } from 'state/ui/editor/selectors';
-import { canCurrentUserEditPost } from 'state/selectors';
-import { isMultiSelectEnabled } from 'state/ui/post-type-list/selectors';
+import { getEditorPath } from 'state/editor/selectors';
+import { canCurrentUserEditPost } from 'state/posts/selectors/can-current-user-edit-post';
 
 function PostTypeListPostThumbnail( { onClick, thumbnail, postLink } ) {
 	const classes = classnames( 'post-type-list__post-thumbnail-wrapper', {
@@ -29,7 +25,7 @@ function PostTypeListPostThumbnail( { onClick, thumbnail, postLink } ) {
 		<div className={ classes }>
 			{ thumbnail && (
 				<a href={ postLink } className="post-type-list__post-thumbnail-link">
-					<img
+					<img //eslint-disable-line
 						src={ resizeImageUrl( safeImageUrl( thumbnail ), { h: 80 } ) }
 						className="post-type-list__post-thumbnail"
 						onClick={ onClick }
@@ -60,9 +56,10 @@ export default connect( ( state, ownProps ) => {
 	const postUrl = canCurrentUserEditPost( state, ownProps.globalId )
 		? getEditorPath( state, siteId, postId )
 		: get( post, 'URL' );
+	const isTrashed = post && 'trash' === post.status;
 
-	// Null if the item is a placeholder or bulk edit mode is active.
-	const postLink = ! ownProps.globalId || isMultiSelectEnabled( state ) ? null : postUrl;
+	// Null if the item is a placeholder.
+	const postLink = ! ownProps.globalId || isTrashed ? null : postUrl;
 
 	return { thumbnail, postLink };
 } )( PostTypeListPostThumbnail );

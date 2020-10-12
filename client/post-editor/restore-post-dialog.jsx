@@ -1,22 +1,19 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { localize } from 'i18n-calypso';
-import { noop, get } from 'lodash';
+import { noop } from 'lodash';
 
 /**
  * Internal dependencies
  */
-import Dialog from 'components/dialog';
+import { Dialog } from '@automattic/components';
 import FormButton from 'components/forms/form-button';
 import { getSelectedSiteId } from 'state/ui/selectors';
-import { getEditorPostId } from 'state/ui/editor/selectors';
+import { getEditorPostId } from 'state/editor/selectors';
 import { getEditedPostValue } from 'state/posts/selectors';
 
 class EditorRestorePostDialog extends Component {
@@ -26,22 +23,12 @@ class EditorRestorePostDialog extends Component {
 		onRestore: PropTypes.func,
 		isAutosave: PropTypes.bool,
 		postType: PropTypes.string,
-		canUserDeletePost: PropTypes.bool,
 	};
 
 	static defaultProps = {
 		onClose: noop,
 		onRestore: noop,
 		isAutosave: false,
-	};
-
-	restorePost = () => {
-		const { isAutosave, canUserDeletePost, onRestore } = this.props;
-		if ( isAutosave ) {
-			onRestore();
-		} else if ( canUserDeletePost ) {
-			onRestore( 'draft' );
-		}
 	};
 
 	getStrings = () => {
@@ -76,11 +63,11 @@ class EditorRestorePostDialog extends Component {
 	};
 
 	render() {
-		const { onClose, translate } = this.props;
+		const { onClose, onRestore, translate } = this.props;
 		const strings = this.getStrings();
 
 		const dialogButtons = [
-			<FormButton key="restore" isPrimary={ true } onClick={ this.restorePost }>
+			<FormButton key="restore" isPrimary={ true } onClick={ onRestore }>
 				{ translate( 'Restore' ) }
 			</FormButton>,
 			<FormButton key="back" isPrimary={ false } onClick={ onClose }>
@@ -97,13 +84,9 @@ class EditorRestorePostDialog extends Component {
 	}
 }
 
-export default connect( state => {
+export default connect( ( state ) => {
 	const siteId = getSelectedSiteId( state );
 	const postId = getEditorPostId( state );
-	const capabilities = getEditedPostValue( state, siteId, postId, 'capabilities' );
-
-	return {
-		postType: getEditedPostValue( state, siteId, postId, 'type' ),
-		canUserDeletePost: get( capabilities, 'delete_post' ),
-	};
+	const postType = getEditedPostValue( state, siteId, postId, 'type' );
+	return { postType };
 } )( localize( EditorRestorePostDialog ) );

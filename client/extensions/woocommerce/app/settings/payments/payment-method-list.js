@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -41,7 +39,7 @@ class SettingsPaymentsMethodList extends Component {
 		}
 	};
 
-	componentWillReceiveProps = newProps => {
+	UNSAFE_componentWillReceiveProps = ( newProps ) => {
 		const { site } = this.props;
 
 		const newSiteId = ( newProps.site && newProps.site.ID ) || null;
@@ -52,7 +50,7 @@ class SettingsPaymentsMethodList extends Component {
 		}
 	};
 
-	renderMethodItem = method => {
+	renderMethodItem = ( method ) => {
 		const { onChange, site } = this.props;
 		return (
 			<PaymentMethodItem

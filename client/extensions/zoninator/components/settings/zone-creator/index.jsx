@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -51,7 +49,7 @@ class ZoneCreator extends PureComponent {
 }
 
 const connectComponent = connect(
-	state => ( {
+	( state ) => ( {
 		siteId: getSelectedSiteId( state ),
 		siteSlug: getSelectedSiteSlug( state ),
 	} ),

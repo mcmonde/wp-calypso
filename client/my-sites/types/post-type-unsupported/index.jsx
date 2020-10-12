@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -15,7 +13,7 @@ import { localize } from 'i18n-calypso';
  */
 import EmptyContent from 'components/empty-content';
 import { getSelectedSiteId } from 'state/ui/selectors';
-import { canCurrentUser } from 'state/selectors';
+import canCurrentUser from 'state/selectors/can-current-user';
 import { getSiteSlug } from 'state/sites/selectors';
 
 /**
@@ -66,7 +64,7 @@ PostTypeUnsupported.propTypes = {
 	type: PropTypes.string,
 };
 
-export default connect( state => {
+export default connect( ( state ) => {
 	const siteId = getSelectedSiteId( state );
 
 	return {

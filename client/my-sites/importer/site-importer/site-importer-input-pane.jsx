@@ -1,32 +1,51 @@
-/** @format */
-
 /**
  * External dependencies
  */
-import Dispatcher from 'dispatcher';
+import React from 'react';
+import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { localize } from 'i18n-calypso';
-import React from 'react';
-import { noop, every, has, defer, get } from 'lodash';
+import { includes, isEmpty, noop, flowRight, has, trim, sortBy, reverse } from 'lodash';
+import url from 'url';
+import moment from 'moment';
 
 /**
  * Internal dependencies
  */
-import wpLib from 'lib/wp';
-const wpcom = wpLib.undocumented();
-
-import { toApi, fromApi } from 'lib/importer/common';
-
-import { startMappingAuthors, startImporting, mapAuthor, finishUpload } from 'lib/importer/actions';
-import user from 'lib/user';
-
-import { appStates } from 'state/imports/constants';
-import Button from 'components/forms/form-button';
-import ErrorPane from '../error-pane';
+import config from 'config';
+import wpcom from 'lib/wp';
+import { validateImportUrl } from 'lib/importer/url-validation';
 import TextInput from 'components/forms/form-text-input';
-
+import FormLabel from 'components/forms/form-label';
+import FormSelect from 'components/forms/form-select';
+import { recordTracksEvent } from 'state/analytics/actions';
+import { setSelectedEditor } from 'state/selected-editor/actions';
+import {
+	importSite,
+	validateSiteIsImportable,
+	resetSiteImporterImport,
+	setValidationError,
+	clearSiteImporterImport,
+} from 'state/imports/site-importer/actions';
+import ImporterActionButton from 'my-sites/importer/importer-action-buttons/action-button';
+import ImporterCloseButton from 'my-sites/importer/importer-action-buttons/close-button';
+import ImporterActionButtonContainer from 'my-sites/importer/importer-action-buttons/container';
+import ErrorPane from '../error-pane';
 import SiteImporterSitePreview from './site-importer-site-preview';
-import { connectDispatcher } from '../dispatcher-converter';
+import { appStates } from 'state/imports/constants';
+import { cancelImport, setUploadStartState } from 'lib/importer/actions';
+import {
+	getError,
+	getImportData,
+	getImportStage,
+	getValidatedSiteUrl,
+	isLoading as isLoadingSelector,
+} from 'state/imports/site-importer/selectors';
+
+/**
+ * Style dependencies
+ */
+import './site-importer-input-pane.scss';
 
 class SiteImporterInputPane extends React.Component {
 	static displayName = 'SiteImporterSitePreview';
@@ -39,205 +58,256 @@ class SiteImporterInputPane extends React.Component {
 		} ),
 		onStartImport: PropTypes.func,
 		disabled: PropTypes.bool,
+		site: PropTypes.object,
 	};
 
 	static defaultProps = { description: null, onStartImport: noop };
 
 	state = {
-		// TODO this is bad, make it better. Both appStates and state should be unified in one.
-		importStage: 'idle',
-		error: false,
-		errorMessage: '',
-		siteURLInput: '',
+		siteURLInput: this.props.fromSite || '',
+		selectedEndpoint: '',
+		availableEndpoints: [],
 	};
 
-	// TODO This can be improved if we move to Redux.
-	componentWillReceiveProps = nextProps => {
-		// TODO test on a site without posts
-		const newImporterState = nextProps.importerStatus.importerState;
-		const oldImporterState = this.props.importerStatus.importerState;
-		const singleAuthorSite = get( this.props.site, 'single_user_site', true );
-
-		if ( newImporterState !== oldImporterState && newImporterState === appStates.UPLOAD_SUCCESS ) {
-			// WXR was uploaded, map the authors
-			if ( singleAuthorSite ) {
-				defer( props => {
-					const currentUserData = user().get();
-					const currentUser = {
-						...currentUserData,
-						name: currentUserData.display_name,
-					};
-
-					const mappingFunction = this.props.mapAuthorFor( props.importerStatus.importerId );
-
-					// map all the authors to the current user
-					props.importerStatus.customData.sourceAuthors.forEach( author => {
-						mappingFunction( author, currentUser );
-					} );
-				}, nextProps );
-			} else {
-				defer( props => startMappingAuthors( props.importerStatus.importerId ), nextProps );
-			}
-
-			// Do not continue execution of the function as the rest should be executed on the next update.
-			return;
+	componentDidMount() {
+		const { importStage } = this.props;
+		if ( 'importable' === importStage ) {
+			// Clear any leftover state from previous imports
+			this.props.clearSiteImporterImport();
 		}
 
-		if ( singleAuthorSite && has( this.props, 'importerStatus.customData.sourceAuthors' ) ) {
-			// Authors have been mapped, start the import
-			const oldAuthors = every( this.props.importerStatus.customData.sourceAuthors, 'mappedTo' );
-			const newAuthors = every( nextProps.importerStatus.customData.sourceAuthors, 'mappedTo' );
+		this.validateSite();
 
-			if ( oldAuthors === false && newAuthors === true ) {
-				defer( props => {
-					startImporting( props.importerStatus );
-				}, nextProps );
-			}
+		if ( config.isEnabled( 'manage/import/site-importer-endpoints' ) ) {
+			this.fetchEndpoints();
 		}
+	}
+
+	componentWillUnmount() {
+		const {
+			importerStatus: { importerState, importerId } = {},
+			site: { ID: siteId } = {},
+		} = this.props;
+
+		if ( ! includes( [ appStates.UPLOAD_SUCCESS ], importerState ) ) {
+			cancelImport( siteId, importerId );
+			this.resetImport();
+		}
+	}
+
+	fetchEndpoints = () => {
+		wpcom.req
+			.get( {
+				path: `/sites/${ this.props.site.ID }/site-importer/list-endpoints`,
+				apiNamespace: 'wpcom/v2',
+			} )
+			.then( ( resp ) => {
+				const twoWeeksAgo = moment().subtract( 2, 'weeks' );
+				const endpoints = resp.reduce( ( validEndpoints, endpoint ) => {
+					const lastModified = moment( new Date( endpoint.lastModified ) );
+					if ( lastModified.isBefore( twoWeeksAgo ) ) {
+						return validEndpoints;
+					}
+
+					return [
+						...validEndpoints,
+						{
+							name: endpoint.name,
+							title: endpoint.name.replace( /^[a-zA-Z0-9]+-/i, '' ),
+							lastModifiedTitle: lastModified.fromNow(),
+							lastModifiedTimestamp: lastModified.unix(),
+						},
+					];
+				}, [] );
+				this.setState( {
+					availableEndpoints: reverse( sortBy( endpoints, 'lastModifiedTimestamp' ) ).slice(
+						0,
+						20
+					),
+				} );
+			} )
+			.catch( ( err ) => {
+				return err;
+			} );
 	};
 
-	resetErrors = () => {
-		this.setState( {
-			error: false,
-			errorMessage: '',
-		} );
+	setEndpoint = ( e ) => {
+		this.setState( { selectedEndpoint: e.target.value } );
 	};
 
-	setUrl = event => {
+	setUrl = ( event ) => {
 		this.setState( { siteURLInput: event.target.value } );
 	};
 
+	validateOnEnter = ( event ) => {
+		event.key === 'Enter' && this.validateSite();
+	};
+
+	getApiParams = () => {
+		const params = {};
+		if ( this.state.selectedEndpoint ) {
+			params.force_endpoint = this.state.selectedEndpoint;
+		}
+		if ( has( this.props, 'importerData.engine' ) ) {
+			params.engine = this.props.importerData.engine;
+		}
+		return params;
+	};
+
 	validateSite = () => {
-		const siteURL = this.state.siteURLInput;
+		const siteURL = trim( this.state.siteURLInput );
 
-		this.setState( { loading: true }, this.resetErrors );
+		if ( ! siteURL ) {
+			return;
+		}
 
-		wpcom.wpcom.req
-			.get( {
-				path: `/sites/${
-					this.props.site.ID
-				}/site-importer/is-site-importable?site_url=${ siteURL }`,
-				apiNamespace: 'wpcom/v2',
-			} )
-			.then( resp => {
-				this.setState( {
-					importStage: 'importable',
-					importData: {
-						title: resp.site_title,
-						supported: resp.supported_content,
-						unsupported: resp.unsupported_content,
-						favicon: resp.favicon,
-						engine: resp.engine,
-					},
-					loading: false,
-					importSiteURL: siteURL,
-				} );
-			} )
-			.catch( err => {
-				this.setState( {
-					loading: false,
-					error: true,
-					errorMessage: `${ err.message }`,
-				} );
-			} );
+		const { hostname, pathname } = url.parse(
+			siteURL.startsWith( 'http' ) ? siteURL : 'https://' + siteURL
+		);
+
+		if ( ! hostname ) {
+			return;
+		}
+
+		const errorMessage = validateImportUrl( siteURL );
+
+		if ( errorMessage ) {
+			return this.props.setValidationError( errorMessage );
+		}
+
+		// normalized URL
+		const urlForImport = hostname + pathname;
+
+		return this.props.validateSiteIsImportable( {
+			params: {
+				...this.getApiParams(),
+				site_url: urlForImport,
+			},
+			site: this.props.site,
+			targetSiteUrl: urlForImport,
+		} );
 	};
 
 	importSite = () => {
-		this.setState( { loading: true }, this.resetErrors );
+		// To track an "upload start"
+		const { importerId } = this.props.importerStatus;
+		setUploadStartState( importerId, this.props.validatedSiteUrl );
 
-		wpcom.wpcom.req
-			.post( {
-				path: `/sites/${ this.props.site.ID }/site-importer/import-site`,
-				apiNamespace: 'wpcom/v2',
-				formData: [
-					[ 'import_status', JSON.stringify( toApi( this.props.importerStatus ) ) ],
-					[ 'site_url', this.state.importSiteURL ],
-				],
-			} )
-			.then( resp => {
-				this.setState( { loading: false } );
-
-				const data = fromApi( resp );
-				const action = finishUpload( this.props.importerStatus.importerId )( data );
-				defer( () => {
-					Dispatcher.handleViewAction( action );
-				} );
-			} )
-			.catch( err => {
-				this.setState( {
-					loading: false,
-					error: true,
-					errorMessage: `${ err.message } (${ err.code })`,
-				} );
-			} );
+		this.props.importSite( {
+			engine: this.props.importData.engine,
+			importerStatus: this.props.importerStatus,
+			params: this.getApiParams(),
+			site: this.props.site,
+			supportedContent: this.props.importData.supported,
+			targetSiteUrl: this.props.validatedSiteUrl,
+			unsupportedContent: this.props.importData.unsupported,
+		} );
 	};
 
 	resetImport = () => {
-		this.setState(
-			{
-				loading: false,
-				importStage: 'idle',
-			},
-			this.resetErrors
-		);
+		this.props.resetSiteImporterImport( {
+			site: this.props.site,
+			targetSiteUrl: this.props.validatedSiteUrl || this.state.siteURLInput,
+			importStage: this.props.importStage,
+		} );
 	};
 
 	render() {
+		const { importerStatus, isEnabled, site, error, isLoading, importStage } = this.props;
+
 		return (
 			<div className="site-importer__site-importer-pane">
-				{ this.state.importStage === 'idle' && (
+				{ importStage === 'idle' && (
 					<div>
-						<p>{ this.props.description }</p>
 						<div className="site-importer__site-importer-url-input">
-							<TextInput
-								disabled={ this.state.loading }
-								onChange={ this.setUrl }
-								value={ this.state.siteURLInput }
-							/>
-							<Button
-								disabled={ this.state.loading }
-								isPrimary={ true }
-								onClick={ this.validateSite }
-							>
-								{ this.props.translate( 'Continue' ) }
-							</Button>
+							<FormLabel>
+								{ this.props.description }
+								<TextInput
+									label={ this.props.description }
+									disabled={ isLoading }
+									onChange={ this.setUrl }
+									onKeyPress={ this.validateOnEnter }
+									value={ this.state.siteURLInput }
+									placeholder="example.com"
+								/>
+							</FormLabel>
 						</div>
+						{ this.state.availableEndpoints.length > 0 && (
+							<FormSelect
+								onChange={ this.setEndpoint }
+								disabled={ isLoading }
+								className="site-importer__site-importer-endpoint-select"
+								value={ this.state.selectedEndpoint }
+							>
+								<option value="">Production Endpoint</option>
+								{ this.state.availableEndpoints.map( ( endpoint ) => (
+									<option key={ endpoint.name } value={ endpoint.name }>
+										{ endpoint.title } ({ endpoint.lastModifiedTitle })
+									</option>
+								) ) }
+							</FormSelect>
+						) }
 					</div>
 				) }
-				{ this.state.importStage === 'importable' && (
+				{ importStage === 'importable' && (
 					<div className="site-importer__site-importer-confirm-site-pane">
 						<SiteImporterSitePreview
-							siteURL={ this.state.importSiteURL }
-							importData={ this.state.importData }
-							isLoading={ this.state.loading }
+							site={ site }
+							siteURL={ this.props.validatedSiteUrl }
+							importData={ this.props.importData }
+							isLoading={ isLoading }
+							resetImport={ this.resetImport }
+							startImport={ this.importSite }
 						/>
-						<div className="site-importer__site-importer-confirm-site-pane-container">
-							<Button disabled={ this.state.loading } onClick={ this.importSite }>
-								{ this.props.translate( 'Yes! Start import' ) }
-							</Button>
-							<Button
-								disabled={ this.state.loading }
-								isPrimary={ false }
-								onClick={ this.resetImport }
-							>
-								{ this.props.translate( 'No' ) }
-							</Button>
-						</div>
 					</div>
 				) }
-				{ this.state.error && (
-					<ErrorPane type="importError" description={ this.state.errorMessage } />
+				{ error && error.errorMessage && (
+					<ErrorPane
+						type={ error.errorType || 'importError' }
+						description={ error.errorMessage }
+						retryImport={ this.validateSite }
+					/>
+				) }
+				{ importStage === 'idle' && (
+					<ImporterActionButtonContainer>
+						<ImporterCloseButton
+							importerStatus={ importerStatus }
+							site={ site }
+							isEnabled={ isEnabled }
+						/>
+						<ImporterActionButton
+							primary
+							disabled={ isLoading || isEmpty( this.state.siteURLInput ) }
+							busy={ isLoading }
+							onClick={ this.validateSite }
+						>
+							{ this.props.translate( 'Continue' ) }
+						</ImporterActionButton>
+					</ImporterActionButtonContainer>
 				) }
 			</div>
 		);
 	}
 }
 
-const mapDispatchToProps = dispatch => ( {
-	mapAuthorFor: importerId => ( source, target ) =>
-		defer( () => {
-			dispatch( mapAuthor( importerId, source, target ) );
+export default flowRight(
+	connect(
+		( state ) => ( {
+			error: getError( state ),
+			importData: getImportData( state ),
+			importStage: getImportStage( state ),
+			isLoading: isLoadingSelector( state ),
+			validatedSiteUrl: getValidatedSiteUrl( state ),
 		} ),
-} );
-
-export default connectDispatcher( null, mapDispatchToProps )( localize( SiteImporterInputPane ) );
+		{
+			recordTracksEvent,
+			setSelectedEditor,
+			importSite,
+			validateSiteIsImportable,
+			resetSiteImporterImport,
+			clearSiteImporterImport,
+			setValidationError,
+		}
+	),
+	localize
+)( SiteImporterInputPane );

@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -7,56 +6,124 @@ import React from 'react';
 /**
  * Internal dependencies
  */
-import feedStreamFactory from 'lib/feed-stream-store';
 import { recordTrack } from 'reader/stats';
-import {
-	ensureStoreLoading,
-	trackPageLoad,
-	trackUpdatesLoaded,
-	trackScrollPage,
-} from 'reader/controller-helper';
+import { trackPageLoad, trackUpdatesLoaded, trackScrollPage } from 'reader/controller-helper';
 import AsyncLoad from 'components/async-load';
 
 const analyticsPageTitle = 'Reader';
 
-const exported = {
-	listListing( context, next ) {
-		const basePath = '/read/list/:owner/:slug',
-			fullAnalyticsPageTitle =
-				analyticsPageTitle + ' > List > ' + context.params.user + ' - ' + context.params.list,
-			listStore = feedStreamFactory( 'list:' + context.params.user + '-' + context.params.list ),
-			mcKey = 'list';
+export const createList = ( context, next ) => {
+	const basePath = '/read/list/new';
+	const fullAnalyticsPageTitle = `${ analyticsPageTitle } > List > Create`;
+	const mcKey = 'list';
 
-		ensureStoreLoading( listStore, context );
+	trackPageLoad( basePath, fullAnalyticsPageTitle, mcKey );
+	recordTrack( 'calypso_reader_list_create_loaded' );
 
-		trackPageLoad( basePath, fullAnalyticsPageTitle, mcKey );
-		recordTrack( 'calypso_reader_list_loaded', {
-			list_owner: context.params.user,
-			list_slug: context.params.list,
-		} );
-
-		context.primary = (
-			<AsyncLoad
-				require="reader/list-stream"
-				key={ 'tag-' + context.params.user + '-' + context.params.list }
-				postsStore={ listStore }
-				owner={ encodeURIComponent( context.params.user ) }
-				slug={ encodeURIComponent( context.params.list ) }
-				showPrimaryFollowButtonOnCards={ false }
-				trackScrollPage={ trackScrollPage.bind(
-					null,
-					basePath,
-					fullAnalyticsPageTitle,
-					analyticsPageTitle,
-					mcKey
-				) }
-				onUpdatesShown={ trackUpdatesLoaded.bind( null, mcKey ) }
-			/>
-		);
-		next();
-	},
+	context.primary = <AsyncLoad require="reader/list-manage" key="list-manage" isCreateForm />;
+	next();
 };
 
-export default exported;
+export const listListing = ( context, next ) => {
+	const basePath = '/read/list/:owner/:slug';
+	const fullAnalyticsPageTitle =
+		analyticsPageTitle + ' > List > ' + context.params.user + ' - ' + context.params.list;
+	const mcKey = 'list';
+	const streamKey =
+		'list:' + JSON.stringify( { owner: context.params.user, slug: context.params.list } );
 
-export const { listListing } = exported;
+	trackPageLoad( basePath, fullAnalyticsPageTitle, mcKey );
+	recordTrack( 'calypso_reader_list_loaded', {
+		list_owner: context.params.user,
+		list_slug: context.params.list,
+	} );
+
+	context.primary = (
+		<AsyncLoad
+			require="reader/list-stream"
+			key={ 'tag-' + context.params.user + '-' + context.params.list }
+			streamKey={ streamKey }
+			owner={ encodeURIComponent( context.params.user ) }
+			slug={ encodeURIComponent( context.params.list ) }
+			showPrimaryFollowButtonOnCards={ false }
+			trackScrollPage={ trackScrollPage.bind(
+				null,
+				basePath,
+				fullAnalyticsPageTitle,
+				analyticsPageTitle,
+				mcKey
+			) }
+			onUpdatesShown={ trackUpdatesLoaded.bind( null, mcKey ) }
+		/>
+	);
+	next();
+};
+
+export const editList = ( context, next ) => {
+	const basePath = '/read/list/:owner/:slug/edit';
+	const fullAnalyticsPageTitle = `${ analyticsPageTitle } > List > ${ context.params.user } - ${ context.params.list } > Edit`;
+	const mcKey = 'list';
+
+	trackPageLoad( basePath, fullAnalyticsPageTitle, mcKey );
+	recordTrack( 'calypso_reader_list_edit_loaded', {
+		list_owner: context.params.user,
+		list_slug: context.params.list,
+	} );
+
+	context.primary = (
+		<AsyncLoad
+			require="reader/list-manage"
+			key="list-manage"
+			owner={ encodeURIComponent( context.params.user ) }
+			slug={ encodeURIComponent( context.params.list ) }
+			selectedSection={ 'details' }
+		/>
+	);
+	next();
+};
+
+export const editListItems = ( context, next ) => {
+	const basePath = '/read/list/:owner/:slug/edit/items';
+	const fullAnalyticsPageTitle = `${ analyticsPageTitle } > List > ${ context.params.user } - ${ context.params.list } > Edit > Items`;
+	const mcKey = 'list';
+
+	trackPageLoad( basePath, fullAnalyticsPageTitle, mcKey );
+	recordTrack( 'calypso_reader_list_edit_items_loaded', {
+		list_owner: context.params.user,
+		list_slug: context.params.list,
+	} );
+
+	context.primary = (
+		<AsyncLoad
+			require="reader/list-manage"
+			key="list-manage"
+			owner={ encodeURIComponent( context.params.user ) }
+			slug={ encodeURIComponent( context.params.list ) }
+			selectedSection={ 'items' }
+		/>
+	);
+	next();
+};
+
+export const exportList = ( context, next ) => {
+	const basePath = '/read/list/:owner/:slug/export';
+	const fullAnalyticsPageTitle = `${ analyticsPageTitle } > List > ${ context.params.user } - ${ context.params.list } > Edit > Export`;
+	const mcKey = 'list';
+
+	trackPageLoad( basePath, fullAnalyticsPageTitle, mcKey );
+	recordTrack( 'calypso_reader_list_export_loaded', {
+		list_owner: context.params.user,
+		list_slug: context.params.list,
+	} );
+
+	context.primary = (
+		<AsyncLoad
+			require="reader/list-manage"
+			key="list-manage"
+			owner={ encodeURIComponent( context.params.user ) }
+			slug={ encodeURIComponent( context.params.list ) }
+			selectedSection={ 'export' }
+		/>
+	);
+	next();
+};

@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -12,18 +10,15 @@ import { connect } from 'react-redux';
 /**
  * Internal dependencies
  */
-import Card from 'components/card';
+import { Card } from '@automattic/components';
 import JetpackModuleToggle from 'my-sites/site-settings/jetpack-module-toggle';
 import FormFieldset from 'components/forms/form-fieldset';
 import CompactFormToggle from 'components/forms/form-toggle/compact';
 import { getSelectedSiteId } from 'state/ui/selectors';
-import {
-	isJetpackModuleActive,
-	isJetpackModuleUnavailableInDevelopmentMode,
-	isJetpackSiteInDevelopmentMode,
-} from 'state/selectors';
-import InfoPopover from 'components/info-popover';
-import ExternalLink from 'components/external-link';
+import isJetpackModuleActive from 'state/selectors/is-jetpack-module-active';
+import isJetpackModuleUnavailableInDevelopmentMode from 'state/selectors/is-jetpack-module-unavailable-in-development-mode';
+import isJetpackSiteInDevelopmentMode from 'state/selectors/is-jetpack-site-in-development-mode';
+import SupportInfo from 'components/support-info';
 import QueryJetpackConnection from 'components/data/query-jetpack-connection';
 
 const Sso = ( {
@@ -42,22 +37,18 @@ const Sso = ( {
 
 			<Card className="sso__card site-settings__security-settings">
 				<FormFieldset>
-					<div className="sso__info-link-container site-settings__info-link-container">
-						<InfoPopover position="left">
-							{ translate(
-								'Allows registered users to log in to your site with their WordPress.com accounts.'
-							) }
-							<ExternalLink href="https://jetpack.com/support/sso" icon={ false } target="_blank">
-								{ translate( 'Learn more' ) }
-							</ExternalLink>
-						</InfoPopover>
-					</div>
+					<SupportInfo
+						text={ translate(
+							'Allows registered users to log in to your site with their WordPress.com accounts.'
+						) }
+						link="https://jetpack.com/support/sso/"
+					/>
 
 					<JetpackModuleToggle
 						siteId={ selectedSiteId }
 						moduleSlug="sso"
-						label={ translate( 'Allow sign in using WordPress.com accounts' ) }
-						description="Use WordPress.com's secure authentication"
+						label={ translate( 'Allow users to log in to this site using WordPress.com accounts' ) }
+						description={ translate( "Use WordPress.com's secure authentication" ) }
 						disabled={ isRequestingSettings || isSavingSettings || ssoModuleUnavailable }
 					/>
 
@@ -107,7 +98,7 @@ Sso.propTypes = {
 	fields: PropTypes.object,
 };
 
-export default connect( state => {
+export default connect( ( state ) => {
 	const selectedSiteId = getSelectedSiteId( state );
 	const siteInDevMode = isJetpackSiteInDevelopmentMode( state, selectedSiteId );
 	const moduleUnavailableInDevMode = isJetpackModuleUnavailableInDevelopmentMode(

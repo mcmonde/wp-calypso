@@ -1,20 +1,22 @@
-.info-popover .gridicon {
-	cursor: pointer;
-	color: $gray-lighten-10;
-
-	&:hover {
-		color: $gray-dark;
+.info-popover {
+	.gridicon {
+		cursor: pointer;
+		color: var( --color-text-subtle );
 	}
-}
 
-.info-popover.is_active .gridicon {
-	color: $gray-dark;
+	.accessible-focus &:focus,
+	&:hover,
+	&.is-active {
+		.gridicon {
+			color: var( --color-neutral-70 );
+		}
+	}
 }
 
 .popover.info-popover__tooltip {
 	.popover__inner {
-		color: $gray-darken-20;
-		font-size: 13px;
+		color: var( --color-neutral-50 );
+		font-size: $font-body-small;
 		max-width: 220px;
 		padding: 16px;
 		text-align: left;

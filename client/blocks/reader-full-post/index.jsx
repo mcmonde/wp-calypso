@@ -1,20 +1,19 @@
-/** @format */
 /**
- * External Dependencies
+ * External dependencies
  */
 import PropTypes from 'prop-types';
 import React from 'react';
-import ReactDom from 'react-dom';
 import { connect } from 'react-redux';
 import { translate } from 'i18n-calypso';
 import classNames from 'classnames';
-import { get, startsWith } from 'lodash';
+import { get, startsWith, pickBy } from 'lodash';
+import config from 'config';
 
 /**
- * Internal Dependencies
+ * Internal dependencies
  */
 import AutoDirection from 'components/auto-direction';
-import ReaderMain from 'components/reader-main';
+import ReaderMain from 'reader/components/reader-main';
 import EmbedContainer from 'components/embed-container';
 import PostExcerpt from 'components/post-excerpt';
 import { markPostSeen } from 'state/reader/posts/actions';
@@ -38,7 +37,6 @@ import Comments from 'blocks/comments';
 import scrollTo from 'lib/scroll-to';
 import PostExcerptLink from 'reader/post-excerpt-link';
 import { getSiteName } from 'reader/get-helpers';
-import { keyForPost } from 'reader/post-key';
 import KeyboardShortcuts from 'lib/keyboard-shortcuts';
 import ReaderPostActions from 'blocks/reader-post-actions';
 import { RelatedPostsFromSameSite, RelatedPostsFromOtherSites } from 'components/related-posts';
@@ -56,16 +54,30 @@ import ReaderFullPostUnavailable from './unavailable';
 import BackButton from 'components/back-button';
 import { isFeaturedImageInContent } from 'lib/post-normalizer/utils';
 import ReaderFullPostContentPlaceholder from './placeholders/content';
-import * as FeedStreamStoreActions from 'lib/feed-stream-store/actions';
-import { getLastStore } from 'reader/controller-helper';
+import { keyForPost } from 'reader/post-key';
 import { showSelectedPost } from 'reader/utils';
 import Emojify from 'components/emojify';
-import config from 'config';
 import { COMMENTS_FILTER_ALL } from 'blocks/comments/comments-filters';
 import { READER_FULL_POST } from 'reader/follow-sources';
 import { getPostByKey } from 'state/reader/posts/selectors';
-import isLikedPost from 'state/selectors/is-liked-post';
+import { isLikedPost } from 'state/posts/selectors/is-liked-post';
 import QueryPostLikes from 'components/data/query-post-likes';
+import getCurrentStream from 'state/selectors/get-reader-current-stream';
+import { setViewingFullPostKey, unsetViewingFullPostKey } from 'state/reader/viewing/actions';
+import { getNextItem, getPreviousItem } from 'state/reader/streams/selectors';
+import {
+	requestMarkAsSeen,
+	requestMarkAsUnseen,
+	requestMarkAsSeenBlog,
+	requestMarkAsUnseenBlog,
+} from 'state/reader/seen-posts/actions';
+import Gridicon from 'components/gridicon';
+import { PerformanceTrackerStop } from 'lib/performance-tracking';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 export class FullPostView extends React.Component {
 	static propTypes = {
@@ -76,6 +88,7 @@ export class FullPostView extends React.Component {
 	};
 
 	hasScrolledToCommentAnchor = false;
+	commentsWrapper = React.createRef();
 
 	componentDidMount() {
 		KeyboardShortcuts.on( 'close-full-post', this.handleBack );
@@ -108,6 +121,10 @@ export class FullPostView extends React.Component {
 			this.attemptToSendPageView();
 		}
 
+		if ( this.props.shouldShowComments && ! prevProps.shouldShowComments ) {
+			this.hasScrolledToCommentAnchor = false;
+		}
+
 		this.checkForCommentAnchor();
 
 		// If we have a comment anchor, scroll to comments
@@ -116,21 +133,15 @@ export class FullPostView extends React.Component {
 		}
 	}
 
-	componentWillReceiveProps( newProps ) {
-		if ( newProps.shouldShowComments ) {
-			this.hasScrolledToCommentAnchor = false;
-			this.checkForCommentAnchor();
-		}
-	}
-
 	componentWillUnmount() {
+		this.props.unsetViewingFullPostKey( keyForPost( this.props.post ) );
 		KeyboardShortcuts.off( 'close-full-post', this.handleBack );
 		KeyboardShortcuts.off( 'like-selection', this.handleLike );
 		KeyboardShortcuts.off( 'move-selection-down', this.goToNextPost );
 		KeyboardShortcuts.off( 'move-selection-up', this.goToPreviousPost );
 	}
 
-	handleBack = event => {
+	handleBack = ( event ) => {
 		event.preventDefault();
 		recordAction( 'full_post_close' );
 		recordGaEvent( 'Closed Full Post Dialog' );
@@ -184,7 +195,7 @@ export class FullPostView extends React.Component {
 		recordTrackForPost( 'calypso_reader_related_post_from_other_site_clicked', this.props.post );
 	};
 
-	// Does the URL contain the anchor #comments? If so, scroll to comments if we're not already there.
+	// Does the URL contain the anchor #comments?
 	checkForCommentAnchor = () => {
 		const hash = window.location.hash.substr( 1 );
 		if ( hash.indexOf( 'comments' ) > -1 ) {
@@ -214,7 +225,7 @@ export class FullPostView extends React.Component {
 
 		this._scrolling = true;
 		setTimeout( () => {
-			const commentsNode = ReactDom.findDOMNode( this.refs.commentsWrapper );
+			const commentsNode = this.commentsWrapper.current;
 			if ( commentsNode && commentsNode.offsetTop ) {
 				scrollTo( {
 					x: 0,
@@ -223,7 +234,7 @@ export class FullPostView extends React.Component {
 					onComplete: () => {
 						// check to see if the comment node moved while we were scrolling
 						// and scroll to the end position
-						const commentsNodeAfterScroll = ReactDom.findDOMNode( this.refs.commentsWrapper );
+						const commentsNodeAfterScroll = this.commentsWrapper.current;
 						if ( commentsNodeAfterScroll && commentsNodeAfterScroll.offsetTop ) {
 							window.scrollTo( 0, commentsNodeAfterScroll.offsetTop - 48 );
 						}
@@ -250,9 +261,14 @@ export class FullPostView extends React.Component {
 		) {
 			this.props.markPostSeen( post, site );
 			this.hasSentPageView = true;
+
+			// mark post as currently viewing
+			this.props.setViewingFullPostKey( keyForPost( post ) );
 		}
 
 		if ( ! this.hasLoaded && post && post._state !== 'pending' ) {
+			config.isEnabled( 'reader/seen-posts' ) && this.markAsSeen();
+
 			recordTrackForPost(
 				'calypso_reader_article_opened',
 				post,
@@ -266,25 +282,77 @@ export class FullPostView extends React.Component {
 	};
 
 	goToNextPost = () => {
-		const store = getLastStore();
-		if ( store ) {
-			if ( ! store.getSelectedPostKey() ) {
-				store.selectItem( keyForPost( this.props.post ), store.id );
-			}
-			FeedStreamStoreActions.selectNextItem( store.getID() );
-			showSelectedPost( { store, postKey: store.getSelectedPostKey() } );
+		if ( this.props.nextPost ) {
+			showSelectedPost( { postKey: this.props.nextPost } );
 		}
 	};
 
 	goToPreviousPost = () => {
-		const store = getLastStore();
-		if ( store ) {
-			if ( ! store.getSelectedPostKey() ) {
-				store.selectItem( keyForPost( this.props.post ), store.id );
-			}
-			FeedStreamStoreActions.selectPrevItem( store.getID() );
-			showSelectedPost( { store, postKey: store.getSelectedPostKey() } );
+		if ( this.props.previousPost ) {
+			showSelectedPost( { postKey: this.props.previousPost } );
 		}
+	};
+
+	markAsSeen = () => {
+		const { post } = this.props;
+
+		if ( post.feed_item_ID ) {
+			// is feed
+			this.props.requestMarkAsSeen( {
+				feedId: post.feed_ID,
+				feedUrl: post.feed_URL,
+				feedItemIds: [ post.feed_item_ID ],
+				globalIds: [ post.global_ID ],
+			} );
+		} else {
+			// is blog
+			this.props.requestMarkAsSeenBlog( {
+				feedId: post.feed_ID,
+				feedUrl: post.feed_URL,
+				blogId: post.site_ID,
+				postIds: [ post.ID ],
+				globalIds: [ post.global_ID ],
+			} );
+		}
+	};
+
+	markAsUnseen = () => {
+		const { post } = this.props;
+		if ( post.feed_item_ID ) {
+			// is feed
+			this.props.requestMarkAsUnseen( {
+				feedId: post.feed_ID,
+				feedUrl: post.feed_URL,
+				feedItemIds: [ post.feed_item_ID ],
+				globalIds: [ post.global_ID ],
+			} );
+		} else {
+			// is blog
+			this.props.requestMarkAsUnseenBlog( {
+				feedId: post.feed_ID,
+				feedUrl: post.feed_URL,
+				blogId: post.site_ID,
+				postIds: [ post.ID ],
+				globalIds: [ post.global_ID ],
+			} );
+		}
+	};
+
+	renderMarkAsSenButton = () => {
+		const { post } = this.props;
+		return (
+			<div
+				className="reader-full-post__seen-button"
+				title={ post.is_seen ? 'Mark post as unseen' : 'Mark post as seen' }
+			>
+				<Gridicon
+					icon={ post.is_seen ? 'not-visible' : 'visible' }
+					size={ 18 }
+					onClick={ post.is_seen ? this.markAsUnseen : this.markAsSeen }
+					ref={ this.seenTooltipContextRef }
+				/>
+			</div>
+		);
 	};
 
 	render() {
@@ -302,7 +370,7 @@ export class FullPostView extends React.Component {
 			{
 				components: {
 					/* eslint-disable */
-					wpLink: <a href="/" className="reader-related-card__link" />,
+					wpLink: <a href="/read" className="reader-related-card__link" />,
 					/* eslint-enable */
 				},
 			}
@@ -332,9 +400,9 @@ export class FullPostView extends React.Component {
 					<DocumentHead title={ `${ post.title } ‹ ${ siteName } ‹ Reader` } />
 				) }
 				{ post && post.feed_ID && <QueryReaderFeed feedId={ +post.feed_ID } /> }
-				{ post &&
-					! post.is_external &&
-					post.site_ID && <QueryReaderSite siteId={ +post.site_ID } /> }
+				{ post && ! post.is_external && post.site_ID && (
+					<QueryReaderSite siteId={ +post.site_ID } />
+				) }
 				{ referral && ! referralPost && <QueryReaderPost postKey={ referral } /> }
 				{ ! post || ( isLoading && <QueryReaderPost postKey={ postKey } /> ) }
 				<BackButton onClick={ this.handleBack } />
@@ -353,21 +421,20 @@ export class FullPostView extends React.Component {
 				<div className="reader-full-post__content">
 					<div className="reader-full-post__sidebar">
 						{ isLoading && <AuthorCompactProfile author={ null } /> }
-						{ ! isLoading &&
-							post.author && (
-								<AuthorCompactProfile
-									author={ post.author }
-									siteIcon={ get( site, 'icon.img' ) }
-									feedIcon={ get( feed, 'image' ) }
-									siteName={ siteName }
-									siteUrl={ post.site_URL }
-									feedUrl={ get( feed, 'feed_URL' ) }
-									followCount={ site && site.subscribers_count }
-									feedId={ +post.feed_ID }
-									siteId={ +post.site_ID }
-									post={ post }
-								/>
-							) }
+						{ ! isLoading && post.author && (
+							<AuthorCompactProfile
+								author={ post.author }
+								siteIcon={ get( site, 'icon.img' ) }
+								feedIcon={ get( feed, 'image' ) }
+								siteName={ siteName }
+								siteUrl={ post.site_URL }
+								feedUrl={ get( feed, 'feed_URL' ) }
+								followCount={ site && site.subscribers_count }
+								feedId={ +post.feed_ID }
+								siteId={ +post.site_ID }
+								post={ post }
+							/>
+						) }
 						<div className="reader-full-post__sidebar-comment-like">
 							{ shouldShowComments( post ) && (
 								<CommentButton
@@ -377,6 +444,7 @@ export class FullPostView extends React.Component {
 									tagName="div"
 								/>
 							) }
+
 							{ shouldShowLikes( post ) && (
 								<LikeButton
 									siteId={ +post.site_ID }
@@ -386,16 +454,17 @@ export class FullPostView extends React.Component {
 									likeSource={ 'reader' }
 								/>
 							) }
+
+							{ config.isEnabled( 'reader/seen-posts' ) && this.renderMarkAsSenButton() }
 						</div>
 					</div>
 					<Emojify>
-						<article className="reader-full-post__story" ref="article">
+						<article className="reader-full-post__story">
 							<ReaderFullPostHeader post={ post } referralPost={ referralPost } />
 
-							{ post.featured_image &&
-								! isFeaturedImageInContent( post ) && (
-									<FeaturedImage src={ post.featured_image } />
-								) }
+							{ post.featured_image && ! isFeaturedImageInContent( post ) && (
+								<FeaturedImage src={ post.featured_image } />
+							) }
 							{ isLoading && <ReaderFullPostContentPlaceholder /> }
 							{ post.use_excerpt ? (
 								<PostExcerpt content={ post.better_excerpt ? post.better_excerpt : post.excerpt } />
@@ -410,10 +479,9 @@ export class FullPostView extends React.Component {
 								</EmbedContainer>
 							) }
 
-							{ post.use_excerpt &&
-								! isDiscoverPost( post ) && (
-									<PostExcerptLink siteName={ siteName } postUrl={ post.URL } />
-								) }
+							{ post.use_excerpt && ! isDiscoverPost( post ) && (
+								<PostExcerptLink siteName={ siteName } postUrl={ post.URL } />
+							) }
 							{ isDiscoverSitePick( post ) && <DiscoverSiteAttribution post={ post } /> }
 							{ isDailyPostChallengeOrPrompt( post ) && (
 								<DailyPostButton post={ post } site={ site } />
@@ -425,6 +493,8 @@ export class FullPostView extends React.Component {
 								onCommentClick={ this.handleCommentClick }
 								fullPost={ true }
 							/>
+
+							{ ! isLoading && <PerformanceTrackerStop /> }
 
 							{ showRelatedPosts && (
 								<RelatedPostsFromSameSite
@@ -451,11 +521,10 @@ export class FullPostView extends React.Component {
 								/>
 							) }
 
-							<div className="reader-full-post__comments-wrapper" ref="commentsWrapper">
+							<div className="reader-full-post__comments-wrapper" ref={ this.commentsWrapper }>
 								{ shouldShowComments( post ) && (
 									<Comments
-										showNestingReplyArrow={ config.isEnabled( 'reader/nesting-arrow' ) }
-										ref="commentsList"
+										showNestingReplyArrow={ true }
 										post={ post }
 										initialSize={ startingCommentId ? commentCount : 10 }
 										pageSize={ 25 }
@@ -465,6 +534,8 @@ export class FullPostView extends React.Component {
 										commentsFilterDisplay={ COMMENTS_FILTER_ALL }
 										showConversationFollowButton={ true }
 										followSource={ READER_FULL_POST }
+										shouldPollForNewComments={ config.isEnabled( 'reader/comment-polling' ) }
+										shouldHighlightNew={ true }
 									/>
 								) }
 							</div>
@@ -491,13 +562,15 @@ export class FullPostView extends React.Component {
 export default connect(
 	( state, ownProps ) => {
 		const { feedId, blogId, postId } = ownProps;
-		const post = getPostByKey( state, { feedId, blogId, postId } ) || { _state: 'pending' };
+		const postKey = pickBy( { feedId: +feedId, blogId: +blogId, postId: +postId } );
+		const post = getPostByKey( state, postKey ) || { _state: 'pending' };
 
 		const { site_ID: siteId, is_external: isExternal } = post;
 
 		const props = {
 			post,
 			liked: isLikedPost( state, siteId, post.ID ),
+			postKey,
 		};
 
 		if ( ! isExternal && siteId ) {
@@ -510,7 +583,23 @@ export default connect(
 			props.referralPost = getPostByKey( state, ownProps.referral );
 		}
 
+		const currentStreamKey = getCurrentStream( state );
+		if ( currentStreamKey ) {
+			props.previousPost = getPreviousItem( state, postKey );
+			props.nextPost = getNextItem( state, postKey );
+		}
+
 		return props;
 	},
-	{ markPostSeen, likePost, unlikePost }
+	{
+		markPostSeen,
+		setViewingFullPostKey,
+		unsetViewingFullPostKey,
+		likePost,
+		unlikePost,
+		requestMarkAsSeen,
+		requestMarkAsUnseen,
+		requestMarkAsSeenBlog,
+		requestMarkAsUnseenBlog,
+	}
 )( FullPostView );

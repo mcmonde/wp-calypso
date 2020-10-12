@@ -1,12 +1,11 @@
-/** @format */
-
 /**
  * Internal dependencies
  */
-
 import { composeAnalytics, recordGoogleEvent, recordTracksEvent } from 'state/analytics/actions';
 
-export const recordAddDomainButtonClick = ( domainName, section ) =>
+import 'state/domains/init';
+
+export const recordAddDomainButtonClick = ( domainName, section, isPremium = false ) =>
 	composeAnalytics(
 		recordGoogleEvent(
 			'Domain Search',
@@ -17,6 +16,7 @@ export const recordAddDomainButtonClick = ( domainName, section ) =>
 		recordTracksEvent( 'calypso_domain_search_add_button_click', {
 			domain_name: domainName,
 			section,
+			is_premium: isPremium,
 		} )
 	);
 
@@ -48,12 +48,26 @@ export const recordAddDomainButtonClickInTransferDomain = ( domainName, section 
 		} )
 	);
 
-export const recordStartTransferClickInThankYou = domainName =>
+export const recordAddDomainButtonClickInUseYourDomain = ( domainName, section ) =>
+	composeAnalytics(
+		recordGoogleEvent(
+			'Domain Search',
+			'Clicked "Use Your Domain" Button on a Domain Search Step',
+			'Domain Name',
+			domainName
+		),
+		recordTracksEvent( 'calypso_transfer_domain_step_add_domain_click', {
+			domain_name: domainName,
+			section,
+		} )
+	);
+
+export const recordStartTransferClickInThankYou = ( domainName ) =>
 	recordTracksEvent( 'calypso_thank_you_start_transfer', {
 		meta: domainName,
 	} );
 
-export const recordRemoveDomainButtonClick = domainName =>
+export const recordRemoveDomainButtonClick = ( domainName ) =>
 	composeAnalytics(
 		recordGoogleEvent(
 			'Domain Search',
@@ -66,7 +80,7 @@ export const recordRemoveDomainButtonClick = domainName =>
 		} )
 	);
 
-export const recordFormSubmitInMapDomain = searchBoxValue =>
+export const recordFormSubmitInMapDomain = ( searchBoxValue ) =>
 	recordGoogleEvent(
 		'Domain Search',
 		'Submitted Form in Map Domain Step',
@@ -74,7 +88,7 @@ export const recordFormSubmitInMapDomain = searchBoxValue =>
 		searchBoxValue
 	);
 
-export const recordInputFocusInMapDomain = searchBoxValue =>
+export const recordInputFocusInMapDomain = ( searchBoxValue ) =>
 	recordGoogleEvent(
 		'Domain Search',
 		'Focused On Search Box Input in Map Domain Step',

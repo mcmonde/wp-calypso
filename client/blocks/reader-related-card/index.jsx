@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External Dependencies
  */
@@ -14,7 +13,7 @@ import { localize } from 'i18n-calypso';
 import { getPostById } from 'state/reader/posts/selectors';
 import { getSite } from 'state/reader/sites/selectors';
 import QueryReaderSite from 'components/data/query-reader-site';
-import Card from 'components/card/compact';
+import { CompactCard as Card } from '@automattic/components';
 import Gravatar from 'components/gravatar';
 import FollowButton from 'reader/follow-button';
 import { getPostUrl, getStreamUrl } from 'reader/route';
@@ -22,6 +21,11 @@ import { areEqualIgnoringWhitespaceAndCase } from 'lib/string';
 import ReaderFeaturedVideo from 'blocks/reader-featured-video';
 import ReaderFeaturedImage from 'blocks/reader-featured-image';
 import ReaderAuthorLink from 'blocks/reader-author-link';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 const RELATED_IMAGE_WIDTH = 385; // usual width of featured images in related post card
 
@@ -37,20 +41,19 @@ function AuthorAndSiteFollow( { post, site, onSiteClick, followSource } ) {
 				<Gravatar user={ post.author } />
 			</a>
 			<div className="reader-related-card__byline">
-				{ authorName &&
-					authorAndSiteAreDifferent && (
-						<span className="reader-related-card__byline-author">
-							<ReaderAuthorLink
-								author={ post.author }
-								siteUrl={ siteUrl }
-								post={ post }
-								onClick={ onSiteClick }
-								className="reader-related-card__link"
-							>
-								{ authorName }
-							</ReaderAuthorLink>
-						</span>
-					) }
+				{ authorName && authorAndSiteAreDifferent && (
+					<span className="reader-related-card__byline-author">
+						<ReaderAuthorLink
+							author={ post.author }
+							siteUrl={ siteUrl }
+							post={ post }
+							onClick={ onSiteClick }
+							className="reader-related-card__link"
+						>
+							{ authorName }
+						</ReaderAuthorLink>
+					</span>
+				) }
 				<span className="reader-related-card__byline-site">
 					<a href={ siteUrl } onClick={ onSiteClick } className="reader-related-card__link">
 						{ siteName }

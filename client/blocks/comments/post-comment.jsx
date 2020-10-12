@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -7,7 +6,7 @@ import PropTypes from 'prop-types';
 import { get, noop, some, flatMap } from 'lodash';
 import { connect } from 'react-redux';
 import { translate } from 'i18n-calypso';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 import classnames from 'classnames';
 
 /**
@@ -22,16 +21,20 @@ import { getStreamUrl } from 'reader/route';
 import PostCommentContent from './post-comment-content';
 import PostCommentForm from './form';
 import CommentEditForm from './comment-edit-form';
-import { PLACEHOLDER_STATE } from 'state/comments/constants';
+import { PLACEHOLDER_STATE, POST_COMMENT_DISPLAY_TYPES } from 'state/comments/constants';
 import { decodeEntities } from 'lib/formatting';
 import PostCommentWithError from './post-comment-with-error';
 import PostTrackback from './post-trackback';
 import CommentActions from './comment-actions';
 import Emojify from 'components/emojify';
-import { POST_COMMENT_DISPLAY_TYPES } from 'state/comments/constants';
 import ConversationCaterpillar from 'blocks/conversation-caterpillar';
 import withDimensions from 'lib/with-dimensions';
 import { expandComments } from 'state/comments/actions';
+
+/**
+ * Style dependencies
+ */
+import './post-comment.scss';
 
 /**
  * A PostComment is the visual representation for a comment within a tree of comments.
@@ -83,6 +86,7 @@ class PostComment extends React.PureComponent {
 
 		// connect()ed props:
 		currentUser: PropTypes.object.isRequired,
+		shouldHighlightNew: PropTypes.bool,
 	};
 
 	static defaultProps = {
@@ -95,6 +99,7 @@ class PostComment extends React.PureComponent {
 		showNestingReplyArrow: false,
 		showReadMoreInActions: false,
 		hidePingbacksAndTrackbacks: false,
+		shouldHighlightNew: false,
 	};
 
 	state = {
@@ -111,7 +116,7 @@ class PostComment extends React.PureComponent {
 		this.setState( { showReplies: true } ); // show the comments when replying
 	};
 
-	handleAuthorClick = event => {
+	handleAuthorClick = ( event ) => {
 		recordAction( 'comment_author_click' );
 		recordGaEvent( 'Clicked Author Name' );
 		recordTrack( 'calypso_reader_comment_author_click', {
@@ -122,7 +127,7 @@ class PostComment extends React.PureComponent {
 		} );
 	};
 
-	handleCommentPermalinkClick = event => {
+	handleCommentPermalinkClick = ( event ) => {
 		recordPermalinkClick(
 			'timestamp_comment',
 			{},
@@ -135,7 +140,7 @@ class PostComment extends React.PureComponent {
 		);
 	};
 
-	getAllChildrenIds = id => {
+	getAllChildrenIds = ( id ) => {
 		const { commentsTree } = this.props;
 
 		if ( ! id ) {
@@ -144,7 +149,7 @@ class PostComment extends React.PureComponent {
 
 		const immediateChildren = get( commentsTree, [ id, 'children' ], [] );
 		return immediateChildren.concat(
-			flatMap( immediateChildren, childId => this.getAllChildrenIds( childId ) )
+			flatMap( immediateChildren, ( childId ) => this.getAllChildrenIds( childId ) )
 		);
 	};
 
@@ -153,7 +158,9 @@ class PostComment extends React.PureComponent {
 		const { enableCaterpillar, commentsToShow, commentId } = this.props;
 		const childIds = this.getAllChildrenIds( commentId );
 
-		return enableCaterpillar && commentsToShow && some( childIds, id => ! commentsToShow[ id ] );
+		return (
+			enableCaterpillar && commentsToShow && some( childIds, ( id ) => ! commentsToShow[ id ] )
+		);
 	};
 
 	// has visisble child --> true
@@ -161,7 +168,7 @@ class PostComment extends React.PureComponent {
 		const { commentsToShow, commentId } = this.props;
 		const childIds = this.getAllChildrenIds( commentId );
 
-		return commentsToShow && some( childIds, id => commentsToShow[ id ] );
+		return commentsToShow && some( childIds, ( id ) => commentsToShow[ id ] );
 	};
 
 	renderRepliesList() {
@@ -220,7 +227,7 @@ class PostComment extends React.PureComponent {
 				) }
 				{ showReplies && (
 					<ol className="comments__list">
-						{ commentChildrenIds.map( childId => (
+						{ commentChildrenIds.map( ( childId ) => (
 							<ConnectedPostComment
 								showNestingReplyArrow={ this.props.showNestingReplyArrow }
 								showReadMoreInActions={ this.props.showReadMoreInActions }
@@ -240,6 +247,7 @@ class PostComment extends React.PureComponent {
 								activeEditCommentId={ this.props.activeEditCommentId }
 								onUpdateCommentText={ this.props.onUpdateCommentText }
 								onCommentSubmit={ this.props.onCommentSubmit }
+								shouldHighlightNew={ this.props.shouldHighlightNew }
 							/>
 						) ) }
 					</ol>
@@ -265,7 +273,6 @@ class PostComment extends React.PureComponent {
 
 		return (
 			<PostCommentForm
-				ref="postCommentForm"
 				post={ this.props.post }
 				parentCommentId={ this.props.commentId }
 				commentText={ this.props.commentText }
@@ -275,18 +282,18 @@ class PostComment extends React.PureComponent {
 		);
 	}
 
-	getAuthorDetails = commentId => {
+	getAuthorDetails = ( commentId ) => {
 		const comment = get( this.props.commentsTree, [ commentId, 'data' ], {} );
 		const commentAuthor = get( comment, 'author', {} );
 		const commentAuthorName = decodeEntities( commentAuthor.name );
-		const commentAuthorUrl = !! commentAuthor.site_ID
+		const commentAuthorUrl = commentAuthor.site_ID
 			? getStreamUrl( null, commentAuthor.site_ID )
 			: commentAuthor && commentAuthor.URL;
 		return { comment, commentAuthor, commentAuthorUrl, commentAuthorName };
 	};
 
 	renderAuthorTag = ( { authorName, authorUrl, commentId, className } ) => {
-		return !! authorUrl ? (
+		return authorUrl ? (
 			<a
 				href={ authorUrl }
 				className={ className }
@@ -332,6 +339,7 @@ class PostComment extends React.PureComponent {
 			overflowY,
 			showReadMoreInActions,
 			hidePingbacksAndTrackbacks,
+			shouldHighlightNew,
 		} = this.props;
 
 		const comment = get( commentsTree, [ commentId, 'data' ] );
@@ -352,7 +360,7 @@ class PostComment extends React.PureComponent {
 		// todo: connect this constants to the state (new selector)
 		const haveReplyWithError = some(
 			get( commentsTree, [ this.props.commentId, 'children' ] ),
-			childId =>
+			( childId ) =>
 				get( commentsTree, [ childId, 'data', 'placeholderState' ] ) === PLACEHOLDER_STATE.ERROR
 		);
 
@@ -382,8 +390,13 @@ class PostComment extends React.PureComponent {
 			commentAuthorName: parentAuthorName,
 		} = this.getAuthorDetails( parentCommentId );
 
+		// highlight comments not older than 10s
+		const isHighlighted =
+			shouldHighlightNew && new Date().getTime() - new Date( comment.date ).getTime() < 10000;
+
 		const postCommentClassnames = classnames( 'comments__comment', {
 			[ 'depth-' + depth ]: depth <= maxDepth && depth <= 3, // only indent up to 3
+			'is-highlighted': isHighlighted,
 		} );
 
 		/* eslint-disable wpcalypso/jsx-gridicon-size */
@@ -404,18 +417,17 @@ class PostComment extends React.PureComponent {
 						commentId,
 						className: 'comments__comment-username',
 					} ) }
-					{ this.props.showNestingReplyArrow &&
-						parentAuthorName && (
-							<span className="comments__comment-respondee">
-								<Gridicon icon="chevron-right" size={ 16 } />
-								{ this.renderAuthorTag( {
-									className: 'comments__comment-respondee-link',
-									authorName: parentAuthorName,
-									authorUrl: parentAuthorUrl,
-									commentId: parentCommentId,
-								} ) }
-							</span>
-						) }
+					{ this.props.showNestingReplyArrow && parentAuthorName && (
+						<span className="comments__comment-respondee">
+							<Gridicon icon="chevron-right" size={ 16 } />
+							{ this.renderAuthorTag( {
+								className: 'comments__comment-respondee-link',
+								authorName: parentAuthorName,
+								authorUrl: parentAuthorUrl,
+								commentId: parentCommentId,
+							} ) }
+						</span>
+					) }
 					<div className="comments__comment-timestamp">
 						<a
 							href={ comment.URL }
@@ -484,7 +496,7 @@ class PostComment extends React.PureComponent {
 }
 
 const ConnectedPostComment = connect(
-	state => ( {
+	( state ) => ( {
 		currentUser: getCurrentUser( state ),
 	} ),
 	{ expandComments }

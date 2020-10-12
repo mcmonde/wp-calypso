@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -13,43 +11,40 @@ import { isEmpty, partial } from 'lodash';
  * Internal dependencies
  */
 import config from 'config';
-import Card from 'components/card';
+import { Card } from '@automattic/components';
 import CompactFormToggle from 'components/forms/form-toggle/compact';
 import JetpackModuleToggle from 'my-sites/site-settings/jetpack-module-toggle';
-import SectionHeader from 'components/section-header';
-import InfoPopover from 'components/info-popover';
-import ExternalLink from 'components/external-link';
+import SettingsSectionHeader from 'my-sites/site-settings/settings-section-header';
+import SupportInfo from 'components/support-info';
 import QueryJetpackModules from 'components/data/query-jetpack-modules';
 import QuerySiteMonitorSettings from 'components/data/query-site-monitor-settings';
 import { getSelectedSiteId } from 'state/ui/selectors';
 import { updateSiteMonitorSettings } from 'state/sites/monitor/actions';
 import { recordGoogleEvent } from 'state/analytics/actions';
-import {
-	getSiteMonitorSettings,
-	isActivatingJetpackModule,
-	isDeactivatingJetpackModule,
-	isFetchingJetpackModules,
-	isJetpackModuleActive,
-	isRequestingSiteMonitorSettings,
-	isUpdatingSiteMonitorSettings,
-} from 'state/selectors';
+import getSiteMonitorSettings from 'state/selectors/get-site-monitor-settings';
+import isActivatingJetpackModule from 'state/selectors/is-activating-jetpack-module';
+import isDeactivatingJetpackModule from 'state/selectors/is-deactivating-jetpack-module';
+import isFetchingJetpackModules from 'state/selectors/is-fetching-jetpack-modules';
+import isJetpackModuleActive from 'state/selectors/is-jetpack-module-active';
+import isRequestingSiteMonitorSettings from 'state/selectors/is-requesting-site-monitor-settings';
+import isUpdatingSiteMonitorSettings from 'state/selectors/is-updating-site-monitor-settings';
 
 class SiteSettingsFormJetpackMonitor extends Component {
 	state = {};
 
-	componentWillReceiveProps( nextProps ) {
+	UNSAFE_componentWillReceiveProps( nextProps ) {
 		if ( isEmpty( this.state ) && nextProps.monitorSettings ) {
 			this.setState( nextProps.monitorSettings );
 		}
 	}
 
-	recordEvent = event => {
+	recordEvent = ( event ) => {
 		return () => {
 			this.props.trackEvent( event );
 		};
 	};
 
-	handleToggle = name => () => {
+	handleToggle = ( name ) => () => {
 		this.props.trackEvent( `Toggled ${ name }` );
 		this.setState(
 			{
@@ -131,31 +126,28 @@ class SiteSettingsFormJetpackMonitor extends Component {
 			return null;
 		}
 
+		/* eslint-disable wpcalypso/jsx-classname-namespace */
 		return (
 			<div className="site-settings__security-settings">
 				<QueryJetpackModules siteId={ siteId } />
 				<QuerySiteMonitorSettings siteId={ siteId } />
 
-				<SectionHeader label={ translate( 'Downtime Monitoring' ) } />
+				<SettingsSectionHeader title={ translate( 'Downtime monitoring' ) } />
 
 				<Card className="jetpack-monitor-settings">
-					<div className="site-settings__info-link-container">
-						<InfoPopover position="left">
-							{ translate( "Notifies you when there's an issue with your site." ) }{' '}
-							<ExternalLink
-								href="https://jetpack.com/support/monitor/"
-								icon={ false }
-								target="_blank"
-							>
-								{ translate( 'Learn more' ) }
-							</ExternalLink>
-						</InfoPopover>
-					</div>
+					<SupportInfo
+						text={ translate(
+							'Jetpack will continuously monitor your site, and alert you the moment downtime is detected.'
+						) }
+						link="https://jetpack.com/support/monitor/"
+					/>
 
 					<JetpackModuleToggle
 						siteId={ siteId }
 						moduleSlug="monitor"
-						label={ translate( "Monitor your site's downtime" ) }
+						label={ translate(
+							'Get alerts if your site goes offline. We’ll let you know when it’s back up, too.'
+						) }
 						disabled={ this.disableForm() }
 					/>
 
@@ -167,11 +159,12 @@ class SiteSettingsFormJetpackMonitor extends Component {
 				</Card>
 			</div>
 		);
+		/* eslint-enable wpcalypso/jsx-classname-namespace */
 	}
 }
 
 export default connect(
-	state => {
+	( state ) => {
 		const siteId = getSelectedSiteId( state );
 
 		return {

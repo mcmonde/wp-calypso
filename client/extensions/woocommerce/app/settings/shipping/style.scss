@@ -1,4 +1,3 @@
-/** @format */
 
 @import 'shipping-zone/style';
 @import 'shipping-zone/style';
@@ -9,9 +8,9 @@
 
 .shipping__credit-card-description {
 	margin-bottom: 4px;
-	color: $gray-text-min;
+	color: var( --color-text-subtle );
 	padding-bottom: 8px;
-	font-size: 14px;
+	font-size: $font-body-small;
 	line-height: 18px;
 }
 
@@ -24,7 +23,7 @@
 		padding-right: 24px;
 	}
 
-	@include breakpoint( '>960px' ) {
+	@include breakpoint-deprecated( '>960px' ) {
 		display: flex;
 	}
 }
@@ -34,7 +33,7 @@
 	flex-grow: 1;
 	flex-direction: row;
 
-	@include breakpoint( '<1280px' ) {
+	@include breakpoint-deprecated( '<1280px' ) {
 		flex-direction: column;
 	}
 
@@ -51,7 +50,7 @@
 		margin-bottom: 0;
 
 		&.shipping__address-name {
-			font-weight: bold;
+			font-weight: 600;
 		}
 	}
 }
@@ -70,8 +69,8 @@
 	padding: 16px 0;
 	align-items: center;
 
-	&:not(:last-child) {
-		border-bottom: 1px solid $gray-lighten-20;
+	&:not( :last-child ) {
+		border-bottom: 1px solid var( --color-neutral-10 );
 	}
 }
 
@@ -79,14 +78,14 @@
 	&.is-placeholder {
 		@include placeholder();
 		pointer-events: none;
-		background: $white;
+		background: var( --color-surface );
 
 		.gridicon,
 		p,
 		a,
 		button {
 			animation: loading-fade 1.6s ease-in-out infinite;
-			background-color: lighten($gray, 25%);
+			background-color: var( --color-neutral-5 );
 			color: transparent;
 			cursor: default;
 		}
@@ -103,15 +102,15 @@
 	}
 
 	&:last-child {
-		background: lighten($gray, 35%);
+		background: var( --color-neutral-0 );
 	}
 }
 
 .shipping__zones-header {
 	padding: 12px 0;
-	font-size: 14px;
+	font-size: $font-body-small;
 	border-top: 0;
-	background: lighten($gray, 35%);
+	background: var( --color-neutral-0 );
 }
 
 .shipping__zones-row-icon {
@@ -119,7 +118,7 @@
 	text-align: left;
 	padding-left: 16px;
 
-	@include breakpoint( '>480px' ) {
+	@include breakpoint-deprecated( '>480px' ) {
 		padding-left: 24px;
 	}
 
@@ -135,7 +134,7 @@
 
 .shipping__zones-row-location-name {
 	margin-bottom: 0;
-	font-size: 14px;
+	font-size: $font-body-small;
 }
 
 .shipping__zones-row-location-name {
@@ -143,11 +142,11 @@
 }
 
 .shipping__zones-row-method {
-	font-size: 14px;
+	font-size: $font-body-small;
 	display: flex;
 	flex-direction: column;
 
-	@include breakpoint( '>960px' ) {
+	@include breakpoint-deprecated( '>960px' ) {
 		flex-direction: row;
 	}
 }
@@ -156,13 +155,13 @@
 .shipping__zones-row-method-description,
 .shipping__card-name {
 	margin-bottom: 0;
-	color: $gray-text-min;
-	font-size: 13px;
+	color: var( --color-text-subtle );
+	font-size: $font-body-small;
 	line-height: 22px;
 }
 
 .shipping__zones-row-method-description {
-	@include breakpoint( '>960px' ) {
+	@include breakpoint-deprecated( '>960px' ) {
 		margin-left: 4px;
 	}
 }
@@ -171,7 +170,7 @@
 	width: 45%;
 }
 
-.shipping__zones-row-method:not(:last-child) {
+.shipping__zones-row-method:not( :last-child ) {
 	margin-bottom: 8px;
 }
 
@@ -184,7 +183,7 @@
 	text-align: right;
 	padding-right: 16px;
 
-	@include breakpoint( '>480px' ) {
+	@include breakpoint-deprecated( '>480px' ) {
 		padding-right: 24px;
 	}
 }

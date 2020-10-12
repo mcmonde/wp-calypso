@@ -1,4 +1,4 @@
-.active-tests {
+.test-helper__active-tests {
 	display: none;
 }
 
@@ -10,16 +10,16 @@
 
 .environment-badge .environment.is-tests .test-helper__choice-indicator {
 	margin-top: -2px;
-	transform: scale(0.8);
+	transform: scale( 0.8 );
 }
 
 .test-helper__test-header {
 	text-transform: initial;
 	margin-top: 5px;
-	font-weight: bolder;
+	font-weight: 600;
 }
 
-.environment.is-tests:hover .active-tests.card {
+.environment.is-tests:hover .test-helper__active-tests.card {
 	display: block;
 	max-height: 80vh;
 	overflow-y: scroll;
@@ -27,7 +27,7 @@
 	bottom: 100%;
 	right: 0;
 	margin: 0;
-	font-size: 11px;
+	font-size: $font-body-extra-small;
 }
 
 .test-helper__list {

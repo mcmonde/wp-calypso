@@ -11,10 +11,7 @@ import SettingsItem from './settings-item';
 import SettingsGroupCard from 'woocommerce/woocommerce-services/components/settings-group-card';
 
 const SettingsGroup = ( props ) => {
-	const {
-		group,
-		errors,
-	} = props;
+	const { group, errors } = props;
 
 	const renderSettingsItem = ( item ) => {
 		const itemKey = item.key ? item.key : item;
@@ -31,27 +28,23 @@ const SettingsGroup = ( props ) => {
 
 	const renderSettingsItems = () => {
 		return group.items.map( ( item, idx ) => (
-			<div className="settings-form__row" key={ idx }>{ renderSettingsItem( item ) }</div>
+			<div className="settings-form__row" key={ idx }>
+				{ renderSettingsItem( item ) }
+			</div>
 		) );
 	};
 
 	switch ( group.type ) {
 		case 'fieldset':
 			return (
-				<SettingsGroupCard heading={ group.title } >
-					{ renderSettingsItems() }
-				</SettingsGroupCard>
+				<SettingsGroupCard heading={ group.title }>{ renderSettingsItems() }</SettingsGroupCard>
 			);
 
 		case 'actions':
 			return null; // The "save" button will be outside the form
 
 		default:
-			return (
-				<div>
-					{ renderSettingsItems() }
-				</div>
-			);
+			return <div>{ renderSettingsItems() }</div>;
 	}
 };
 

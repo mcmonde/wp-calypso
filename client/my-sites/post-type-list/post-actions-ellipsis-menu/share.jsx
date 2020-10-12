@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -16,7 +14,9 @@ import { bumpStat as bumpAnalyticsStat } from 'state/analytics/actions';
 import { bumpStatGenerator } from './utils';
 import { getPost } from 'state/posts/selectors';
 import { toggleSharePanel } from 'state/ui/post-type-list/actions';
-import { isPublicizeEnabled } from 'state/selectors';
+import isPublicizeEnabled from 'state/selectors/is-publicize-enabled';
+import canCurrentUser from 'state/selectors/can-current-user';
+import { getSelectedSiteId } from 'state/ui/selectors';
 
 class PostActionsEllipsisMenuShare extends Component {
 	static propTypes = {
@@ -42,8 +42,14 @@ class PostActionsEllipsisMenuShare extends Component {
 	}
 
 	render() {
-		const { translate, status, type, isPublicizeEnabled: isPublicizeEnabledForSite } = this.props;
-		if ( 'publish' !== status || ! isPublicizeEnabledForSite || 'post' !== type ) {
+		const {
+			canShare,
+			translate,
+			status,
+			type,
+			isPublicizeEnabled: isPublicizeEnabledForSite,
+		} = this.props;
+		if ( 'publish' !== status || ! isPublicizeEnabledForSite || 'post' !== type || ! canShare ) {
 			return null;
 		}
 
@@ -65,6 +71,7 @@ const mapStateToProps = ( state, { globalId } ) => {
 		status: post.status,
 		type: post.type,
 		isPublicizeEnabled: isPublicizeEnabled( state, post.site_ID, post.type ),
+		canShare: canCurrentUser( state, getSelectedSiteId( state ), 'publish_posts' ),
 	};
 };
 
@@ -79,6 +86,8 @@ const mergeProps = ( stateProps, dispatchProps, ownProps ) => {
 	return Object.assign( {}, ownProps, stateProps, dispatchProps, { bumpStat } );
 };
 
-export default connect( mapStateToProps, mapDispatchToProps, mergeProps )(
-	localize( PostActionsEllipsisMenuShare )
-);
+export default connect(
+	mapStateToProps,
+	mapDispatchToProps,
+	mergeProps
+)( localize( PostActionsEllipsisMenuShare ) );

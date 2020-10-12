@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -12,7 +10,7 @@ import { localize } from 'i18n-calypso';
 /**
  * Internal dependencies
  */
-import Button from 'components/button';
+import { Button } from '@automattic/components';
 import PulsingDot from 'components/pulsing-dot';
 import QueryTheme from 'components/data/query-theme';
 import { connectOptions } from './theme-options';
@@ -34,6 +32,7 @@ class ThemePreview extends React.Component {
 
 	static propTypes = {
 		// connected props
+		belowToolbar: PropTypes.element,
 		demoUrl: PropTypes.string,
 		isActivating: PropTypes.bool,
 		isActive: PropTypes.bool,
@@ -47,7 +46,7 @@ class ThemePreview extends React.Component {
 		showActionIndicator: false,
 	};
 
-	componentWillReceiveProps( nextProps ) {
+	UNSAFE_componentWillReceiveProps( nextProps ) {
 		if ( this.props.isActivating && ! nextProps.isActivating ) {
 			this.setState( { showActionIndicator: false } );
 			this.props.hideThemePreview();
@@ -112,6 +111,7 @@ class ThemePreview extends React.Component {
 		return (
 			<div>
 				{ this.props.isJetpack && <QueryTheme themeId={ themeId } siteId="wporg" /> }
+				{ this.props.children }
 				{ this.props.demoUrl && (
 					<WebPreview
 						showPreview={ true }
@@ -120,6 +120,7 @@ class ThemePreview extends React.Component {
 						onClose={ this.props.hideThemePreview }
 						previewUrl={ this.props.demoUrl + '?demo=true&iframe=true&theme_preview=true' }
 						externalUrl={ this.props.demoUrl }
+						belowToolbar={ this.props.belowToolbar }
 					>
 						{ showActionIndicator && <PulsingDot active={ true } /> }
 						{ ! showActionIndicator && this.renderSecondaryButton() }
@@ -135,7 +136,7 @@ class ThemePreview extends React.Component {
 const ConnectedThemePreview = connectOptions( ThemePreview );
 
 export default connect(
-	state => {
+	( state ) => {
 		const themeId = themePreviewVisibility( state );
 		if ( ! themeId ) {
 			return { themeId };

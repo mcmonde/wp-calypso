@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -46,7 +44,7 @@ class SettingsTaxes extends Component {
 		}
 	};
 
-	componentDidUpdate = prevProps => {
+	componentDidUpdate = ( prevProps ) => {
 		if ( this.props.setupChoicesLoaded && ! prevProps.setupChoicesLoaded ) {
 			this.maybeSetCheckedTaxSetup();
 		}

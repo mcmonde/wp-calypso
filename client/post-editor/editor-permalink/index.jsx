@@ -1,15 +1,12 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import PropTypes from 'prop-types';
-import React, { Component } from 'react';
+import React, { Component, Fragment } from 'react';
 import { pick } from 'lodash';
 import { localize } from 'i18n-calypso';
 import { connect } from 'react-redux';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 
 /**
  * Internal dependencies
@@ -19,8 +16,13 @@ import Popover from 'components/popover';
 import Tooltip from 'components/tooltip';
 import ClipboardButton from 'components/forms/clipboard-button';
 import { getSelectedSiteId } from 'state/ui/selectors';
-import { getEditorPostId } from 'state/ui/editor/selectors';
+import { getEditorPostId } from 'state/editor/selectors';
 import { getEditedPostSlug } from 'state/posts/selectors';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class EditorPermalink extends Component {
 	static propTypes = {
@@ -29,6 +31,8 @@ class EditorPermalink extends Component {
 		translate: PropTypes.func,
 		slug: PropTypes.string,
 	};
+
+	permalinkToggleReference = React.createRef();
 
 	constructor() {
 		super( ...arguments );
@@ -40,21 +44,9 @@ class EditorPermalink extends Component {
 
 		this.state = {
 			showPopover: false,
-			popoverVisible: false,
 			showCopyConfirmation: false,
 			tooltip: false,
 		};
-	}
-
-	componentDidUpdate( prevProps, prevState ) {
-		if ( this.state.showPopover !== prevState.showPopover ) {
-			// The contents of <Popover /> are only truly rendered into the
-			// DOM after its `componentDidUpdate` finishes executing, so we
-			// wait to render the clipboard button until after the update.
-			this.setState( {
-				popoverVisible: this.state.showPopover,
-			} );
-		}
 	}
 
 	componentWillUnmount() {
@@ -96,9 +88,6 @@ class EditorPermalink extends Component {
 	}
 
 	renderCopyButton() {
-		if ( ! this.state.popoverVisible ) {
-			return;
-		}
 		const { path, slug, translate } = this.props;
 
 		let label;
@@ -126,22 +115,24 @@ class EditorPermalink extends Component {
 		}
 
 		return (
-			<div
-				className="editor-permalink"
-				onMouseEnter={ this.showTooltip }
-				onMouseLeave={ this.hideTooltip }
-			>
-				<Gridicon
-					className="editor-permalink__toggle"
-					icon="link"
-					onClick={ this.showPopover }
-					ref="popoverButton"
-				/>
+			<Fragment>
+				<div
+					className="editor-permalink"
+					onMouseEnter={ this.showTooltip }
+					onMouseLeave={ this.hideTooltip }
+				>
+					<Gridicon
+						className="editor-permalink__toggle"
+						icon="link"
+						onClick={ this.showPopover }
+						ref={ this.permalinkToggleReference }
+					/>
+				</div>
 				<Popover
 					isVisible={ this.state.showPopover }
 					onClose={ this.closePopover }
 					position={ 'bottom right' }
-					context={ this.refs && this.refs.popoverButton }
+					context={ this.permalinkToggleReference.current }
 					className="editor-permalink__popover"
 				>
 					<Slug
@@ -152,18 +143,18 @@ class EditorPermalink extends Component {
 					{ this.renderCopyButton() }
 				</Popover>
 				<Tooltip
-					context={ this.refs && this.refs.popoverButton }
+					context={ this.permalinkToggleReference.current }
 					isVisible={ this.state.tooltip }
 					position="bottom"
 				>
 					{ tooltipMessage }
 				</Tooltip>
-			</div>
+			</Fragment>
 		);
 	}
 }
 
-export default connect( state => {
+export default connect( ( state ) => {
 	const siteId = getSelectedSiteId( state );
 	const postId = getEditorPostId( state );
 

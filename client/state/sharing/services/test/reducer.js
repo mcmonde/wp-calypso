@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -18,7 +16,7 @@ import {
 	DESERIALIZE,
 	SERIALIZE,
 } from 'state/action-types';
-import { useSandbox } from 'test/helpers/use-sinon';
+import { useSandbox } from 'test-helpers/use-sinon';
 
 const originalKeyringServices = {
 	facebook: {
@@ -34,6 +32,7 @@ const originalKeyringServices = {
 		jetpack_support: true,
 		label: 'Facebook',
 		multiple_external_user_ID_support: true,
+		external_users_only: true,
 		type: 'publicize',
 	},
 	twitter: {
@@ -50,12 +49,13 @@ const originalKeyringServices = {
 		jetpack_support: true,
 		label: 'Twitter',
 		multiple_external_user_ID_support: false,
+		external_users_only: false,
 		type: 'publicize',
 	},
 };
 
 describe( 'reducer', () => {
-	useSandbox( sandbox => sandbox.stub( console, 'warn' ) );
+	useSandbox( ( sandbox ) => sandbox.stub( console, 'warn' ) );
 
 	test( 'should include expected keys in return value', () => {
 		expect( reducer( undefined, {} ) ).to.have.keys( [ 'items', 'isFetching' ] );

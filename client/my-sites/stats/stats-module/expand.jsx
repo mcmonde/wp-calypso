@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -7,6 +5,11 @@
 import PropTypes from 'prop-types';
 import React, { PureComponent } from 'react';
 import { localize } from 'i18n-calypso';
+
+/**
+ * Style dependencies
+ */
+import './expand.scss';
 
 class StatsModuleExpand extends PureComponent {
 	static propTypes = {
@@ -21,7 +24,7 @@ class StatsModuleExpand extends PureComponent {
 		return (
 			<div className="stats-module__expand">
 				<a href={ this.props.href }>
-					{ this.props.translate( 'View All', {
+					{ this.props.translate( 'View all', {
 						context: 'Stats: Button label to expand a panel',
 					} ) }
 					<span className="stats-module__expand-right" />

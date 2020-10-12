@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -12,19 +10,16 @@ import { connect } from 'react-redux';
 /**
  * Internal dependencies
  */
-import CompactCard from 'components/card/compact';
+import { CompactCard } from '@automattic/components';
 import JetpackModuleToggle from 'my-sites/site-settings/jetpack-module-toggle';
 import FormFieldset from 'components/forms/form-fieldset';
 import CompactFormToggle from 'components/forms/form-toggle/compact';
 import { getSelectedSiteId, getSelectedSiteSlug } from 'state/ui/selectors';
-import {
-	isJetpackModuleActive,
-	isJetpackModuleUnavailableInDevelopmentMode,
-	isJetpackSiteInDevelopmentMode,
-} from 'state/selectors';
+import isJetpackModuleActive from 'state/selectors/is-jetpack-module-active';
+import isJetpackModuleUnavailableInDevelopmentMode from 'state/selectors/is-jetpack-module-unavailable-in-development-mode';
+import isJetpackSiteInDevelopmentMode from 'state/selectors/is-jetpack-site-in-development-mode';
 import QueryJetpackConnection from 'components/data/query-jetpack-connection';
-import InfoPopover from 'components/info-popover';
-import ExternalLink from 'components/external-link';
+import SupportInfo from 'components/support-info';
 
 const Subscriptions = ( {
 	fields,
@@ -43,28 +38,18 @@ const Subscriptions = ( {
 
 			<CompactCard className="subscriptions__card site-settings__discussion-settings">
 				<FormFieldset>
-					<div className="subscriptions__info-link-container site-settings__info-link-container">
-						<InfoPopover position="left">
-							{ translate(
-								'Allows readers to subscribe to your posts or comments, ' +
-									'and receive notifications of new content by email.'
-							) }{' '}
-							<ExternalLink
-								href="https://jetpack.com/support/subscriptions"
-								icon={ false }
-								target="_blank"
-							>
-								{ translate( 'Learn more' ) }
-							</ExternalLink>
-						</InfoPopover>
-					</div>
+					<SupportInfo
+						text={ translate(
+							'Allows readers to subscribe to your posts or comments, ' +
+								'and receive notifications of new content by email.'
+						) }
+						link="https://jetpack.com/support/subscriptions/"
+					/>
 
 					<JetpackModuleToggle
 						siteId={ selectedSiteId }
 						moduleSlug="subscriptions"
-						label={ translate(
-							'Allow users to subscribe to your posts and comments and receive notifications via email'
-						) }
+						label={ translate( 'Let visitors subscribe to new posts and comments via email' ) }
 						disabled={ isRequestingSettings || isSavingSettings || moduleUnavailable }
 					/>
 
@@ -79,7 +64,7 @@ const Subscriptions = ( {
 							}
 							onChange={ handleAutosavingToggle( 'stb_enabled' ) }
 						>
-							{ translate( 'Show a "follow blog" option in the comment form' ) }
+							{ translate( 'Enable the "subscribe to site" option on your comment form' ) }
 						</CompactFormToggle>
 
 						<CompactFormToggle
@@ -92,7 +77,7 @@ const Subscriptions = ( {
 							}
 							onChange={ handleAutosavingToggle( 'stc_enabled' ) }
 						>
-							{ translate( 'Show a "follow comments" option in the comment form' ) }
+							{ translate( 'Enable the "subscribe to comments" option on your comment form' ) }
 						</CompactFormToggle>
 					</div>
 				</FormFieldset>
@@ -123,7 +108,7 @@ Subscriptions.propTypes = {
 	fields: PropTypes.object,
 };
 
-export default connect( state => {
+export default connect( ( state ) => {
 	const selectedSiteId = getSelectedSiteId( state );
 	const selectedSiteSlug = getSelectedSiteSlug( state );
 	const siteInDevMode = isJetpackSiteInDevelopmentMode( state, selectedSiteId );

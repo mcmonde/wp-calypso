@@ -1,27 +1,33 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
+import { useMobileBreakpoint } from '@automattic/viewport-react';
 import React from 'react';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 
 /**
  * Internal dependencies
  */
 import InfoPopover from 'components/info-popover';
-import { isMobile } from 'lib/viewport';
 
-export default function PlanFeaturesItem( { children, description, hideInfoPopover } ) {
+export default function PlanFeaturesItem( {
+	children,
+	description,
+	hideInfoPopover,
+	hideGridicon = false,
+} ) {
+	const isMobile = useMobileBreakpoint();
+
 	return (
 		<div className="plan-features__item">
-			<Gridicon className="plan-features__item-checkmark" size={ 18 } icon="checkmark" />
+			{ ! hideGridicon && (
+				<Gridicon className="plan-features__item-checkmark" size={ 18 } icon="checkmark" />
+			) }
 			{ children }
 			{ hideInfoPopover ? null : (
 				<InfoPopover
 					className="plan-features__item-tip-info"
-					position={ isMobile() ? 'top' : 'right' }
+					position={ isMobile ? 'left' : 'right' }
 				>
 					{ description }
 				</InfoPopover>

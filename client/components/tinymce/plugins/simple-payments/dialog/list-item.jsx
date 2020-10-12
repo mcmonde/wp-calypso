@@ -1,10 +1,4 @@
 /**
- * /* eslint-disable wpcalypso/jsx-classname-namespace
- *
- * @format
- */
-
-/**
  * External dependencies
  */
 import PropTypes from 'prop-types';
@@ -12,17 +6,20 @@ import React, { Component } from 'react';
 import { localize } from 'i18n-calypso';
 import { noop } from 'lodash';
 import classnames from 'classnames';
+import { getCurrencyObject } from '@automattic/format-currency';
 
 /**
  * Internal dependencies
  */
-import { getCurrencyObject } from 'lib/format-currency';
-import CompactCard from 'components/card/compact';
+import { CompactCard } from '@automattic/components';
 import EllipsisMenu from 'components/ellipsis-menu';
 import FormRadio from 'components/forms/form-radio';
 import log from 'lib/catch-js-errors/log';
 import PopoverMenuItem from 'components/popover/menu-item';
 import ProductImage from './product-image';
+import { DEFAULT_CURRENCY } from 'lib/simple-payments/constants';
+
+/* eslint-disable wpcalypso/jsx-classname-namespace */
 
 class ProductListItem extends Component {
 	static propTypes = {
@@ -41,7 +38,7 @@ class ProductListItem extends Component {
 	handleEditClick = () => this.props.onEditClick( this.props.paymentId );
 	handleTrashClick = () => this.props.onTrashClick( this.props.paymentId );
 
-	formatPrice( price, currency = 'USD' ) {
+	formatPrice( price, currency = DEFAULT_CURRENCY ) {
 		if ( isNaN( price ) ) {
 			log( 'Simple Payments: invalid price value', {
 				siteId: this.props.siteId,

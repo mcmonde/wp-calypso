@@ -1,20 +1,18 @@
 .all-time {
-
 	.stats-tab {
-
 		padding-bottom: 0;
 
 		&.all-time__is-best .gridicon,
 		&.all-time__is-best .label {
-			color: $alert-yellow;
+			color: var( --color-primary );
 		}
 
 		.all-time__best-day {
-			color: $gray-text-min;
-			font-size: 12px;
+			color: var( --color-text-subtle );
+			font-size: $font-body-extra-small;
 			box-sizing: border-box;
 			display: block;
-			padding: 24px 0px 10px 58px;
+			padding: 24px 0 10px 58px;
 			text-align: left;
 		}
 	}

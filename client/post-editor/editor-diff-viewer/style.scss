@@ -1,4 +1,3 @@
-/** @format */
 .editor-diff-viewer {
 	box-sizing: border-box;
 	overflow-y: hidden;
@@ -8,7 +7,7 @@
 	z-index: 1; // Put the viewer above the action-buttons:before overlay gradient. -shaun
 
 	.editor-diff-viewer__scrollable {
-		padding: 24px 32px 32px 32px;
+		padding: 24px 32px 32px;
 		height: 100%;
 		overflow-y: auto;
 		box-sizing: border-box;
@@ -17,29 +16,56 @@
 
 	.editor-diff-viewer__title {
 		font-family: $serif;
-		font-size: 32px;
-		color: $gray-dark;
+		font-size: $font-title-large;
+		color: var( --color-neutral-70 );
 		font-weight: 600;
-		margin: 0 0 24px 0;
+		margin: 0 0 24px;
 		height: auto;
 		line-height: 1.425;
 	}
+
+	@include breakpoint-deprecated( '>1040px' ) {
+		&.is-split {
+			.editor-diff-viewer__scrollable {
+				display: flex;
+			}
+			.editor-diff-viewer__main-pane {
+				width: 50%;
+				padding-right: 16px;
+				.text-diff__additions {
+					display: none;
+				}
+			}
+			.editor-diff-viewer__secondary-pane {
+				display: block;
+				width: 50%;
+				padding-left: 16px;
+				.text-diff__deletions {
+					display: none;
+				}
+			}
+		}
+	}
+}
+
+.editor-diff-viewer__secondary-pane {
+	display: none;
 }
 
 .editor-diff-viewer__hint-above,
 .editor-diff-viewer__hint-below {
 	position: absolute;
 	right: 24px;
-	border-radius: 4px;
+	border-radius: 2px;
 	height: 28px;
 	line-height: 27px;
-	background-color: $gray-text-min;
+	background-color: var( --color-text-subtle );
 	cursor: pointer;
 	padding: 0 16px 0 8px;
 	color: #fff;
-	font-size: 13px;
+	font-size: $font-body-small;
 
-	@include breakpoint( '<660px' ) {
+	@include breakpoint-deprecated( '<660px' ) {
 		display: none;
 	}
 }
@@ -51,7 +77,7 @@
 
 .editor-diff-viewer__hint-below {
 	bottom: 0;
-	border-radius: 4px 4px 0 0;
+	border-radius: 2px 2px 0 0;
 }
 
 .editor-diff-viewer__hint-icon {
@@ -64,36 +90,36 @@
 	display: inline-block;
 	width: 50%;
 	height: 38px;
-	@include placeholder(23%);
+	@include placeholder( --color-neutral-10 );
 }
 
 .editor-diff-viewer__content {
 	font-family: $serif;
-	font-size: 15px;
+	font-size: $font-body;
 	white-space: pre-wrap;
 	word-wrap: break-word;
 	padding: 0;
 	background: transparent;
-	overflow-y: hidden;
+	overflow: hidden;
 }
 
 .editor-diff-viewer.is-loading .editor-diff-viewer__content {
-	&:before,
-	&:after {
+	&::before,
+	&::after {
 		content: '';
 		display: block;
 		width: 100%;
 		height: 20px;
 		margin-top: 6px;
-		@include placeholder(23%);
+		@include placeholder( --color-neutral-10 );
 	}
 
-	&:before {
+	&::before {
 		width: 75%;
 	}
 
-	&:after {
+	&::after {
 		margin-bottom: 36px;
-		box-shadow: 0px 26px 0px 0px lighten($gray, 23%);
+		box-shadow: 0 26px 0 0 var( --color-neutral-5 );
 	}
 }

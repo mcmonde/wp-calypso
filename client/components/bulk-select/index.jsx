@@ -1,17 +1,23 @@
-/** @format */
 /**
  * External dependencies
  */
 import PropTypes from 'prop-types';
 import React from 'react';
 import classNames from 'classnames';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 import { localize } from 'i18n-calypso';
 
 /**
  * Internal dependencies
  */
 import Count from 'components/count';
+import FormInputCheckbox from 'components/forms/form-checkbox';
+import FormLabel from 'components/forms/form-label';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 export class BulkSelect extends React.Component {
 	static displayName = 'BulkSelect';
@@ -53,11 +59,8 @@ export class BulkSelect extends React.Component {
 
 		return (
 			<span className="bulk-select">
-				{ /* The label + input have an implicit relationship since the input is a direct child of the label. */ }
-				{ /* eslint-disable jsx-a11y/label-has-for */ }
-				<label className="bulk-select__container">
-					<input
-						type="checkbox"
+				<FormLabel className="bulk-select__container">
+					<FormInputCheckbox
 						className={ inputClasses }
 						checked={ isChecked }
 						onChange={ this.handleToggleAll }
@@ -65,8 +68,7 @@ export class BulkSelect extends React.Component {
 					/>
 					<Count count={ this.props.selectedElements } />
 					{ this.getStateIcon() }
-				</label>
-				{ /* eslint-enable jsx-a11y/label-has-for */ }
+				</FormLabel>
 			</span>
 		);
 	}

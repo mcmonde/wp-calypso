@@ -1,9 +1,6 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
@@ -14,12 +11,19 @@ import classNames from 'classnames';
 /**
  * Internal dependencies
  */
-import ProgressBar from 'components/progress-bar';
+import { ProgressBar } from '@automattic/components';
 import Notice from 'components/notice';
 import DetailPreviewVideo from 'post-editor/media-modal/detail/detail-preview-video';
 import VideoEditorControls from './video-editor-controls';
-import { updatePoster } from 'state/ui/editor/video-editor/actions';
-import { getPosterUploadProgress, getPosterUrl, shouldShowVideoEditorError } from 'state/selectors';
+import { updatePoster } from 'state/editor/video-editor/actions';
+import getPosterUploadProgress from 'state/selectors/get-poster-upload-progress';
+import getPosterUrl from 'state/selectors/get-poster-url';
+import shouldShowVideoEditorError from 'state/selectors/should-show-video-editor-error';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class VideoEditor extends Component {
 	static propTypes = {
@@ -46,7 +50,7 @@ class VideoEditor extends Component {
 		pauseVideo: false,
 	};
 
-	componentWillReceiveProps( nextProps ) {
+	UNSAFE_componentWillReceiveProps( nextProps ) {
 		if ( nextProps.shouldShowError && ! this.props.shouldShowError ) {
 			this.setState( {
 				error: true,
@@ -78,9 +82,10 @@ class VideoEditor extends Component {
 
 	/**
 	 * Updates the poster by selecting a particular frame of the video.
+	 *
 	 * @param {number} currentTime - Time at which to capture the frame
 	 */
-	updatePoster = currentTime => {
+	updatePoster = ( currentTime ) => {
 		if ( ! this.state.isSelectingFrame ) {
 			return;
 		}
@@ -89,7 +94,7 @@ class VideoEditor extends Component {
 		const guid = get( media, 'videopress_guid', null );
 
 		if ( guid ) {
-			this.props.updatePoster( guid, { atTime: currentTime } );
+			this.props.updatePoster( guid, { atTime: currentTime }, { mediaId: media.ID } );
 		}
 	};
 
@@ -111,9 +116,10 @@ class VideoEditor extends Component {
 
 	/**
 	 * Uploads an image to use as the poster for the video.
+	 *
 	 * @param {object} file - Uploaded image
 	 */
-	uploadImage = file => {
+	uploadImage = ( file ) => {
 		if ( ! file ) {
 			return;
 		}
@@ -122,7 +128,7 @@ class VideoEditor extends Component {
 		const guid = get( media, 'videopress_guid', null );
 
 		if ( guid ) {
-			this.props.updatePoster( guid, { file } );
+			this.props.updatePoster( guid, { file }, { mediaId: media.ID } );
 		}
 	};
 
@@ -142,6 +148,7 @@ class VideoEditor extends Component {
 
 		return (
 			<Notice
+				className="video-editor__notice"
 				status="is-error"
 				showDismiss={ true }
 				text={ translate( 'We are unable to edit this video.' ) }
@@ -159,8 +166,6 @@ class VideoEditor extends Component {
 
 		return (
 			<div className={ classes }>
-				{ error && this.renderError() }
-
 				<figure>
 					<div className="video-editor__content">
 						<div className="video-editor__preview-wrapper">
@@ -173,16 +178,14 @@ class VideoEditor extends Component {
 								onVideoLoaded={ this.setIsLoading }
 							/>
 						</div>
-						{ uploadProgress &&
-							! error &&
-							! isSelectingFrame && (
-								<ProgressBar
-									className="video-editor__progress-bar"
-									isPulsing={ true }
-									total={ 100 }
-									value={ uploadProgress }
-								/>
-							) }
+						{ uploadProgress && ! error && ! isSelectingFrame && (
+							<ProgressBar
+								className="video-editor__progress-bar"
+								isPulsing={ true }
+								total={ 100 }
+								value={ uploadProgress }
+							/>
+						) }
 						<span className="video-editor__text">
 							{ translate( 'Select a frame to use as the thumbnail image or upload your own.' ) }
 						</span>
@@ -196,13 +199,15 @@ class VideoEditor extends Component {
 						/>
 					</div>
 				</figure>
+
+				{ error && this.renderError() }
 			</div>
 		);
 	}
 }
 
 export default connect(
-	state => {
+	( state ) => {
 		return {
 			posterUrl: getPosterUrl( state ),
 			shouldShowError: shouldShowVideoEditorError( state ),

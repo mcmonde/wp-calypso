@@ -1,9 +1,7 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
+import { isMobile } from '@automattic/viewport';
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
@@ -14,11 +12,15 @@ import { noop } from 'lodash';
  * Internal dependencies
  */
 import { hasTouch } from 'lib/touch-detect';
-import { isMobile } from 'lib/viewport';
 import { localize } from 'i18n-calypso';
-import RootChild from 'components/root-child';
+import { RootChild } from '@automattic/components';
 import { setPreviewShowing } from 'state/ui/actions';
 import WebPreviewContent from './content';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 export class WebPreviewModal extends Component {
 	static propTypes = {
@@ -36,6 +38,8 @@ export class WebPreviewModal extends Component {
 		showDeviceSwitcher: PropTypes.bool,
 		// Show edit button
 		showEdit: PropTypes.bool,
+		// Show edit the header link button
+		showEditHeaderLink: PropTypes.bool,
 		// The URL for the edit button
 		editUrl: PropTypes.string,
 		// The URL that should be displayed in the iframe
@@ -63,6 +67,8 @@ export class WebPreviewModal extends Component {
 		hasSidebar: PropTypes.bool,
 		// The site/post description passed to the SeoPreviewPane
 		frontPageMetaDescription: PropTypes.string,
+		// A post object used to override the selected post in the SEO preview
+		overridePost: PropTypes.object,
 	};
 
 	static defaultProps = {
@@ -78,6 +84,7 @@ export class WebPreviewModal extends Component {
 		onClose: noop,
 		onEdit: noop,
 		hasSidebar: false,
+		overridePost: null,
 	};
 
 	constructor( props ) {
@@ -94,7 +101,7 @@ export class WebPreviewModal extends Component {
 		this.setDeviceViewport = this.setDeviceViewport.bind( this );
 	}
 
-	componentWillMount() {
+	UNSAFE_componentWillMount() {
 		// Cache touch and mobile detection for the entire lifecycle of the component
 		this._hasTouch = hasTouch();
 		this._isMobile = isMobile();
@@ -155,7 +162,9 @@ export class WebPreviewModal extends Component {
 		return (
 			<RootChild>
 				<div className={ className }>
+					{ /* eslint-disable jsx-a11y/click-events-have-key-events,jsx-a11y/no-static-element-interactions */ }
 					<div className="web-preview__backdrop" onClick={ this.props.onClose } />
+					{ /* eslint-enable jsx-a11y/click-events-have-key-events,jsx-a11y/no-static-element-interactions */ }
 					<div className="web-preview__content">
 						<WebPreviewContent
 							{ ...this.props }

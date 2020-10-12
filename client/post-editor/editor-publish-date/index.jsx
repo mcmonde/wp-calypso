@@ -1,40 +1,38 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import PropTypes from 'prop-types';
 import React from 'react';
 import ReactDom from 'react-dom';
 import { connect } from 'react-redux';
 import { localize } from 'i18n-calypso';
 import classNames from 'classnames';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 import { intersection } from 'lodash';
 
 /**
  * Internal dependencies
  */
-import Button from 'components/button';
+import { Button } from '@automattic/components';
+import { withLocalizedMoment } from 'components/localized-moment';
 import PostScheduler from './post-scheduler';
-import * as utils from 'lib/posts/utils';
+import * as utils from 'state/posts/utils';
 import { getSelectedSite } from 'state/ui/selectors';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 export class EditorPublishDate extends React.Component {
 	static propTypes = {
 		post: PropTypes.object,
-		postDate: PropTypes.string,
 		setPostDate: PropTypes.func,
 	};
 
-	constructor( props ) {
-		super( props );
-
-		this.state = {
-			isOpen: false,
-		};
-	}
+	state = {
+		isOpen: false,
+	};
 
 	componentWillUnmount() {
 		window.removeEventListener( 'click', this.handleOutsideClick );
@@ -48,7 +46,7 @@ export class EditorPublishDate extends React.Component {
 		}
 	}
 
-	handleOutsideClick = event => {
+	handleOutsideClick = ( event ) => {
 		// The `className` of a `svg` element is a `SVGAnimatedString`, which
 		// does not have a `split` method.  Since an `svg` element will not
 		// have any of the classes we're interested in, don't bother trying to
@@ -69,7 +67,7 @@ export class EditorPublishDate extends React.Component {
 	};
 
 	setImmediate = () => {
-		this.props.setPostDate( null );
+		this.props.setPostDate( false );
 		this.setState( { isOpen: false } );
 	};
 
@@ -196,8 +194,8 @@ export class EditorPublishDate extends React.Component {
 	}
 }
 
-export default connect( state => {
+export default connect( ( state ) => {
 	return {
 		site: getSelectedSite( state ),
 	};
-} )( localize( EditorPublishDate ) );
+} )( localize( withLocalizedMoment( EditorPublishDate ) ) );

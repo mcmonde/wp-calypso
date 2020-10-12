@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -9,40 +7,32 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { debounce, partial } from 'lodash';
 import { localize } from 'i18n-calypso';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 
 /**
  * Internal dependencies
  */
 import FormRange from 'components/forms/range';
 import SegmentedControl from 'components/segmented-control';
-import SegmentedControlItem from 'components/segmented-control/item';
 import { setPreference, savePreference } from 'state/preferences/actions';
 import { getPreference } from 'state/preferences/selectors';
+import { SCALE_CHOICES } from 'lib/media/constants';
 
 /**
  * Constants
  */
 
 /**
- * Scale choices are 12, 8, 6, 4, and 3 items per row, with some horizontal
- * padding between items
- *
- * @type {Array}
- */
-const SCALE_CHOICES = [ 0.077, 0.115, 0.157, 0.24, 0.323 ];
-
-/**
  * Number of steps on the rendered input range
  *
- * @type {Number}
+ * @type {number}
  */
 const SLIDER_STEPS = 100;
 
 /**
  * Scale size for small viewports grid option (3 items per row).
  *
- * @type {Number}
+ * @type {number}
  */
 const SCALE_TOUCH_GRID = 0.32;
 
@@ -90,7 +80,7 @@ class MediaLibraryScale extends Component {
 
 	onScaleChange( event ) {
 		const sliderPosition = parseInt( event.target.value, 10 );
-		const scaleIndex = sliderPosition * SCALE_CHOICES.length / SLIDER_STEPS;
+		const scaleIndex = ( sliderPosition * SCALE_CHOICES.length ) / SLIDER_STEPS;
 		const scale = SCALE_CHOICES[ Math.floor( scaleIndex ) ];
 
 		this.setState( { sliderPosition } );
@@ -114,7 +104,7 @@ class MediaLibraryScale extends Component {
 			return 0;
 		}
 
-		return Math.floor( scaleIndex * ( SLIDER_STEPS - 1 ) / ( SCALE_CHOICES.length - 1 ) );
+		return Math.floor( ( scaleIndex * ( SLIDER_STEPS - 1 ) ) / ( SCALE_CHOICES.length - 1 ) );
 	}
 
 	render() {
@@ -123,14 +113,20 @@ class MediaLibraryScale extends Component {
 		return (
 			<div className="media-library__scale">
 				<SegmentedControl className="media-library__scale-toggle" compact>
-					<SegmentedControlItem selected={ 1 !== scale } onClick={ this.setScaleToMobileGrid }>
-						<span className="media-library__scale-toggle-label">{ translate( 'Grid' ) }</span>
+					<SegmentedControl.Item
+						selected={ 1 !== scale }
+						onClick={ this.setScaleToMobileGrid }
+						title={ translate( 'Grid' ) }
+					>
 						<Gridicon icon="grid" size={ 18 } />
-					</SegmentedControlItem>
-					<SegmentedControlItem selected={ 1 === scale } onClick={ this.setScaleToMobileFull }>
-						<span className="media-library__scale-toggle-label">{ translate( 'List' ) }</span>
+					</SegmentedControl.Item>
+					<SegmentedControl.Item
+						selected={ 1 === scale }
+						onClick={ this.setScaleToMobileFull }
+						title={ translate( 'List' ) }
+					>
 						<Gridicon icon="menu" size={ 18 } />
-					</SegmentedControlItem>
+					</SegmentedControl.Item>
 				</SegmentedControl>
 				<FormRange
 					step="1"
@@ -148,7 +144,7 @@ class MediaLibraryScale extends Component {
 }
 
 export default connect(
-	state => ( {
+	( state ) => ( {
 		scale: getPreference( state, 'mediaScale' ),
 	} ),
 	{

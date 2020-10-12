@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -44,7 +43,7 @@ export default class FollowersData extends Component {
 		);
 	}
 
-	componentWillReceiveProps( nextProps ) {
+	UNSAFE_componentWillReceiveProps( nextProps ) {
 		if ( ! nextProps.fetchOptions ) {
 			return;
 		}
@@ -65,7 +64,7 @@ export default class FollowersData extends Component {
 		pollers.remove( this._poller );
 	}
 
-	fetchIfEmpty = fetchOptions => {
+	fetchIfEmpty = ( fetchOptions ) => {
 		fetchOptions = fetchOptions || this.props.fetchOptions;
 		if ( ! fetchOptions || ! fetchOptions.siteId ) {
 			return;
@@ -75,8 +74,8 @@ export default class FollowersData extends Component {
 			return;
 		}
 		// defer fetch requests to avoid dispatcher conflicts
-		let defer = function() {
-			var paginationData = FollowersStore.getPaginationData( fetchOptions );
+		const defer = function () {
+			const paginationData = FollowersStore.getPaginationData( fetchOptions );
 			if ( paginationData.fetchingFollowers ) {
 				return;
 			}
@@ -87,7 +86,7 @@ export default class FollowersData extends Component {
 	};
 
 	isFetching = () => {
-		let fetchOptions = this.props.fetchOptions;
+		const fetchOptions = this.props.fetchOptions;
 		if ( ! fetchOptions.siteId ) {
 			debug( 'Is fetching because siteId is falsey' );
 			return true;
@@ -97,7 +96,7 @@ export default class FollowersData extends Component {
 			return true;
 		}
 
-		let followersPaginationData = FollowersStore.getPaginationData( fetchOptions );
+		const followersPaginationData = FollowersStore.getPaginationData( fetchOptions );
 		debug( 'Followers pagination data: ' + JSON.stringify( followersPaginationData ) );
 
 		if ( followersPaginationData.fetchingFollowers ) {
@@ -106,7 +105,7 @@ export default class FollowersData extends Component {
 		return false;
 	};
 
-	refreshFollowers = fetchOptions => {
+	refreshFollowers = ( fetchOptions ) => {
 		fetchOptions = fetchOptions || this.props.fetchOptions;
 		debug( 'Refreshing followers: ' + JSON.stringify( fetchOptions ) );
 		this.setState( {

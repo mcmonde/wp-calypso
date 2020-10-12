@@ -1,11 +1,10 @@
-/** @format */
 /**
  * External dependencies
  */
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { moment, translate } from 'i18n-calypso';
+import moment from 'moment';
 
 /**
  * Internal dependencies
@@ -14,7 +13,7 @@ import Main from 'components/main';
 import StatsNavigation from 'blocks/stats-navigation';
 import SidebarNavigation from 'my-sites/sidebar-navigation';
 import { getSelectedSiteId, getSelectedSiteSlug } from 'state/ui/selectors';
-import Chart from './store-stats-chart';
+import Chart from './store-stats-orders-chart';
 import StatsPeriodNavigation from 'my-sites/stats/stats-period-navigation';
 import DatePicker from 'my-sites/stats/stats-date-picker';
 import Module from './store-stats-module';
@@ -27,8 +26,9 @@ import {
 	topProducts,
 	topCategories,
 	topCoupons,
+	noDataMsg,
 } from 'woocommerce/app/store-stats/constants';
-import { getUnitPeriod, getEndPeriod, getQueries, getWidgetPath } from './utils';
+import { getEndPeriod, getQueries, getWidgetPath } from './utils';
 import QuerySiteStats from 'components/data/query-site-stats';
 import config from 'config';
 import StoreStatsReferrerWidget from './store-stats-referrer-widget';
@@ -46,8 +46,7 @@ class StoreStats extends Component {
 	};
 
 	render() {
-		const { path, queryDate, selectedDate, siteId, slug, unit, queryParams } = this.props;
-		const unitSelectedDate = getUnitPeriod( selectedDate, unit );
+		const { queryDate, selectedDate, siteId, slug, unit, queryParams } = this.props;
 		const endSelectedDate = getEndPeriod( selectedDate, unit );
 		const { orderQuery, referrerQuery } = getQueries( unit, queryDate );
 		const { topListQuery } = getQueries( unit, selectedDate );
@@ -63,9 +62,7 @@ class StoreStats extends Component {
 				{ siteId && (
 					<QuerySiteStats statType="statsOrders" siteId={ siteId } query={ orderQuery } />
 				) }
-				<div className="store-stats__sidebar-nav">
-					<SidebarNavigation />
-				</div>
+				<SidebarNavigation />
 				<StatsNavigation
 					selectedItem={ 'store' }
 					siteId={ siteId }
@@ -73,11 +70,11 @@ class StoreStats extends Component {
 					interval={ unit }
 				/>
 				<Chart
-					path={ path }
 					query={ orderQuery }
 					selectedDate={ endSelectedDate }
 					siteId={ siteId }
 					unit={ unit }
+					slug={ slug }
 				/>
 				<StatsPeriodNavigation
 					date={ selectedDate }
@@ -89,9 +86,7 @@ class StoreStats extends Component {
 						// this is needed to counter the +1d adjustment made in DatePicker for weeks
 						date={
 							unit === 'week'
-								? moment( selectedDate, 'YYYY-MM-DD' )
-										.subtract( 1, 'days' )
-										.format( 'YYYY-MM-DD' )
+								? moment( selectedDate, 'YYYY-MM-DD' ).subtract( 1, 'days' ).format( 'YYYY-MM-DD' )
 								: selectedDate
 						}
 						query={ orderQuery }
@@ -110,7 +105,7 @@ class StoreStats extends Component {
 						) }
 						<Module
 							siteId={ siteId }
-							emptyMessage={ translate( 'No data found' ) }
+							emptyMessage={ noDataMsg }
 							query={ referrerQuery }
 							statType="statsStoreReferrers"
 							header={
@@ -127,7 +122,7 @@ class StoreStats extends Component {
 								siteId={ siteId }
 								query={ referrerQuery }
 								statType="statsStoreReferrers"
-								unitSelectedDate={ unitSelectedDate }
+								endSelectedDate={ endSelectedDate }
 								limit={ 5 }
 								pageType="orders"
 							/>
@@ -139,7 +134,7 @@ class StoreStats extends Component {
 						<div className="store-stats__widgets-column widgets" key={ index }>
 							<Module
 								siteId={ siteId }
-								emptyMessage={ translate( 'No data found' ) }
+								emptyMessage={ noDataMsg }
 								query={ orderQuery }
 								statType="statsOrders"
 							>
@@ -153,7 +148,7 @@ class StoreStats extends Component {
 							</Module>
 						</div>
 					) ) }
-					{ topWidgets.map( widget => {
+					{ topWidgets.map( ( widget ) => {
 						const header = (
 							<SectionHeader href={ widget.basePath + widgetPath } label={ widget.title } />
 						);
@@ -190,7 +185,7 @@ class StoreStats extends Component {
 	}
 }
 
-export default connect( state => ( {
+export default connect( ( state ) => ( {
 	slug: getSelectedSiteSlug( state ),
 	siteId: getSelectedSiteId( state ),
 } ) )( StoreStats );

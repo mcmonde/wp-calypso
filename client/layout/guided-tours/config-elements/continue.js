@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -7,13 +5,13 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { translate } from 'i18n-calypso';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 
 /**
  * Internal dependencies
  */
 import { targetForSlug } from '../positioning';
-import contextTypes from '../context-types';
+import { contextTypes } from '../context-types';
 
 export default class Continue extends Component {
 	static displayName = 'Continue';
@@ -41,11 +39,11 @@ export default class Continue extends Component {
 		this.removeTargetListener();
 	}
 
-	componentWillReceiveProps( nextProps, nextContext ) {
+	UNSAFE_componentWillReceiveProps( nextProps, nextContext ) {
 		nextProps.when && nextContext.isValid( nextProps.when ) && this.onContinue();
 	}
 
-	componentWillUpdate() {
+	UNSAFE_componentWillUpdate() {
 		this.removeTargetListener();
 	}
 
@@ -83,7 +81,7 @@ export default class Continue extends Component {
 		return this.props.icon
 			? translate( 'Click the {{icon/}} to continue.', {
 					components: { icon: <Gridicon icon={ this.props.icon } /> },
-				} )
+			  } )
 			: translate( 'Click to continue.' );
 	}
 

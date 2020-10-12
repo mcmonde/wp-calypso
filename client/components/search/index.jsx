@@ -1,23 +1,26 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
+import { isMobile } from '@automattic/viewport';
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import { debounce, noop, uniqueId } from 'lodash';
 import i18n from 'i18n-calypso';
-import Gridicon from 'gridicons';
 
 /**
  * Internal dependencies
  */
-import analytics from 'lib/analytics';
+import FormTextInput from 'components/forms/form-text-input';
+import Gridicon from 'components/gridicon';
 import Spinner from 'components/spinner';
-import { isMobile } from 'lib/viewport';
 import TranslatableString from 'components/translatable/proptype';
+import { gaRecordEvent } from 'lib/analytics/ga';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 /**
  * Internal variables
@@ -60,6 +63,7 @@ class Search extends Component {
 		dir: PropTypes.oneOf( [ 'ltr', 'rtl' ] ),
 		fitsContainer: PropTypes.bool,
 		maxLength: PropTypes.number,
+		minLength: PropTypes.number,
 		hideClose: PropTypes.bool,
 		compact: PropTypes.bool,
 		hideOpenIcon: PropTypes.bool,
@@ -106,13 +110,13 @@ class Search extends Component {
 		this.openListener = keyListener.bind( this, 'openSearch' );
 	}
 
-	setOpenIconRef = openIcon => ( this.openIcon = openIcon );
+	setOpenIconRef = ( openIcon ) => ( this.openIcon = openIcon );
 
-	setSearchInputRef = input => ( this.searchInput = input );
+	setSearchInputRef = ( input ) => ( this.searchInput = input );
 
-	setOverlayRef = overlay => ( this.overlay = overlay );
+	setOverlayRef = ( overlay ) => ( this.overlay = overlay );
 
-	componentWillReceiveProps( nextProps ) {
+	UNSAFE_componentWillReceiveProps( nextProps ) {
 		if (
 			nextProps.onSearch !== this.props.onSearch ||
 			nextProps.delaySearch !== this.props.delaySearch
@@ -122,7 +126,7 @@ class Search extends Component {
 				: this.props.onSearch;
 		}
 
-		if ( nextProps.isOpen ) {
+		if ( this.props.isOpen !== nextProps.isOpen ) {
 			this.setState( { isOpen: nextProps.isOpen } );
 		}
 
@@ -183,7 +187,7 @@ class Search extends Component {
 	//This is fix for IE11. Does not work on Edge.
 	//On IE11 scrollLeft value for input is always 0.
 	//We are calculating it manually using TextRange object.
-	getScrollLeft = inputElement => {
+	getScrollLeft = ( inputElement ) => {
 		//TextRange is IE11 specific so this checks if we are not on IE11.
 		if ( ! inputElement.createTextRange ) {
 			return inputElement.scrollLeft;
@@ -211,7 +215,7 @@ class Search extends Component {
 
 	clear = () => this.setState( { keyword: '' } );
 
-	onBlur = event => {
+	onBlur = ( event ) => {
 		if ( this.props.onBlur ) {
 			this.props.onBlur( event );
 		}
@@ -219,23 +223,23 @@ class Search extends Component {
 		this.setState( { hasFocus: false } );
 	};
 
-	onChange = event => {
+	onChange = ( event ) => {
 		this.setState( {
 			keyword: event.target.value,
 		} );
 	};
 
-	openSearch = event => {
+	openSearch = ( event ) => {
 		event.preventDefault();
 		this.setState( {
 			keyword: '',
 			isOpen: true,
 		} );
 
-		analytics.ga.recordEvent( this.props.analyticsGroup, 'Clicked Open Search' );
+		gaRecordEvent( this.props.analyticsGroup, 'Clicked Open Search' );
 	};
 
-	closeSearch = event => {
+	closeSearch = ( event ) => {
 		event.preventDefault();
 
 		if ( this.props.disabled ) {
@@ -248,18 +252,20 @@ class Search extends Component {
 		} );
 
 		this.searchInput.value = ''; // will not trigger onChange
-		this.searchInput.blur();
 
 		if ( this.props.pinned ) {
+			this.searchInput.blur();
 			this.openIcon.focus();
+		} else {
+			this.searchInput.focus();
 		}
 
 		this.props.onSearchClose( event );
 
-		analytics.ga.recordEvent( this.props.analyticsGroup, 'Clicked Close Search' );
+		gaRecordEvent( this.props.analyticsGroup, 'Clicked Close Search' );
 	};
 
-	keyUp = event => {
+	keyUp = ( event ) => {
 		if ( event.key === 'Enter' && isMobile() ) {
 			//dismiss soft keyboards
 			this.blur();
@@ -275,7 +281,7 @@ class Search extends Component {
 		this.scrollOverlay();
 	};
 
-	keyDown = event => {
+	keyDown = ( event ) => {
 		this.scrollOverlay();
 		if ( event.key === 'Escape' && event.target.value === '' ) {
 			this.closeSearch( event );
@@ -332,6 +338,7 @@ class Search extends Component {
 			<div dir={ this.props.dir || null } className={ searchClass } role="search">
 				<Spinner />
 				<div
+					role="button"
 					className="search__icon-navigation"
 					ref={ this.setOpenIconRef }
 					onClick={ enableOpenIcon ? this.openSearch : this.focus }
@@ -343,7 +350,7 @@ class Search extends Component {
 					{ ! this.props.hideOpenIcon && <Gridicon icon="search" className="search__open-icon" /> }
 				</div>
 				<div className={ fadeDivClass }>
-					<input
+					<FormTextInput
 						type="search"
 						id={ 'search-component-' + this.instanceId }
 						autoFocus={ this.props.autoFocus } // eslint-disable-line jsx-a11y/no-autofocus
@@ -352,9 +359,9 @@ class Search extends Component {
 						aria-hidden={ ! isOpenUnpinnedOrQueried }
 						className={ inputClass }
 						placeholder={ placeholder }
-						role="search"
+						role="searchbox"
 						value={ searchValue }
-						ref={ this.setSearchInputRef }
+						inputRef={ this.setSearchInputRef }
 						onChange={ this.onChange }
 						onKeyUp={ this.keyUp }
 						onKeyDown={ this.keyDown }
@@ -365,6 +372,7 @@ class Search extends Component {
 						autoCapitalize="none"
 						dir={ this.props.dir }
 						maxLength={ this.props.maxLength }
+						minLength={ this.props.minLength }
 						{ ...autocorrect }
 					/>
 					{ this.props.overlayStyling && this.renderStylingDiv() }
@@ -374,18 +382,19 @@ class Search extends Component {
 		);
 	}
 
-	renderStylingDiv = () => {
+	renderStylingDiv() {
 		return (
 			<div className="search__text-overlay" ref={ this.setOverlayRef }>
 				{ this.props.overlayStyling( this.state.keyword ) }
 			</div>
 		);
-	};
+	}
 
-	closeButton = () => {
+	closeButton() {
 		if ( ! this.props.hideClose && ( this.state.keyword || this.state.isOpen ) ) {
 			return (
 				<div
+					role="button"
 					className="search__icon-navigation"
 					onClick={ this.closeSearch }
 					tabIndex="0"
@@ -399,7 +408,7 @@ class Search extends Component {
 		}
 
 		return null;
-	};
+	}
 }
 
 export default Search;

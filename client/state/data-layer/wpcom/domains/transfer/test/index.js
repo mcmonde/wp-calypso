@@ -61,9 +61,9 @@ describe( 'wpcom-api', () => {
 						saveStatus: 'error',
 					} )
 				);
-				expect( actions.shift() ).toMatchObject(
-					{ notice: { noticeId: 'ips-tag-save-failure-notice' } }
-				);
+				expect( actions.shift() ).toMatchObject( {
+					notice: { noticeId: 'ips-tag-save-failure-notice' },
+				} );
 			} );
 		} );
 	} );

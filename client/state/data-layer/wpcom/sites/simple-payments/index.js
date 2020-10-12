@@ -1,22 +1,22 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import { get, noop, toPairs } from 'lodash';
+import formatCurrency from '@automattic/format-currency';
 
 /**
  * Internal dependencies
  */
-import formatCurrency from 'lib/format-currency';
 import { decodeEntities } from 'lib/formatting';
-import { dispatchRequestEx } from 'state/data-layer/wpcom-http/utils';
-import { getFeaturedImageId } from 'lib/posts/utils';
+import { dispatchRequest } from 'state/data-layer/wpcom-http/utils';
+import { getFeaturedImageId } from 'state/posts/utils';
 import { http } from 'state/data-layer/wpcom-http/actions';
 import { isValidSimplePaymentsProduct } from 'lib/simple-payments/utils';
 import { metaKeyToSchemaKeyMap, metadataSchema } from 'state/simple-payments/product-list/schema';
-import { SIMPLE_PAYMENTS_PRODUCT_POST_TYPE } from 'lib/simple-payments/constants';
+import {
+	SIMPLE_PAYMENTS_PRODUCT_POST_TYPE,
+	NUMBER_OF_POSTS_BY_REQUEST,
+} from 'lib/simple-payments/constants';
 import { TransformerError } from 'lib/make-json-schema-parser';
 import {
 	SIMPLE_PAYMENTS_PRODUCT_GET,
@@ -30,12 +30,14 @@ import {
 	receiveProductsList,
 	receiveUpdateProduct,
 } from 'state/simple-payments/product-list/actions';
-import config from 'config';
+
+import { registerHandlers } from 'state/data-layer/handler-registry';
 
 /**
  * Convert custom post metadata array to product attributes
+ *
  * @param { Array } metadata Array of post metadata
- * @returns { Object } properties extracted from the metadata, to be merged into the product object
+ * @returns {object} properties extracted from the metadata, to be merged into the product object
  */
 function customPostMetadataToProductAttributes( metadata ) {
 	const productAttributes = {};
@@ -61,12 +63,17 @@ function customPostMetadataToProductAttributes( metadata ) {
 
 /**
  * Validates a `/posts` endpoint response and converts it into a product object
- * @param { Object } customPost raw /post endpoint response to format
- * @returns { Object } sanitized and formatted product
+ *
+ * @param {object} customPost raw /post endpoint response to format
+ * @returns {object} sanitized and formatted product
  */
 export function customPostToProduct( customPost ) {
 	if ( ! isValidSimplePaymentsProduct( customPost ) ) {
-		throw new TransformerError( 'Custom post is not a valid simple payment product', customPost );
+		const simplePaymentsName = 'Pay with PayPal';
+		throw new TransformerError(
+			'Custom post is not a valid ' + simplePaymentsName + ' product',
+			customPost
+		);
 	}
 
 	const metadataAttributes = customPostMetadataToProductAttributes( customPost.metadata );
@@ -83,20 +90,14 @@ export function customPostToProduct( customPost ) {
 /**
  * Extract custom posts array from `responseData`, filter out invalid items and convert the
  * valid custom posts to products.
- * @param {Object} responseData JSON data with shape `{ posts }`
- * @return {Array} validated and converted product list
+ *
+ * @param {object} responseData JSON data with shape `{ posts }`
+ * @returns {Array} validated and converted product list
  */
 export function customPostsToProducts( responseData ) {
-	if ( config.isEnabled( 'memberships' ) && ! responseData.posts ) {
-		// This is to disregard the memberships response.
-		throw new TransformerError(
-			'This is from Memberships response. We have to disregard it since' +
-				'for some reason data layer does not handle multiple handlers corretly.'
-		);
-	}
 	const posts = get( responseData, 'posts', [] );
 	const validProducts = posts
-		.map( post => {
+		.map( ( post ) => {
 			try {
 				return customPostToProduct( post );
 			} catch ( error ) {
@@ -109,8 +110,9 @@ export function customPostsToProducts( responseData ) {
 
 /**
  * Transforms a product definition object into proper custom post type
- * @param { Object } product action with product payload
- * @returns { Object } custom post type data
+ *
+ * @param {object} product action with product payload
+ * @returns {object} custom post type data
  */
 export function productToCustomPost( product ) {
 	// Get the `product` object entries and filter only those that will go into metadata
@@ -153,8 +155,8 @@ const replaceProductList = ( { siteId }, products ) => receiveProductsList( site
 const addOrUpdateProduct = ( { siteId }, newProduct ) => receiveUpdateProduct( siteId, newProduct );
 const deleteProduct = ( { siteId }, deletedPost ) => receiveDeleteProduct( siteId, deletedPost.ID );
 
-export const handleProductGet = dispatchRequestEx( {
-	fetch: action =>
+export const handleProductGet = dispatchRequest( {
+	fetch: ( action ) =>
 		http(
 			{
 				method: 'GET',
@@ -167,8 +169,8 @@ export const handleProductGet = dispatchRequestEx( {
 	onError: noop,
 } );
 
-export const handleProductList = dispatchRequestEx( {
-	fetch: action =>
+export const handleProductList = dispatchRequest( {
+	fetch: ( action ) =>
 		http(
 			{
 				method: 'GET',
@@ -176,6 +178,7 @@ export const handleProductList = dispatchRequestEx( {
 				query: {
 					type: SIMPLE_PAYMENTS_PRODUCT_POST_TYPE,
 					status: 'publish',
+					number: NUMBER_OF_POSTS_BY_REQUEST,
 				},
 			},
 			action
@@ -185,8 +188,8 @@ export const handleProductList = dispatchRequestEx( {
 	onError: noop,
 } );
 
-export const handleProductListAdd = dispatchRequestEx( {
-	fetch: action =>
+export const handleProductListAdd = dispatchRequest( {
+	fetch: ( action ) =>
 		http(
 			{
 				method: 'POST',
@@ -200,8 +203,8 @@ export const handleProductListAdd = dispatchRequestEx( {
 	onError: noop,
 } );
 
-export const handleProductListEdit = dispatchRequestEx( {
-	fetch: action =>
+export const handleProductListEdit = dispatchRequest( {
+	fetch: ( action ) =>
 		http(
 			{
 				method: 'POST',
@@ -215,8 +218,8 @@ export const handleProductListEdit = dispatchRequestEx( {
 	onError: noop,
 } );
 
-export const handleProductListDelete = dispatchRequestEx( {
-	fetch: action =>
+export const handleProductListDelete = dispatchRequest( {
+	fetch: ( action ) =>
 		http(
 			{
 				method: 'POST',
@@ -228,10 +231,10 @@ export const handleProductListDelete = dispatchRequestEx( {
 	onError: noop,
 } );
 
-export default {
+registerHandlers( 'state/data-layer/wpcom/sites/simple-payments/index.js', {
 	[ SIMPLE_PAYMENTS_PRODUCT_GET ]: [ handleProductGet ],
 	[ SIMPLE_PAYMENTS_PRODUCTS_LIST ]: [ handleProductList ],
 	[ SIMPLE_PAYMENTS_PRODUCTS_LIST_ADD ]: [ handleProductListAdd ],
 	[ SIMPLE_PAYMENTS_PRODUCTS_LIST_EDIT ]: [ handleProductListEdit ],
 	[ SIMPLE_PAYMENTS_PRODUCTS_LIST_DELETE ]: [ handleProductListDelete ],
-};
+} );

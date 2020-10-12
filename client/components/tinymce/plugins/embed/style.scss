@@ -15,16 +15,16 @@
 
 			.embed__title {
 				color: #4b6476;
-				font-weight: bold;
+				font-weight: 600;
 			}
 
-			input[type="text"].embed__url {
+			input[type='text'].form-text-input.embed__url {
 				margin-top: 1em;
 			}
 		}
 
 		.embed__preview-container {
-			background: $gray-light;
+			background: var( --color-neutral-0 );
 			padding: 24px;
 			flex: 3;
 			display: flex;
@@ -37,7 +37,7 @@
 				width: 100%;
 
 				&.isError {
-					color: $alert-red;
+					color: var( --color-error );
 				}
 
 				&.isLoading {
@@ -68,7 +68,7 @@
 		border-top: none;
 	}
 
-	.dialog__action-buttons:before {
+	.dialog__action-buttons::before {
 		background: none;
 	}
 }

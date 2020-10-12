@@ -1,0 +1,30 @@
+{
+	"name": "@automattic/viewport",
+	"version": "1.0.0",
+	"description": "Vanilla helpers for tracking viewport changes",
+	"main": "dist/cjs/index.js",
+	"module": "dist/esm/index.js",
+	"sideEffects": false,
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/Automattic/wp-calypso.git",
+		"directory": "packages/viewport"
+	},
+	"author": "Automattic Inc.",
+	"license": "GPL-2.0-or-later",
+	"bugs": {
+		"url": "https://github.com/Automattic/wp-calypso/issues"
+	},
+	"homepage": "https://github.com/Automattic/wp-calypso/tree/HEAD/packages/viewport#readme",
+	"scripts": {
+		"clean": "npx rimraf dist",
+		"prepublish": "yarn run clean",
+		"prepare": "transpile"
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"devDependencies": {
+		"regenerator-runtime": "^0.13.4"
+	}
+}

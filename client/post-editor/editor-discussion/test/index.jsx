@@ -1,5 +1,4 @@
 /**
- * @format
  * @jest-environment jsdom
  */
 
@@ -18,10 +17,6 @@ import ReactDom from 'react-dom';
 import { EditorDiscussion } from '../';
 
 jest.mock( 'components/info-popover', () => require( 'components/empty-component' ) );
-jest.mock( 'lib/posts/stats', () => ( {
-	recordEvent: () => {},
-	recordStat: () => {},
-} ) );
 
 /**
  * Module variables
@@ -34,13 +29,13 @@ const DUMMY_SITE = {
 	},
 };
 
-describe( 'EditorDiscussion', function() {
-	beforeEach( function() {
+describe( 'EditorDiscussion', function () {
+	beforeEach( function () {
 		ReactDom.unmountComponentAtNode( document.body );
 	} );
 
-	describe( '#getDiscussionSetting()', function() {
-		test( 'should return an empty object if both post and site are unknown', function() {
+	describe( '#getDiscussionSetting()', function () {
+		test( 'should return an empty object if both post and site are unknown', function () {
 			const tree = TestUtils.renderIntoDocument( <EditorDiscussion /> );
 
 			expect( tree.getDiscussionSetting() ).to.eql( {} );

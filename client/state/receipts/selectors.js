@@ -1,4 +1,6 @@
-/** @format */
+/**
+ * Internal dependencies
+ */
 import { initialReceiptState } from './reducer';
 
 export function getReceiptById( state, receiptId ) {

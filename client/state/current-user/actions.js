@@ -1,28 +1,18 @@
-/** @format */
-
 /**
  * Internal dependencies
  */
 
-import { CURRENT_USER_ID_SET, CURRENT_USER_FLAGS_RECEIVE } from 'state/action-types';
+import { CURRENT_USER_RECEIVE } from 'state/action-types';
 
 /**
- * Returns an action object to be used in signalling that the current user ID
- * has been set.
+ * Returns an action object that sets the current user object on the store
  *
- * @param  {Number} userId User ID
- * @return {Object}        Action object
+ * @param  {object} user user object
+ * @returns {object}        Action object
  */
-export function setCurrentUserId( userId ) {
+export function setCurrentUser( user ) {
 	return {
-		type: CURRENT_USER_ID_SET,
-		userId,
-	};
-}
-
-export function setCurrentUserFlags( flags ) {
-	return {
-		type: CURRENT_USER_FLAGS_RECEIVE,
-		flags,
+		type: CURRENT_USER_RECEIVE,
+		user,
 	};
 }

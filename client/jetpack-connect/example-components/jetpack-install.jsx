@@ -1,16 +1,15 @@
-/** @format */
 /**
  * External dependencies
  */
 import React from 'react';
 import PropTypes from 'prop-types';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
+import { localize } from 'i18n-calypso';
 
 /**
  * Internal dependencies
  */
 import FormTextInput from 'components/forms/form-text-input';
-import { localize } from 'i18n-calypso';
 
 const JetpackConnectExampleInstall = ( { url, translate, onClick } ) => {
 	return (
@@ -25,7 +24,7 @@ const JetpackConnectExampleInstall = ( { url, translate, onClick } ) => {
 					<Gridicon size={ 24 } icon="globe" />
 					<FormTextInput
 						className="example-components__browser-chrome-url"
-						disabled="true"
+						disabled
 						placeholder={ url }
 					/>
 				</div>
@@ -34,7 +33,7 @@ const JetpackConnectExampleInstall = ( { url, translate, onClick } ) => {
 				<div className="example-components__install-plugin-header" />
 				<div className="example-components__install-plugin-body" />
 				<div className="example-components__install-plugin-footer">
-					<div className="example-components__install-plugin-footer-button" aria-hidden="true">
+					<div className="example-components__install-plugin-footer-button" aria-hidden>
 						{ translate( 'Install Now', {
 							context: 'Jetpack Connect install plugin instructions, install button',
 						} ) }

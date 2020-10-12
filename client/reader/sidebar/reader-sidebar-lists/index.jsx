@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -10,7 +9,7 @@ import React, { Component } from 'react';
 /**
  * Internal dependencies
  */
-import ExpandableSidebarMenu from '../expandable';
+import ExpandableSidebarMenu from 'layout/sidebar/expandable';
 import ReaderSidebarListsList from './list';
 
 export class ReaderSidebarLists extends Component {
@@ -29,18 +28,19 @@ export class ReaderSidebarLists extends Component {
 	};
 
 	render() {
-		const { translate, lists, isOpen, onClick } = this.props;
-		const listCount = lists ? lists.length : 0;
+		const { translate, isOpen, onClick, ...passedProps } = this.props;
 		return (
-			<ExpandableSidebarMenu
-				expanded={ isOpen }
-				title={ translate( 'Lists' ) }
-				count={ listCount }
-				onClick={ onClick }
-				hideAddButton={ true }
-			>
-				<ReaderSidebarListsList { ...this.props } />
-			</ExpandableSidebarMenu>
+			<div>
+				<ExpandableSidebarMenu
+					expanded={ isOpen }
+					title={ translate( 'Lists' ) }
+					onClick={ onClick }
+					materialIcon={ 'list' }
+					hideAddButton
+				>
+					<ReaderSidebarListsList { ...passedProps } />
+				</ExpandableSidebarMenu>
+			</div>
 		);
 	}
 }

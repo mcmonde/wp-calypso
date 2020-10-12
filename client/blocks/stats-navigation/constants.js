@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -23,14 +21,14 @@ export const navItems = {
 		path: '/stats/insights',
 		showIntervals: false,
 	},
-	activity: {
-		label: translate( 'Activity' ),
-		path: '/stats/activity',
-		showIntervals: false,
-	},
 	store: {
 		label: translate( 'Store' ),
 		path: '/store/stats/orders',
+		showIntervals: true,
+	},
+	wordads: {
+		label: 'Ads',
+		path: '/stats/ads',
 		showIntervals: true,
 	},
 	googleMyBusiness: {

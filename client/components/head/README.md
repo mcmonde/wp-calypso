@@ -1,5 +1,4 @@
-Head
-====
+# Head
 
 Provides an HTML `<head>` prefilled with boilerplate (such as `meta`s and `links` for stylesheets, favicons, etc.) that is common for all of Calypso. Accepts children which will be rendered as children of `head`.
 
@@ -9,9 +8,9 @@ Provides an HTML `<head>` prefilled with boilerplate (such as `meta`s and `links
 import Head from 'components/head';
 
 <Head title="Calypso">
-  <meta property="myCustomMeta" content="foobar" />
-  <link rel="stylesheet" href="/dev/null" />
-</Head>
+	<meta property="myCustomMeta" content="foobar" />
+	<link rel="stylesheet" href="/dev/null" />
+</Head>;
 ```
 
 ## Props
@@ -27,26 +26,6 @@ Below is a list of supported props.
 </table>
 
 The HTML page's `title`.
-
-### `faviconURL`
-
-<table>
-	<tr><td>Type</td><td>String</td></tr>
-	<tr><td>Required</td><td>Yes</td></tr>
-	<tr><td>Default</td><td><code>n/a</code></td></tr>
-</table>
-
-The `faviconURL` prop is needed for several `<link />` tags.
-
-### `cdn`
-
-<table>
-	<tr><td>Type</td><td>String</td></tr>
-	<tr><td>Required</td><td>Yes</td></tr>
-	<tr><td>Default</td><td><code>n/a</code></td></tr>
-</table>
-
-Which host to use for static assets (e.g. `//s0.wp.com` or `//s1.wp.com`). Used for several `<link />` tags.
 
 ### `children`
 

@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -16,12 +14,20 @@ import wrapWithClickOutside from 'react-click-outside';
 import { transferStates } from 'state/automated-transfer/constants';
 import { getSelectedSiteId } from 'state/ui/selectors';
 import { getSite } from 'state/sites/selectors';
-import { getAutomatedTransferStatus } from 'state/automated-transfer/selectors';
-import { isAutomatedTransferActive, isAutomatedTransferFailed } from 'state/selectors';
+import {
+	getAutomatedTransferStatus,
+	isAutomatedTransferActive,
+	isAutomatedTransferFailed,
+} from 'state/automated-transfer/selectors';
 import Notice from 'components/notice';
 import NoticeAction from 'components/notice/notice-action';
 import WpAdminAutoLogin from 'components/wpadmin-auto-login';
 import { requestSite } from 'state/sites/actions';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class PluginAutomatedTransfer extends Component {
 	static propTypes = {
@@ -43,7 +49,7 @@ class PluginAutomatedTransfer extends Component {
 		transferComplete: false,
 	};
 
-	componentWillMount() {
+	UNSAFE_componentWillMount() {
 		const { COMPLETE } = transferStates;
 		const { isTransferring, isFailedTransfer, transferState } = this.props;
 
@@ -58,7 +64,7 @@ class PluginAutomatedTransfer extends Component {
 		clearInterval( this.interval );
 	}
 
-	componentWillReceiveProps( nextProps ) {
+	UNSAFE_componentWillReceiveProps( nextProps ) {
 		const { siteId } = this.props;
 		const { COMPLETE } = transferStates;
 		const { transferComplete } = this.state;
@@ -157,15 +163,14 @@ class PluginAutomatedTransfer extends Component {
 					status={ this.getStatus() }
 					text={ this.getNoticeText() }
 				>
-					{ ! transferComplete &&
-						CONFLICTS === transferState && (
-							<NoticeAction href="#">
-								{ translate( 'View Conflicts', {
-									comment:
-										'Conflicts arose during an Automated Transfer started by a plugin install.',
-								} ) }
-							</NoticeAction>
-						) }
+					{ ! transferComplete && CONFLICTS === transferState && (
+						<NoticeAction href="#">
+							{ translate( 'View Conflicts', {
+								comment:
+									'Conflicts arose during an Automated Transfer started by a plugin install.',
+							} ) }
+						</NoticeAction>
+					) }
 				</Notice>
 				{ this.state.transferComplete && <WpAdminAutoLogin site={ this.props.site } /> }
 			</div>
@@ -173,7 +178,7 @@ class PluginAutomatedTransfer extends Component {
 	}
 }
 
-const mapStateToProps = state => {
+const mapStateToProps = ( state ) => {
 	const siteId = getSelectedSiteId( state );
 	return {
 		siteId,

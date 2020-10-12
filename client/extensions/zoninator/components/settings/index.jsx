@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -36,7 +34,7 @@ const Settings = ( { children, siteId, translate } ) => {
 	);
 };
 
-const connectComponent = connect( state => ( {
+const connectComponent = connect( ( state ) => ( {
 	siteId: getSelectedSiteId( state ),
 } ) );
 

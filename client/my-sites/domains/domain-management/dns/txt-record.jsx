@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -19,11 +17,6 @@ import FormTextarea from 'components/forms/form-textarea';
 import FormTextInputWithAffixes from 'components/forms/form-text-input-with-affixes';
 
 class TxtRecord extends React.Component {
-	static initialFields = {
-		name: '',
-		data: '',
-	};
-
 	static propTypes = {
 		fieldValues: PropTypes.object.isRequired,
 		onChange: PropTypes.func.isRequired,
@@ -31,12 +24,26 @@ class TxtRecord extends React.Component {
 		show: PropTypes.bool.isRequired,
 	};
 
+	getValidationErrorMessage( value ) {
+		const { translate } = this.props;
+
+		if ( value?.length === 0 ) {
+			return translate( 'TXT records may not be empty' );
+		} else if ( value?.length > 255 ) {
+			return translate( 'TXT records may not exceed 255 characters' );
+		}
+
+		return null;
+	}
+
 	render() {
 		const { fieldValues, isValid, onChange, selectedDomainName, show, translate } = this.props;
 		const classes = classnames( { 'is-hidden': ! show } );
 		const isNameValid = isValid( 'name' );
 		const isDataValid = isValid( 'data' );
+		// eslint-disable-next-line no-control-regex
 		const hasNonAsciiData = /[^\u0000-\u007f]/.test( fieldValues.data );
+		const validationError = this.getValidationErrorMessage( fieldValues.data );
 
 		return (
 			<div className={ classes }>
@@ -69,8 +76,8 @@ class TxtRecord extends React.Component {
 					{ hasNonAsciiData && (
 						<FormInputValidation text={ translate( 'TXT Record has non-ASCII data' ) } isWarning />
 					) }
-					{ ! isDataValid && (
-						<FormInputValidation text={ translate( 'Invalid TXT Record' ) } isError />
+					{ ! isDataValid && validationError && (
+						<FormInputValidation text={ validationError } isError />
 					) }
 				</FormFieldset>
 			</div>

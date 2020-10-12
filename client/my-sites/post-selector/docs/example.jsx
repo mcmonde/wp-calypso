@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -12,7 +10,8 @@ import { connect } from 'react-redux';
  */
 import PostSelector from '../';
 import FormLabel from 'components/forms/form-label';
-import { getPrimarySiteId } from 'state/selectors';
+import FormInputCheckbox from 'components/forms/form-checkbox';
+import getPrimarySiteId from 'state/selectors/get-primary-site-id';
 
 class PostSelectorExample extends Component {
 	state = {
@@ -26,7 +25,7 @@ class PostSelectorExample extends Component {
 		} );
 	};
 
-	setSelected = post => {
+	setSelected = ( post ) => {
 		this.setState( {
 			selectedPostId: post.ID,
 		} );
@@ -38,8 +37,7 @@ class PostSelectorExample extends Component {
 		return (
 			<div style={ { width: 300 } }>
 				<FormLabel>
-					<input
-						type="checkbox"
+					<FormInputCheckbox
 						checked={ this.state.showTypeLabels }
 						onChange={ this.toggleTypeLabels }
 					/>
@@ -59,7 +57,7 @@ class PostSelectorExample extends Component {
 	}
 }
 
-const ConnectedPostSelectorExample = connect( state => ( {
+const ConnectedPostSelectorExample = connect( ( state ) => ( {
 	primarySiteId: getPrimarySiteId( state ),
 } ) )( PostSelectorExample );
 

@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -18,7 +16,7 @@ import StatsModuleSelectDropdown from '../stats-module/select-dropdown';
 import StatsModulePlaceholder from '../stats-module/placeholder';
 import StatsList from '../stats-list';
 import ErrorPanel from '../stats-error';
-import Card from 'components/card';
+import { Card } from '@automattic/components';
 import SectionHeader from 'components/section-header';
 import QuerySiteStats from 'components/data/query-site-stats';
 import { getSelectedSiteId } from 'state/ui/selectors';
@@ -35,7 +33,7 @@ class StatModuleFollowers extends Component {
 		activeFilter: 'wpcom-followers',
 	};
 
-	changeFilter = selection => {
+	changeFilter = ( selection ) => {
 		const filter = selection.value;
 		let gaEvent;
 		if ( filter !== this.state.activeFilter ) {
@@ -68,11 +66,11 @@ class StatModuleFollowers extends Component {
 		const options = [
 			{
 				value: 'wpcom-followers',
-				label: this.props.translate( 'WordPress.com Followers' ),
+				label: this.props.translate( 'WordPress.com followers' ),
 			},
 			{
 				value: 'email-followers',
-				label: this.props.translate( 'Email Followers' ),
+				label: this.props.translate( 'Email followers' ),
 			},
 		];
 
@@ -130,26 +128,20 @@ class StatModuleFollowers extends Component {
 				<Card className={ classNames( ...classes ) }>
 					<div className="followers">
 						<div className="module-content">
-							{ noData &&
-								! hasError &&
-								! isLoading && (
-									<ErrorPanel
-										className="is-empty-message"
-										message={ translate( 'No followers' ) }
-									/>
-								) }
+							{ noData && ! hasError && ! isLoading && (
+								<ErrorPanel className="is-empty-message" message={ translate( 'No followers' ) } />
+							) }
 
 							{ this.filterSelect() }
 
 							<div className="tab-content wpcom-followers stats-async-metabox-wrapper">
 								<div className="module-content-text module-content-text-stat">
-									{ wpcomData &&
-										!! wpcomData.total_wpcom && (
-											<p>
-												{ translate( 'Total WordPress.com Followers' ) }:{' '}
-												{ numberFormat( wpcomData.total_wpcom ) }
-											</p>
-										) }
+									{ wpcomData && !! wpcomData.total_wpcom && (
+										<p>
+											{ translate( 'Total WordPress.com followers' ) }:{ ' ' }
+											{ numberFormat( wpcomData.total_wpcom ) }
+										</p>
+									) }
 								</div>
 								<StatsListLegend value={ translate( 'Since' ) } label={ translate( 'Follower' ) } />
 								{ hasWpcomFollowers && (
@@ -164,13 +156,12 @@ class StatModuleFollowers extends Component {
 
 							<div className="tab-content email-followers stats-async-metabox-wrapper">
 								<div className="module-content-text module-content-text-stat">
-									{ emailData &&
-										!! emailData.total_email && (
-											<p>
-												{ translate( 'Total Email Followers' ) }:{' '}
-												{ numberFormat( emailData.total_email ) }
-											</p>
-										) }
+									{ emailData && !! emailData.total_email && (
+										<p>
+											{ translate( 'Total Email Followers' ) }:{ ' ' }
+											{ numberFormat( emailData.total_email ) }
+										</p>
+									) }
 								</div>
 
 								<StatsListLegend value={ translate( 'Since' ) } label={ translate( 'Follower' ) } />
@@ -186,7 +177,7 @@ class StatModuleFollowers extends Component {
 							( emailData && emailData.subscribers.length !== emailData.total_email ) ) && (
 							<div key="view-all" className="module-expand">
 								<a href={ summaryPageLink }>
-									{ translate( 'View All', { context: 'Stats: Button label to expand a panel' } ) }
+									{ translate( 'View all', { context: 'Stats: Button label to expand a panel' } ) }
 									<span className="right" />
 								</a>
 							</div>
@@ -199,7 +190,7 @@ class StatModuleFollowers extends Component {
 }
 
 const connectComponent = connect(
-	state => {
+	( state ) => {
 		const siteId = getSelectedSiteId( state );
 		const siteSlug = getSiteSlug( state, siteId );
 		const emailQuery = { type: 'email', max: 10 };

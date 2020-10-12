@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -11,13 +9,21 @@ import React from 'react';
 /**
  * Internal dependencies
  */
-import Button from 'components/forms/form-button';
 import AuthorMapping from './author-mapping-item';
 import SiteUsersFetcher from 'components/site-users-fetcher';
 import UsersStore from 'lib/users/store';
 
-class ImporterMappingPane extends React.PureComponent {
-	static displayName = 'ImporterMappingPane';
+import ImporterActionButtonContainer from 'my-sites/importer/importer-action-buttons/container';
+import ImporterActionButton from 'my-sites/importer/importer-action-buttons/action-button';
+import ImporterCloseButton from 'my-sites/importer/importer-action-buttons/close-button';
+
+/**
+ * Style dependencies
+ */
+import './author-mapping-pane.scss';
+
+class AuthorMappingPane extends React.PureComponent {
+	static displayName = 'AuthorMappingPane';
 
 	static propTypes = {
 		hasSingleAuthor: PropTypes.bool.isRequired,
@@ -32,6 +38,7 @@ class ImporterMappingPane extends React.PureComponent {
 		).isRequired,
 		sourceTitle: PropTypes.string.isRequired,
 		targetTitle: PropTypes.string.isRequired,
+		sourceType: PropTypes.string,
 	};
 
 	getFetchOptions = ( options = {} ) => {
@@ -46,16 +53,16 @@ class ImporterMappingPane extends React.PureComponent {
 		);
 	};
 
-	getMappingDescription = ( numSourceUsers, numTargetUsers, targetTitle ) => {
+	getMappingDescription = ( numSourceUsers, numTargetUsers, targetTitle, sourceType ) => {
 		if ( numTargetUsers === 1 && numSourceUsers === 1 ) {
 			return this.props.translate(
-				'We found one author on your %(sourceType)s site. ' +
+				'There is one author on your %(sourceType)s site. ' +
 					"Because you're the only author on {{b}}%(destinationSiteTitle)s{{/b}}, " +
 					'all imported content will be assigned to you. ' +
-					'Click Start Import to proceed.',
+					'Click Start import to proceed.',
 				{
 					args: {
-						sourceType: 'WordPress',
+						sourceType: sourceType,
 						destinationSiteTitle: targetTitle,
 					},
 					components: {
@@ -65,25 +72,26 @@ class ImporterMappingPane extends React.PureComponent {
 			);
 		} else if ( numTargetUsers === 1 && numSourceUsers > 1 ) {
 			return this.props.translate(
-				'We found multiple authors on your %(sourceType)s site. ' +
+				'There are multiple authors on your %(sourceType)s site. ' +
 					"Because you're the only author on {{b}}%(destinationSiteTitle)s{{/b}}, " +
 					'all imported content will be assigned to you. ' +
-					'Click Start Import to proceed.',
+					'Click {{em}}Start import{{/em}} to proceed.',
 				{
 					args: {
-						sourceType: 'WordPress',
+						sourceType: sourceType,
 						destinationSiteTitle: targetTitle,
 					},
 					components: {
 						b: <strong />,
+						em: <em />,
 					},
 				}
 			);
 		} else if ( numTargetUsers > 1 && numSourceUsers === 1 ) {
 			return this.props.translate(
-				'We found multiple authors on {{b}}%(destinationSiteTitle)s{{/b}}. ' +
+				'There are multiple authors on your site. ' +
 					'Please reassign the authors of the imported items to an existing ' +
-					'user on {{b}}%(destinationSiteTitle)s{{/b}}, then click Start Import.',
+					'user on {{b}}%(destinationSiteTitle)s{{/b}}, then click {{em}}Start import{{/em}}.',
 				{
 					args: {
 						sourceType: 'WordPress',
@@ -91,14 +99,15 @@ class ImporterMappingPane extends React.PureComponent {
 					},
 					components: {
 						b: <strong />,
+						em: <em />,
 					},
 				}
 			);
 		} else if ( numTargetUsers > 1 && numSourceUsers > 1 ) {
 			return this.props.translate(
-				'We found multiple authors on your %(sourceType)s site. ' +
+				'There are multiple authors on your %(sourceType)s site. ' +
 					'Please reassign the authors of the imported items to an existing ' +
-					'user on {{b}}%(destinationSiteTitle)s{{/b}}, then click Start Import.',
+					'user on {{b}}%(destinationSiteTitle)s{{/b}}, then click {{em}}Start import{{/em}}.',
 				{
 					args: {
 						sourceType: 'WordPress',
@@ -106,6 +115,7 @@ class ImporterMappingPane extends React.PureComponent {
 					},
 					components: {
 						b: <strong />,
+						em: <em />,
 					},
 				}
 			);
@@ -128,41 +138,47 @@ class ImporterMappingPane extends React.PureComponent {
 			onMap,
 			onStartImport,
 			siteId,
+			sourceType,
+			importerStatus,
+			site,
 		} = this.props;
-		const canStartImport = hasSingleAuthor || sourceAuthors.some( author => author.mappedTo );
+		const canStartImport = hasSingleAuthor || sourceAuthors.some( ( author ) => author.mappedTo );
 		const targetUserCount = this.getUserCount();
 		const mappingDescription = this.getMappingDescription(
 			sourceAuthors.length,
 			targetUserCount,
-			targetTitle
+			targetTitle,
+			sourceType
 		);
 
 		return (
 			<div className="importer__mapping-pane">
-				<SiteUsersFetcher fetchOptions={ this.getFetchOptions( { number: 50 } ) }>
-					<div className="importer__mapping-description">{ mappingDescription }</div>
-				</SiteUsersFetcher>
+				<SiteUsersFetcher fetchOptions={ this.getFetchOptions( { number: 50 } ) } />
+				<div className="importer__mapping-description">{ mappingDescription }</div>
 				<div className="importer__mapping-header">
 					<span className="importer__mapping-source-title">{ sourceTitle }</span>
 					<span className="importer__mapping-target-title">{ targetTitle }</span>
 				</div>
-				{ sourceAuthors.map( author => {
+				{ sourceAuthors.map( ( author ) => {
 					return (
 						<AuthorMapping
 							hasSingleAuthor={ hasSingleAuthor }
 							key={ 'author-mapping-' + author.id }
-							onSelect={ e => onMap( author, e ) }
+							onSelect={ ( e ) => onMap( author, e ) }
 							siteId={ siteId }
 							sourceAuthor={ author }
 						/>
 					);
 				} ) }
-				<Button disabled={ ! canStartImport } onClick={ onStartImport }>
-					{ this.props.translate( 'Start Import' ) }
-				</Button>
+				<ImporterActionButtonContainer>
+					<ImporterCloseButton importerStatus={ importerStatus } site={ site } isEnabled />
+					<ImporterActionButton primary disabled={ ! canStartImport } onClick={ onStartImport }>
+						{ this.props.translate( 'Start import' ) }
+					</ImporterActionButton>
+				</ImporterActionButtonContainer>
 			</div>
 		);
 	}
 }
 
-export default localize( ImporterMappingPane );
+export default localize( AuthorMappingPane );

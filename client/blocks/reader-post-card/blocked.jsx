@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -11,7 +10,7 @@ import { connect } from 'react-redux';
  * Internal dependencies
  */
 import { unblockSite } from 'state/reader/site-blocks/actions';
-import Card from 'components/card';
+import { Card } from '@automattic/components';
 import { recordTrack as recordReaderTrack } from 'reader/stats';
 import { bumpStat, recordGoogleEvent } from 'state/analytics/actions';
 
@@ -32,18 +31,20 @@ class PostBlocked extends React.Component {
 	render() {
 		const { post, translate } = this.props;
 
+		/* eslint-disable wpcalypso/jsx-classname-namespace */
 		return (
 			<Card className="reader-post-card is-blocked">
 				<p className="reader-post-card__blocked-description">
 					{ translate( 'You have blocked %(site_name)s.', {
 						args: { site_name: post.site_name },
 					} ) }
-					<a onClick={ this.unblock } className="reader-post-card__blocked-undo">
+					<button onClick={ this.unblock } className="reader-post-card__blocked-undo">
 						{ translate( 'Undo?' ) }
-					</a>
+					</button>
 				</p>
 			</Card>
 		);
+		/* eslint-enable wpcalypso/jsx-classname-namespace */
 	}
 }
 

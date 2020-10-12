@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -13,6 +11,11 @@ import { omit } from 'lodash';
  * Internal dependencies
  */
 import formatNumberCompact from 'lib/format-number-compact';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 export const Count = ( { count, compact, numberFormat, primary, ...inheritProps } ) => {
 	return (

@@ -1,43 +1,41 @@
 /**
- * /* eslint-disable react/no-danger
- *
- * @format
- */
-
-// FIXME!!!^ we want to ensure we have sanitised data…
-
-/**
  * External dependencies
  */
 import PropTypes from 'prop-types';
 import React from 'react';
 import { connect } from 'react-redux';
-import i18n from 'i18n-calypso';
+import i18n, { localize } from 'i18n-calypso';
 import classNames from 'classnames';
+import config from 'config';
 import titlecase from 'to-title-case';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 import { head, split } from 'lodash';
 import photon from 'photon';
+import page from 'page';
 
 /**
  * Internal dependencies
  */
+import AsyncLoad from 'components/async-load';
 import QueryCanonicalTheme from 'components/data/query-canonical-theme';
 import Main from 'components/main';
 import HeaderCake from 'components/header-cake';
 import SectionHeader from 'components/section-header';
 import ThemeDownloadCard from './theme-download-card';
 import ThemePreview from 'my-sites/themes/theme-preview';
-import Button from 'components/button';
+import UpsellNudge from 'blocks/upsell-nudge';
+import { Button, Card } from '@automattic/components';
 import SectionNav from 'components/section-nav';
 import NavTabs from 'components/section-nav/tabs';
 import NavItem from 'components/section-nav/item';
-import Card from 'components/card';
 import { getSelectedSiteId } from 'state/ui/selectors';
 import { getSiteSlug, isJetpackSite } from 'state/sites/selectors';
+import isVipSite from 'state/selectors/is-vip-site';
 import { getCurrentUserId } from 'state/current-user/selectors';
 import { isUserPaid } from 'state/purchases/selectors';
 import ThanksModal from 'my-sites/themes/thanks-modal';
+import AutoLoadingHomepageModal from 'my-sites/themes/auto-loading-homepage-modal';
+
 import QueryActiveTheme from 'components/data/query-active-theme';
 import QuerySitePlans from 'components/data/query-site-plans';
 import QueryUserPurchases from 'components/data/query-user-purchases';
@@ -58,11 +56,25 @@ import {
 import { getBackPath } from 'state/themes/themes-ui/selectors';
 import PageViewTracker from 'lib/analytics/page-view-tracker';
 import DocumentHead from 'components/data/document-head';
-import { decodeEntities } from 'lib/formatting';
+import { decodeEntities, preventWidows } from 'lib/formatting';
 import { recordTracksEvent } from 'state/analytics/actions';
 import { setThemePreviewOptions } from 'state/themes/actions';
 import ThemeNotFoundError from './theme-not-found-error';
 import ThemeFeaturesCard from './theme-features-card';
+import {
+	FEATURE_UNLIMITED_PREMIUM_THEMES,
+	FEATURE_UPLOAD_THEMES,
+	PLAN_PREMIUM,
+	PLAN_BUSINESS,
+} from 'lib/plans/constants';
+import { hasFeature } from 'state/sites/plans/selectors';
+import getPreviousRoute from 'state/selectors/get-previous-route';
+import { PerformanceTrackerStop } from 'lib/performance-tracking';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class ThemeSheet extends React.Component {
 	static displayName = 'ThemeSheet';
@@ -117,7 +129,7 @@ class ThemeSheet extends React.Component {
 		this.scrollToTop();
 	}
 
-	componentWillUpdate( nextProps ) {
+	UNSAFE_componentWillUpdate( nextProps ) {
 		if ( nextProps.id !== this.props.id ) {
 			this.scrollToTop();
 		}
@@ -135,8 +147,8 @@ class ThemeSheet extends React.Component {
 	};
 
 	onButtonClick = () => {
-		const { defaultOption } = this.props;
-		defaultOption.action && defaultOption.action( this.props.id );
+		const { defaultOption, id } = this.props;
+		defaultOption.action && defaultOption.action( id );
 	};
 
 	onSecondaryButtonClick = () => {
@@ -152,14 +164,14 @@ class ThemeSheet extends React.Component {
 		return validSections;
 	};
 
-	validateSection = section => {
+	validateSection = ( section ) => {
 		if ( this.getValidSections().indexOf( section ) === -1 ) {
 			return this.getValidSections()[ 0 ];
 		}
 		return section;
 	};
 
-	trackButtonClick = context => {
+	trackButtonClick = ( context ) => {
 		this.props.recordTracksEvent( 'calypso_theme_sheet_button_click', {
 			theme_name: this.props.id,
 			button_context: context,
@@ -202,7 +214,7 @@ class ThemeSheet extends React.Component {
 		return null;
 	}
 
-	previewAction = event => {
+	previewAction = ( event ) => {
 		if ( event.altKey || event.ctrlKey || event.metaKey || event.shiftKey ) {
 			return;
 		}
@@ -213,54 +225,72 @@ class ThemeSheet extends React.Component {
 		return preview.action( this.props.id );
 	};
 
-	renderPreviewButton( demo_uri ) {
+	shouldRenderPreviewButton() {
+		return this.isThemeAvailable() && ! this.isThemeCurrentOne();
+	}
+
+	isThemeCurrentOne() {
+		return this.props.isActive;
+	}
+
+	isThemeAvailable() {
+		const { demo_uri, retired } = this.props;
+		return demo_uri && ! retired;
+	}
+
+	// Render "Open Live Demo" pseudo-button for mobiles.
+	// This is a legacy hack that shows the button under the preview screenshot for mobiles
+	// but not for desktop (becomes hidden behind the screenshot).
+	renderPreviewButton() {
 		return (
-			<a
-				className="theme__sheet-preview-link"
-				onClick={ this.previewAction }
-				data-tip-target="theme-sheet-preview"
-				href={ demo_uri }
-				rel="noopener noreferrer"
-			>
+			<div className="theme__sheet-preview-link">
 				<span className="theme__sheet-preview-link-text">
 					{ i18n.translate( 'Open Live Demo', {
 						context: 'Individual theme live preview button',
 					} ) }
 				</span>
-			</a>
+			</div>
 		);
 	}
 
 	renderScreenshot() {
-		const { demo_uri, retired, isActive, isWpcomTheme, name: themeName } = this.props;
+		const { isWpcomTheme, name: themeName } = this.props;
 		const screenshotFull = isWpcomTheme ? this.getFullLengthScreenshot() : this.props.screenshot;
 		const width = 735;
 		// Photon may return null, allow fallbacks
 		const photonSrc = screenshotFull && photon( screenshotFull, { width } );
 		const img = screenshotFull && (
 			<img
-				alt={ i18n.translate( 'Screenshot of the %(themeName)s theme', {
-					args: { themeName },
-				} ) }
+				alt={
+					// translators: %s is the theme name. Eg Twenty Twenty.
+					i18n.translate( 'Screenshot of the %(themeName)s theme', {
+						args: { themeName },
+					} )
+				}
 				className="theme__sheet-img"
 				src={ photonSrc || screenshotFull }
 				srcSet={ photonSrc && `${ photon( screenshotFull, { width, zoom: 2 } ) } 2x` }
 			/>
 		);
 
-		if ( demo_uri && ! retired ) {
+		if ( this.isThemeAvailable() ) {
 			return (
-				<div className="theme__sheet-screenshot is-active" onClick={ this.previewAction }>
-					{ isActive ? null : this.renderPreviewButton( demo_uri ) }
+				<a
+					className="theme__sheet-screenshot is-active"
+					href={ this.props.demo_uri }
+					onClick={ this.previewAction }
+					rel="noopener noreferrer"
+				>
+					{ this.shouldRenderPreviewButton() && this.renderPreviewButton() }
 					{ img }
-				</div>
+				</a>
 			);
 		}
 
 		return <div className="theme__sheet-screenshot">{ img }</div>;
 	}
 
-	renderSectionNav = currentSection => {
+	renderSectionNav = ( currentSection ) => {
 		const filterStrings = {
 			'': i18n.translate( 'Overview', { context: 'Filter label for theme content' } ),
 			setup: i18n.translate( 'Setup', { context: 'Filter label for theme content' } ),
@@ -272,7 +302,7 @@ class ThemeSheet extends React.Component {
 
 		const nav = (
 			<NavTabs label="Details">
-				{ this.getValidSections().map( section => (
+				{ this.getValidSections().map( ( section ) => (
 					<NavItem
 						key={ section }
 						path={ `/theme/${ id }${ section ? '/' + section : '' }${ sitePart }` }
@@ -281,6 +311,17 @@ class ThemeSheet extends React.Component {
 						{ filterStrings[ section ] }
 					</NavItem>
 				) ) }
+				{ this.shouldRenderPreviewButton() ? (
+					<NavItem
+						path={ this.props.demo_uri }
+						onClick={ this.previewAction }
+						className="theme__sheet-preview-nav-item"
+					>
+						{ i18n.translate( 'Open Live Demo', {
+							context: 'Individual theme live preview button',
+						} ) }
+					</NavItem>
+				) : null }
 			</NavTabs>
 		);
 
@@ -294,7 +335,7 @@ class ThemeSheet extends React.Component {
 		);
 	};
 
-	renderSectionContent = section => {
+	renderSectionContent = ( section ) => {
 		const activeSection = {
 			'': this.renderOverviewTab(),
 			setup: this.renderSetupTab(),
@@ -303,6 +344,9 @@ class ThemeSheet extends React.Component {
 
 		return (
 			<div className="theme__sheet-content">
+				{ config.isEnabled( 'jitms' ) && this.props.siteSlug && (
+					<AsyncLoad require="blocks/jitm" messagePath={ 'calypso:theme:admin_notices' } />
+				) }
 				{ this.renderSectionNav( section ) }
 				{ activeSection }
 				<div className="theme__sheet-footer-line">
@@ -314,6 +358,7 @@ class ThemeSheet extends React.Component {
 
 	renderDescription = () => {
 		if ( this.props.descriptionLong ) {
+			// eslint-disable-next-line react/no-danger
 			return <div dangerouslySetInnerHTML={ { __html: this.props.descriptionLong } } />;
 		}
 		// description doesn't contain any formatting, so we don't need to dangerouslySetInnerHTML
@@ -346,6 +391,7 @@ class ThemeSheet extends React.Component {
 	};
 
 	renderSetupTab = () => {
+		/* eslint-disable react/no-danger */
 		return (
 			<div>
 				<Card className="theme__sheet-content">
@@ -353,9 +399,10 @@ class ThemeSheet extends React.Component {
 				</Card>
 			</div>
 		);
+		/* eslint-enable react/no-danger */
 	};
 
-	renderSupportContactUsCard = buttonCount => {
+	renderSupportContactUsCard = ( buttonCount ) => {
 		return (
 			<Card className="theme__sheet-card-support">
 				<Gridicon icon="help-outline" size={ 48 } />
@@ -374,7 +421,7 @@ class ThemeSheet extends React.Component {
 		);
 	};
 
-	renderSupportThemeForumCard = buttonCount => {
+	renderSupportThemeForumCard = ( buttonCount ) => {
 		if ( ! this.props.forumUrl ) {
 			return null;
 		}
@@ -401,7 +448,7 @@ class ThemeSheet extends React.Component {
 		);
 	};
 
-	renderSupportCssCard = buttonCount => {
+	renderSupportCssCard = ( buttonCount ) => {
 		return (
 			<Card className="theme__sheet-card-support">
 				<Gridicon icon="briefcase" size={ 48 } />
@@ -473,8 +520,13 @@ class ThemeSheet extends React.Component {
 	getDefaultOptionLabel = () => {
 		const { defaultOption, isActive, isLoggedIn, isPremium, isPurchased } = this.props;
 		if ( isActive ) {
-			// Customize size
-			return i18n.translate( 'Customize site' );
+			// Customize site
+			return (
+				<span className="theme__sheet-customize-button">
+					<Gridicon icon="external" />
+					{ i18n.translate( 'Customize site' ) }
+				</span>
+			);
 		} else if ( isLoggedIn ) {
 			if ( isPremium && ! isPurchased ) {
 				// purchase
@@ -539,6 +591,7 @@ class ThemeSheet extends React.Component {
 				href={ getUrl ? getUrl( this.props.id ) : null }
 				onClick={ this.onButtonClick }
 				primary={ isActive }
+				target={ isActive ? '_blank' : null }
 			>
 				{ this.isLoaded() ? label : placeholder }
 				{ this.props.isWpcomTheme && this.renderPrice() }
@@ -546,9 +599,31 @@ class ThemeSheet extends React.Component {
 		);
 	};
 
+	goBack = () => {
+		const { previousRoute, backPath } = this.props;
+		if ( previousRoute ) {
+			page.back( previousRoute );
+		} else {
+			page( backPath );
+		}
+	};
+
 	renderSheet = () => {
 		const section = this.validateSection( this.props.section );
-		const { id, siteId, retired } = this.props;
+		const {
+			id,
+			siteId,
+			siteSlug,
+			retired,
+			isPremium,
+			isJetpack,
+			isWpcomTheme,
+			isVip,
+			translate,
+			hasUnlimitedPremiumThemes,
+			canUserUploadThemes,
+			previousRoute,
+		} = this.props;
 
 		const analyticsPath = `/theme/${ id }${ section ? '/' + section : '' }${
 			siteId ? '/:site' : ''
@@ -556,6 +631,8 @@ class ThemeSheet extends React.Component {
 		const analyticsPageTitle = `Themes > Details Sheet${
 			section ? ' > ' + titlecase( section ) : ''
 		}${ siteId ? ' > Site' : '' }`;
+
+		const plansUrl = siteSlug ? `/plans/${ siteSlug }/?plan=value_bundle` : '/plans';
 
 		const { canonicalUrl, currentUserId, description, name: themeName } = this.props;
 		const title =
@@ -587,27 +664,85 @@ class ThemeSheet extends React.Component {
 			} );
 		}
 
+		let pageUpsellBanner, previewUpsellBanner;
+		const hasWpComThemeUpsellBanner =
+			! isJetpack && isPremium && ! hasUnlimitedPremiumThemes && ! isVip && ! retired;
+		const hasWpOrgThemeUpsellBanner =
+			! isWpcomTheme && ( ! siteId || ( ! isJetpack && ! canUserUploadThemes ) );
+		const hasUpsellBanner = hasWpComThemeUpsellBanner || hasWpOrgThemeUpsellBanner;
+
+		if ( hasWpComThemeUpsellBanner ) {
+			pageUpsellBanner = (
+				<UpsellNudge
+					plan={ PLAN_PREMIUM }
+					className="theme__page-upsell-banner"
+					title={ translate( 'Access this theme for FREE with a Premium or Business plan!' ) }
+					description={ preventWidows(
+						translate(
+							'Instantly unlock all premium themes, more storage space, advanced customization, video support, and more when you upgrade.'
+						)
+					) }
+					event="themes_plan_particular_free_with_plan"
+					forceHref={ true }
+					href={ plansUrl }
+					showIcon={ true }
+				/>
+			);
+		}
+
+		if ( hasWpOrgThemeUpsellBanner ) {
+			pageUpsellBanner = (
+				<UpsellNudge
+					plan={ PLAN_BUSINESS }
+					className="theme__page-upsell-banner"
+					title={ translate( 'Access this theme for FREE with a Business plan!' ) }
+					description={ preventWidows(
+						translate(
+							'Instantly unlock thousands of different themes and install your own when you upgrade.'
+						)
+					) }
+					forceHref
+					feature={ FEATURE_UPLOAD_THEMES }
+					forceDisplay
+					href={ ! siteId ? '/plans' : null }
+					showIcon
+				/>
+			);
+		}
+
+		if ( hasUpsellBanner ) {
+			previewUpsellBanner = React.cloneElement( pageUpsellBanner, {
+				className: 'theme__preview-upsell-banner',
+			} );
+		}
+
+		const className = classNames( 'theme__sheet', { 'is-with-upsell-banner': hasUpsellBanner } );
+
 		const links = [ { rel: 'canonical', href: canonicalUrl } ];
 
 		return (
-			<Main className="theme__sheet">
+			<Main className={ className }>
 				<QueryCanonicalTheme themeId={ this.props.id } siteId={ siteId } />
 				{ currentUserId && <QueryUserPurchases userId={ currentUserId } /> }
-				{ siteId && (
-					<QuerySitePurchases siteId={ siteId } />
-				) /* TODO: Make QuerySitePurchases handle falsey siteId */ }
+				{
+					siteId && (
+						<QuerySitePurchases siteId={ siteId } />
+					) /* TODO: Make QuerySitePurchases handle falsey siteId */
+				}
 				<QuerySitePlans siteId={ siteId } />
 				<DocumentHead title={ title } meta={ metas } link={ links } />
 				<PageViewTracker path={ analyticsPath } title={ analyticsPageTitle } />
 				{ this.renderBar() }
 				<QueryActiveTheme siteId={ siteId } />
 				<ThanksModal source={ 'details' } />
+				<AutoLoadingHomepageModal source={ 'details' } />
+				{ pageUpsellBanner }
 				<HeaderCake
 					className="theme__sheet-action-bar"
-					backHref={ this.props.backPath }
-					backText={ i18n.translate( 'All Themes' ) }
+					backText={ previousRoute ? i18n.translate( 'Back' ) : i18n.translate( 'All Themes' ) }
+					onClick={ this.goBack }
 				>
-					{ ! retired && this.renderButton() }
+					{ ! retired && ! hasWpOrgThemeUpsellBanner && this.renderButton() }
 				</HeaderCake>
 				<div className="theme__sheet-columns">
 					<div className="theme__sheet-column-left">
@@ -616,7 +751,8 @@ class ThemeSheet extends React.Component {
 					</div>
 					<div className="theme__sheet-column-right">{ this.renderScreenshot() }</div>
 				</div>
-				<ThemePreview />
+				<ThemePreview belowToolbar={ previewUpsellBanner } />
+				<PerformanceTrackerStop />
 			</Main>
 		);
 	};
@@ -629,7 +765,7 @@ class ThemeSheet extends React.Component {
 	}
 }
 
-const ConnectedThemeSheet = connectOptions( props => {
+const ConnectedThemeSheet = connectOptions( ( props ) => {
 	if ( ! props.isLoggedIn || props.siteId ) {
 		return <ThemeSheet { ...props } />;
 	}
@@ -641,7 +777,7 @@ const ConnectedThemeSheet = connectOptions( props => {
 	);
 } );
 
-const ThemeSheetWithOptions = props => {
+const ThemeSheetWithOptions = ( props ) => {
 	const { siteId, isActive, isLoggedIn, isPremium, isPurchased, isJetpack } = props;
 
 	let defaultOption;
@@ -702,15 +838,19 @@ export default connect(
 			isLoggedIn: !! currentUserId,
 			isActive: isThemeActive( state, id, siteId ),
 			isJetpack: isJetpackSite( state, siteId ),
+			isVip: isVipSite( state, siteId ),
 			isPremium: isThemePremium( state, id ),
 			isPurchased: isPremiumThemeAvailable( state, id, siteId ),
 			forumUrl: getThemeForumUrl( state, id, siteId ),
+			hasUnlimitedPremiumThemes: hasFeature( state, siteId, FEATURE_UNLIMITED_PREMIUM_THEMES ),
+			canUserUploadThemes: hasFeature( state, siteId, FEATURE_UPLOAD_THEMES ),
 			// No siteId specified since we want the *canonical* URL :-)
 			canonicalUrl: 'https://wordpress.com' + getThemeDetailsUrl( state, id ),
+			previousRoute: getPreviousRoute( state ),
 		};
 	},
 	{
 		setThemePreviewOptions,
 		recordTracksEvent,
 	}
-)( ThemeSheetWithOptions );
+)( localize( ThemeSheetWithOptions ) );

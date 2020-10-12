@@ -1,28 +1,25 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 import classnames from 'classnames';
 import { connect } from 'react-redux';
 import { localize } from 'i18n-calypso';
 import path from 'path';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 
 /**
  * Internal dependencies
  */
 import { ALLOWED_FILE_EXTENSIONS } from './constants';
-import { AspectRatios } from 'state/ui/editor/image-editor/constants';
-import Dialog from 'components/dialog';
+import { AspectRatios } from 'state/editor/image-editor/constants';
+import { Dialog } from '@automattic/components';
 import FilePicker from 'components/file-picker';
 import { getCurrentUser } from 'state/current-user/selectors';
 import Gravatar from 'components/gravatar';
 import { isCurrentUserUploadingGravatar } from 'state/current-user/gravatar-status/selectors';
-import { resetAllImageEditorState } from 'state/ui/editor/image-editor/actions';
+import { resetAllImageEditorState } from 'state/editor/image-editor/actions';
 import Spinner from 'components/spinner';
 import {
 	receiveGravatarImageFailed,
@@ -34,6 +31,11 @@ import ExternalLink from 'components/external-link';
 import VerifyEmailDialog from 'components/email-verification/email-verification-dialog';
 import DropZone from 'components/drop-zone';
 import { recordTracksEvent, recordGoogleEvent, composeAnalytics } from 'state/analytics/actions';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 export class EditGravatar extends Component {
 	state = {
@@ -53,16 +55,13 @@ export class EditGravatar extends Component {
 		recordReceiveImageEvent: PropTypes.func,
 	};
 
-	onReceiveFile = files => {
+	onReceiveFile = ( files ) => {
 		const {
 			receiveGravatarImageFailed: receiveGravatarImageFailedAction,
 			translate,
 			recordReceiveImageEvent,
 		} = this.props;
-		const extension = path
-			.extname( files[ 0 ].name )
-			.toLowerCase()
-			.substring( 1 );
+		const extension = path.extname( files[ 0 ].name ).toLowerCase().substring( 1 );
 
 		recordReceiveImageEvent();
 
@@ -174,6 +173,8 @@ export class EditGravatar extends Component {
 		const buttonText = user.email_verified
 			? translate( 'Click to change photo' )
 			: translate( 'Verify your email' );
+		/* eslint-disable jsx-a11y/click-events-have-key-events */
+		/* eslint-disable jsx-a11y/no-static-element-interactions */
 		return (
 			<div
 				className={ classnames(
@@ -183,10 +184,6 @@ export class EditGravatar extends Component {
 				) }
 			>
 				<div onClick={ this.handleUnverifiedUserClick }>
-					{ this.state.showEmailVerificationNotice && (
-						<VerifyEmailDialog onClose={ this.closeVerifyEmailDialog } />
-					) }
-					{ this.renderImageEditor() }
 					<FilePicker accept="image/*" onPick={ this.onReceiveFile }>
 						<div
 							data-tip-target="edit-gravatar"
@@ -211,6 +208,10 @@ export class EditGravatar extends Component {
 						</div>
 					</FilePicker>
 				</div>
+				{ this.state.showEmailVerificationNotice && (
+					<VerifyEmailDialog onClose={ this.closeVerifyEmailDialog } />
+				) }
+				{ this.renderImageEditor() }
 				<div>
 					<p className="edit-gravatar__explanation">
 						{ translate( 'Your profile photo is public.' ) }
@@ -221,7 +222,7 @@ export class EditGravatar extends Component {
 								'from {{ExternalLink}}Gravatar{{/ExternalLink}}, a universal avatar service ' +
 								'(it stands for "Globally Recognized Avatar," get it?).{{/p}}' +
 								'{{p}}Your image may also appear on other sites using Gravatar ' +
-								"whenever you're logged in with your email address %(email)s.{{/p}}",
+								"whenever you're logged in with the email %(email)s.{{/p}}",
 							{
 								components: {
 									ExternalLink: (
@@ -243,6 +244,8 @@ export class EditGravatar extends Component {
 				</div>
 			</div>
 		);
+		/* eslint-enable jsx-a11y/click-events-have-key-events */
+		/* eslint-enable jsx-a11y/no-static-element-interactions */
 	}
 }
 
@@ -255,7 +258,7 @@ const recordClickButtonEvent = ( { isVerified } ) =>
 const recordReceiveImageEvent = () => recordTracksEvent( 'calypso_edit_gravatar_file_receive' );
 
 export default connect(
-	state => ( {
+	( state ) => ( {
 		user: getCurrentUser( state ) || {},
 		isUploading: isCurrentUserUploadingGravatar( state ),
 	} ),

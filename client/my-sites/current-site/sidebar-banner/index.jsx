@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -8,13 +6,18 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import classnames from 'classnames';
 import { localize } from 'i18n-calypso';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 
 /**
  * Internal dependencies
  */
 import TrackComponentView from 'lib/analytics/track-component-view';
 import { recordTracksEvent } from 'state/analytics/actions';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 export class SidebarBanner extends Component {
 	static defaultProps = {
@@ -28,13 +31,17 @@ export class SidebarBanner extends Component {
 		icon: PropTypes.string,
 		href: PropTypes.string,
 		text: PropTypes.string,
+		onClick: PropTypes.func,
 		track: PropTypes.func.isRequired,
 		translate: PropTypes.func.isRequired,
 	};
 
-	onClick = () => {
-		const { ctaName, track } = this.props;
+	onClick = ( e ) => {
+		const { ctaName, track, onClick } = this.props;
 		track( 'calypso_upgrade_nudge_cta_click', { cta_name: ctaName } );
+		if ( onClick ) {
+			onClick( e );
+		}
 	};
 
 	render() {

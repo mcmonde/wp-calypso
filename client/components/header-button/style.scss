@@ -3,7 +3,6 @@
 	border: none;
 	border-radius: 0;
 	display: flex;
-	flex-direction: column;
 	font-weight: normal;
 	justify-content: center;
 	min-width: 140px;
@@ -11,15 +10,17 @@
 	padding: 0 16px;
 
 	&:hover {
-		background-color: $gray-light;
+		background-color: var( --color-neutral-0 );
+	}
+
+	.gridicon {
+		top: auto;
+		margin-top: 0;
+		width: 24px;
+		height: 24px;
 	}
 }
 
-.header-button .gridicon.gridicons-cloud-upload {
-	top: 6px;
-}
-
 .header-button__text {
-	margin-top: 3px;
 	white-space: nowrap;
 }

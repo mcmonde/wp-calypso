@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -9,7 +7,7 @@ import React, { PureComponent } from 'react';
 import { connect } from 'react-redux';
 import classNames from 'classnames';
 import { noop, get } from 'lodash';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 
 /**
  * Internal dependencies
@@ -17,8 +15,13 @@ import Gridicon from 'gridicons';
 import Site from 'blocks/site';
 import SitePlaceholder from 'blocks/site/placeholder';
 import SiteSelector from 'components/site-selector';
-import { getPrimarySiteId } from 'state/selectors';
+import getPrimarySiteId from 'state/selectors/get-primary-site-id';
 import { getCurrentUser } from 'state/current-user/selectors';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 export class SitesDropdown extends PureComponent {
 	static propTypes = {
@@ -96,24 +99,23 @@ export class SitesDropdown extends PureComponent {
 						) }
 						{ this.props.hasMultipleSites && <Gridicon icon="chevron-down" /> }
 					</div>
-					{ this.props.hasMultipleSites &&
-						this.state.open && (
-							<SiteSelector
-								autoFocus={ true }
-								onClose={ this.onClose }
-								onSiteSelect={ this.selectSite }
-								selected={ this.state.selectedSiteId }
-								hideSelected={ true }
-								filter={ this.props.filter && this.siteFilter }
-							/>
-						) }
+					{ this.props.hasMultipleSites && this.state.open && (
+						<SiteSelector
+							autoFocus={ true }
+							onClose={ this.onClose }
+							onSiteSelect={ this.selectSite }
+							selected={ this.state.selectedSiteId }
+							hideSelected={ true }
+							filter={ this.props.filter && this.siteFilter }
+						/>
+					) }
 				</div>
 			</div>
 		);
 	}
 }
 
-export default connect( state => ( {
+export default connect( ( state ) => ( {
 	primarySiteId: getPrimarySiteId( state ),
 	hasMultipleSites: get( getCurrentUser( state ), 'site_count', 1 ) > 1,
 } ) )( SitesDropdown );

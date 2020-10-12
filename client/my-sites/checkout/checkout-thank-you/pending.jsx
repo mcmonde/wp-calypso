@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -13,12 +11,15 @@ import { identity } from 'lodash';
 /**
  * Internal dependencies
  */
-import { getOrderTransaction, getOrderTransactionError } from 'state/selectors';
+import getOrderTransaction from 'state/selectors/get-order-transaction';
+
+import getOrderTransactionError from 'state/selectors/get-order-transaction-error';
 import { ORDER_TRANSACTION_STATUS } from 'state/order-transactions/constants';
 import { errorNotice } from 'state/notices/actions';
 import QueryOrderTransaction from 'components/data/query-order-transaction';
 import EmptyContent from 'components/empty-content';
 import Main from 'components/main';
+import PageViewTracker from 'lib/analytics/page-view-tracker';
 
 class CheckoutPending extends PureComponent {
 	static propTypes = {
@@ -28,6 +29,7 @@ class CheckoutPending extends PureComponent {
 		error: PropTypes.object,
 		errorNotice: PropTypes.func,
 		localize: PropTypes.func,
+		redirectTo: PropTypes.string,
 	};
 
 	static defaultProps = {
@@ -35,9 +37,10 @@ class CheckoutPending extends PureComponent {
 		errorNotice: identity,
 	};
 
-	componentWillReceiveProps( nextProps ) {
+	UNSAFE_componentWillReceiveProps( nextProps ) {
 		const { transaction, error } = nextProps;
 		const { translate, showErrorNotice, siteSlug } = this.props;
+		const redirectTo = this.props.redirectTo || `/checkout/thank-you/${ siteSlug }/pending`;
 
 		const retryOnError = () => {
 			page( `/checkout/${ siteSlug }` );
@@ -55,11 +58,14 @@ class CheckoutPending extends PureComponent {
 			if ( ORDER_TRANSACTION_STATUS.SUCCESS === processingStatus ) {
 				const { receiptId } = transaction;
 
-				page(
-					receiptId
-						? `/checkout/thank-you/${ siteSlug }/${ receiptId }`
-						: `/checkout/thank-you/${ siteSlug }`
-				);
+				const redirectPath = redirectTo.replace( 'pending', receiptId );
+				page( redirectPath );
+
+				return;
+			}
+
+			if ( ORDER_TRANSACTION_STATUS.ASYNC_PENDING === transaction.processingStatus ) {
+				page( '/me/purchases/pending' );
 
 				return;
 			}
@@ -94,11 +100,20 @@ class CheckoutPending extends PureComponent {
 	}
 
 	render() {
-		const { orderId, translate } = this.props;
+		const { orderId, siteSlug, translate } = this.props;
 
 		return (
 			<Main className="checkout-thank-you__pending">
 				<QueryOrderTransaction orderId={ orderId } pollIntervalMs={ 5000 } />
+				<PageViewTracker
+					path={
+						siteSlug
+							? '/checkout/thank-you/:site/pending/:order_id'
+							: '/checkout/thank-you/no-site/pending/:order_id'
+					}
+					title="Checkout Pending"
+					properties={ { order_id: orderId, ...( siteSlug && { site: siteSlug } ) } }
+				/>
 				<EmptyContent
 					illustration={ '/calypso/images/illustrations/illustration-shopping-bags.svg' }
 					illustrationWidth={ 500 }

@@ -12,7 +12,7 @@ import FormField from './form-field';
 
 const PercentField = ( props ) => {
 	const { fieldName, explanationText, placeholderText, value, edit } = props;
-	const renderedValue = ( 'undefined' !== typeof value ? value : '' );
+	const renderedValue = 'undefined' !== typeof value ? value : '';
 
 	const onChange = ( e ) => {
 		const newValue = e.target.value;
@@ -22,7 +22,7 @@ const PercentField = ( props ) => {
 	};
 
 	return (
-		<FormField { ...props } >
+		<FormField { ...props }>
 			<FormTextInputWithAffixes
 				id={ fieldName + '-label' }
 				aria-describedby={ explanationText && fieldName + '-description' }

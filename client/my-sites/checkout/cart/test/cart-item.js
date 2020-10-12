@@ -1,5 +1,4 @@
 /**
- * @format
  * @jest-environment jsdom
  */
 
@@ -27,6 +26,7 @@ import {
 	PLAN_BUSINESS_2_YEARS,
 	PLAN_JETPACK_PERSONAL,
 	PLAN_PERSONAL,
+	PLAN_BLOGGER,
 	PLAN_PREMIUM,
 } from 'lib/plans/constants';
 
@@ -46,8 +46,9 @@ jest.mock( 'config', () => {
 	fn.isEnabled = jest.fn( () => null );
 	return fn;
 } );
-jest.mock( 'lib/format-currency', () => jest.fn() );
-jest.mock( 'lib/mixins/analytics', () => ( {} ) );
+jest.mock( '@automattic/format-currency', () => ( {
+	getCurrencyObject: ( price ) => ( { integer: price } ),
+} ) );
 jest.mock( 'lib/products-values', () => ( {
 	isPlan: jest.fn( () => null ),
 	isTheme: jest.fn( () => null ),
@@ -77,7 +78,7 @@ const props = {
 describe( 'cart-item', () => {
 	test( 'Does not blow up', () => {
 		const comp = shallow( <CartItem { ...props } /> );
-		expect( comp.find( '.cart-item' ).length ).toBe( 1 );
+		expect( comp.find( '.cart-item' ) ).toHaveLength( 1 );
 	} );
 
 	describe( 'monthlyPrice', () => {
@@ -108,7 +109,7 @@ describe( 'cart-item', () => {
 			expect( myTranslate ).toHaveBeenCalledTimes( 1 );
 			expect( myTranslate.mock.calls[ 0 ][ 1 ] ).toEqual( {
 				args: {
-					monthlyPrice: '133.00',
+					monthlyPrice: '133',
 					currency: 'AUD',
 					months: 17,
 				},
@@ -221,10 +222,26 @@ describe( 'cart-item', () => {
 		} );
 
 		const expectations = [
-			[ { product_slug: PLAN_PERSONAL, cost: 120 }, { months: 12, monthlyPrice: 10 } ],
-			[ { product_slug: PLAN_PREMIUM, cost: 180 }, { months: 12, monthlyPrice: 15 } ],
-			[ { product_slug: PLAN_BUSINESS_2_YEARS, cost: 480 }, { months: 24, monthlyPrice: 20 } ],
-			[ { product_slug: PLAN_JETPACK_PERSONAL, cost: 288 }, { months: 12, monthlyPrice: 24 } ],
+			[
+				{ product_slug: PLAN_BLOGGER, cost: 60 },
+				{ months: 12, monthlyPrice: 5 },
+			],
+			[
+				{ product_slug: PLAN_PERSONAL, cost: 120 },
+				{ months: 12, monthlyPrice: 10 },
+			],
+			[
+				{ product_slug: PLAN_PREMIUM, cost: 180 },
+				{ months: 12, monthlyPrice: 15 },
+			],
+			[
+				{ product_slug: PLAN_BUSINESS_2_YEARS, cost: 480 },
+				{ months: 24, monthlyPrice: 20 },
+			],
+			[
+				{ product_slug: PLAN_JETPACK_PERSONAL, cost: 288 },
+				{ months: 12, monthlyPrice: 24 },
+			],
 		];
 
 		expectations.forEach( ( [ input, output ] ) => {
@@ -248,7 +265,7 @@ describe( 'cart-item', () => {
 					product_slug: 'fake',
 				},
 			} );
-			expect( () => instance.calcMonthlyBillingDetails() ).toThrowError();
+			expect( () => instance.calcMonthlyBillingDetails() ).toThrow();
 		} );
 	} );
 
@@ -261,25 +278,17 @@ describe( 'cart-item', () => {
 
 		const instance = new CartItem( { ...props, cartItem: { cost: 0, bill_period: 1 } } );
 
-		test( 'Returns false for bundled domains - if 2 year plans are enabled', () => {
+		test( 'Returns false for bundled domains', () => {
 			isEnabled.mockImplementation( () => true );
 			isDomainProduct.mockImplementation( () => true );
 			isBundled.mockImplementation( () => true );
 			expect( instance.getSubscriptionLength() ).toEqual( false );
 		} );
 
-		test( 'Returns "annual subscription" for non-bundled domains - if 2 year plans are enabled', () => {
+		test( 'Returns "annual subscription" for non-bundled domains', () => {
 			isEnabled.mockImplementation( () => true );
 			isDomainProduct.mockImplementation( () => true );
 			isBundled.mockImplementation( () => false );
-
-			expect( instance.getSubscriptionLength() ).toEqual( 'annual subscription' );
-		} );
-
-		test( 'Returns "annual subscription" for bundled domains - if 2 year plans are disabled', () => {
-			isEnabled.mockImplementation( () => false );
-			isDomainProduct.mockImplementation( () => true );
-			isBundled.mockImplementation( () => true );
 
 			expect( instance.getSubscriptionLength() ).toEqual( 'annual subscription' );
 		} );

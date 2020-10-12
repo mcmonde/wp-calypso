@@ -1,12 +1,9 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
-import ReactDom from 'react-dom';
 import PropTypes from 'prop-types';
 import React from 'react';
+import { connect } from 'react-redux';
 import { noop, uniq } from 'lodash';
 import classNames from 'classnames';
 import page from 'page';
@@ -14,18 +11,23 @@ import page from 'page';
 /**
  * Internal dependencies
  */
-import analytics from 'lib/analytics';
-import MediaActions from 'lib/media/actions';
+import { bumpStat } from 'lib/analytics/mc';
 import { getAllowedFileTypesForSite, isSiteAllowedFileTypesToBeTrusted } from 'lib/media/utils';
 import { VideoPressFileTypes } from 'lib/media/constants';
+import { clearMediaItemErrors } from 'state/media/actions';
+import { addMedia } from 'state/media/thunks';
 
-export default class extends React.Component {
-	static displayName = 'MediaLibraryUploadButton';
+/**
+ * Style dependencies
+ */
+import './upload-button.scss';
 
+export class MediaLibraryUploadButton extends React.Component {
 	static propTypes = {
 		site: PropTypes.object,
 		onAddMedia: PropTypes.func,
 		className: PropTypes.string,
+		addMedia: PropTypes.func,
 	};
 
 	static defaultProps = {
@@ -33,6 +35,8 @@ export default class extends React.Component {
 		type: 'button',
 		href: null,
 	};
+
+	formRef = React.createRef();
 
 	onClick = () => {
 		if ( this.props.onClick ) {
@@ -43,15 +47,15 @@ export default class extends React.Component {
 		}
 	};
 
-	uploadFiles = event => {
+	uploadFiles = ( event ) => {
 		if ( event.target.files && this.props.site ) {
-			MediaActions.clearValidationErrors( this.props.site.ID );
-			MediaActions.add( this.props.site, event.target.files );
+			this.props.clearMediaItemErrors( this.props.site.ID );
+			this.props.addMedia( event.target.files, this.props.site );
 		}
 
-		ReactDom.findDOMNode( this.refs.form ).reset();
+		this.formRef.current.reset();
 		this.props.onAddMedia();
-		analytics.mc.bumpStat( 'editor_upload_via', 'add_button' );
+		bumpStat( 'editor_upload_via', 'add_button' );
 	};
 
 	/**
@@ -61,7 +65,7 @@ export default class extends React.Component {
 	 * but is supported in Internet Explorer and Chrome browsers. Further input
 	 * validation will occur when attempting to upload the file.
 	 *
-	 * @return {string} Supported file extensions, as comma-separated string
+	 * @returns {string} Supported file extensions, as comma-separated string
 	 */
 	getInputAccept = () => {
 		if ( ! isSiteAllowedFileTypesToBeTrusted( this.props.site ) ) {
@@ -70,15 +74,15 @@ export default class extends React.Component {
 		const allowedFileTypesForSite = getAllowedFileTypesForSite( this.props.site );
 
 		return uniq( allowedFileTypesForSite.concat( VideoPressFileTypes ) )
-			.map( type => `.${ type }` )
+			.map( ( type ) => `.${ type }` )
 			.join();
 	};
 
 	render() {
-		var classes = classNames( 'media-library__upload-button', 'button', this.props.className );
+		const classes = classNames( 'media-library__upload-button', 'button', this.props.className );
 
 		return (
-			<form ref="form" className={ classes }>
+			<form ref={ this.formRef } className={ classes }>
 				{ this.props.children }
 				<input
 					type="file"
@@ -92,3 +96,5 @@ export default class extends React.Component {
 		);
 	}
 }
+
+export default connect( null, { addMedia, clearMediaItemErrors } )( MediaLibraryUploadButton );

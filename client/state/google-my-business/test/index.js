@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -37,6 +35,8 @@ describe( 'reducer', () => {
 							},
 						},
 					},
+					statsError: {},
+					statsInterval: {},
 				},
 			} );
 		} );
@@ -133,6 +133,8 @@ describe( 'reducer', () => {
 							},
 						},
 					},
+					statsError: {},
+					statsInterval: {},
 				},
 			} );
 		} );

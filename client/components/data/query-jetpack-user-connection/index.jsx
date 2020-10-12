@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -11,7 +9,7 @@ import { connect } from 'react-redux';
 /**
  * Internal dependencies
  */
-import { isRequestingJetpackUserConnection } from 'state/selectors';
+import isRequestingJetpackUserConnection from 'state/selectors/is-requesting-jetpack-user-connection';
 import { requestJetpackUserConnectionData } from 'state/jetpack/connection/actions';
 
 class QueryJetpackUserConnection extends Component {
@@ -26,7 +24,7 @@ class QueryJetpackUserConnection extends Component {
 		this.request( this.props );
 	}
 
-	componentWillReceiveProps( nextProps ) {
+	UNSAFE_componentWillReceiveProps( nextProps ) {
 		if ( this.props.siteId === nextProps.siteId ) {
 			return;
 		}

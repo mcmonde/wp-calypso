@@ -1,0 +1,70 @@
+// Post comments line-clamping
+.comments__comment-content-wrapper {
+	position: relative;
+
+	&.is-single-line,
+	&.is-single-line .comments__comment-content {
+		max-height: $font-body * 1.6;
+	}
+
+	&.is-excerpt,
+	&.is-excerpt .comments__comment-content {
+		max-height: $font-body * 1.6 * 3; // 3 lines
+	}
+
+	&.is-single-line .comments__comment-content,
+	&.is-excerpt .comments__comment-content {
+		overflow: hidden;
+	}
+}
+
+// Hide certain elements in excerpt comments
+.comments__comment-content-wrapper.is-excerpt {
+	blockquote {
+		display: none;
+	}
+}
+
+.comments__comment-content-wrapper.is-excerpt .comments__comment-content p {
+	margin-bottom: 0;
+}
+
+.comments__comment-content-wrapper.is-excerpt .comments__comment-content blockquote {
+	margin: 10px 0 16px;
+}
+
+.comments__comment-content {
+	@extend %content-font;
+	font-size: $font-body;
+	line-height: 1.56;
+	word-break: break-word;
+
+	p {
+		color: var( --color-text );
+
+		&:last-child {
+			margin-bottom: 0;
+		}
+	}
+
+	blockquote {
+		background: var( --color-neutral-0 );
+		border-left: 2px solid var( --color-neutral-0 );
+		border-radius: 0;
+		color: var( --color-text );
+		margin: 8px 0 16px;
+		padding: 8px 16px;
+	}
+
+	pre {
+		white-space: pre-wrap;
+	}
+
+	figure figcaption {
+		padding: 12px;
+		margin: 0;
+		font-size: $font-body-small;
+		text-align: center;
+		color: var( --color-neutral-40 );
+	}
+}

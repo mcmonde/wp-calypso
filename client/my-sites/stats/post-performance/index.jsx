@@ -1,9 +1,6 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
@@ -14,8 +11,7 @@ import { flowRight } from 'lodash';
 /**
  * Internal dependencies
  */
-import Button from 'components/button';
-import Card from 'components/card';
+import { Button, Card } from '@automattic/components';
 import StatsTabs from '../stats-tabs';
 import StatsTab from '../stats-tabs/tab';
 import StatsModulePlaceholder from '../stats-module/placeholder';
@@ -23,10 +19,16 @@ import Emojify from 'components/emojify';
 import SectionHeader from 'components/section-header';
 import QueryPosts from 'components/data/query-posts';
 import QueryPostStats from 'components/data/query-post-stats';
+import { withLocalizedMoment } from 'components/localized-moment';
 import { isRequestingPostsForQuery, getPostsForQuery } from 'state/posts/selectors';
 import { getPostStat } from 'state/stats/posts/selectors';
 import { recordTracksEvent } from 'state/analytics/actions';
 import { getSelectedSiteId, getSelectedSiteSlug } from 'state/ui/selectors';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class StatsPostPerformance extends Component {
 	static propTypes = {
@@ -69,7 +71,7 @@ class StatsPostPerformance extends Component {
 			},
 		];
 
-		return tabs.map( function( tabOptions ) {
+		return tabs.map( function ( tabOptions ) {
 			return <StatsTab { ...tabOptions } key={ tabOptions.gridicon } />;
 		} );
 	}
@@ -96,12 +98,14 @@ class StatsPostPerformance extends Component {
 			}
 		}
 
+		/* eslint-disable wpcalypso/jsx-classname-namespace */
 		return (
 			<div>
 				{ siteId && <QueryPosts siteId={ siteId } query={ query } /> }
-				{ siteId &&
-					post && <QueryPostStats siteId={ siteId } postId={ post.ID } fields={ [ 'views' ] } /> }
-				<SectionHeader label={ translate( 'Latest Post Summary' ) } href={ summaryUrl } />
+				{ siteId && post && (
+					<QueryPostStats siteId={ siteId } postId={ post.ID } fields={ [ 'views' ] } />
+				) }
+				<SectionHeader label={ translate( 'Latest post summary' ) } href={ summaryUrl } />
 				<Card className={ cardClass }>
 					<StatsModulePlaceholder isLoading={ loading && ! post } />
 					{ post ? (
@@ -115,7 +119,7 @@ class StatsPostPerformance extends Component {
 										},
 										components: {
 											href: <a href={ post.URL } target="_blank" rel="noopener noreferrer" />,
-											postTitle: <Emojify>{ postTitle }</Emojify>,
+											postTitle: <Emojify tagName="span">{ postTitle }</Emojify>,
 										},
 										context:
 											'Stats: Sentence showing how much time has passed since the last post, and how the stats are',
@@ -140,11 +144,12 @@ class StatsPostPerformance extends Component {
 				</Card>
 			</div>
 		);
+		/* eslint-enable */
 	}
 }
 
 const connectComponent = connect(
-	state => {
+	( state ) => {
 		const siteId = getSelectedSiteId( state );
 		const query = { status: 'publish', number: 1 };
 		const posts = siteId ? getPostsForQuery( state, siteId, query ) : null;
@@ -164,4 +169,4 @@ const connectComponent = connect(
 	{ recordTracksEvent }
 );
 
-export default flowRight( connectComponent, localize )( StatsPostPerformance );
+export default flowRight( connectComponent, localize, withLocalizedMoment )( StatsPostPerformance );

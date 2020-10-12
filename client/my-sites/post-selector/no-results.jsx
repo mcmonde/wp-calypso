@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -41,7 +39,8 @@ class PostSelectorNoResults extends React.Component {
 		return (
 			<span className="is-empty-content">
 				{ noResultsMessage }
-				&nbsp;{ createMessage }
+				&nbsp;
+				{ createMessage }
 			</span>
 		);
 	}

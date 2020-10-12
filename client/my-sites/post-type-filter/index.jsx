@@ -1,24 +1,20 @@
-/** @format */
 /**
  * External dependencies
  */
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { localize } from 'i18n-calypso';
+import { localize, getLocaleSlug } from 'i18n-calypso';
 import { connect } from 'react-redux';
-import { compact, find, flow, includes, reduce } from 'lodash';
+import { compact, find, flow, reduce } from 'lodash';
 
 /**
  * Internal dependencies
  */
-import { areAllSitesSingleUser } from 'state/selectors';
+import areAllSitesSingleUser from 'state/selectors/are-all-sites-single-user';
 import { getSelectedSiteId } from 'state/ui/selectors';
 import { isJetpackSite, isSingleUserSite, getSiteSlug } from 'state/sites/selectors';
+import { getPostTypeLabel } from 'state/post-types/selectors';
 import { getNormalizedMyPostCounts, getNormalizedPostCounts } from 'state/posts/counts/selectors';
-import { isMultiSelectEnabled } from 'state/ui/post-type-list/selectors';
-import { toggleMultiSelect } from 'state/ui/post-type-list/actions';
-import { mapPostStatus } from 'lib/route';
-import { isEnabled } from 'config';
 import urlSearch from 'lib/url-search';
 import QueryPostCounts from 'components/data/query-post-counts';
 import SectionNav from 'components/section-nav';
@@ -26,8 +22,11 @@ import NavTabs from 'components/section-nav/tabs';
 import NavItem from 'components/section-nav/item';
 import Search from 'components/search';
 import AuthorSegmented from './author-segmented';
-import Button from 'components/button';
-import Gridicon from 'gridicons';
+
+/**
+ * Internal dependencies
+ */
+import './style.scss';
 
 export class PostTypeFilter extends Component {
 	static displayName = 'PostTypeFilter';
@@ -40,30 +39,18 @@ export class PostTypeFilter extends Component {
 			status: PropTypes.string,
 			type: PropTypes.string.isRequired,
 		} ),
+		typeLabel: PropTypes.string,
 		jetpack: PropTypes.bool,
 		siteSlug: PropTypes.string,
 		counts: PropTypes.object,
 	};
 
 	getNavItems() {
-		const { query, siteId, siteSlug, jetpack, counts } = this.props;
+		const { query, siteId, siteSlug, statusSlug, jetpack, counts } = this.props;
 
 		return reduce(
 			counts,
 			( memo, count, status ) => {
-				// * Always add 'publish' and 'draft' tabs
-				// * Add all tabs in all-sites mode
-				// * Add all tabs in JP mode, for CPTs
-				// * In all other cases, add status tabs only if there's at least one post/CPT with that status
-				if (
-					siteId &&
-					! ( jetpack && query.type !== 'post' ) &&
-					! count &&
-					! includes( [ 'publish', 'draft' ], status )
-				) {
-					return memo;
-				}
-
 				let label, pathStatus;
 				switch ( status ) {
 					case 'publish':
@@ -104,32 +91,11 @@ export class PostTypeFilter extends Component {
 						pathStatus,
 						siteSlug,
 					] ).join( '/' ),
-					selected: mapPostStatus( pathStatus ) === query.status,
+					selected: pathStatus === statusSlug,
 					children: label,
 				} );
 			},
 			[]
-		);
-	}
-
-	renderMultiSelectButton() {
-		if ( ! isEnabled( 'posts/post-type-list/bulk-edit' ) || ! this.props.siteId ) {
-			return null;
-		}
-
-		const { translate, toggleMultiSelect: onMultiSelectClick } = this.props;
-
-		return (
-			<Button
-				className="post-type-filter__multi-select-button"
-				compact
-				onClick={ onMultiSelectClick }
-			>
-				<Gridicon icon="list-checkmark" />
-				<span className="post-type-filter__multi-select-button-text">
-					{ translate( 'Bulk Edit' ) }
-				</span>
-			</Button>
 		);
 	}
 
@@ -140,20 +106,21 @@ export class PostTypeFilter extends Component {
 			query,
 			siteId,
 			statusSlug,
-			isMultiSelectEnabled: isMultiSelectButtonEnabled,
+			searchPagesPlaceholder,
 		} = this.props;
 
 		if ( ! query ) {
 			return null;
 		}
 
-		if ( isMultiSelectButtonEnabled ) {
-			return null;
-		}
-
 		const isSingleSite = !! siteId;
 
 		const navItems = this.getNavItems();
+		const sortOrder = [ 'filter-publish', 'filter-draft', 'filter-future', 'filter-trash' ];
+		navItems.sort( ( a, b ) =>
+			sortOrder.indexOf( a.key ) > sortOrder.indexOf( b.key ) ? 1 : -1
+		);
+
 		const selectedItem = find( navItems, 'selected' ) || {};
 
 		const scopes = {
@@ -180,7 +147,9 @@ export class PostTypeFilter extends Component {
 						selectedText={ selectedItem.children }
 						selectedCount={ selectedItem.count }
 					>
-						{ navItems.map( props => <NavItem { ...props } /> ) }
+						{ navItems.map( ( props ) => (
+							<NavItem { ...props } />
+						) ) }
 					</NavTabs>
 					{ ! authorToggleHidden && (
 						<AuthorSegmented author={ query.author } siteId={ siteId } statusSlug={ statusSlug } />
@@ -190,12 +159,13 @@ export class PostTypeFilter extends Component {
 						<Search
 							pinned
 							fitsContainer
+							initialValue={ query.search }
+							isOpen={ this.props.getSearchOpen() }
 							onSearch={ this.props.doSearch }
-							placeholder={ this.props.translate( 'Search…' ) }
+							placeholder={ `${ searchPagesPlaceholder }…` }
 							delaySearch={ true }
 						/>
 					) }
-					{ this.renderMultiSelectButton() }
 				</SectionNav>
 			</div>
 		);
@@ -205,42 +175,46 @@ export class PostTypeFilter extends Component {
 export default flow(
 	localize,
 	urlSearch,
-	connect(
-		( state, { query } ) => {
-			const siteId = getSelectedSiteId( state );
-			let authorToggleHidden = false;
-			if ( query && query.type === 'post' ) {
-				if ( siteId ) {
-					authorToggleHidden = isSingleUserSite( state, siteId ) || isJetpackSite( state, siteId );
-				} else {
-					authorToggleHidden = areAllSitesSingleUser( state );
-				}
+	connect( ( state, { query } ) => {
+		const siteId = getSelectedSiteId( state );
+		let authorToggleHidden = false;
+		if ( query && query.type === 'post' ) {
+			if ( siteId ) {
+				authorToggleHidden = isSingleUserSite( state, siteId ) || isJetpackSite( state, siteId );
 			} else {
-				// Hide for Custom Post Types
-				authorToggleHidden = true;
+				authorToggleHidden = areAllSitesSingleUser( state );
 			}
-
-			const props = {
-				siteId,
-				authorToggleHidden,
-				jetpack: isJetpackSite( state, siteId ),
-				siteSlug: getSiteSlug( state, siteId ),
-				isMultiSelectEnabled: isMultiSelectEnabled( state ),
-			};
-
-			if ( ! query ) {
-				return props;
-			}
-
-			return {
-				...props,
-				counts: query.author
-					? getNormalizedMyPostCounts( state, siteId, query.type )
-					: getNormalizedPostCounts( state, siteId, query.type ),
-			};
-		},
-		{
-			toggleMultiSelect,
+		} else {
+			// Hide for Custom Post Types
+			authorToggleHidden = true;
 		}
-	)
+
+		const props = {
+			siteId,
+			authorToggleHidden,
+			jetpack: isJetpackSite( state, siteId ),
+			siteSlug: getSiteSlug( state, siteId ),
+		};
+
+		if ( ! query ) {
+			return props;
+		}
+
+		const localeSlug = getLocaleSlug( state );
+		const searchPagesPlaceholder = getPostTypeLabel(
+			state,
+			siteId,
+			query.type,
+			'search_items',
+			localeSlug
+		);
+
+		return {
+			...props,
+			searchPagesPlaceholder,
+			counts: query.author
+				? getNormalizedMyPostCounts( state, siteId, query.type )
+				: getNormalizedPostCounts( state, siteId, query.type ),
+		};
+	} )
 )( PostTypeFilter );

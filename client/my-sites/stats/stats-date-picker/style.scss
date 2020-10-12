@@ -2,13 +2,17 @@
 	line-height: 16px;
 
 	.stats-date-picker__update-date {
-		color: $gray;
+		color: var( --color-text-subtle );
 		display: inline-block;
-		font-size: 13px;
+		font-size: $font-body-small;
 
 		.gridicon {
 			padding: 0 5px;
 			vertical-align: bottom;
 		}
 	}
+}
+
+.stats-date-picker__last-update {
+	color: var( --color-neutral-70 );
 }

@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -17,15 +15,19 @@ import { getCurrentUserId } from 'state/current-user/selectors';
 import { getSelectedSiteId } from 'state/ui/selectors';
 import { getSiteUserConnections } from 'state/sharing/publicize/selectors';
 
-export const EditorSharingPublicizeServices = ( { connections, post, newConnectionPopup } ) => (
+/**
+ * Style dependencies
+ */
+import './publicize-services.scss';
+
+export const EditorSharingPublicizeServices = ( { connections, newConnectionPopup } ) => (
 	<ul className="editor-sharing__publicize-services">
 		{ map( groupBy( connections, 'label' ), ( groupedConnections, label ) => (
 			<li key={ label } className="editor-sharing__publicize-service">
 				<h5 className="editor-sharing__publicize-service-heading">{ label }</h5>
-				{ groupedConnections.map( connection => (
+				{ groupedConnections.map( ( connection ) => (
 					<EditorSharingPublicizeConnection
 						key={ connection.ID }
-						post={ post }
 						connection={ connection }
 						onRefresh={ newConnectionPopup }
 						label={ label }
@@ -38,11 +40,10 @@ export const EditorSharingPublicizeServices = ( { connections, post, newConnecti
 
 EditorSharingPublicizeServices.propTypes = {
 	connections: PropTypes.array.isRequired,
-	post: PropTypes.object,
 	newConnectionPopup: PropTypes.func.isRequired,
 };
 
-export default connect( state => {
+export default connect( ( state ) => {
 	const siteId = getSelectedSiteId( state );
 	const userId = getCurrentUserId( state );
 

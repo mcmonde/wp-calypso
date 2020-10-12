@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -7,6 +5,11 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { omit } from 'lodash';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 export default class AsyncLoad extends Component {
 	static propTypes = {
@@ -18,21 +21,15 @@ export default class AsyncLoad extends Component {
 		placeholder: <div className="async-load__placeholder" />,
 	};
 
-	constructor() {
-		super( ...arguments );
+	state = { component: null };
 
-		this.state = {
-			require: null,
-			component: null,
-		};
-	}
-
-	componentWillMount() {
+	componentDidMount() {
+		this.mounted = true;
 		this.require();
 	}
 
-	componentWillReceiveProps( nextProps ) {
-		if ( this.props.require !== nextProps.require ) {
+	UNSAFE_componentWillReceiveProps( nextProps ) {
+		if ( this.mounted && this.props.require !== nextProps.require ) {
 			this.setState( { component: null } );
 		}
 	}
@@ -45,11 +42,15 @@ export default class AsyncLoad extends Component {
 		}
 	}
 
+	componentWillUnmount() {
+		this.mounted = false;
+	}
+
 	require() {
 		const requireFunction = this.props.require;
 
-		requireFunction( component => {
-			if ( this.props.require === requireFunction ) {
+		requireFunction( ( component ) => {
+			if ( this.mounted && this.props.require === requireFunction ) {
 				this.setState( { component } );
 			}
 		} );

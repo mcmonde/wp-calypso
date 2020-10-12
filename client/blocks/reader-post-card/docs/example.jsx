@@ -1,7 +1,6 @@
-/** @format */
 /**
-* External dependencies
-*/
+ * External dependencies
+ */
 import React from 'react';
 
 /**
@@ -13,7 +12,7 @@ import { posts, site } from './fixtures';
 const ReaderPostCard = () => (
 	<div className="design-assets__group">
 		<div>
-			{ posts.map( item => (
+			{ posts.map( ( item ) => (
 				<ReaderPostCardBlock key={ item.global_ID } post={ item } site={ site } />
 			) ) }
 		</div>

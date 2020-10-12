@@ -1,9 +1,6 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import PropTypes from 'prop-types';
 import React from 'react';
 import { connect } from 'react-redux';
@@ -13,14 +10,18 @@ import { get } from 'lodash';
  * Internal dependencies
  */
 import { localize } from 'i18n-calypso';
-import { canCurrentUser } from 'state/selectors';
+import canCurrentUser from 'state/selectors/can-current-user';
 import { getSelectedSiteId } from 'state/ui/selectors';
-import { getEditorPostId } from 'state/ui/editor/selectors';
+import { getEditorPostId } from 'state/editor/selectors';
 import { getEditedPostValue } from 'state/posts/selectors';
 import { getPostType } from 'state/post-types/selectors';
 import { getSiteSlug } from 'state/sites/selectors';
-import Button from 'components/button';
-import Dialog from 'components/dialog';
+import { Button, Dialog } from '@automattic/components';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 function EditorForbidden( { translate, userCanEdit, siteSlug } ) {
 	if ( false !== userCanEdit ) {
@@ -51,7 +52,7 @@ EditorForbidden.propTypes = {
 	siteSlug: PropTypes.string,
 };
 
-export default connect( state => {
+export default connect( ( state ) => {
 	const siteId = getSelectedSiteId( state );
 	const type = getEditedPostValue( state, siteId, getEditorPostId( state ), 'type' );
 	const typeObject = getPostType( state, siteId, type );

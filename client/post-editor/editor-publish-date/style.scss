@@ -1,15 +1,16 @@
-/** @format */
-@import 'components/select-dropdown/style';
+// copied from select-dropdown styles
+$option-height: 40;
+$side-margin: 16;
 
 .editor-publish-date {
 	height: 43px;
 }
 
 .editor-publish-date__wrapper {
-	background: $white;
-	border: 1px solid $gray-lighten-20;
-	border-width: 1px 1px 2px;
-	border-radius: 4px;
+	background: var( --color-surface );
+	border: 1px solid var( --color-neutral-10 );
+	border-width: 1px;
+	border-radius: 2px;
 	box-sizing: border-box;
 	margin: 0;
 	position: relative;
@@ -17,57 +18,57 @@
 	width: 100%;
 
 	.editor-publish-date.is-open & {
-		z-index: z-index('root', '.editor-publish-date.is-open .editor-publish-date__wrapper');
+		z-index: z-index( 'root', '.editor-publish-date.is-open .editor-publish-date__wrapper' );
 	}
 }
 
 .editor-publish-date__header {
 	padding: 0 36px 0 16px;
-	height: #{ $option-height }px;
-	line-height: #{ $option-height }px;
+	height: #{$option-height}px;
+	line-height: #{$option-height}px;
 
-	color: $gray-dark;
-	font-size: 14px;
+	color: var( --color-neutral-70 );
+	font-size: $font-body-small;
 	font-weight: 600;
 	white-space: nowrap;
 	overflow: hidden;
 	cursor: pointer;
 
 	.gridicon.editor-publish-date__header-icon {
-		margin-right: #{ ($side-margin / 2) }px;
+		margin-right: #{( $side-margin / 2 )}px;
 		vertical-align: text-bottom;
 	}
 
 	&.is-scheduled,
 	&.is-back-dated,
 	&.is-published {
-		color: $blue-wordpress;
+		color: var( --color-primary );
 	}
 
 	.editor-publish-date.is-open & {
-		border-radius: 4px 4px 0 0;
+		border-radius: 2px 2px 0 0;
 		box-shadow: none;
-		background-color: $gray-light;
+		background-color: var( --color-neutral-0 );
 	}
 
 	// Chevron
 	.gridicon.editor-publish-date__header-chevron {
-		fill: $gray-darken-20;
+		fill: var( --color-neutral-50 );
 		position: absolute;
 		top: 11px;
 		right: 16px;
 		vertical-align: text-bottom;
-		transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+		transition: transform 0.15s cubic-bezier( 0.175, 0.885, 0.32, 1.275 );
 
 		.editor-publish-date.is-open & {
-			transform: rotate(180deg);
+			transform: rotate( 180deg );
 		}
 	}
 
 	&.is-scheduled {
 		.editor-publish-date__header-icon,
 		.editor-publish-date__header-description {
-			color: $orange-jazzy;
+			color: var( --color-primary );
 		}
 	}
 }
@@ -75,8 +76,8 @@
 .editor-publish-date__header-wrapper {
 	vertical-align: text-top;
 	display: inline-block;
-	line-height: #{ $option-height }px;
-	height: #{ $option-height }px;
+	line-height: #{$option-height}px;
+	height: #{$option-height}px;
 }
 
 .editor-publish-date__header-description {
@@ -88,28 +89,28 @@
 	.editor-publish-date__header.is-back-dated &,
 	.editor-publish-date__header.is-published & {
 		top: 6px;
-		font-size: 10px;
+		font-size: $font-body-extra-small;
 		line-height: 12px;
 	}
 }
 
 .editor-publish-date__immediate.button {
-	margin: 4px auto 0 auto;
+	margin: 4px auto 0;
 	display: block;
-	color: $blue-wordpress;
+	color: var( --color-primary );
 	font-weight: normal;
 
 	&:hover,
 	&:focus,
 	&:active {
-		color: $link-highlight;
+		color: var( --color-link-dark );
 	}
 }
 
 .editor-publish-date__choose-header {
 	text-align: center;
-	margin: 4px auto 0 auto;
-	font-size: 14px;
+	margin: 4px auto 0;
+	font-size: $font-body-small;
 	line-height: 21px;
 	padding-top: 7px;
 	padding-bottom: 9px;
@@ -118,20 +119,20 @@
 .editor-publish-date__header-chrono {
 	position: absolute;
 	top: 16px;
-	font-size: 12px;
+	font-size: $font-body-extra-small;
 	line-height: 18px;
-	color: $gray-dark;
+	color: var( --color-neutral-70 );
 }
 
 .editor-publish-date__schedule {
 	overflow-y: auto;
 	position: static;
-	border-top: 1px solid $gray-lighten-20;
+	border-top: 1px solid var( --color-neutral-10 );
 	padding: 0 10px;
 
 	&.is-scheduled {
 		.DayPicker-Day.DayPicker-Day--is-selected > .date-picker__day {
-			background-color: $orange-jazzy;
+			background-color: var( --color-primary );
 		}
 	}
 }

@@ -1,9 +1,12 @@
-/** @format */
+/**
+ * External dependencies
+ */
+import { kebabCase } from 'lodash';
 
 /**
  * Internal dependencies
  */
-import { bypassDataLayer, convertToCamelCase } from '../utils';
+import { bypassDataLayer, convertKeysBy, convertToCamelCase, convertToSnakeCase } from '../utils';
 
 describe( 'Data Layer', () => {
 	describe( '#local', () => {
@@ -31,7 +34,7 @@ describe( 'Data Layer', () => {
 		} );
 	} );
 
-	describe( '#convertToCamelCase', () => {
+	test( '#convertToCamelCase', () => {
 		const snakeObject = {
 			primitive_value: 'string_const',
 			'value_with.dot_key': null,
@@ -46,6 +49,7 @@ describe( 'Data Layer', () => {
 					second_second: 4,
 				},
 			],
+			another_array: [ 1, 2, { third_first: 1 } ],
 			object_value: {
 				obj_foo: {
 					obj_foo: null,
@@ -70,6 +74,7 @@ describe( 'Data Layer', () => {
 					secondSecond: 4,
 				},
 			],
+			anotherArray: [ 1, 2, { thirdFirst: 1 } ],
 			objectValue: {
 				objFoo: {
 					objFoo: null,
@@ -78,6 +83,66 @@ describe( 'Data Layer', () => {
 					objBar: null,
 				},
 			},
+		} );
+	} );
+
+	describe( '#convertKeysBy', () => {
+		const snakeObject = {
+			primitive_value: 'string_const',
+			array_value: [
+				{
+					first_first: 1,
+					first_second: 2,
+				},
+				{
+					second_first: 3,
+					second_second: 4,
+				},
+			],
+			object_value: {
+				obj_foo: {
+					obj_foo: null,
+				},
+				obj_bar: {
+					obj_bar: null,
+				},
+			},
+		};
+
+		const camelObject = {
+			primitiveValue: 'string_const',
+			arrayValue: [
+				{
+					firstFirst: 1,
+					firstSecond: 2,
+				},
+				{
+					secondFirst: 3,
+					secondSecond: 4,
+				},
+			],
+			objectValue: {
+				objFoo: {
+					objFoo: null,
+				},
+				objBar: {
+					objBar: null,
+				},
+			},
+		};
+
+		test( 'lodash native backwards/cross compatiblity', () => {
+			expect( convertKeysBy( snakeObject, kebabCase ) ).toEqual(
+				convertKeysBy( camelObject, kebabCase )
+			);
+		} );
+
+		test( '#convertToCamelCase', () => {
+			expect( convertToCamelCase( snakeObject ) ).toEqual( camelObject );
+		} );
+
+		test( '#convertToSnakeCase', () => {
+			expect( convertToSnakeCase( camelObject ) ).toEqual( snakeObject );
 		} );
 	} );
 } );

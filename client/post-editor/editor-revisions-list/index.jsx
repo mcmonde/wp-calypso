@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -14,10 +12,16 @@ import { get, head, isEmpty, last, map } from 'lodash';
  * Internal dependencies
  */
 import EditorRevisionsListHeader from './header';
+import EditorRevisionsListViewButtons from './view-buttons';
 import EditorRevisionsListNavigation from './navigation';
 import EditorRevisionsListItem from './item';
 import { selectPostRevision } from 'state/posts/revisions/actions';
 import KeyboardShortcuts from 'lib/keyboard-shortcuts';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class EditorRevisionsList extends PureComponent {
 	static propTypes = {
@@ -30,7 +34,7 @@ class EditorRevisionsList extends PureComponent {
 		prevIsDisabled: PropTypes.bool,
 	};
 
-	selectRevision = revisionId => {
+	selectRevision = ( revisionId ) => {
 		this.props.selectPostRevision( revisionId );
 	};
 
@@ -147,6 +151,7 @@ class EditorRevisionsList extends PureComponent {
 		return (
 			<div className={ classes }>
 				<EditorRevisionsListHeader numRevisions={ revisions.length } />
+				<EditorRevisionsListViewButtons />
 				<EditorRevisionsListNavigation
 					nextIsDisabled={ nextIsDisabled }
 					prevIsDisabled={ prevIsDisabled }
@@ -155,7 +160,7 @@ class EditorRevisionsList extends PureComponent {
 				/>
 				<div className="editor-revisions-list__scroller">
 					<ul className="editor-revisions-list__list">
-						{ map( revisions, revision => {
+						{ map( revisions, ( revision ) => {
 							const itemClasses = classNames( 'editor-revisions-list__revision', {
 								'is-selected': revision.id === selectedRevisionId,
 							} );

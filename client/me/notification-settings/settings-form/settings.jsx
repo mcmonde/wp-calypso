@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -7,7 +5,7 @@
 import PropTypes from 'prop-types';
 import React, { PureComponent } from 'react';
 import { connect } from 'react-redux';
-import Immutable from 'immutable';
+import { find, get } from 'lodash';
 
 /**
  * Internal dependencies
@@ -15,7 +13,7 @@ import Immutable from 'immutable';
 import Labels from './labels';
 import Stream from './stream';
 import StreamSelector from './stream-selector';
-import { getUserDevices } from 'state/selectors';
+import getUserDevices from 'calypso/state/selectors/get-user-devices';
 
 /**
  * Module variables
@@ -31,7 +29,7 @@ class NotificationSettingsForm extends PureComponent {
 		blogId: PropTypes.oneOfType( [ PropTypes.string, PropTypes.number ] ).isRequired,
 		devices: PropTypes.array,
 		settingKeys: PropTypes.arrayOf( PropTypes.string ).isRequired,
-		settings: PropTypes.instanceOf( Immutable.Map ).isRequired,
+		settings: PropTypes.object.isRequired,
 		onToggle: PropTypes.func.isRequired,
 	};
 
@@ -39,12 +37,12 @@ class NotificationSettingsForm extends PureComponent {
 
 	getSelectedStreamSettings = () => {
 		if ( isNaN( this.state.selectedStream ) ) {
-			return this.props.settings.get( this.state.selectedStream );
+			return get( this.props.settings, this.state.selectedStream );
 		}
 
-		return this.props.settings
-			.get( 'devices' )
-			.find( device => device.get( 'device_id' ) === parseInt( this.state.selectedStream, 10 ) );
+		return find( get( this.props.settings, 'devices' ), {
+			device_id: parseInt( this.state.selectedStream, 10 ),
+		} );
 	};
 
 	render() {
@@ -54,7 +52,7 @@ class NotificationSettingsForm extends PureComponent {
 			<div className="notification-settings-form">
 				<StreamSelector
 					selectedStream={ this.state.selectedStream }
-					onChange={ selectedStream => this.setState( { selectedStream } ) }
+					onChange={ ( selectedStream ) => this.setState( { selectedStream } ) }
 					settings={ selectedStreamSettings }
 				/>
 				<div className="notification-settings-form__streams">
@@ -64,7 +62,7 @@ class NotificationSettingsForm extends PureComponent {
 						blogId={ this.props.blogId }
 						stream={ streams.TIMELINE }
 						settingKeys={ this.props.settingKeys }
-						settings={ this.props.settings.get( streams.TIMELINE ) }
+						settings={ get( this.props.settings, streams.TIMELINE ) }
 						onToggle={ this.props.onToggle }
 					/>
 					<Stream
@@ -72,20 +70,19 @@ class NotificationSettingsForm extends PureComponent {
 						blogId={ this.props.blogId }
 						stream={ streams.EMAIL }
 						settingKeys={ this.props.settingKeys }
-						settings={ this.props.settings.get( streams.EMAIL ) }
+						settings={ get( this.props.settings, streams.EMAIL ) }
 						onToggle={ this.props.onToggle }
 					/>
-					{ this.props.devices &&
-						this.props.devices.length > 0 && (
-							<Stream
-								key={ streams.DEVICES }
-								blogId={ this.props.blogId }
-								devices={ this.props.devices }
-								settingKeys={ this.props.settingKeys }
-								settings={ this.props.settings.get( streams.DEVICES ) }
-								onToggle={ this.props.onToggle }
-							/>
-						) }
+					{ this.props.devices && this.props.devices.length > 0 && (
+						<Stream
+							key={ streams.DEVICES }
+							blogId={ this.props.blogId }
+							devices={ this.props.devices }
+							settingKeys={ this.props.settingKeys }
+							settings={ get( this.props.settings, streams.DEVICES ) }
+							onToggle={ this.props.onToggle }
+						/>
+					) }
 					<Stream
 						key={ 'selected-stream' }
 						className={ 'selected-stream' }
@@ -101,6 +98,6 @@ class NotificationSettingsForm extends PureComponent {
 	}
 }
 
-export default connect( state => ( {
+export default connect( ( state ) => ( {
 	devices: getUserDevices( state ),
 } ) )( NotificationSettingsForm );

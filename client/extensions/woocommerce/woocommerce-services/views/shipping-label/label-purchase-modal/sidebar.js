@@ -44,7 +44,8 @@ const Sidebar = ( props ) => {
 				title={ translate( 'Paper size' ) }
 				value={ paperSize }
 				updateValue={ onPaperSizeChange }
-				error={ errors.paperSize } />
+				error={ errors.paperSize }
+			/>
 			<FormLabel className="label-purchase-modal__option-email-customer">
 				<FormCheckbox checked={ emailDetails } onChange={ onEmailDetailsChange } />
 				<span>{ translate( 'Email shipment details to the customer' ) }</span>
@@ -79,11 +80,14 @@ const mapStateToProps = ( state, { orderId, siteId } ) => {
 };
 
 const mapDispatchToProps = ( dispatch ) => {
-	return bindActionCreators( {
-		setEmailDetailsOption,
-		setFulfillOrderOption,
-		updatePaperSize,
-	}, dispatch );
+	return bindActionCreators(
+		{
+			setEmailDetailsOption,
+			setFulfillOrderOption,
+			updatePaperSize,
+		},
+		dispatch
+	);
 };
 
 export default connect( mapStateToProps, mapDispatchToProps )( localize( Sidebar ) );

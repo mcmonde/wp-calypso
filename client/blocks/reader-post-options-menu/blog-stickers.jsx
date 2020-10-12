@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -10,7 +9,7 @@ import { connect } from 'react-redux';
 /**
  * Internal dependencies
  */
-import { getBlogStickers } from 'state/selectors';
+import getBlogStickers from 'state/selectors/get-blog-stickers';
 import QueryBlogStickers from 'components/data/query-blog-stickers';
 import ReaderPostOptionsMenuBlogStickerMenuItem from './blog-sticker-menu-item';
 
@@ -25,7 +24,8 @@ class ReaderPostOptionsMenuBlogStickers extends React.Component {
 
 		return (
 			<div className="reader-post-options-menu__blog-stickers">
-				{ map( blogStickersOffered, blogStickerName => (
+				<QueryBlogStickers blogId={ blogId } />
+				{ map( blogStickersOffered, ( blogStickerName ) => (
 					<ReaderPostOptionsMenuBlogStickerMenuItem
 						key={ blogStickerName }
 						blogId={ blogId }
@@ -35,14 +35,11 @@ class ReaderPostOptionsMenuBlogStickers extends React.Component {
 						{ blogStickerName }
 					</ReaderPostOptionsMenuBlogStickerMenuItem>
 				) ) }
-				{ ! stickers && <QueryBlogStickers blogId={ blogId } /> }
 			</div>
 		);
 	}
 }
 
-export default connect( ( state, ownProps ) => {
-	return {
-		stickers: ownProps.blogId ? getBlogStickers( state, ownProps.blogId ) : undefined,
-	};
-} )( ReaderPostOptionsMenuBlogStickers );
+export default connect( ( state, { blogId } ) => ( {
+	stickers: getBlogStickers( state, blogId ),
+} ) )( ReaderPostOptionsMenuBlogStickers );

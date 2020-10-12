@@ -16,13 +16,13 @@ class QueryMailChimpLists extends Component {
 		siteId: PropTypes.number.isRequired,
 		isRequesting: PropTypes.bool.isRequired,
 		requestLists: PropTypes.func.isRequired,
-	}
+	};
 
 	componentDidMount() {
 		this.request( this.props );
 	}
 
-	componentWillReceiveProps( nextProps ) {
+	UNSAFE_componentWillReceiveProps( nextProps ) {
 		if ( this.props.siteId === nextProps.siteId ) {
 			return;
 		}

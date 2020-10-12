@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -8,67 +6,79 @@ import React, { Fragment } from 'react';
 import PropTypes from 'prop-types';
 import page from 'page';
 import { connect } from 'react-redux';
-import i18n, { localize } from 'i18n-calypso';
+import { localize } from 'i18n-calypso';
 import debugFactory from 'debug';
 
 /**
  * Internal dependencies
  */
-import config from 'config';
-import Main from 'components/main';
-import Card from 'components/card';
-import Notice from 'components/notice';
-import HelpContactForm from 'me/help/help-contact-form';
-import HelpContactClosed from 'me/help/help-contact-closed';
-import HelpContactConfirmation from 'me/help/help-contact-confirmation';
-import HeaderCake from 'components/header-cake';
-import wpcomLib from 'lib/wp';
-import notices from 'notices';
-import analytics from 'lib/analytics';
-import getHappychatUserInfo from 'state/happychat/selectors/get-happychat-userinfo';
-import isHappychatUserEligible from 'state/happychat/selectors/is-happychat-user-eligible';
-import hasHappychatLocalizedSupport from 'state/happychat/selectors/has-happychat-localized-support';
+import config from 'calypso/config';
+import Main from 'calypso/components/main';
+import { Card } from '@automattic/components';
+import Notice from 'calypso/components/notice';
+import HelpContactForm from 'calypso/me/help/help-contact-form';
+import ActiveTicketsNotice from 'calypso/me/help/active-tickets-notice';
+import HelpContactConfirmation from 'calypso/me/help/help-contact-confirmation';
+import HeaderCake from 'calypso/components/header-cake';
+import wpcomLib from 'calypso/lib/wp';
+import notices from 'calypso/notices';
+import ChatCovidLimitedAvailabilityNotice from 'calypso/me/help/contact-form-notice/chat-covid-limited-availability';
+import { recordTracksEvent } from 'calypso/lib/analytics/tracks';
+import getHappychatUserInfo from 'calypso/state/happychat/selectors/get-happychat-userinfo';
+import isHappychatUserEligible from 'calypso/state/happychat/selectors/is-happychat-user-eligible';
+import hasHappychatLocalizedSupport from 'calypso/state/happychat/selectors/has-happychat-localized-support';
 import {
 	isTicketSupportConfigurationReady,
 	getTicketSupportRequestError,
-} from 'state/help/ticket/selectors';
-import HappychatConnection from 'components/happychat/connection-connected';
-import QueryTicketSupportConfiguration from 'components/data/query-ticket-support-configuration';
+} from 'calypso/state/help/ticket/selectors';
+import HappychatConnection from 'calypso/components/happychat/connection-connected';
+import QueryTicketSupportConfiguration from 'calypso/components/data/query-ticket-support-configuration';
+import QuerySupportHistory from 'calypso/components/data/query-support-history';
 import HelpUnverifiedWarning from '../help-unverified-warning';
 import {
 	sendMessage as sendHappychatMessage,
 	sendUserInfo,
-} from 'state/happychat/connection/actions';
-import { openChat as openHappychat } from 'state/happychat/ui/actions';
+} from 'calypso/state/happychat/connection/actions';
+import { openChat as openHappychat } from 'calypso/state/happychat/ui/actions';
 import {
 	getCurrentUser,
 	getCurrentUserLocale,
 	getCurrentUserSiteCount,
 	isCurrentUserEmailVerified,
-} from 'state/current-user/selectors';
+} from 'calypso/state/current-user/selectors';
 import {
 	askQuestion as askDirectlyQuestion,
 	initialize as initializeDirectly,
-} from 'state/help/directly/actions';
-import { getSitePlan, isRequestingSites } from 'state/sites/selectors';
-import {
-	hasUserAskedADirectlyQuestion,
-	isDirectlyReady,
-	isDirectlyUninitialized,
-	getLocalizedLanguageNames,
-} from 'state/selectors';
-import QueryUserPurchases from 'components/data/query-user-purchases';
-import { getHelpSelectedSiteId } from 'state/help/selectors';
-import { isDefaultLocale } from 'lib/i18n-utils';
-import { recordTracksEvent } from 'state/analytics/actions';
-import PageViewTracker from 'lib/analytics/page-view-tracker';
-import QueryLanguageNames from 'components/data/query-language-names';
+} from 'calypso/state/help/directly/actions';
+import { isRequestingSites } from 'calypso/state/sites/selectors';
+import getLocalizedLanguageNames from 'calypso/state/selectors/get-localized-language-names';
+import getSupportLevel, {
+	SUPPORT_LEVEL_PERSONAL,
+	SUPPORT_LEVEL_PERSONAL_WITH_LEGACY_CHAT,
+} from 'calypso/state/selectors/get-support-level';
+import hasUserAskedADirectlyQuestion from 'calypso/state/selectors/has-user-asked-a-directly-question';
+import isDirectlyReady from 'calypso/state/selectors/is-directly-ready';
+import isDirectlyUninitialized from 'calypso/state/selectors/is-directly-uninitialized';
+import getActiveSupportTickets from 'calypso/state/selectors/get-active-support-tickets';
+import QueryUserPurchases from 'calypso/components/data/query-user-purchases';
+import { getHelpSelectedSiteId } from 'calypso/state/help/selectors';
+import { isDefaultLocale, localizeUrl } from 'calypso/lib/i18n-utils';
+import { recordTracksEvent as recordTracksEventAction } from 'calypso/state/analytics/actions';
+import PageViewTracker from 'calypso/lib/analytics/page-view-tracker';
+import QueryLanguageNames from 'calypso/components/data/query-language-names';
 import getInlineHelpSupportVariation, {
+	SUPPORT_CHAT_OVERFLOW,
 	SUPPORT_DIRECTLY,
+	SUPPORT_FORUM,
 	SUPPORT_HAPPYCHAT,
 	SUPPORT_TICKET,
-	SUPPORT_FORUM,
-} from 'state/selectors/get-inline-help-support-variation';
+	SUPPORT_UPWORK_TICKET,
+} from 'calypso/state/selectors/get-inline-help-support-variation';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 const debug = debugFactory( 'calypso:help-contact' );
 
@@ -78,9 +88,6 @@ const debug = debugFactory( 'calypso:help-contact' );
 const defaultLanguageSlug = config( 'i18n_default_locale_slug' );
 const wpcom = wpcomLib.undocumented();
 let savedContactForm = null;
-
-const startShowingEaster2018ClosureNoticeAt = i18n.moment( 'Thu, 29 Mar 2018 00:00:00 +0000' );
-const stopShowingEaster2018ClosureNoticeAt = i18n.moment( 'Mon, 2 Apr 2018 00:00:00 +0000' );
 
 class HelpContact extends React.Component {
 	static propTypes = {
@@ -116,7 +123,7 @@ class HelpContact extends React.Component {
 		savedContactForm = null;
 	};
 
-	startHappychat = contactForm => {
+	startHappychat = ( contactForm ) => {
 		this.recordCompactSubmit( 'happychat' );
 		this.props.openHappychat();
 		const { howCanWeHelp, howYouFeel, message, site } = contactForm;
@@ -124,10 +131,17 @@ class HelpContact extends React.Component {
 		this.props.sendUserInfo( this.props.getUserInfo( { howCanWeHelp, howYouFeel, site } ) );
 		this.props.sendHappychatMessage( message, { includeInSummary: true } );
 
-		analytics.tracks.recordEvent( 'calypso_help_live_chat_begin', {
+		recordTracksEvent( 'calypso_help_live_chat_begin', {
 			site_plan_product_id: site ? site.plan.product_id : null,
 			is_automated_transfer: site ? site.options.is_automated_transfer : null,
 		} );
+
+		if ( this.props.activeSupportTickets.length > 0 ) {
+			recordTracksEvent( 'calypso_help_contact_submit_with_active_tickets', {
+				support_type: 'chat',
+				active_ticket_count: this.props.activeSupportTickets.length,
+			} );
+		}
 
 		this.setState( {
 			isSubmitting: false,
@@ -156,7 +170,7 @@ class HelpContact extends React.Component {
 		}
 	};
 
-	submitDirectlyQuestion = contactForm => {
+	submitDirectlyQuestion = ( contactForm ) => {
 		this.recordCompactSubmit( 'directly' );
 		const { display_name, email } = this.props.currentUser;
 
@@ -167,11 +181,18 @@ class HelpContact extends React.Component {
 		if ( ! this.props.compact ) {
 			page( '/help' );
 		}
+
+		if ( this.props.activeSupportTickets.length > 0 ) {
+			recordTracksEvent( 'calypso_help_contact_submit_with_active_tickets', {
+				support_type: 'directly',
+				active_ticket_count: this.props.activeSupportTickets.length,
+			} );
+		}
 	};
 
-	submitKayakoTicket = contactForm => {
+	submitKayakoTicket = ( contactForm ) => {
 		const { subject, message, howCanWeHelp, howYouFeel, site } = contactForm;
-		const { currentUserLocale } = this.props;
+		const { currentUserLocale, supportVariation } = this.props;
 
 		const ticketMeta = [
 			'How can you help: ' + howCanWeHelp,
@@ -189,7 +210,8 @@ class HelpContact extends React.Component {
 			kayakoMessage,
 			currentUserLocale,
 			this.props.clientSlug,
-			error => {
+			supportVariation === SUPPORT_CHAT_OVERFLOW,
+			( error ) => {
 				if ( error ) {
 					// TODO: bump a stat here
 					notices.error( error.message );
@@ -203,24 +225,32 @@ class HelpContact extends React.Component {
 					confirmation: {
 						title: this.props.translate( "We're on it!" ),
 						message: this.props.translate(
-							"We've received your message, and you'll hear back from " +
-								'one of our Happiness Engineers shortly.'
+							'We normally reply within 24-48 hours but are experiencing longer delays ' +
+								'right now. We appreciate your patience and will respond as soon as we can.'
 						),
 					},
 				} );
 
-				analytics.tracks.recordEvent( 'calypso_help_contact_submit', {
+				recordTracksEvent( 'calypso_help_contact_submit', {
 					ticket_type: 'kayako',
+					support_variation: supportVariation,
 					site_plan_product_id: site ? site.plan.product_id : null,
 					is_automated_transfer: site ? site.options.is_automated_transfer : null,
 				} );
+
+				if ( this.props.activeSupportTickets.length > 0 ) {
+					recordTracksEvent( 'calypso_help_contact_submit_with_active_tickets', {
+						support_type: 'email',
+						active_ticket_count: this.props.activeSupportTickets.length,
+					} );
+				}
 			}
 		);
 
 		this.clearSavedContactForm();
 	};
 
-	submitSupportForumsTopic = contactForm => {
+	submitSupportForumsTopic = ( contactForm ) => {
 		const { subject, message } = contactForm;
 		const { currentUserLocale } = this.props;
 
@@ -256,7 +286,14 @@ class HelpContact extends React.Component {
 					},
 				} );
 
-				analytics.tracks.recordEvent( 'calypso_help_contact_submit', { ticket_type: 'forum' } );
+				recordTracksEvent( 'calypso_help_contact_submit', { ticket_type: 'forum' } );
+
+				if ( this.props.activeSupportTickets.length > 0 ) {
+					recordTracksEvent( 'calypso_help_contact_submit_with_active_tickets', {
+						support_type: 'forum',
+						active_ticket_count: this.props.activeSupportTickets.length,
+					} );
+				}
 			}
 		);
 
@@ -278,21 +315,24 @@ class HelpContact extends React.Component {
 		return isEn && ! this.props.isDirectlyFailed;
 	};
 
-	recordCompactSubmit = variation => {
+	recordCompactSubmit = ( variation ) => {
 		if ( this.props.compact ) {
-			this.props.recordTracksEvent( 'calypso_inlinehelp_contact_submit', {
+			this.props.recordTracksEventAction( 'calypso_inlinehelp_contact_submit', {
 				support_variation: variation,
 			} );
 		}
 	};
 
-	getContactFormPropsVariation = variationSlug => {
+	getContactFormPropsVariation = ( variationSlug ) => {
 		const { isSubmitting } = this.state;
 		const { currentUserLocale, hasMoreThanOneSite, translate, localizedLanguageNames } = this.props;
 		let buttonLabel = translate( 'Chat with us' );
+		const languageForumAvailable =
+			isDefaultLocale( currentUserLocale ) ||
+			localizeUrl( 'https://en.forums.wordpress.com/' ) !== 'https://en.forums.wordpress.com/';
 
 		switch ( variationSlug ) {
-			case SUPPORT_HAPPYCHAT:
+			case SUPPORT_HAPPYCHAT: {
 				// TEMPORARY: to collect data about the customer preferences, context 1050-happychat-gh
 				// for non english customers check if we have full support in their language
 				let additionalSupportOption = { enabled: false };
@@ -301,9 +341,12 @@ class HelpContact extends React.Component {
 					// make sure we only record the track once
 					if ( ! this.state.wasAdditionalSupportOptionShown ) {
 						// track that additional support option is shown
-						this.props.recordTracksEvent( 'calypso_happychat_a_b_additional_support_option_shown', {
-							locale: currentUserLocale,
-						} );
+						this.props.recordTracksEventAction(
+							'calypso_happychat_a_b_additional_support_option_shown',
+							{
+								locale: currentUserLocale,
+							}
+						);
 						this.setState( { wasAdditionalSupportOptionShown: true } );
 					}
 
@@ -334,8 +377,10 @@ class HelpContact extends React.Component {
 					showSiteField: hasMoreThanOneSite,
 					showQASuggestions: true,
 				};
-
+			}
+			case SUPPORT_CHAT_OVERFLOW:
 			case SUPPORT_TICKET:
+			case SUPPORT_UPWORK_TICKET:
 				return {
 					onSubmit: this.submitKayakoTicket,
 					buttonLabel: isSubmitting ? translate( 'Sending email' ) : translate( 'Email us' ),
@@ -375,21 +420,37 @@ class HelpContact extends React.Component {
 			default:
 				return {
 					onSubmit: this.submitSupportForumsTopic,
-					buttonLabel: isSubmitting
-						? translate( 'Asking in the forums' )
-						: translate( 'Ask in the forums' ),
-					formDescription: translate(
-						'Post a new question in our {{strong}}public forums{{/strong}}, ' +
-							'where it may be answered by helpful community members, ' +
-							'by submitting the form below. ' +
-							'{{strong}}Please do not{{/strong}} provide financial or ' +
-							'contact information when submitting this form.',
-						{
-							components: {
-								strong: <strong />,
-							},
-						}
-					),
+					buttonLabel: languageForumAvailable
+						? translate( 'Ask in the forums' )
+						: translate( 'Ask in the English forums' ),
+					formDescription: languageForumAvailable
+						? translate(
+								'Post a new question in our {{strong}}public forums{{/strong}}, ' +
+									'where it may be answered by helpful community members, ' +
+									'by submitting the form below. ' +
+									'{{strong}}Please do not{{/strong}} provide financial or ' +
+									'contact information when submitting this form.',
+								{
+									components: {
+										strong: <strong />,
+									},
+								}
+						  )
+						: translate(
+								'Post a new question in our {{strong}}public forums{{/strong}}, ' +
+									'where it may be answered by helpful community members, ' +
+									'by submitting the form below. ' +
+									'{{strong}}Please do not{{/strong}} provide financial or ' +
+									'contact information when submitting this form.' +
+									'{{br/}}{{br/}}' +
+									"Unfortunately, we don't have a forum available for your language. Therefore, {{strong}}please write your question in English{{/strong}}, as this will be posted to our English forums.",
+								{
+									components: {
+										br: <br />,
+										strong: <strong />,
+									},
+								}
+						  ),
 					showSubjectField: true,
 					showHowCanWeHelpField: false,
 					showHowYouFeelField: false,
@@ -399,7 +460,7 @@ class HelpContact extends React.Component {
 		}
 	};
 
-	getContactFormCommonProps = variationSlug => {
+	getContactFormCommonProps = ( variationSlug ) => {
 		const { isSubmitting } = this.state;
 		const { currentUserLocale } = this.props;
 
@@ -409,23 +470,26 @@ class HelpContact extends React.Component {
 		// 2. The support request isn't sent to the forums. Because forum support
 		//    requests are sent to the language specific forums (for popular languages)
 		//    we don't tell the user that support is only offered in English.
+		// 3. The support request isn't sent to Upwork. This is support given in
+		//    the user's language.
 		const showHelpLanguagePrompt =
-			config( 'support_locales' ).indexOf( currentUserLocale ) === -1 &&
-			SUPPORT_FORUM !== variationSlug;
+			config( 'livechat_support_locales' ).indexOf( currentUserLocale ) === -1 &&
+			SUPPORT_FORUM !== variationSlug &&
+			SUPPORT_UPWORK_TICKET !== variationSlug;
 
 		return {
 			compact: this.props.compact,
 			selectedSite: this.props.selectedSite,
 			disabled: isSubmitting,
-			showHelpLanguagePrompt: showHelpLanguagePrompt,
+			showHelpLanguagePrompt,
 			valueLink: {
 				value: savedContactForm,
-				requestChange: contactForm => ( savedContactForm = contactForm ),
+				requestChange: ( contactForm ) => ( savedContactForm = contactForm ),
 			},
 		};
 	};
 
-	shouldShowTicketRequestErrorNotice = variationSlug => {
+	shouldShowTicketRequestErrorNotice = ( variationSlug ) => {
 		const { ticketSupportRequestError } = this.props;
 
 		return SUPPORT_HAPPYCHAT !== variationSlug && null != ticketSupportRequestError;
@@ -435,7 +499,7 @@ class HelpContact extends React.Component {
 	 * Before determining which variation to assign, certain async data needs to be in place.
 	 * This function helps assess whether we're ready to say which variation the user should see.
 	 *
-	 * @returns {Boolean} Whether all the data is present to determine the variation to show
+	 * @returns {boolean} Whether all the data is present to determine the variation to show
 	 */
 	hasDataToDetermineVariation = () => {
 		const ticketReadyOrError =
@@ -456,7 +520,7 @@ class HelpContact extends React.Component {
 	};
 
 	// Modifies passed props for the "compact" contact form style.
-	contactFormPropsCompactFilter = props => {
+	contactFormPropsCompactFilter = ( props ) => {
 		if ( this.props.compact ) {
 			return Object.assign( props, {
 				showSubjectField: false,
@@ -470,11 +534,12 @@ class HelpContact extends React.Component {
 
 	/**
 	 * Get the view for the contact page.
-	 * @return {object} A JSX object that should be rendered
+	 *
+	 * @returns {object} A JSX object that should be rendered
 	 */
 	getView = () => {
 		const { confirmation } = this.state;
-		const { compact, selectedSitePlanSlug, supportVariation, translate } = this.props;
+		const { activeSupportTickets, compact, supportLevel, supportVariation, translate } = this.props;
 
 		debug( { supportVariation } );
 
@@ -524,24 +589,28 @@ class HelpContact extends React.Component {
 			this.contactFormPropsCompactFilter( this.getContactFormPropsVariation( supportVariation ) )
 		);
 
-		const currentDate = i18n.moment();
-
-		// Customers sent to Directly and Forum are not affected by live chat closures
+		// Customers sent to Directly, Forums, and Upwork are not affected by live chat closures
 		const isUserAffectedByLiveChatClosure =
-			supportVariation !== SUPPORT_DIRECTLY && supportVariation !== SUPPORT_FORUM;
+			[ SUPPORT_DIRECTLY, SUPPORT_FORUM, SUPPORT_UPWORK_TICKET ].indexOf( supportVariation ) === -1;
 
-		const isClosureNoticeInEffect = currentDate.isBetween(
-			startShowingEaster2018ClosureNoticeAt,
-			stopShowingEaster2018ClosureNoticeAt
-		);
-
-		const shouldShowClosureNotice = isUserAffectedByLiveChatClosure && isClosureNoticeInEffect;
+		const activeTicketCount = activeSupportTickets.length;
 
 		return (
 			<div>
-				{ shouldShowClosureNotice && (
-					<HelpContactClosed compact={ compact } sitePlanSlug={ selectedSitePlanSlug } />
+				{ activeTicketCount > 0 && (
+					<ActiveTicketsNotice count={ activeTicketCount } compact={ compact } />
 				) }
+
+				{ isUserAffectedByLiveChatClosure &&
+					( supportLevel === SUPPORT_LEVEL_PERSONAL ||
+						supportLevel === SUPPORT_LEVEL_PERSONAL_WITH_LEGACY_CHAT ) && (
+						<ChatCovidLimitedAvailabilityNotice
+							showAt="2020-08-24"
+							hideAt="2020-10-05"
+							compact={ compact }
+						/>
+					) }
+
 				{ this.shouldShowTicketRequestErrorNotice( supportVariation ) && (
 					<Notice
 						status="is-warning"
@@ -569,6 +638,7 @@ class HelpContact extends React.Component {
 				{ ! this.props.compact && ! this.props.isEmailVerified && <HelpUnverifiedWarning /> }
 				<Card className="help-contact__form">{ this.getView() }</Card>
 				{ this.props.shouldStartHappychatConnection && <HappychatConnection /> }
+				{ ! this.props.compact && <QuerySupportHistory email={ this.props.currentUser.email } /> }
 				<QueryTicketSupportConfiguration />
 				<QueryUserPurchases userId={ this.props.currentUser.ID } />
 				<QueryLanguageNames />
@@ -582,9 +652,8 @@ class HelpContact extends React.Component {
 }
 
 export default connect(
-	state => {
+	( state ) => {
 		const helpSelectedSiteId = getHelpSelectedSiteId( state );
-		const selectedSitePlan = getSitePlan( state, helpSelectedSiteId );
 		return {
 			currentUserLocale: getCurrentUserLocale( state ),
 			currentUser: getCurrentUser( state ),
@@ -601,15 +670,16 @@ export default connect(
 			hasMoreThanOneSite: getCurrentUserSiteCount( state ) > 1,
 			shouldStartHappychatConnection: ! isRequestingSites( state ) && helpSelectedSiteId,
 			isRequestingSites: isRequestingSites( state ),
-			selectedSitePlanSlug: selectedSitePlan && selectedSitePlan.product_slug,
 			supportVariation: getInlineHelpSupportVariation( state ),
+			activeSupportTickets: getActiveSupportTickets( state ),
+			supportLevel: getSupportLevel( state ),
 		};
 	},
 	{
 		askDirectlyQuestion,
 		initializeDirectly,
 		openHappychat,
-		recordTracksEvent,
+		recordTracksEventAction,
 		sendHappychatMessage,
 		sendUserInfo,
 	}

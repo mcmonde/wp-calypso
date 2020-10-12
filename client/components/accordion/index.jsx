@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -8,12 +6,17 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { noop } from 'lodash';
 import classNames from 'classnames';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 
 /**
  * Internal dependencies
  */
 import AccordionStatus from './status';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 export default class Accordion extends Component {
 	static propTypes = {
@@ -38,22 +41,37 @@ export default class Accordion extends Component {
 
 		this.state = {
 			isExpanded: props.initialExpanded,
+			hasExpanded: false,
 		};
+	}
+
+	static getDerivedStateFromProps( props, state ) {
+		// in order to improve the performance, hasExpanded determines if the
+		// accordion content should be rendered or not. the content has to
+		// be rendered as soon as the accordion is expanded manually
+		// (isExpanded) or forced (forceExpand) or if it has been previously
+		// expanded
+		if ( state.isExpanded || props.forceExpand ) {
+			return { hasExpanded: true };
+		}
+		return null;
 	}
 
 	toggleExpanded = () => {
 		this.setExpandedStatus( ! this.state.isExpanded );
 	};
 
-	setExpandedStatus = isExpanded => {
+	setExpandedStatus = ( isExpanded ) => {
 		this.setState( { isExpanded } );
 		this.props.onToggle( isExpanded );
 	};
 
 	render() {
 		const { className, icon, title, subtitle, status, children, e2eTitle } = this.props;
+		const isExpanded = this.state.isExpanded || this.props.forceExpand;
+		const { hasExpanded } = this.state;
 		const classes = classNames( 'accordion', className, {
-			'is-expanded': this.state.isExpanded || this.props.forceExpand,
+			'is-expanded': isExpanded,
 			'has-icon': !! icon,
 			'has-subtitle': !! subtitle,
 			'has-status': !! status,
@@ -76,9 +94,11 @@ export default class Accordion extends Component {
 					</button>
 					{ status && <AccordionStatus { ...status } /> }
 				</header>
-				<div className="accordion__content">
-					<div className="accordion__content-wrap">{ children }</div>
-				</div>
+				{ hasExpanded && (
+					<div className="accordion__content">
+						<div className="accordion__content-wrap">{ children }</div>
+					</div>
+				) }
 			</div>
 		);
 	}

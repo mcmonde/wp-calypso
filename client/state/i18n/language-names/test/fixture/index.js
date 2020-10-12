@@ -28,4 +28,3 @@ export const LOCALIZED_LANGUAGE_NAMES_DATA_IT = {
 		en: 'Italian',
 	},
 };
-

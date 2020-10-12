@@ -1,5 +1,4 @@
 /**
- * @format
  * @jest-environment jsdom
  */
 
@@ -14,13 +13,20 @@ import { identity } from 'lodash';
  * Internal dependencies
  */
 import { CreditsPaymentBox } from '../credits-payment-box';
+import PaymentChatButton from '../payment-chat-button';
+import CheckoutTerms from '../checkout-terms';
 import {
+	PLAN_ECOMMERCE,
+	PLAN_ECOMMERCE_2_YEARS,
+	PLAN_BUSINESS_MONTHLY,
 	PLAN_BUSINESS,
 	PLAN_BUSINESS_2_YEARS,
 	PLAN_PREMIUM,
 	PLAN_PREMIUM_2_YEARS,
 	PLAN_PERSONAL,
 	PLAN_PERSONAL_2_YEARS,
+	PLAN_BLOGGER,
+	PLAN_BLOGGER_2_YEARS,
 	PLAN_FREE,
 	PLAN_JETPACK_FREE,
 	PLAN_JETPACK_PERSONAL,
@@ -40,19 +46,6 @@ jest.mock( 'lib/cart-values', () => ( {
 	},
 } ) );
 
-jest.mock( 'i18n-calypso', () => ( {
-	localize: x => x,
-} ) );
-
-jest.mock( '../terms-of-service', () => {
-	const react = require( 'react' );
-	return class TermsOfService extends react.Component {};
-} );
-jest.mock( '../payment-chat-button', () => {
-	const react = require( 'react' );
-	return class PaymentChatButton extends react.Component {};
-} );
-
 const defaultProps = {
 	cart: {},
 	translate: identity,
@@ -63,12 +56,18 @@ describe( 'CreditsPaymentBox', () => {
 		const wrapper = shallow( <CreditsPaymentBox { ...defaultProps } /> );
 		expect( wrapper.find( '.payment-box-section' ) ).toHaveLength( 1 );
 		expect( wrapper.find( '.payment-box-actions' ) ).toHaveLength( 1 );
-		expect( wrapper.find( 'TermsOfService' ) ).toHaveLength( 1 );
+		expect( wrapper.find( CheckoutTerms ) ).toHaveLength( 1 );
 	} );
 
-	const businessPlans = [ PLAN_BUSINESS, PLAN_BUSINESS_2_YEARS ];
+	const eligiblePlans = [
+		PLAN_BUSINESS_MONTHLY,
+		PLAN_BUSINESS,
+		PLAN_BUSINESS_2_YEARS,
+		PLAN_ECOMMERCE,
+		PLAN_ECOMMERCE_2_YEARS,
+	];
 
-	businessPlans.forEach( product_slug => {
+	eligiblePlans.forEach( ( product_slug ) => {
 		test( 'should render PaymentChatButton if any WP.com business plan is in the cart', () => {
 			const props = {
 				...defaultProps,
@@ -78,11 +77,11 @@ describe( 'CreditsPaymentBox', () => {
 				},
 			};
 			const wrapper = shallow( <CreditsPaymentBox { ...props } /> );
-			expect( wrapper.find( 'PaymentChatButton' ) ).toHaveLength( 1 );
+			expect( wrapper.find( PaymentChatButton ) ).toHaveLength( 1 );
 		} );
 	} );
 
-	businessPlans.forEach( product_slug => {
+	eligiblePlans.forEach( ( product_slug ) => {
 		test( 'should not render PaymentChatButton if presaleChatAvailable is false', () => {
 			const props = {
 				...defaultProps,
@@ -92,7 +91,7 @@ describe( 'CreditsPaymentBox', () => {
 				},
 			};
 			const wrapper = shallow( <CreditsPaymentBox { ...props } /> );
-			expect( wrapper.find( 'PaymentChatButton' ) ).toHaveLength( 0 );
+			expect( wrapper.find( PaymentChatButton ) ).toHaveLength( 0 );
 		} );
 	} );
 
@@ -101,6 +100,8 @@ describe( 'CreditsPaymentBox', () => {
 		PLAN_PREMIUM_2_YEARS,
 		PLAN_PERSONAL,
 		PLAN_PERSONAL_2_YEARS,
+		PLAN_BLOGGER,
+		PLAN_BLOGGER_2_YEARS,
 		PLAN_FREE,
 		PLAN_JETPACK_FREE,
 		PLAN_JETPACK_PERSONAL,
@@ -111,7 +112,7 @@ describe( 'CreditsPaymentBox', () => {
 		PLAN_JETPACK_BUSINESS_MONTHLY,
 	];
 
-	otherPlans.forEach( product_slug => {
+	otherPlans.forEach( ( product_slug ) => {
 		test( 'should not render PaymentChatButton if only non-business plan products are in the cart', () => {
 			const props = {
 				...defaultProps,
@@ -120,7 +121,7 @@ describe( 'CreditsPaymentBox', () => {
 				},
 			};
 			const wrapper = shallow( <CreditsPaymentBox { ...props } /> );
-			expect( wrapper.find( 'PaymentChatButton' ) ).toHaveLength( 0 );
+			expect( wrapper.find( PaymentChatButton ) ).toHaveLength( 0 );
 		} );
 	} );
 } );

@@ -1,17 +1,13 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import PropTypes from 'prop-types';
 import React from 'react';
 
 /**
  * Internal dependencies
  */
-import Button from 'components/button';
-import Count from 'components/count';
+import { Button } from '@automattic/components';
 
 const DocsExampleToggle = ( { onClick, text } ) => <Button onClick={ onClick }>{ text }</Button>;
 
@@ -20,53 +16,26 @@ DocsExampleToggle.propTypes = {
 	text: PropTypes.string.isRequired,
 };
 
-const DocsExampleStats = ( { count } ) => (
-	<div className="docs-example__stats">
-		<p className="docs-example__stats-item">
-			Used in <Count count={ count } /> components.
-		</p>
-	</div>
-);
-
-DocsExampleStats.propTypes = {
-	count: PropTypes.number.isRequired,
-};
-
-const DocsExample = ( { children, componentUsageStats = {}, toggleHandler, toggleText } ) => {
-	const { count } = componentUsageStats;
-
+const DocsExample = ( { children, toggleHandler, toggleText } ) => {
 	return (
 		<section className="docs-example">
 			<header className="docs-example__header">
-				{ toggleHandler &&
-					toggleText && (
-						<span className="docs-example__toggle">
-							<DocsExampleToggle onClick={ toggleHandler } text={ toggleText } />
-						</span>
-					) }
-			</header>
-
-			<div className="docs-example__main">{ children }</div>
-
-			<footer role="contentinfo" className="docs-example__footer">
-				{ ! isNaN( count ) && (
-					<div className="docs-example__stats">
-						<DocsExampleStats count={ count } />
-					</div>
+				{ toggleHandler && toggleText && (
+					<span className="docs-example__toggle">
+						<DocsExampleToggle onClick={ toggleHandler } text={ toggleText } />
+					</span>
 				) }
-			</footer>
+			</header>
+			<div className="docs-example__main">{ children }</div>
 		</section>
 	);
 };
 
 DocsExample.propTypes = {
-	componentUsageStats: PropTypes.shape( {
-		count: PropTypes.number,
-	} ),
 	toggleHandler: PropTypes.func,
 	toggleText: PropTypes.string,
 };
 
-export { DocsExampleToggle, DocsExampleStats };
+export { DocsExampleToggle };
 
 export default DocsExample;

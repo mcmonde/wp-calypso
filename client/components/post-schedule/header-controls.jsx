@@ -1,17 +1,15 @@
-/** @format */
-
 /**
  * External dependencies
  */
 
 import PropTypes from 'prop-types';
 import React from 'react';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 
 /**
  * Globals
  */
-var noop = () => {};
+const noop = () => {};
 
 export default class extends React.Component {
 	static displayName = 'PostScheduleHeaderControls';

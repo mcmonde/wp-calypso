@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -14,21 +12,21 @@ import {
 	PUSH_NOTIFICATIONS_RECEIVE_UNREGISTER_DEVICE,
 	PUSH_NOTIFICATIONS_RECEIVE_REGISTER_DEVICE,
 } from 'state/action-types';
-import useNock from 'test/helpers/use-nock';
-import { useSandbox } from 'test/helpers/use-sinon';
+import useNock from 'test-helpers/use-nock';
+import { useSandbox } from 'test-helpers/use-sinon';
 
 const API_DOMAIN = 'https://public-api.wordpress.com:443';
 
 describe( 'actions', () => {
 	let sandbox, spy;
 
-	useSandbox( newSandbox => {
+	useSandbox( ( newSandbox ) => {
 		sandbox = newSandbox;
 		spy = sandbox.spy();
 	} );
 
 	beforeEach( () => {
-		spy.reset();
+		spy.resetHistory();
 	} );
 
 	describe( 'receiveUnregisterDevice()', () => {
@@ -64,7 +62,7 @@ describe( 'actions', () => {
 		const getState = () => ( { pushNotifications: { settings: {}, system: {} } } );
 
 		describe( 'success', () => {
-			useNock( nock => {
+			useNock( ( nock ) => {
 				nock( API_DOMAIN )
 					.persist()
 					.post( '/rest/v1.1/devices/new' )

@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -22,8 +21,14 @@ import CommentDeleteWarning from 'my-sites/comment/comment-delete-warning';
 import CommentListHeader from 'my-sites/comments/comment-list/comment-list-header';
 import PageViewTracker from 'lib/analytics/page-view-tracker';
 import { preventWidows } from 'lib/formatting';
-import { getSiteComment, canCurrentUser } from 'state/selectors';
+import canCurrentUser from 'state/selectors/can-current-user';
+import { getSiteComment } from 'state/comments/selectors';
 import getSiteId from 'state/selectors/get-site-id';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 export class CommentView extends Component {
 	static propTypes = {
@@ -97,7 +102,7 @@ const mapStateToProps = ( state, ownProps ) => {
 	const comment = getSiteComment( state, siteId, commentId );
 	const postId = get( comment, 'post.ID' );
 
-	const canModerateComments = canCurrentUser( state, siteId, 'moderate_comments' ) !== false;
+	const canModerateComments = canCurrentUser( state, siteId, 'moderate_comments' );
 	const hasPermalink = includes( [ 'approved', 'unapproved' ], get( comment, 'status' ) );
 
 	return {

@@ -1,9 +1,7 @@
-/** @format */
-
 /**
  * Internal dependencies
  */
-import { getUpgradePlanSlugFromPath } from 'state/selectors';
+import getUpgradePlanSlugFromPath from 'state/selectors/get-upgrade-plan-slug-from-path';
 import { PLAN_FREE, PLAN_PERSONAL, PLAN_PREMIUM } from 'lib/plans/constants';
 
 describe( 'getUpgradePlanSlugFromPath', () => {

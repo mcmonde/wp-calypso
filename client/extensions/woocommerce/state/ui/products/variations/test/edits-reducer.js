@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -22,7 +20,7 @@ import { createProduct, productUpdated } from 'woocommerce/state/sites/products/
 
 const siteId = 123;
 
-jest.mock( 'lib/analytics', () => ( {} ) );
+jest.mock( 'lib/analytics/tracks', () => ( {} ) );
 
 describe( 'edits-reducer', () => {
 	const newVariableProduct1 = {
@@ -221,7 +219,7 @@ describe( 'edits-reducer', () => {
 			undefined,
 			editProductVariation( siteId, product, null, { regular_price: '1.99' } )
 		);
-		const productEdits1 = edits1.find( function( p ) {
+		const productEdits1 = edits1.find( function ( p ) {
 			if ( isEqual( product.id, p.productId ) ) {
 				return p;
 			}
@@ -233,7 +231,7 @@ describe( 'edits-reducer', () => {
 			edits1,
 			editProductVariation( siteId, product, null, { regular_price: '2.99' } )
 		);
-		const productEdits2 = edits2.find( function( p ) {
+		const productEdits2 = edits2.find( function ( p ) {
 			if ( isEqual( product.id, p.productId ) ) {
 				return p;
 			}
@@ -254,7 +252,7 @@ describe( 'edits-reducer', () => {
 			undefined,
 			editProductVariation( siteId, product, variation1, { regular_price: '1.99' } )
 		);
-		const _edits1 = edits1.find( function( p ) {
+		const _edits1 = edits1.find( function ( p ) {
 			if ( isEqual( product.id, p.productId ) ) {
 				return p;
 			}
@@ -433,7 +431,7 @@ describe( 'edits-reducer', () => {
 			expect( variationEditsAfter[ 0 ].creates ).to.exist;
 			expect( variationEditsAfter[ 0 ].creates.length ).to.equal( 2 );
 			expect( variationEditsAfter[ 0 ].creates[ 0 ] ).to.eql( variationBlackNew );
-			expect( variationEditsAfter[ 0 ].creates[ 1 ].id ).to.be.an.Object;
+			expect( variationEditsAfter[ 0 ].creates[ 1 ].id ).to.be.an( 'object' );
 			expect( variationEditsAfter[ 0 ].creates[ 1 ].attributes[ 0 ].name ).to.eql( 'Color' );
 			expect( variationEditsAfter[ 0 ].creates[ 1 ].attributes[ 0 ].option ).to.eql( 'Blue' );
 			expect( variationEditsAfter[ 0 ].creates[ 1 ].sku ).to.exist;
@@ -486,7 +484,7 @@ describe( 'edits-reducer', () => {
 			expect( variationEditsAfter[ 0 ].updates[ 0 ].regular_price ).to.eql( '5.99' );
 			expect( variationEditsAfter[ 0 ].creates ).to.exist;
 			expect( variationEditsAfter[ 0 ].creates.length ).to.equal( 1 );
-			expect( variationEditsAfter[ 0 ].creates[ 0 ].id ).to.be.an.Object;
+			expect( variationEditsAfter[ 0 ].creates[ 0 ].id ).to.be.an( 'object' );
 			expect( variationEditsAfter[ 0 ].creates[ 0 ].attributes[ 0 ].name ).to.eql( 'Color' );
 			expect( variationEditsAfter[ 0 ].creates[ 0 ].attributes[ 0 ].option ).to.eql( 'Blue' );
 			expect( variationEditsAfter[ 0 ].creates[ 0 ].sku ).to.exist;

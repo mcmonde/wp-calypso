@@ -1,9 +1,6 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import ReactDom from 'react-dom';
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
@@ -16,11 +13,16 @@ import classNames from 'classnames';
  */
 import TrackInputChanges from 'components/track-input-changes';
 import FormTextInput from 'components/forms/form-text-input';
-import { recordStat, recordEvent } from 'lib/posts/stats';
+import { recordEditorStat, recordEditorEvent } from 'state/posts/stats';
 import { getSelectedSiteId } from 'state/ui/selectors';
-import { getEditorPostId } from 'state/ui/editor/selectors';
+import { getEditorPostId } from 'state/editor/selectors';
 import { getEditedPostSlug } from 'state/posts/selectors';
 import { editPost } from 'state/posts/actions';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class PostEditorSlug extends Component {
 	static propTypes = {
@@ -62,7 +64,7 @@ class PostEditorSlug extends Component {
 	onSlugKeyDown( event ) {
 		if ( event.key === 'Enter' || event.key === 'Escape' ) {
 			const { onEscEnter, isEditable } = this.props;
-			this.setState( { isSlugFocused: false }, function() {
+			this.setState( { isSlugFocused: false }, function () {
 				onEscEnter();
 
 				if ( isEditable ) {
@@ -91,23 +93,23 @@ class PostEditorSlug extends Component {
 	recordChangeStats() {
 		switch ( this.props.instanceName ) {
 			case 'post-sidebar':
-				recordStat( 'slug-edited-post-sidebar' );
-				recordEvent( 'Slug Edited (Post Sidebar)' );
+				this.props.recordEditorStat( 'slug-edited-post-sidebar' );
+				this.props.recordEditorEvent( 'Slug Edited (Post Sidebar)' );
 				break;
 
 			case 'post-popover':
-				recordStat( 'slug-edited-post-popover' );
-				recordEvent( 'Slug Edited (Post Permalink Popover)' );
+				this.props.recordEditorStat( 'slug-edited-post-popover' );
+				this.props.recordEditorEvent( 'Slug Edited (Post Permalink Popover)' );
 				break;
 
 			case 'page-sidebar':
-				recordStat( 'slug-edited-page-sidebar' );
-				recordEvent( 'Slug Edited (Page Sidebar)' );
+				this.props.recordEditorStat( 'slug-edited-page-sidebar' );
+				this.props.recordEditorEvent( 'Slug Edited (Page Sidebar)' );
 				break;
 
 			case 'page-permalink':
-				recordStat( 'slug-edited-page-permalink' );
-				recordEvent( 'Slug Edited (Page Permalink)' );
+				this.props.recordEditorStat( 'slug-edited-page-permalink' );
+				this.props.recordEditorEvent( 'Slug Edited (Page Permalink)' );
 				break;
 		}
 	}
@@ -143,12 +145,12 @@ class PostEditorSlug extends Component {
 }
 
 export default connect(
-	state => {
+	( state ) => {
 		const siteId = getSelectedSiteId( state );
 		const postId = getEditorPostId( state );
 		const slug = getEditedPostSlug( state, siteId, postId );
 
 		return { siteId, postId, slug };
 	},
-	{ editPost }
+	{ editPost, recordEditorStat, recordEditorEvent }
 )( localize( PostEditorSlug ) );

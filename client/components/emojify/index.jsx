@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -8,14 +6,21 @@ import React, { PureComponent } from 'react';
 import classNames from 'classnames';
 import twemoji from 'twemoji';
 
+/**
+ * Style dependencies
+ */
+import './style.scss';
+
 export default class Emojify extends PureComponent {
 	static propTypes = {
 		imgClassName: PropTypes.string,
+		tagName: PropTypes.string,
 		twemojiUrl: PropTypes.string,
 	};
 
 	static defaultProps = {
 		imgClassName: 'emojify__emoji',
+		tagName: 'div',
 	};
 
 	constructor( props ) {
@@ -42,7 +47,7 @@ export default class Emojify extends PureComponent {
 			base: twemojiUrl,
 			size: '72x72',
 			className: imgClassName,
-			callback: function( icon, options ) {
+			callback: function ( icon, options ) {
 				const ignored = [ 'a9', 'ae', '2122', '2194', '2660', '2663', '2665', '2666' ];
 
 				if ( -1 !== ignored.indexOf( icon ) ) {
@@ -57,14 +62,20 @@ export default class Emojify extends PureComponent {
 	render() {
 		// We want other props to content everything but children, className, imgClassName, and twemojiUrl.
 		// We can't delete imgClassName and twemojiUrl despite they not being used here.
-		const { children, className, imgClassName, twemojiUrl, ...other } = this.props; // eslint-disable-line no-unused-vars
-
+		const {
+			children,
+			className,
+			imgClassName,
+			tagName: WrapperTagName,
+			twemojiUrl,
+			...other
+		} = this.props;
 		const classes = classNames( className, 'emojify' );
 
 		return (
-			<div className={ classes } ref={ this.setRef } { ...other }>
+			<WrapperTagName className={ classes } ref={ this.setRef } { ...other }>
 				{ children }
-			</div>
+			</WrapperTagName>
 		);
 	}
 }

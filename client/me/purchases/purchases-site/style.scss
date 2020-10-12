@@ -1,5 +1,5 @@
 .purchases-site {
-	margin-bottom: 15px;
+	margin-bottom: 24px;
 
 	.site-icon {
 		display: inline-block;
@@ -9,39 +9,44 @@
 }
 
 .purchases-site__slug {
-	color: darken( $gray, 15% );
-	font-size: 12px;
+	color: var( --color-neutral );
+	font-size: $font-body-extra-small;
 }
 
 .purchases-site__slug {
 	white-space: nowrap;
 
-	@include breakpoint( "<660px" ) {
+	@include breakpoint-deprecated( '<660px' ) {
 		line-height: 15px;
 	}
 }
 
-.purchases-site__header {
-	&.card.is-compact {
-		padding: 0;
-	}
+.concierge-banner {
+	& .action-card__button-container {
+		text-align: left;
 
-	.site.is-loading {
-		.site-icon,
-		.site__title,
-		.site__domain {
-			@include placeholder( 23% );
+		@include breakpoint-deprecated( '>960px' ) {
+			text-align: center;
 		}
 	}
 
-	.site.is-disconnected .site-icon {
-		height: 32px;
-		width: 32px;
-		line-height: 32px;
-		font-size: 32px;
+	& .action-card__illustration {
+		@include breakpoint-deprecated( '>960px' ) {
+			margin: -10px -20px 0;
+		}
 	}
 
-	.site .site__content {
-		padding: 11px 24px;
+	&.purchase-concierge .action-card__illustration {
+		@include breakpoint-deprecated( '>960px' ) {
+			margin-right: 20px;
+		}
 	}
+
+	&.card {
+		@include breakpoint-deprecated( '>480px' ) {
+			padding: 10px;
+			align-items: flex-start;
+		}
+	}
+
 }

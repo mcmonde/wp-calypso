@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -8,21 +6,27 @@ import PropTypes from 'prop-types';
 import { localize } from 'i18n-calypso';
 import React from 'react';
 import Page from 'page';
+import { noop } from 'lodash';
 
 /**
  * Internal dependencies
  */
 import Notice from 'components/notice';
+import { Button } from '@automattic/components';
 
-class SiteSettingsImporterError extends React.PureComponent {
-	static displayName = 'SiteSettingsImporterError';
+class ImporterError extends React.PureComponent {
+	static displayName = 'ImporterError';
+	static defaultProps = {
+		retryImport: noop,
+	};
 
 	static propTypes = {
 		description: PropTypes.string.isRequired,
 		type: PropTypes.string.isRequired,
+		retryImport: PropTypes.func,
 	};
 
-	contactSupport = event => {
+	contactSupport = ( event ) => {
 		event.preventDefault();
 		event.stopPropagation();
 		Page( '/help' );
@@ -30,40 +34,42 @@ class SiteSettingsImporterError extends React.PureComponent {
 
 	getImportError = () => {
 		return this.props.translate(
-			'%(errorDescription)s{{br/}}{{a}}Try again{{/a}} or {{cs}}contact support{{/cs}}.',
+			'%(errorDescription)s{{br/}}{{a}}Try again{{/a}} or {{cs}}get help{{/cs}}.',
 			{
 				args: {
 					errorDescription: this.props.description,
 				},
 				components: {
-					a: <a href="#" onClick={ this.retryImport } />,
+					a: <Button className="importer__error-pane is-link" onClick={ this.retryImport } />,
 					br: <br />,
-					cs: <a href="#" onClick={ this.contactSupport } />,
+					cs: <Button className="importer__error-pane is-link" onClick={ this.contactSupport } />,
 				},
 			}
 		);
 	};
 
 	getUploadError = () => {
-		const defaultError = this.props.translate( 'Unexpected error during the upload' );
+		const defaultError = this.props.translate(
+			'Oops! We ran into an unexpected error while uploading your file.'
+		);
 		const { description = '' } = this.props;
 
 		return this.props.translate(
-			'%(errorDescription)s{{br/}}Try another file or {{cs}}contact support{{/cs}}.',
+			'%(errorDescription)s{{br/}}Make sure you are using a valid WordPress export file in XML or ZIP format. {{cs}}Still need help{{/cs}}?',
 			{
 				args: {
 					errorDescription: description.length ? description : defaultError,
 				},
 				components: {
 					br: <br />,
-					cs: <a href="#" onClick={ this.contactSupport } />,
+					cs: <Button className="importer__error-pane is-link" onClick={ this.contactSupport } />,
 				},
 			}
 		);
 	};
 
 	getErrorMessage = () => {
-		var actionMessage;
+		let actionMessage;
 
 		switch ( this.props.type ) {
 			case 'uploadError':
@@ -73,14 +79,21 @@ class SiteSettingsImporterError extends React.PureComponent {
 			case 'importError':
 				actionMessage = this.getImportError();
 				break;
+
+			case 'validationError':
+				actionMessage = this.props.description
+					? this.props.description
+					: this.props.translate( 'Data you entered are not valid' );
+				break;
 		}
 
 		return actionMessage;
 	};
 
-	retryImport = event => {
+	retryImport = ( event ) => {
 		event.preventDefault();
 		event.stopPropagation();
+		this.props.retryImport();
 	};
 
 	render() {
@@ -92,4 +105,4 @@ class SiteSettingsImporterError extends React.PureComponent {
 	}
 }
 
-export default localize( SiteSettingsImporterError );
+export default localize( ImporterError );

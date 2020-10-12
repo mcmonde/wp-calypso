@@ -1,23 +1,23 @@
-/** @format */
-
 /**
  * External dependencies
  */
 
 import React from 'react';
 import PropTypes from 'prop-types';
+import { connect } from 'react-redux';
 import { localize } from 'i18n-calypso';
 
 /**
  * Internal dependencies
  */
-import Button from 'components/button';
-import Gridicon from 'gridicons';
+import { Button } from '@automattic/components';
+import Gridicon from 'components/gridicon';
 import Site from 'blocks/site';
+import { getSiteHomeUrl } from 'state/sites/selectors';
 
-const StoreGroundControl = ( { site, translate } ) => {
+const StoreGroundControl = ( { site, siteHomeUrl, translate } ) => {
 	const isPlaceholder = ! site;
-	const backLink = isPlaceholder ? '' : '/stats/day/' + site.slug;
+	const backUrl = isPlaceholder ? '' : siteHomeUrl;
 
 	return (
 		<div className="store-sidebar__ground-control">
@@ -25,10 +25,10 @@ const StoreGroundControl = ( { site, translate } ) => {
 				borderless
 				className="store-sidebar__ground-control-back"
 				disabled={ isPlaceholder }
-				href={ backLink }
-				aria-label={ translate( 'Go back' ) }
+				href={ backUrl }
+				aria-label={ translate( 'Close Store' ) }
 			>
-				<Gridicon icon="chevron-left" />
+				<Gridicon icon="cross" />
 			</Button>
 			<div className="store-sidebar__ground-control-site">
 				<Site site={ site } indicator={ false } homeLink externalLink />
@@ -40,7 +40,11 @@ const StoreGroundControl = ( { site, translate } ) => {
 StoreGroundControl.propTypes = {
 	site: PropTypes.shape( {
 		slug: PropTypes.string,
-	} ),
+	} ).isRequired,
+	siteHomeUrl: PropTypes.string.isRequired,
+	translate: PropTypes.func.isRequired,
 };
 
-export default localize( StoreGroundControl );
+export default connect( ( state ) => ( {
+	siteHomeUrl: getSiteHomeUrl( state ),
+} ) )( localize( StoreGroundControl ) );

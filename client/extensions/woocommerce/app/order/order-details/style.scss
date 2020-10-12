@@ -1,19 +1,18 @@
-/** @format */
 .order-details__table {
 	margin: 0 -24px;
 	box-shadow: none;
-	border-bottom: 1px solid $gray-lighten-30;
+	border-bottom: 1px solid var( --color-neutral-5 );
 
 	.order-details__item-sku {
 		display: block;
 		margin-top: 6px;
-		color: $gray-text-min;
-		font-size: 11px;
+		color: var( --color-text-subtle );
+		font-size: $font-body-extra-small;
 		text-transform: uppercase;
 	}
 
 	&.is-editing .order-details__item-tax {
-		color: $gray-text-min;
+		color: var( --color-text-subtle );
 		font-style: italic;
 	}
 
@@ -22,7 +21,7 @@
 	}
 
 	thead .table-heading {
-		border-bottom: 1px solid $gray-lighten-30;
+		border-bottom: 1px solid var( --color-neutral-0 );
 	}
 
 	.table-row {
@@ -54,7 +53,7 @@
 		width: 1.5em;
 
 		.gridicons-trash {
-			color: $alert-red;
+			color: var( --color-error );
 		}
 	}
 }
@@ -70,7 +69,7 @@
 .order-details__actions {
 	margin: 0 -24px;
 	padding: 16px 80px 16px 24px;
-	border-bottom: 1px solid $gray-lighten-30;
+	border-bottom: 1px solid var( --color-neutral-0 );
 
 	.button + .button {
 		margin-left: 24px;
@@ -78,10 +77,10 @@
 
 	.button {
 		&.is-borderless {
-			color: $blue-wordpress;
+			color: var( --color-primary );
 
 			&:hover {
-				color: $link-highlight;
+				color: var( --color-link-dark );
 			}
 		}
 	}
@@ -96,6 +95,10 @@
 
 	& + .form-setting-explanation {
 		padding-right: 55px;
+
+		@include breakpoint-deprecated( '<660px' ) {
+			padding-right: 0;
+		}
 	}
 
 	.table-row {
@@ -105,18 +108,18 @@
 	}
 
 	.table-item {
-		font-size: 14px;
+		font-size: $font-body-small;
 	}
 
 	.order-details__coupon-list {
 		.table-item {
 			padding-left: 24px;
-			border-bottom: 1px solid $gray-lighten-30;
+			border-bottom: 1px solid var( --color-neutral-0 );
 			padding-bottom: 16px;
 		}
 
-		.table-item:not(.is-row-heading) {
-			border-bottom: 1px solid $gray-lighten-30;
+		.table-item:not( .is-row-heading ) {
+			border-bottom: 1px solid var( --color-neutral-0 );
 			padding-top: 0;
 			vertical-align: top;
 		}
@@ -138,10 +141,10 @@
 	}
 
 	.order-details__total-refund {
-		color: $alert-red;
+		color: var( --color-error );
 
 		.table-item {
-			border-bottom: 1px solid $gray-lighten-30;
+			border-bottom: 1px solid var( --color-neutral-0 );
 			padding-bottom: 16px;
 		}
 
@@ -185,6 +188,10 @@
 			// Increase width for PriceInput
 			width: 13em;
 			padding-right: 79px;
+
+			@include breakpoint-deprecated( '<660px' ) {
+				padding-right: 24px;
+			}
 		}
 
 		.form-text-input-with-affixes {
@@ -197,7 +204,7 @@
 		}
 
 		.order-details__totals-tax {
-			color: $gray-text-min;
+			color: var( --color-text-subtle );
 			font-style: italic;
 		}
 	}
@@ -208,7 +215,7 @@
 	text-align: right;
 }
 
-@include breakpoint( '<660px' ) {
+@include breakpoint-deprecated( '<660px' ) {
 	.order-details__table,
 	.order-details__totals {
 		table,

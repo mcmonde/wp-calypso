@@ -9,7 +9,7 @@
 
 .plugin-sections__content {
 	font-family: $sans;
-	font-size: 14px;
+	font-size: $font-body-small;
 	font-weight: 400;
 	line-height: 21px;
 	word-wrap: break-word;
@@ -23,18 +23,18 @@
 	h4,
 	h5,
 	h6 {
-		font-size: 14px;
+		font-size: $font-body-small;
 		font-weight: 600;
 		margin-bottom: 16px;
 	}
 	h1 {
-		font-size: 32px;
+		font-size: $font-title-large;
 	}
 	h2 {
-		font-size: 24px;
+		font-size: $font-title-medium;
 	}
 	h3 {
-		font-size: 21px;
+		font-size: $font-title-small;
 	}
 	li {
 		margin-bottom: 8px;
@@ -51,10 +51,10 @@
 		}
 	}
 	code {
-		font-size: 14px;
+		font-size: $font-body-small;
 		padding: 1px 4px;
 		border-radius: 2px;
-		background: $gray-light;
+		background: var( --color-neutral-0 );
 	}
 	> code {
 		display: block;
@@ -77,19 +77,19 @@
 	width: 100%;
 	padding-top: 12px;
 	padding-bottom: 2px;
-	background: $white;
-	color: $gray;
+	background: var( --color-surface );
+	color: var( --color-neutral-light );
 	cursor: pointer;
-	font-size: 12px;
+	font-size: $font-body-extra-small;
 	text-transform: uppercase;
 
 	&:focus {
 		.plugin-sections__read-more-text {
-			color: $blue-wordpress;
-			outline: solid $gray 1px;
+			color: var( --color-primary );
+			outline: solid var( --color-neutral-light ) 1px;
 		}
 	}
-	&:after {
+	&::after {
 		position: absolute;
 			left: 0;
 			bottom: 100%;

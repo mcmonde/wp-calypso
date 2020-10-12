@@ -13,20 +13,20 @@
 	margin: 0 auto;
 
 	&.is-placeholder {
-		@include placeholder( 23% );
+		@include placeholder( --color-neutral-10 );
 	}
 }
 
 .security-2fa-enable__app-options {
-	font-color: $gray-light;
-	font-size: 13px;
+	font-color: var( --color-neutral-0 );
+	font-size: $font-body-small;
 	font-style: italic;
 	margin-top: 10px;
 }
 
 .security-2fa-enable__time-code {
-	font-weight: bold;
-	font-size: 16px;
+	font-weight: 600;
+	font-size: $font-body;
 }
 
 .security-2fa-enable__toggle {
@@ -35,7 +35,7 @@
 }
 
 .security-2fa-enable .notice {
-	margin: 5px 0 0 0;
+	margin: 5px 0 0;
 }
 
 .security-2fa-enable__buttons-bar {

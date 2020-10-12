@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -8,7 +7,7 @@ import classnames from 'classnames';
 import { localize } from 'i18n-calypso';
 import { connect } from 'react-redux';
 import { sample } from 'lodash';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 
 /**
  * Internal dependencies
@@ -37,19 +36,20 @@ class TagStreamHeader extends React.Component {
 		tagImages: [],
 	};
 
-	pickTagImage = ( props = this.props ) => {
-		return sample( props.tagImages );
-	};
-
 	state = {
 		tagImages: this.props.tagImages,
-		chosenTagImage: this.pickTagImage(),
+		chosenTagImage: sample( this.props.tagImages ),
 	};
 
-	componentWillReceiveProps( nextProps ) {
-		if ( nextProps.tagImages !== this.props.tagImages ) {
-			this.setState( { chosenTagImage: this.pickTagImage( nextProps ) } );
+	static getDerivedStateFromProps( nextProps, prevState ) {
+		if ( nextProps.tagImages === prevState.tagImages ) {
+			return null;
 		}
+
+		return {
+			tagImages: nextProps.tagImages,
+			chosenTagImage: sample( nextProps.tagImages ),
+		};
 	}
 
 	render() {
@@ -71,7 +71,7 @@ class TagStreamHeader extends React.Component {
 		const imageStyle = {};
 		const tagImage = this.state.chosenTagImage;
 
-		let photoByWrapper;
+		let sourceWrapper;
 		let authorLink;
 		if ( tagImage ) {
 			const imageUrl = resizeImageUrl( 'https://' + tagImage.url, {
@@ -80,7 +80,7 @@ class TagStreamHeader extends React.Component {
 			const safeCssUrl = cssSafeUrl( imageUrl );
 			imageStyle.backgroundImage = 'url(' + safeCssUrl + ')';
 
-			photoByWrapper = <span className="tag-stream__header-image-byline-label" />;
+			sourceWrapper = <span className="tag-stream__header-image-byline-label" />;
 			authorLink = (
 				<a
 					href={ `/read/blogs/${ tagImage.blog_id }/posts/${ tagImage.post_id }` }
@@ -95,18 +95,17 @@ class TagStreamHeader extends React.Component {
 		return (
 			<div className={ classes }>
 				<QueryReaderTagImages tag={ imageSearchString } />
-				{ showFollow && (
-					<div className="tag-stream__header-follow">
+				<div className="tag-stream__header-follow">
+					{ showFollow && (
 						<FollowButton
 							followLabel={ translate( 'Follow Tag' ) }
-							followingLabel={ translate( 'Following Tag' ) }
+							followingLabel={ translate( 'Following tag' ) }
 							iconSize={ 24 }
 							following={ following }
 							onFollowToggle={ onFollowToggle }
 						/>
-					</div>
-				) }
-
+					) }
+				</div>
 				<div className="tag-stream__header-image" style={ imageStyle }>
 					<h1 className="tag-stream__header-image-title">
 						<Gridicon icon="tag" size={ 24 } />
@@ -114,9 +113,9 @@ class TagStreamHeader extends React.Component {
 					</h1>
 					{ tagImage && (
 						<div className="tag-stream__header-image-byline">
-							{ translate( '{{photoByWrapper}}Photo by{{/photoByWrapper}} {{authorLink/}}', {
+							{ translate( '{{sourceWrapper}}Photo from{{/sourceWrapper}} {{authorLink/}}', {
 								components: {
-									photoByWrapper,
+									sourceWrapper,
 									authorLink,
 								},
 							} ) }

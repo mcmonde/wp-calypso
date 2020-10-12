@@ -29,8 +29,10 @@ const ShippingServiceGroups = ( {
 	// Some shippers have so many services that it is helpful to organize them
 	// into groups.  This code iterates over the services and extracts the group(s)
 	// it finds.  When rendering, we can then iterate over the group(s).
-	const servicesWithSettings = services.map( svc => Object.assign( {}, svc, settings[ svc.id ] ) );
-	const serviceGroups = groupBy( servicesWithSettings, svc => svc.group );
+	const servicesWithSettings = services.map( ( svc ) =>
+		Object.assign( {}, svc, settings[ svc.id ] )
+	);
+	const serviceGroups = groupBy( servicesWithSettings, ( svc ) => svc.group );
 
 	const renderServiceGroup = ( serviceGroup ) => {
 		const groupFields = map( serviceGroups[ serviceGroup ], 'id' );
@@ -45,7 +47,7 @@ const ShippingServiceGroups = ( {
 			<ShippingServiceGroup
 				key={ serviceGroup }
 				title={ serviceGroups[ serviceGroup ][ 0 ].group_name }
-				deliveryEstimate={ serviceGroups[ serviceGroup ][ 0 ].group_estimate || false }
+				deliveryEstimate={ serviceGroups[ serviceGroup ][ 0 ].group_estimate || '' }
 				services={ serviceGroups[ serviceGroup ] }
 				currencySymbol={ currencySymbol }
 				updateValue={ updateValue }

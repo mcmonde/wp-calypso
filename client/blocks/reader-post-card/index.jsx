@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External Dependencies
  */
@@ -9,11 +8,12 @@ import { noop, truncate, get } from 'lodash';
 import classnames from 'classnames';
 import ReactDom from 'react-dom';
 import closest from 'component-closest';
+import config from 'config';
 
 /**
  * Internal Dependencies
  */
-import Card from 'components/card';
+import { Card } from '@automattic/components';
 import DisplayTypes from 'state/reader/posts/display-types';
 import * as stats from 'reader/stats';
 import ReaderPostActions from 'blocks/reader-post-actions';
@@ -30,8 +30,13 @@ import {
 	getSourceFollowUrl as getDiscoverFollowUrl,
 } from 'reader/discover/helper';
 import DiscoverFollowButton from 'reader/discover/follow-button';
-import { expandCard as expandCardAction } from 'state/ui/reader/card-expansions/actions';
-import { isReaderCardExpanded } from 'state/selectors';
+import { expandCard as expandCardAction } from 'state/reader-ui/card-expansions/actions';
+import isReaderCardExpanded from 'state/selectors/is-reader-card-expanded';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class ReaderPostCard extends React.Component {
 	static propTypes = {
@@ -64,33 +69,33 @@ class ReaderPostCard extends React.Component {
 		this.props.onClick( postToOpen );
 	};
 
-	handleCardClick = event => {
+	handleCardClick = ( event ) => {
 		const rootNode = ReactDom.findDOMNode( this ),
 			selection = window.getSelection && window.getSelection();
 
 		// if the click has modifier or was not primary, ignore it
 		if ( event.button > 0 || event.metaKey || event.controlKey || event.shiftKey || event.altKey ) {
-			if ( closest( event.target, '.reader-post-card__title-link', true, rootNode ) ) {
+			if ( closest( event.target, '.reader-post-card__title-link', rootNode ) ) {
 				stats.recordPermalinkClick( 'card_title_with_modifier', this.props.post );
 			}
 			return;
 		}
 
-		if ( closest( event.target, '.should-scroll', true, rootNode ) ) {
-			setTimeout( function() {
+		if ( closest( event.target, '.should-scroll', rootNode ) ) {
+			setTimeout( function () {
 				window.scrollTo( 0, 0 );
 			}, 100 );
 		}
 
 		// declarative ignore
-		if ( closest( event.target, '.ignore-click, [rel~=external]', true, rootNode ) ) {
+		if ( closest( event.target, '.ignore-click, [rel~=external]', rootNode ) ) {
 			return;
 		}
 
 		// ignore clicks on anchors inside inline content
 		if (
-			closest( event.target, 'a', true, rootNode ) &&
-			closest( event.target, '.reader-excerpt', true, rootNode )
+			closest( event.target, 'a', rootNode ) &&
+			closest( event.target, '.reader-excerpt', rootNode )
 		) {
 			return;
 		}
@@ -127,6 +132,7 @@ class ReaderPostCard extends React.Component {
 			compact,
 		} = this.props;
 
+		const isSeen = config.isEnabled( 'reader/seen-posts' ) && !! post.is_seen;
 		const isPhotoPost = !! ( post.display_type & DisplayTypes.PHOTO_ONLY ) && ! compact;
 		const isGalleryPost = !! ( post.display_type & DisplayTypes.GALLERY ) && ! compact;
 		const isVideo = !! ( post.display_type & DisplayTypes.FEATURED_VIDEO ) && ! compact;
@@ -138,6 +144,7 @@ class ReaderPostCard extends React.Component {
 			'is-gallery': isGalleryPost,
 			'is-selected': isSelected,
 			'is-discover': isDiscover,
+			'is-seen': isSeen,
 			'is-expanded-video': isVideo && isExpanded,
 			'is-compact': compact,
 		} );
@@ -154,6 +161,7 @@ class ReaderPostCard extends React.Component {
 			);
 		}
 
+		/* eslint-disable wpcalypso/jsx-classname-namespace */
 		const readerPostActions = (
 			<ReaderPostActions
 				post={ discoverPost || post }
@@ -169,6 +177,7 @@ class ReaderPostCard extends React.Component {
 				iconSize={ 18 }
 			/>
 		);
+		/* eslint-enable wpcalypso/jsx-classname-namespace */
 
 		// Set up post byline
 		let postByline;
@@ -240,8 +249,9 @@ class ReaderPostCard extends React.Component {
 					site={ site }
 					postKey={ postKey }
 				>
-					{ isDailyPostChallengeOrPrompt( post ) &&
-						site && <DailyPostButton post={ post } site={ site } /> }
+					{ isDailyPostChallengeOrPrompt( post ) && site && (
+						<DailyPostButton post={ post } site={ site } />
+					) }
 					{ discoverFollowButton }
 					{ readerPostActions }
 				</StandardPost>
@@ -253,14 +263,13 @@ class ReaderPostCard extends React.Component {
 		return (
 			<Card className={ classes } onClick={ onClick }>
 				{ ! compact && postByline }
-				{ showPrimaryFollowButton &&
-					followUrl && (
-						<FollowButton
-							siteUrl={ followUrl }
-							followSource={ followSource }
-							railcar={ post.railcar }
-						/>
-					) }
+				{ showPrimaryFollowButton && followUrl && (
+					<FollowButton
+						siteUrl={ followUrl }
+						followSource={ followSource }
+						railcar={ post.railcar }
+					/>
+				) }
 				{ readerPostCard }
 				{ this.props.children }
 			</Card>

@@ -1,26 +1,28 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
-import PropTypes from 'prop-types';
-import { localize } from 'i18n-calypso';
-import React from 'react';
 import debugFactory from 'debug';
+import { localize } from 'i18n-calypso';
+import PropTypes from 'prop-types';
+import React from 'react';
+
 const debug = debugFactory( 'calypso:me:security:2fa-backup-codes-prompt' );
 
 /**
  * Internal dependencies
  */
-import FormButton from 'components/forms/form-button';
-import FormFieldset from 'components/forms/form-fieldset';
-import FormLabel from 'components/forms/form-label';
-import FormTelInput from 'components/forms/form-tel-input';
-import twoStepAuthorization from 'lib/two-step-authorization';
-import analytics from 'lib/analytics';
-import constants from 'me/constants';
-import Notice from 'components/notice';
+import { gaRecordEvent } from 'calypso/lib/analytics/ga';
+import FormButton from 'calypso/components/forms/form-button';
+import FormFieldset from 'calypso/components/forms/form-fieldset';
+import FormLabel from 'calypso/components/forms/form-label';
+import FormVerificationCodeInput from 'calypso/components/forms/form-verification-code-input';
+import Notice from 'calypso/components/notice';
+import twoStepAuthorization from 'calypso/lib/two-step-authorization';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class Security2faBackupCodesPrompt extends React.Component {
 	static displayName = 'Security2faBackupCodesPrompt';
@@ -44,19 +46,7 @@ class Security2faBackupCodesPrompt extends React.Component {
 		debug( this.constructor.displayName + ' React component will unmount.' );
 	}
 
-	getSubmitDisabled = () => {
-		if ( this.state.submittingCode ) {
-			return true;
-		}
-
-		if ( this.state.backupCodeEntry.length !== 8 ) {
-			return true;
-		}
-
-		return false;
-	};
-
-	onVerify = event => {
+	onVerify = ( event ) => {
 		event.preventDefault();
 		this.setState( { submittingCode: true } );
 		twoStepAuthorization.validateBackupCode( this.state.backupCodeEntry, this.onRequestComplete );
@@ -83,7 +73,7 @@ class Security2faBackupCodesPrompt extends React.Component {
 		this.props.onSuccess();
 	};
 
-	onPrintAgain = event => {
+	onPrintAgain = ( event ) => {
 		event.preventDefault();
 		this.props.onPrintAgain();
 	};
@@ -92,8 +82,8 @@ class Security2faBackupCodesPrompt extends React.Component {
 		this.setState( { lastError: false } );
 	};
 
-	onClickPrintButton = event => {
-		analytics.ga.recordEvent( 'Me', 'Clicked On 2fa Print Backup Codes Again Button' );
+	onClickPrintButton = ( event ) => {
+		gaRecordEvent( 'Me', 'Clicked On 2fa Print Backup Codes Again Button' );
 		this.onPrintAgain( event );
 	};
 
@@ -136,14 +126,13 @@ class Security2faBackupCodesPrompt extends React.Component {
 					<FormLabel htmlFor="backup-code-entry">
 						{ this.props.translate( 'Type a Backup Code to Verify' ) }
 					</FormLabel>
-					<FormTelInput
+
+					<FormVerificationCodeInput
 						disabled={ this.state.submittingCode }
 						name="backupCodeEntry"
-						autoComplete="off"
-						maxLength="8"
-						placeholder={ constants.eightDigitBackupCodePlaceholder }
-						onFocus={ function() {
-							analytics.ga.recordEvent(
+						method="backup"
+						onFocus={ function () {
+							gaRecordEvent(
 								'Me',
 								'Focused On 2fa Backup Codes Confirm Printed Backup Codes Input'
 							);
@@ -159,9 +148,9 @@ class Security2faBackupCodesPrompt extends React.Component {
 
 				<FormButton
 					className="security-2fa-backup-codes-prompt__verify"
-					disabled={ this.getSubmitDisabled() }
-					onClick={ function() {
-						analytics.ga.recordEvent( 'Me', 'Clicked On 2fa Backup Codes Verify Button' );
+					disabled={ this.state.submittingCode }
+					onClick={ function () {
+						gaRecordEvent( 'Me', 'Clicked On 2fa Backup Codes Verify Button' );
 					} }
 				>
 					{ this.state.submittingCode
@@ -172,7 +161,7 @@ class Security2faBackupCodesPrompt extends React.Component {
 		);
 	}
 
-	handleChange = e => {
+	handleChange = ( e ) => {
 		const { name, value } = e.currentTarget;
 		this.setState( { [ name ]: value } );
 	};

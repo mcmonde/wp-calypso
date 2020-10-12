@@ -4,19 +4,19 @@
 
 .site-tools__section-title {
 	margin-bottom: 4px;
-	font-size: 14px;
+	font-size: $font-body-small;
 	line-height: 18px;
-	color: $gray-dark;
+	color: var( --color-neutral-70 );
 
 	&.is-warning {
-		color: $alert-red;
+		color: var( --color-error );
 	}
 }
 
 .site-tools__section-desc {
 	margin-bottom: 0;
-	font-size: 13px;
-	color: $gray-text-min;
+	font-size: $font-body-small;
+	color: var( --color-text-subtle );
 	font-style: italic;
 }
 
@@ -30,7 +30,7 @@
 		display: none;
 	}
 
-	@include breakpoint( ">480px" ) {
+	@include breakpoint-deprecated( '>480px' ) {
 		&.is-compact {
 			padding: 24px;
 		}

@@ -1,26 +1,32 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import tinymce from 'tinymce/tinymce';
 import closest from 'component-closest';
-import userModule from 'lib/user';
+import debugModule from 'debug';
 
 /**
  * Internal dependencies
  */
-import { recordTinyMCEButtonClick } from 'lib/posts/stats';
+import { gaRecordEvent } from 'lib/analytics/ga';
+import { bumpStat } from 'lib/analytics/mc';
+import { getCurrentUserLocale } from 'state/current-user/selectors';
 
-/**
- * Module variables
- */
-const user = userModule();
+const debug = debugModule( 'calypso:posts:stats' );
+
+const shouldBumpStat = Math.random() <= 0.01 || process.env.NODE_ENV === 'development';
+
+function recordTinyMCEButtonClick( buttonName ) {
+	if ( shouldBumpStat ) {
+		bumpStat( 'editor-button', 'calypso_' + buttonName );
+	}
+	gaRecordEvent( 'Editor', 'Clicked TinyMCE Button', buttonName );
+	debug( 'TinyMCE button click', buttonName, 'mc=', shouldBumpStat );
+}
 
 function editorButtonAnalytics( editor ) {
 	function editorEventAncestor( event, selector ) {
-		return closest( event.target, selector, true, editor.container );
+		return closest( event.target, selector, editor.container );
 	}
 
 	/**
@@ -29,11 +35,11 @@ function editorButtonAnalytics( editor ) {
 	 * foreground color button to apply the previously selected foreground
 	 * color.  These items are handled separately below.
 	 */
-	Object.keys( editor.buttons ).forEach( buttonName => {
+	Object.keys( editor.buttons ).forEach( ( buttonName ) => {
 		const button = editor.buttons[ buttonName ];
 		const onPostRender = button.onPostRender;
-		button.onPostRender = function() {
-			this.on( 'click', event => {
+		button.onPostRender = function () {
+			this.on( 'click', ( event ) => {
 				let eventName = buttonName.replace( /^(wp|wpcom)_/, '' );
 
 				if ( buttonName === 'forecolor' ) {
@@ -57,7 +63,7 @@ function editorButtonAnalytics( editor ) {
 		};
 	} );
 
-	/**
+	/*
 	 * Track clicks on a couple of odd controls that aren't caught above.
 	 * Using `document.body` because the format dropdown menu is a direct child
 	 * of `document.body` (not a descendant of `editor.container`).
@@ -75,14 +81,14 @@ function editorButtonAnalytics( editor ) {
 		} else if ( editorEventAncestor( event, '.mce-listbox' ) ) {
 			// This is a click on the format dropdown button
 			recordTinyMCEButtonClick( 'format_dropdown' );
-		} else if ( closest( event.target, '.mce-menu-item', true ) ) {
+		} else if ( closest( event.target, '.mce-menu-item' ) ) {
 			// This is a menu item in the format dropdown.  Only track which
 			// specific item is clicked for english interfaces - the easiest
 			// way to determine which item is selected is by UI text.
-			const currentUser = user.get();
-			const locale = currentUser ? currentUser.localeSlug : 'en';
+			const reduxStore = editor.getParam( 'redux_store' );
+			const locale = reduxStore ? getCurrentUserLocale( reduxStore.getState() ) : 'en';
 			if ( locale === 'en' ) {
-				const text = closest( event.target, '.mce-menu-item', true ).textContent;
+				const text = closest( event.target, '.mce-menu-item' ).textContent;
 				const menuItemName = text
 					.toLowerCase()
 					.trim()
@@ -103,6 +109,6 @@ function editorButtonAnalytics( editor ) {
 	} );
 }
 
-export default function() {
+export default function () {
 	tinymce.PluginManager.add( 'wpcom/editorbuttonanalytics', editorButtonAnalytics );
 }

@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -20,6 +18,11 @@ import ReaderFollowButton from 'reader/follow-button';
 import { getStreamUrl } from 'reader/route';
 import { areEqualIgnoringWhitespaceAndCase } from 'lib/string';
 import AuthorCompactProfilePlaceholder from './placeholder';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class AuthorCompactProfile extends React.Component {
 	static propTypes = {
@@ -71,12 +74,11 @@ class AuthorCompactProfile extends React.Component {
 				<a href={ streamUrl } className="author-compact-profile__avatar-link">
 					<ReaderAvatar siteIcon={ siteIcon } feedIcon={ feedIcon } author={ author } />
 				</a>
-				{ hasAuthorName &&
-					! hasMatchingAuthorAndSiteNames && (
-						<ReaderAuthorLink author={ author } siteUrl={ streamUrl } post={ post }>
-							{ author.name }
-						</ReaderAuthorLink>
-					) }
+				{ hasAuthorName && ! hasMatchingAuthorAndSiteNames && (
+					<ReaderAuthorLink author={ author } siteUrl={ streamUrl } post={ post }>
+						{ author.name }
+					</ReaderAuthorLink>
+				) }
 				{ siteName && (
 					<ReaderSiteStreamLink
 						className="author-compact-profile__site-link"

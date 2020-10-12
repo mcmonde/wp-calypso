@@ -1,5 +1,4 @@
 /**
- * @format
  * @jest-environment jsdom
  */
 
@@ -14,14 +13,21 @@ import React from 'react';
  * Internal dependencies
  */
 import { CreditCardPaymentBox } from '../credit-card-payment-box';
+import PaymentChatButton from '../payment-chat-button';
+import CheckoutTerms from '../checkout-terms';
 import { INPUT_VALIDATION } from 'lib/store-transactions/step-types';
 import {
+	PLAN_ECOMMERCE,
+	PLAN_ECOMMERCE_2_YEARS,
+	PLAN_BUSINESS_MONTHLY,
 	PLAN_BUSINESS,
 	PLAN_BUSINESS_2_YEARS,
 	PLAN_PREMIUM,
 	PLAN_PREMIUM_2_YEARS,
 	PLAN_PERSONAL,
 	PLAN_PERSONAL_2_YEARS,
+	PLAN_BLOGGER,
+	PLAN_BLOGGER_2_YEARS,
 	PLAN_FREE,
 	PLAN_JETPACK_FREE,
 	PLAN_JETPACK_PERSONAL,
@@ -41,19 +47,6 @@ jest.mock( 'lib/cart-values', () => ( {
 	},
 } ) );
 
-jest.mock( 'i18n-calypso', () => ( {
-	localize: x => x,
-} ) );
-
-jest.mock( '../terms-of-service', () => {
-	const react = require( 'react' );
-	return class TermsOfService extends react.Component {};
-} );
-jest.mock( '../payment-chat-button', () => {
-	const react = require( 'react' );
-	return class PaymentChatButton extends react.Component {};
-} );
-
 jest.mock( 'lib/abtest', () => ( { abtest: () => {} } ) );
 jest.mock( 'lib/cart-values', () => ( {
 	cartItems: {
@@ -68,7 +61,7 @@ describe( 'Credit Card Payment Box', () => {
 		cards: [],
 		transaction: {},
 		cart: {},
-		countriesList: {},
+		countriesList: [],
 		initialCard: {},
 		transactionStep: {},
 		onSubmit: noop,
@@ -78,6 +71,7 @@ describe( 'Credit Card Payment Box', () => {
 	test( 'does not blow up with default props', () => {
 		const wrapper = shallow( <CreditCardPaymentBox { ...defaultProps } /> );
 		expect( wrapper ).toHaveLength( 1 );
+		expect( wrapper.find( CheckoutTerms ) ).toHaveLength( 1 );
 	} );
 
 	test( 'should set progress timer when incoming validation transaction step contains no errors', () => {
@@ -92,8 +86,8 @@ describe( 'Credit Card Payment Box', () => {
 		} );
 		jest.runOnlyPendingTimers();
 		expect( wrapper.instance().timer ).not.toBe( null );
-		expect( tickSpy.mock.calls.length ).toBe( 1 );
-		expect( setInterval.mock.calls.length ).toBe( 1 );
+		expect( tickSpy.mock.calls ).toHaveLength( 1 );
+		expect( setInterval.mock.calls ).toHaveLength( 1 );
 		setInterval.mockClear();
 	} );
 
@@ -110,8 +104,8 @@ describe( 'Credit Card Payment Box', () => {
 		} );
 		jest.runOnlyPendingTimers();
 		expect( wrapper.instance().timer ).toBe( null );
-		expect( tickSpy.mock.calls.length ).toBe( 0 );
-		expect( setInterval.mock.calls.length ).toBe( 0 );
+		expect( tickSpy.mock.calls ).toHaveLength( 0 );
+		expect( setInterval.mock.calls ).toHaveLength( 0 );
 		setInterval.mockClear();
 	} );
 
@@ -127,8 +121,8 @@ describe( 'Credit Card Payment Box', () => {
 		} );
 		jest.runOnlyPendingTimers();
 		expect( wrapper.instance().timer ).not.toBe( null );
-		expect( tickSpy.mock.calls.length ).toBe( 1 );
-		expect( setInterval.mock.calls.length ).toBe( 1 );
+		expect( tickSpy.mock.calls ).toHaveLength( 1 );
+		expect( setInterval.mock.calls ).toHaveLength( 1 );
 		wrapper.setProps( {
 			transactionStep: {
 				name: INPUT_VALIDATION,
@@ -137,8 +131,8 @@ describe( 'Credit Card Payment Box', () => {
 		} );
 		jest.runOnlyPendingTimers();
 		expect( wrapper.instance().timer ).toBe( null );
-		expect( tickSpy.mock.calls.length ).toBe( 1 );
-		expect( setInterval.mock.calls.length ).toBe( 1 );
+		expect( tickSpy.mock.calls ).toHaveLength( 1 );
+		expect( setInterval.mock.calls ).toHaveLength( 1 );
 		setInterval.mockClear();
 	} );
 } );
@@ -147,11 +141,20 @@ describe( 'Credit Card Payment Box - PaymentChatButton', () => {
 	const defaultProps = {
 		cart: {},
 		translate: identity,
+		transaction: {},
+		transactionStep: {},
+		countriesList: [],
 	};
 
-	const businessPlans = [ PLAN_BUSINESS, PLAN_BUSINESS_2_YEARS ];
+	const eligiblePlans = [
+		PLAN_BUSINESS_MONTHLY,
+		PLAN_BUSINESS,
+		PLAN_BUSINESS_2_YEARS,
+		PLAN_ECOMMERCE,
+		PLAN_ECOMMERCE_2_YEARS,
+	];
 
-	businessPlans.forEach( product_slug => {
+	eligiblePlans.forEach( ( product_slug ) => {
 		test( 'should render PaymentChatButton if any WP.com business plan is in the cart', () => {
 			const props = {
 				...defaultProps,
@@ -161,11 +164,11 @@ describe( 'Credit Card Payment Box - PaymentChatButton', () => {
 				},
 			};
 			const wrapper = shallow( <CreditCardPaymentBox { ...props } /> );
-			expect( wrapper.find( 'PaymentChatButton' ) ).toHaveLength( 1 );
+			expect( wrapper.find( PaymentChatButton ) ).toHaveLength( 1 );
 		} );
 	} );
 
-	businessPlans.forEach( product_slug => {
+	eligiblePlans.forEach( ( product_slug ) => {
 		test( 'should not render PaymentChatButton if presaleChatAvailable is false', () => {
 			const props = {
 				...defaultProps,
@@ -175,7 +178,7 @@ describe( 'Credit Card Payment Box - PaymentChatButton', () => {
 				},
 			};
 			const wrapper = shallow( <CreditCardPaymentBox { ...props } /> );
-			expect( wrapper.find( 'PaymentChatButton' ) ).toHaveLength( 0 );
+			expect( wrapper.find( PaymentChatButton ) ).toHaveLength( 0 );
 		} );
 	} );
 
@@ -184,6 +187,8 @@ describe( 'Credit Card Payment Box - PaymentChatButton', () => {
 		PLAN_PREMIUM_2_YEARS,
 		PLAN_PERSONAL,
 		PLAN_PERSONAL_2_YEARS,
+		PLAN_BLOGGER,
+		PLAN_BLOGGER_2_YEARS,
 		PLAN_FREE,
 		PLAN_JETPACK_FREE,
 		PLAN_JETPACK_PERSONAL,
@@ -194,7 +199,7 @@ describe( 'Credit Card Payment Box - PaymentChatButton', () => {
 		PLAN_JETPACK_BUSINESS_MONTHLY,
 	];
 
-	otherPlans.forEach( product_slug => {
+	otherPlans.forEach( ( product_slug ) => {
 		test( 'should not render PaymentChatButton if only non-business plan products are in the cart', () => {
 			const props = {
 				...defaultProps,
@@ -203,7 +208,7 @@ describe( 'Credit Card Payment Box - PaymentChatButton', () => {
 				},
 			};
 			const wrapper = shallow( <CreditCardPaymentBox { ...props } /> );
-			expect( wrapper.find( 'PaymentChatButton' ) ).toHaveLength( 0 );
+			expect( wrapper.find( PaymentChatButton ) ).toHaveLength( 0 );
 		} );
 	} );
 } );

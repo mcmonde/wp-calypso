@@ -1,65 +1,61 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { localize } from 'i18n-calypso';
+import { find } from 'lodash';
 
 /**
  * Internal dependencies
  */
-import { successNotice, errorNotice } from 'state/notices/actions';
-import Main from 'components/main';
-import ReauthRequired from 'me/reauth-required';
-import twoStepAuthorization from 'lib/two-step-authorization';
-import MeSidebarNavigation from 'me/sidebar-navigation';
+import Main from 'calypso/components/main';
+import ReauthRequired from 'calypso/me/reauth-required';
+import twoStepAuthorization from 'calypso/lib/two-step-authorization';
+import MeSidebarNavigation from 'calypso/me/sidebar-navigation';
 import Navigation from './navigation';
 import BlogsSettings from './blogs-settings';
 import PushNotificationSettings from './push-notification-settings';
-import store from 'lib/notification-settings-store';
-import QueryUserDevices from 'components/data/query-user-devices';
-import { fetchSettings, toggle, saveSettings } from 'lib/notification-settings-store/actions';
-import PageViewTracker from 'lib/analytics/page-view-tracker';
+import QueryUserDevices from 'calypso/components/data/query-user-devices';
+import PageViewTracker from 'calypso/lib/analytics/page-view-tracker';
+import { fetchSettings, toggle, saveSettings } from 'calypso/state/notification-settings/actions';
+import {
+	getNotificationSettings,
+	hasUnsavedNotificationSettingsChanges,
+} from 'calypso/state/notification-settings/selectors';
 
 class NotificationSettings extends Component {
-	state = {
-		settings: null,
-		hasUnsavedChanges: false,
-	};
-
 	componentDidMount() {
-		store.on( 'change', this.onChange );
-		fetchSettings();
-	}
-
-	componentWillUnmount() {
-		store.off( 'change', this.onChange );
+		this.props.fetchSettings();
 	}
 
 	onChange = () => {
-		const state = store.getStateFor( 'blogs' );
+		const { error, status } = this.props;
 
-		if ( state.error ) {
+		if ( error ) {
 			this.props.errorNotice(
-				this.props.translate( 'There was a problem saving your changes. Please, try again.' )
+				this.props.translate( 'There was a problem saving your changes. Please, try again.' ),
+				{
+					id: 'notif-settings-save',
+				}
 			);
 		}
 
-		if ( state.status === 'success' ) {
-			this.props.successNotice( this.props.translate( 'Settings saved successfully!' ) );
+		if ( status === 'success' ) {
+			this.props.successNotice( this.props.translate( 'Settings saved successfully!' ), {
+				id: 'notif-settings-save',
+				duration: 4000,
+			} );
 		}
-
-		this.setState( state );
 	};
 
 	render() {
-		const findSettingsForBlog = blogId =>
-			this.state.settings.find( blog => blog.get( 'blog_id' ) === parseInt( blogId, 10 ) );
-		const onSave = blogId => saveSettings( 'blogs', findSettingsForBlog( blogId ) );
-		const onSaveToAll = blogId => saveSettings( 'blogs', findSettingsForBlog( blogId ), true );
+		// TODO: We should avoid creating functions in the render method
+		const findSettingsForBlog = ( blogId ) =>
+			find( this.props.settings, { blog_id: parseInt( blogId, 10 ) } );
+		const onSave = ( blogId ) => this.props.saveSettings( 'blogs', findSettingsForBlog( blogId ) );
+		const onSaveToAll = ( blogId ) =>
+			this.props.saveSettings( 'blogs', findSettingsForBlog( blogId ), true );
 
 		return (
 			<Main className="notification-settings">
@@ -70,9 +66,9 @@ class NotificationSettings extends Component {
 				<Navigation path={ this.props.path } />
 				<PushNotificationSettings pushNotifications={ this.props.pushNotifications } />
 				<BlogsSettings
-					settings={ this.state.settings }
-					hasUnsavedChanges={ this.state.hasUnsavedChanges }
-					onToggle={ toggle }
+					settings={ this.props.settings }
+					hasUnsavedChanges={ this.props.hasUnsavedChanges }
+					onToggle={ this.props.toggle }
 					onSave={ onSave }
 					onSaveToAll={ onSaveToAll }
 				/>
@@ -81,4 +77,10 @@ class NotificationSettings extends Component {
 	}
 }
 
-export default connect( null, { successNotice, errorNotice } )( localize( NotificationSettings ) );
+export default connect(
+	( state ) => ( {
+		settings: getNotificationSettings( state, 'blogs' ),
+		hasUnsavedChanges: hasUnsavedNotificationSettingsChanges( state, 'blogs' ),
+	} ),
+	{ fetchSettings, toggle, saveSettings }
+)( localize( NotificationSettings ) );

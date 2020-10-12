@@ -1,18 +1,18 @@
 .reading-widget__container {
 	box-sizing: border-box;
-	background: $white;
+	background: var( --color-surface );
 	padding-bottom: 0;
-	box-shadow: 0 0 0 1px transparentize( $gray-lighten-20, .5 ),
-		0 1px 2px $gray-lighten-30;
+	box-shadow: 0 0 0 1px rgba( var( --color-neutral-10-rgb ), 0.5 ),
+		0 1px 2px var( --color-neutral-0 );
 
 	.reading-widget__heading {
 		h2 {
-			font-size: 20px;
+			font-size: $font-title-small;
 			margin-bottom: 16px;
 		}
 
 		p {
-			font-size: 14px;
+			font-size: $font-body-small;
 		}
 	}
 
@@ -24,7 +24,7 @@
 		li {
 			margin-bottom: 12px;
 			padding-top: 12px;
-			border-top: 1px solid $gray-lighten-30;
+			border-top: 1px solid var( --color-neutral-0 );
 
 			&:first-child {
 				border-top: 0;
@@ -36,45 +36,45 @@
 			}
 
 			span {
-				color: $gray-dark;
-				font-size: 12px;
+				color: var( --color-neutral-70 );
+				font-size: $font-body-extra-small;
 			}
 		}
 	}
 
 	.reading-widget__subscription-form {
 		align-items: stretch;
-		border-top: 1px solid $gray-lighten-30;
-		background: $gray-light;
+		border-top: 1px solid var( --color-neutral-0 );
+		background: var( --color-neutral-0 );
 		display: flex;
 		flex-direction: column;
-		padding: 24px 16px 0 16px;
+		padding: 24px 16px 0;
 		margin-left: -16px;
 		margin-right: -16px;
 
-		@include breakpoint( ">660px" ) {
+		@include breakpoint-deprecated( '>660px' ) {
 			flex-direction: row;
 		}
 
-		@include breakpoint( ">480px" ) {
-			padding: 24px 24px 0 24px;
+		@include breakpoint-deprecated( '>480px' ) {
+			padding: 24px 24px 0;
 			margin-left: -24px;
 			margin-right: -24px;
 		}
 
 		.reading-widget__subscription-form-explanation {
 			flex: 1 0 0;
-			font-size: 14px;
+			font-size: $font-body-small;
 			margin-bottom: 24px;
 
-			@include breakpoint( ">660px" ) {
+			@include breakpoint-deprecated( '>660px' ) {
 				padding-right: 16px;
 			}
 
 			p {
 				margin-bottom: 0;
 
-				&:nth-child(2) {
+				&:nth-child( 2 ) {
 					margin-top: 1.5em;
 				}
 			}
@@ -83,7 +83,7 @@
 		.reading-widget__subscription-form-fields {
 			flex: 1 0 0;
 
-			@include breakpoint( ">660px" ) {
+			@include breakpoint-deprecated( '>660px' ) {
 				padding-left: 16px;
 			}
 
@@ -93,7 +93,7 @@
 
 			.multi-checkbox {
 				margin-bottom: 8px;
-				font-size: 13px;
+				font-size: $font-body-small;
 				display: flex;
 				flex-wrap: wrap;
 

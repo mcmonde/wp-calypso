@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -9,7 +8,7 @@ import classNames from 'classnames';
 import { get, includes, map, concat } from 'lodash';
 import { localize } from 'i18n-calypso';
 import { isEnabled } from 'config';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 import { current as currentPage } from 'page';
 
 /**
@@ -18,17 +17,16 @@ import { current as currentPage } from 'page';
 import QueryPostTypes from 'components/data/query-post-types';
 import QueryPublicizeConnections from 'components/data/query-publicize-connections';
 import QuerySitePlans from 'components/data/query-site-plans';
-import Button from 'components/button';
+import { Button } from '@automattic/components';
 import ButtonGroup from 'components/button-group';
 import NoticeAction from 'components/notice/notice-action';
-import {
-	getPostSharePublishedActions,
-	getPostShareScheduledActions,
-	getScheduledPublicizeShareActionTime,
-	isPublicizeEnabled,
-	isSchedulingPublicizeShareAction,
-	isSchedulingPublicizeShareActionError,
-} from 'state/selectors';
+import { withLocalizedMoment } from 'components/localized-moment';
+import getPostSharePublishedActions from 'state/selectors/get-post-share-published-actions';
+import getPostShareScheduledActions from 'state/selectors/get-post-share-scheduled-actions';
+import getScheduledPublicizeShareActionTime from 'state/selectors/get-scheduled-publicize-share-action-time';
+import isPublicizeEnabled from 'state/selectors/is-publicize-enabled';
+import isSchedulingPublicizeShareAction from 'state/selectors/is-scheduling-publicize-share-action';
+import isSchedulingPublicizeShareActionError from 'state/selectors/is-scheduling-publicize-share-action-error';
 import { getSiteSlug, getSitePlanSlug, isJetpackSite } from 'state/sites/selectors';
 import { getCurrentUserId, getCurrentUserCurrencyCode } from 'state/current-user/selectors';
 
@@ -53,15 +51,21 @@ import {
 	isRequestingSitePlans as siteIsRequestingPlans,
 } from 'state/sites/plans/selectors';
 import { FEATURE_REPUBLICIZE } from 'lib/plans/constants';
-import { UpgradeToPremiumNudge } from 'blocks/post-share/nudges';
+import { UpgradeToPremiumNudge } from './nudges';
 import SharingPreviewModal from './sharing-preview-modal';
-import ConnectionsList, { NoConnectionsNotice } from './connections-list';
+import ConnectionsList from './connections-list';
+import NoConnectionsNotice from './no-connections-notice';
 import ActionsList from './publicize-actions-list';
 import CalendarButton from 'blocks/calendar-button';
 import EventsTooltip from 'components/date-picker/events-tooltip';
-import analytics from 'lib/analytics';
+import { recordTracksEvent } from 'lib/analytics/tracks';
 import TrackComponentView from 'lib/analytics/track-component-view';
 import { sectionify } from 'lib/route';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class PostShare extends Component {
 	static propTypes = {
@@ -107,7 +111,7 @@ class PostShare extends Component {
 		return !! get( this.props, 'connections.length' );
 	}
 
-	toggleConnection = id => {
+	toggleConnection = ( id ) => {
 		const skipped = this.state.skipped.slice();
 		const index = skipped.indexOf( id );
 		if ( index !== -1 ) {
@@ -119,7 +123,7 @@ class PostShare extends Component {
 		this.setState( { skipped } );
 	};
 
-	scheduleDate = date => {
+	scheduleDate = ( date ) => {
 		if ( date.isBefore( Date.now() ) ) {
 			date = null;
 		}
@@ -130,8 +134,10 @@ class PostShare extends Component {
 		return this.state.skipped.indexOf( keyring_connection_ID ) === -1;
 	}
 
-	isConnectionActive = connection =>
-		connection.status !== 'broken' && this.skipConnection( connection );
+	isConnectionActive = ( connection ) =>
+		connection.status !== 'broken' &&
+		connection.status !== 'invalid' &&
+		this.skipConnection( connection );
 
 	activeConnections() {
 		return this.props.connections.filter( this.isConnectionActive );
@@ -146,22 +152,22 @@ class PostShare extends Component {
 			document.documentElement.classList.remove( 'no-scroll', 'is-previewing' );
 		}
 
-		analytics.tracks.recordEvent( 'calypso_publicize_share_preview_toggle', {
+		recordTracksEvent( 'calypso_publicize_share_preview_toggle', {
 			show: showSharingPreview,
 		} );
 		this.setState( { showSharingPreview } );
 	};
 
-	setMessage = message => this.setState( { message } );
+	setMessage = ( message ) => this.setState( { message } );
 
 	dismiss = () => {
 		this.props.dismissShareConfirmation( this.props.siteId, this.props.postId );
 	};
 
 	sharePost = () => {
-		const { postId, siteId, connections } = this.props;
+		const { postId, siteId, connections, isJetpack } = this.props;
 		const servicesToPublish = connections.filter(
-			connection => this.state.skipped.indexOf( connection.keyring_connection_ID ) === -1
+			( connection ) => this.state.skipped.indexOf( connection.keyring_connection_ID ) === -1
 		);
 		//Let's prepare array of service stats for tracks.
 		const numberOfAccountsPerService = servicesToPublish.reduce(
@@ -175,21 +181,25 @@ class PostShare extends Component {
 			},
 			{ service_all: 0 }
 		);
-		const additionalProperties = { context_path: sectionify( currentPage ) };
+		const additionalProperties = {
+			context_path: sectionify( currentPage ),
+			is_jetpack: isJetpack,
+			blog_id: siteId,
+		};
 		const eventProperties = { ...numberOfAccountsPerService, ...additionalProperties };
 
 		if ( this.state.scheduledDate ) {
-			analytics.tracks.recordEvent( 'calypso_publicize_share_schedule', eventProperties );
+			recordTracksEvent( 'calypso_publicize_share_schedule', eventProperties );
 
 			this.props.schedulePostShareAction(
 				siteId,
 				postId,
 				this.state.message,
 				this.state.scheduledDate.format( 'X' ),
-				servicesToPublish.map( connection => connection.ID )
+				servicesToPublish.map( ( connection ) => connection.ID )
 			);
 		} else {
-			analytics.tracks.recordEvent( 'calypso_publicize_share_instantly', eventProperties );
+			recordTracksEvent( 'calypso_publicize_share_instantly', eventProperties );
 			this.props.sharePost( siteId, postId, this.state.skipped, this.state.message );
 		}
 	};
@@ -315,10 +325,9 @@ class PostShare extends Component {
 						className="post-share__schedule-button"
 						disabled={ this.isDisabled() }
 						disabledDays={ [ { before: new Date() } ] }
-						enableOutsideDays={ false }
+						showOutsideDays={ false }
 						title={ translate( 'Set date and time' ) }
 						selectedDay={ this.state.scheduledDate }
-						tabIndex={ 3 }
 						siteId={ siteId }
 						onDateChange={ this.scheduleDate }
 						onDayMouseEnter={ this.showCalendarTooltip }
@@ -347,23 +356,54 @@ class PostShare extends Component {
 			return null;
 		}
 
-		const brokenConnections = connections.filter( connection => connection.status === 'broken' );
+		const brokenConnections = connections.filter(
+			( connection ) => connection.status === 'broken'
+		);
+		const invalidConnections = connections.filter(
+			( connection ) => connection.status === 'invalid'
+		);
 
-		if ( ! brokenConnections.length ) {
+		if ( ! ( brokenConnections.length || invalidConnections.length ) ) {
 			return null;
 		}
 
 		return (
 			<div>
-				{ brokenConnections.map( connection => (
+				{ brokenConnections.map( ( connection ) => (
 					<Notice
 						key={ connection.keyring_connection_ID }
 						status="is-warning"
 						showDismiss={ false }
 						text={ translate( 'There is an issue connecting to %s.', { args: connection.label } ) }
 					>
-						<NoticeAction href={ `/sharing/${ siteSlug }` }>
+						<NoticeAction href={ `/marketing/connections/${ siteSlug }` }>
 							{ translate( 'Reconnect' ) }
+						</NoticeAction>
+					</Notice>
+				) ) }
+				{ invalidConnections.map( ( connection ) => (
+					<Notice
+						key={ connection.keyring_connection_ID }
+						status="is-error"
+						showDismiss={ false }
+						text={
+							connection.service === 'facebook'
+								? translate( 'Connections to Facebook profiles ceased to work on August 1st.' )
+								: translate( 'Connections to %s have a permenant issue which prevents sharing.', {
+										args: connection.label,
+								  } )
+						}
+					>
+						{ connection.service === 'facebook' && (
+							<NoticeAction
+								href={ 'https://wordpress.com/support/publicize/#facebook-pages' }
+								external
+							>
+								{ translate( 'Learn More' ) }
+							</NoticeAction>
+						) }
+						<NoticeAction href={ `/marketing/connections/${ siteSlug }` }>
+							{ translate( 'Disconnect' ) }
 						</NoticeAction>
 					</Notice>
 				) ) }
@@ -372,7 +412,7 @@ class PostShare extends Component {
 	}
 
 	renderRequestSharingNotice() {
-		const { failure, requesting, success, translate } = this.props;
+		const { failure, requesting, success, translate, moment } = this.props;
 
 		if ( this.props.scheduling ) {
 			return (
@@ -385,7 +425,7 @@ class PostShare extends Component {
 			return (
 				<Notice status="is-success" onDismissClick={ this.dismiss }>
 					{ translate( "We'll share your post on %s.", {
-						args: this.props.scheduledAt.format( 'LLLL' ),
+						args: moment.unix( this.props.scheduledAt ).format( 'LLLL' ),
 					} ) }
 				</Notice>
 			);
@@ -428,7 +468,7 @@ class PostShare extends Component {
 		const { hasFetchedConnections, siteId, siteSlug, translate } = this.props;
 
 		// enrich connections
-		const connections = map( this.props.connections, connection => ( {
+		const connections = map( this.props.connections, ( connection ) => ( {
 			...connection,
 			isActive: this.isConnectionActive( connection ),
 		} ) );
@@ -448,7 +488,7 @@ class PostShare extends Component {
 				<div className="post-share__manage-connections-link">
 					{ translate( '{{a}}Manage connections{{/a}}', {
 						components: {
-							a: <a href={ `/sharing/${ siteId }` } />,
+							a: <a href={ `/marketing/connections/${ siteId }` } />,
 						},
 					} ) }
 				</div>
@@ -457,21 +497,14 @@ class PostShare extends Component {
 	}
 
 	renderPrimarySection() {
-		const { hasFetchedConnections, hasRepublicizeFeature, siteSlug, translate } = this.props;
+		const { hasFetchedConnections, hasRepublicizeFeature, siteSlug } = this.props;
 
 		if ( ! hasFetchedConnections ) {
 			return null;
 		}
 
 		if ( ! this.hasConnections() ) {
-			return (
-				<NoConnectionsNotice
-					{ ...{
-						siteSlug,
-						translate,
-					} }
-				/>
-			);
+			return <NoConnectionsNotice siteSlug={ siteSlug } />;
 		}
 
 		if ( ! hasRepublicizeFeature ) {
@@ -541,7 +574,7 @@ class PostShare extends Component {
 									'Share on your connected social media accounts using ' + '{{a}}Publicize{{/a}}.',
 									{
 										components: {
-											a: <a href={ `/sharing/${ siteSlug }` } />,
+											a: <a href={ `/marketing/connections/${ siteSlug }` } />,
 										},
 									}
 								) }
@@ -607,4 +640,4 @@ export default connect(
 		};
 	},
 	{ requestConnections, sharePost, dismissShareConfirmation, schedulePostShareAction }
-)( localize( PostShare ) );
+)( localize( withLocalizedMoment( PostShare ) ) );

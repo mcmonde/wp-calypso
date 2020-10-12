@@ -1,21 +1,24 @@
-/** @format */
-
 /**
  * External dependencies
  */
 import React from 'react';
 import classNames from 'classnames';
-import Gridicon from 'gridicons';
+import Gridicon from 'calypso/components/gridicon';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 
 /**
  * Internal dependencies
  */
-import Button from 'components/button';
-import safeProtocolUrl from 'lib/safe-protocol-url';
-import { recordGoogleEvent } from 'state/analytics/actions';
-import { withoutHttp } from 'lib/url';
+import { Button } from '@automattic/components';
+import safeProtocolUrl from 'calypso/lib/safe-protocol-url';
+import { recordGoogleEvent } from 'calypso/state/analytics/actions';
+import { withoutHttp } from 'calypso/lib/url';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class ProfileLink extends React.Component {
 	static defaultProps = {
@@ -33,11 +36,11 @@ class ProfileLink extends React.Component {
 		slug: PropTypes.string.isRequired,
 	};
 
-	recordClickEvent = action => {
+	recordClickEvent = ( action ) => {
 		this.props.recordGoogleEvent( 'Me', 'Clicked on ' + action );
 	};
 
-	getClickHandler = action => {
+	getClickHandler = ( action ) => {
 		return () => this.recordClickEvent( action );
 	};
 

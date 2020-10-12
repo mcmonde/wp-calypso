@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -15,13 +13,18 @@ import { localize } from 'i18n-calypso';
  */
 import LikeIcons from './icons';
 
+/**
+ * Style dependencies
+ */
+import './style.scss';
+
 class LikeButton extends PureComponent {
 	static propTypes = {
 		liked: PropTypes.bool,
 		showZeroCount: PropTypes.bool,
 		likeCount: PropTypes.number,
 		showLabel: PropTypes.bool,
-		tagName: PropTypes.string,
+		tagName: PropTypes.oneOfType( [ PropTypes.string, PropTypes.object ] ),
 		onLikeToggle: PropTypes.func,
 		likedLabel: PropTypes.string,
 		iconSize: PropTypes.number,
@@ -64,6 +67,8 @@ class LikeButton extends PureComponent {
 			postId,
 			slug,
 			translate,
+			onMouseEnter,
+			onMouseLeave,
 		} = this.props;
 		const showLikeCount = likeCount > 0 || showZeroCount;
 		const isLink = containerTag === 'a';
@@ -114,6 +119,8 @@ class LikeButton extends PureComponent {
 					href,
 					className: classNames( containerClasses ),
 					onClick: ! isLink ? this.toggleLiked : null,
+					onMouseEnter,
+					onMouseLeave,
 				},
 				isNull
 			),

@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -9,17 +7,25 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { get } from 'lodash';
 import classNames from 'classnames';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 
 /**
  * Internal dependencies
  */
 import Image from 'components/image';
+import MediaImage from 'my-sites/media-library/media-image';
 import Spinner from 'components/spinner';
 import QuerySites from 'components/data/query-sites';
 import { getSite } from 'state/sites/selectors';
-import { getSiteIconUrl, getSiteIconId, isTransientMedia } from 'state/selectors';
+import getSiteIconId from 'state/selectors/get-site-icon-id';
+import getSiteIconUrl from 'state/selectors/get-site-icon-url';
+import isTransientMedia from 'state/selectors/is-transient-media';
 import resizeImageUrl from 'lib/resize-image-url';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 function SiteIcon( { siteId, site, iconUrl, size, imgSize, isTransientIcon } ) {
 	const iconSrc = resizeImageUrl( iconUrl, imgSize );
@@ -40,9 +46,9 @@ function SiteIcon( { siteId, site, iconUrl, size, imgSize, isTransientIcon } ) {
 		<div className={ classes } style={ style }>
 			{ ! site && siteId > 0 && <QuerySites siteId={ siteId } /> }
 			{ iconSrc ? (
-				<Image className="site-icon__img" src={ iconSrc } alt="" />
+				<MediaImage component={ Image } className="site-icon__img" src={ iconSrc } alt="" />
 			) : (
-				<Gridicon icon="globe" size={ Math.round( size / 1.3 ) } />
+				<Gridicon icon="site" size={ Math.round( size / 1.3 ) } />
 			) }
 			{ isTransientIcon && <Spinner /> }
 		</div>

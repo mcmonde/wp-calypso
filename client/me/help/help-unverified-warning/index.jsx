@@ -1,21 +1,21 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import React, { Component } from 'react';
 import { localize } from 'i18n-calypso';
-import userFactory from 'lib/user';
+import user from 'calypso/lib/user';
 
 /**
  * Internal dependencies
  */
-import Notice from 'components/notice';
-import NoticeAction from 'components/notice/notice-action';
-import notices from 'notices';
+import Notice from 'calypso/components/notice';
+import NoticeAction from 'calypso/components/notice/notice-action';
+import notices from 'calypso/notices';
 
-const user = userFactory();
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 const RESEND_IDLE = 0,
 	RESEND_IN_PROGRESS = 1,
@@ -34,7 +34,7 @@ class HelpUnverifiedWarning extends Component {
 	render() {
 		const { resendState } = this.state;
 
-		const resendStateToMessage = val => {
+		const resendStateToMessage = ( val ) => {
 			switch ( val ) {
 				case RESEND_IDLE:
 					return this.props.translate(
@@ -57,7 +57,7 @@ class HelpUnverifiedWarning extends Component {
 				resendState: RESEND_IN_PROGRESS,
 			} );
 
-			user
+			user()
 				.sendVerificationEmail()
 				.then( () => {
 					const nextResendState = RESEND_SUCCESS;
@@ -73,6 +73,7 @@ class HelpUnverifiedWarning extends Component {
 				} );
 		};
 
+		/* eslint-disable wpcalypso/jsx-classname-namespace */
 		return (
 			RESEND_IDLE === resendState && (
 				<Notice

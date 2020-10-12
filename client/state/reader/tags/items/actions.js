@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -13,31 +12,31 @@ import {
 	READER_UNFOLLOW_TAG_REQUEST,
 	READER_UNFOLLOW_TAG_RECEIVE,
 	READER_FOLLOW_TAG_REQUEST,
-} from 'state/action-types';
+} from 'state/reader/action-types';
+
+import 'state/data-layer/wpcom/read/tags';
+import 'state/data-layer/wpcom/read/tags/mine/delete';
+import 'state/data-layer/wpcom/read/tags/mine/new';
+
+import 'state/reader/init';
 
 /**
  * Helper function. Turns a tag name into a tag "slug" for use with the API.
  *
- * @param  {String} tag  Tag name to parse into a slug
- * @return {String}      Tag slug
+ * @param  {string} tag  Tag name to parse into a slug
+ * @returns {string}      Tag slug
  */
-export const slugify = tag =>
-	encodeURIComponent(
-		trim( tag )
-			.toLowerCase()
-			.replace( /\s+/g, '-' )
-			.replace( /-{2,}/g, '-' )
-	);
+export const slugify = ( tag ) =>
+	encodeURIComponent( trim( tag ).toLowerCase().replace( /\s+/g, '-' ).replace( /-{2,}/g, '-' ) );
 
-export const requestTags = tag => {
-	const type = READER_TAGS_REQUEST;
+export const requestTags = ( tag ) => {
 	if ( ! tag ) {
-		return { type };
+		return { type: READER_TAGS_REQUEST };
 	}
 
 	const slug = slugify( tag );
 	return {
-		type,
+		type: READER_TAGS_REQUEST,
 		payload: { tag, slug },
 	};
 };
@@ -48,7 +47,7 @@ export const receiveTags = ( { payload, resetFollowingData = false } ) => ( {
 	meta: { resetFollowingData },
 } );
 
-export const requestUnfollowTag = tag => ( {
+export const requestUnfollowTag = ( tag ) => ( {
 	type: READER_UNFOLLOW_TAG_REQUEST,
 	payload: { tag, slug: slugify( tag ) },
 } );
@@ -58,7 +57,7 @@ export const receiveUnfollowTag = ( { payload } ) => ( {
 	payload,
 } );
 
-export const requestFollowTag = tag => ( {
+export const requestFollowTag = ( tag ) => ( {
 	type: READER_FOLLOW_TAG_REQUEST,
 	payload: { tag, slug: slugify( tag ) },
 } );

@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -8,30 +6,36 @@ import { connect } from 'react-redux';
 import { localize } from 'i18n-calypso';
 import page from 'page';
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 
 /**
  * Internal dependencies
  */
-import Button from 'components/button';
-import Card from 'components/card';
-import config from 'config';
+import { Button, Card } from '@automattic/components';
+import config from 'calypso/config';
+import CreditCard from 'calypso/components/credit-card';
 import CreditCardDelete from './credit-card-delete';
 import {
 	getStoredCards,
+	getUniquePaymentAgreements,
 	hasLoadedStoredCardsFromServer,
 	isFetchingStoredCards,
-} from 'state/stored-cards/selectors';
-import QueryStoredCards from 'components/data/query-stored-cards';
-import { addCreditCard } from 'me/purchases/paths';
-import SectionHeader from 'components/section-header';
+} from 'calypso/state/stored-cards/selectors';
+import QueryStoredCards from 'calypso/components/data/query-stored-cards';
+import SectionHeader from 'calypso/components/section-header';
+
+/**
+ * Style dependencies
+ */
+import './credit-cards.scss';
 
 class CreditCards extends Component {
-	renderCards() {
+	renderCards( cards ) {
 		if ( this.props.isFetching && ! this.props.hasLoadedFromServer ) {
 			return <div className="credit-cards__no-results">{ this.props.translate( 'Loading…' ) }</div>;
 		}
 
-		if ( ! this.props.cards.length ) {
+		if ( ! cards.length ) {
 			return (
 				<div className="credit-cards__no-results">
 					{ this.props.translate( 'You have no saved cards.' ) }
@@ -39,18 +43,18 @@ class CreditCards extends Component {
 			);
 		}
 
-		return this.props.cards.map( function( card ) {
+		return cards.map( ( card ) => {
 			return (
-				<div className="credit-cards__single-card" key={ card.stored_details_id }>
+				<CreditCard key={ card.stored_details_id }>
 					<CreditCardDelete card={ card } />
-				</div>
+				</CreditCard>
 			);
-		}, this );
+		} );
 	}
 
-	goToAddCreditCard() {
-		page( addCreditCard );
-	}
+	goToAddCreditCard = () => {
+		page( this.props.addPaymentMethodUrl );
+	};
 
 	renderAddCreditCardButton() {
 		if ( ! config.isEnabled( 'manage/payment-methods' ) ) {
@@ -59,7 +63,7 @@ class CreditCards extends Component {
 
 		return (
 			<Button primary compact className="credit-cards__add" onClick={ this.goToAddCreditCard }>
-				{ this.props.translate( 'Add Credit Card' ) }
+				{ this.props.translate( 'Add credit card' ) }
 			</Button>
 		);
 	}
@@ -68,21 +72,38 @@ class CreditCards extends Component {
 		return (
 			<div className="credit-cards">
 				<QueryStoredCards />
-
-				<SectionHeader label={ this.props.translate( 'Manage Your Credit Cards' ) }>
+				<SectionHeader label={ this.props.translate( 'Manage your credit cards' ) }>
 					{ this.renderAddCreditCardButton() }
 				</SectionHeader>
-
 				<Card>
-					<div>{ this.renderCards() }</div>
+					<div>{ this.renderCards( this.props.cards ) }</div>
 				</Card>
+
+				{ this.props.hasLoadedFromServer && this.props.paymentAgreements.length > 0 && (
+					<>
+						<SectionHeader label={ this.props.translate( 'Manage Your Payment Agreements' ) } />
+						<Card>
+							<div>{ this.renderCards( this.props.paymentAgreements ) }</div>
+						</Card>
+					</>
+				) }
 			</div>
 		);
 	}
 }
 
-export default connect( state => ( {
+CreditCards.propTypes = {
+	addPaymentMethodUrl: PropTypes.string.isRequired,
+	// From connect:
+	cards: PropTypes.array.isRequired,
+	paymentAgreements: PropTypes.array.isRequired,
+	hasLoadedFromServer: PropTypes.bool,
+	isFetching: PropTypes.bool,
+};
+
+export default connect( ( state ) => ( {
 	cards: getStoredCards( state ),
+	paymentAgreements: getUniquePaymentAgreements( state ),
 	hasLoadedFromServer: hasLoadedStoredCardsFromServer( state ),
 	isFetching: isFetchingStoredCards( state ),
 } ) )( localize( CreditCards ) );

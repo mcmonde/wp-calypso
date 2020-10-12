@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -15,15 +13,12 @@ import { find, isEmpty } from 'lodash';
  * Internal dependencies
  */
 import AddressView from 'woocommerce/components/address-view';
-import Button from 'components/button';
-import Card from 'components/card';
-import Dialog from 'components/dialog';
+import { Button, Card, Dialog } from '@automattic/components';
 import { successNotice, errorNotice } from 'state/notices/actions';
 import {
 	areLocationsLoaded,
 	getAllCountries,
 } from 'woocommerce/state/sites/data/locations/selectors';
-import { fetchLocations } from 'woocommerce/state/sites/data/locations/actions';
 import { getSelectedSiteWithFallback } from 'woocommerce/state/sites/selectors';
 import {
 	getStoreLocation,
@@ -33,30 +28,15 @@ import {
 import { setAddress } from 'woocommerce/state/sites/settings/actions';
 import FormLabel from 'components/forms/form-label';
 import QuerySettingsGeneral from 'woocommerce/components/query-settings-general';
+import QueryLocations from 'woocommerce/components/query-locations';
 
 class StoreAddress extends Component {
 	static defaultProps = {
 		showLabel: true,
 	};
 
-	componentWillReceiveProps = newProps => {
+	UNSAFE_componentWillReceiveProps = ( newProps ) => {
 		this.setState( { address: newProps.address } );
-	};
-
-	maybeFetchLocations = props => {
-		const { loadedLocations, siteId } = props;
-
-		if ( ! loadedLocations && siteId ) {
-			this.props.fetchLocations( siteId );
-		}
-	};
-
-	componentDidMount = () => {
-		this.maybeFetchLocations( this.props );
-	};
-
-	componentDidUpdate = () => {
-		this.maybeFetchLocations( this.props );
 	};
 
 	constructor( props ) {
@@ -67,7 +47,7 @@ class StoreAddress extends Component {
 		};
 	}
 
-	onChange = event => {
+	onChange = ( event ) => {
 		const addressEdits = { ...this.state.addressEdits };
 		const addressKey = event.target.name;
 		const newValue = event.target.value;
@@ -94,7 +74,7 @@ class StoreAddress extends Component {
 		} );
 	};
 
-	onCloseDialog = action => {
+	onCloseDialog = ( action ) => {
 		const { translate, siteId, onSetAddress } = this.props;
 		if ( 'save' === action ) {
 			const onFailure = () => {
@@ -169,6 +149,7 @@ class StoreAddress extends Component {
 		return (
 			<Card className={ classes }>
 				<QuerySettingsGeneral siteId={ siteId } />
+				<QueryLocations siteId={ siteId } />
 				<Dialog
 					buttons={ buttons }
 					isVisible={ this.state.showDialog }
@@ -205,7 +186,6 @@ function mapStateToProps( state ) {
 		countries,
 		fetchError,
 		loaded,
-		loadedLocations,
 		loadedSettingsGeneral,
 		siteId,
 	};
@@ -214,7 +194,6 @@ function mapStateToProps( state ) {
 function mapDispatchToProps( dispatch ) {
 	return bindActionCreators(
 		{
-			fetchLocations,
 			setAddress,
 		},
 		dispatch

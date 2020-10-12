@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -11,10 +9,13 @@ import { localize } from 'i18n-calypso';
 /**
  * Internal dependencies
  */
-import Card from 'components/card';
+import { Card } from '@automattic/components';
+import DnsRecordsList from '../dns-records/list';
+import DomainConnectDnsRecord from './domain-connect-dns-record';
 
 class DomainConnectAuthorizeRecords extends Component {
 	static propTypes = {
+		domain: PropTypes.string,
 		dnsTemplateConflicts: PropTypes.array,
 		dnsTemplateRecords: PropTypes.array,
 		isPlaceholder: PropTypes.bool,
@@ -38,23 +39,13 @@ class DomainConnectAuthorizeRecords extends Component {
 		);
 	};
 
-	renderDnsRecords = records => {
+	renderDnsRecords = ( records ) => {
 		return (
-			<ul className="domain-connect__dns-list">
-				{ records.map( ( record, index ) => {
-					return (
-						<li key={ index }>
-							<div className="domain-connect__dns-list-type">
-								<label>{ record.type }</label>
-							</div>
-							<div className="domain-connect__dns-list-info">
-								<strong>{ record.name }</strong>
-								<em>{ record.data }</em>
-							</div>
-						</li>
-					);
-				} ) }
-			</ul>
+			<DnsRecordsList>
+				{ records.map( ( record, index ) => (
+					<DomainConnectDnsRecord key={ index } domain={ this.props.domain } dnsRecord={ record } />
+				) ) }
+			</DnsRecordsList>
 		);
 	};
 
@@ -113,6 +104,7 @@ class DomainConnectAuthorizeRecords extends Component {
 			return null;
 		}
 
+		/* eslint-disable jsx-a11y/anchor-is-valid,jsx-a11y/click-events-have-key-events,jsx-a11y/no-static-element-interactions */
 		return (
 			<div>
 				<p>
@@ -121,13 +113,15 @@ class DomainConnectAuthorizeRecords extends Component {
 							"To set up this service, we're going to make some changes to the " +
 								'the DNS records for your domain.'
 						) }
-					</span>&nbsp;
+					</span>
+					&nbsp;
 					<a onClick={ this.toggleRecordsVisible }>{ showRecordsLinkText }</a>
 				</p>
 				{ this.renderDnsTemplateRecords() }
 				{ this.renderConflictingRecords() }
 			</div>
 		);
+		/* eslint-enable jsx-a11y/anchor-is-valid,jsx-a11y/click-events-have-key-events,jsx-a11y/no-static-element-interactions */
 	}
 }
 

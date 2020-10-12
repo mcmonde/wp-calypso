@@ -1,25 +1,23 @@
-/** @format */
-
 /**
  * External dependencies
  */
-import React, { Component } from 'react';
+import React, { Component, Fragment } from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { isEqual, noop, some } from 'lodash';
+import { find, last, noop, some } from 'lodash';
 import { localize } from 'i18n-calypso';
 
 /**
  * Internal dependencies
  */
-import Button from 'components/button';
+import { Button } from '@automattic/components';
 import {
 	deleteStoredKeyringConnection,
 	requestKeyringConnections,
 } from 'state/sharing/keyring/actions';
 import { getKeyringServiceByName } from 'state/sharing/services/selectors';
 import QueryKeyringServices from 'components/data/query-keyring-services';
-import requestExternalAccess from 'lib/sharing';
+import requestExternalAccess from '@automattic/request-external-access';
 import {
 	getKeyringConnectionsByName,
 	isKeyringConnectionsFetching,
@@ -38,11 +36,15 @@ class KeyringConnectButton extends Component {
 		keyringConnections: PropTypes.array,
 		onClick: PropTypes.func,
 		onConnect: PropTypes.func,
+		forceReconnect: PropTypes.bool,
+		primary: PropTypes.bool,
 	};
 
 	static defaultProps = {
 		onClick: noop,
 		onConnect: noop,
+		forceReconnect: false,
+		primary: false,
 	};
 
 	state = {
@@ -60,10 +62,10 @@ class KeyringConnectButton extends Component {
 	/**
 	 * Returns the current status of the service's connection.
 	 *
-	 * @return {string} Connection status.
+	 * @returns {string} Connection status.
 	 */
 	getConnectionStatus() {
-		if ( this.props.isFetching ) {
+		if ( this.props.isFetching || this.props.isAwaitingConnections ) {
 			// When connections are still loading, we don't know the status
 			return 'unknown';
 		}
@@ -84,12 +86,13 @@ class KeyringConnectButton extends Component {
 	}
 
 	performAction = () => {
+		const { forceReconnect, keyringConnections } = this.props;
 		const connectionStatus = this.getConnectionStatus();
 
 		// Depending on current status, perform an action when user clicks the
 		// service action button
-		if ( 'connected' === connectionStatus ) {
-			this.props.onConnect();
+		if ( 'connected' === connectionStatus && ! forceReconnect ) {
+			this.props.onConnect( last( keyringConnections ) );
 		} else {
 			this.addConnection();
 		}
@@ -103,39 +106,41 @@ class KeyringConnectButton extends Component {
 		if ( this.props.service ) {
 			// Attempt to create a new connection. If a Keyring connection ID
 			// is not provided, the user will need to authorize the app
-			requestExternalAccess( this.props.service.connect_URL, () => {
+			requestExternalAccess( this.props.service.connect_URL, ( { keyring_id: keyringId } ) => {
+				if ( ! keyringId ) {
+					this.setState( { isConnecting: false } );
+					return;
+				}
+
 				// When the user has finished authorizing the connection
 				// (or otherwise closed the window), force a refresh
 				this.props.requestKeyringConnections( true );
 
 				// In the case that a Keyring connection doesn't exist, wait for app
 				// authorization to occur, then display with the available connections
-				this.setState( { isAwaitingConnections: true } );
+				this.setState( { isAwaitingConnections: true, keyringId } );
 			} );
 		} else {
 			this.setState( { isConnecting: false } );
 		}
 	};
 
-	componentWillReceiveProps( nextProps ) {
-		if ( ! isEqual( this.props.keyringConnections, nextProps.keyringConnections ) ) {
+	UNSAFE_componentWillReceiveProps( nextProps ) {
+		if ( this.state.isAwaitingConnections ) {
 			this.setState( {
-				isConnecting: false,
+				isAwaitingConnections: false,
+				isRefreshing: false,
 			} );
-		}
 
-		if ( ! this.state.isAwaitingConnections ) {
-			return;
-		}
-
-		this.setState( {
-			isAwaitingConnections: false,
-			isRefreshing: false,
-		} );
-
-		if ( this.didKeyringConnectionSucceed( nextProps.keyringConnections ) ) {
-			this.setState( { isConnecting: false } );
-			this.props.onConnect();
+			if ( this.didKeyringConnectionSucceed( nextProps.keyringConnections ) ) {
+				const newKeyringConnection = find( nextProps.keyringConnections, {
+					ID: this.state.keyringId,
+				} );
+				if ( newKeyringConnection ) {
+					this.props.onConnect( newKeyringConnection );
+				}
+				this.setState( { keyringId: null, isConnecting: false } );
+			}
 		}
 	}
 
@@ -144,25 +149,28 @@ class KeyringConnectButton extends Component {
 	 * in creating new Keyring account options.
 	 *
 	 * @param {Array} keyringConnections props to check on if a keyring connection succeeded.
-	 * @return {Boolean} Whether the Keyring authorization attempt succeeded
+	 * @returns {boolean} Whether the Keyring authorization attempt succeeded
 	 */
 	didKeyringConnectionSucceed( keyringConnections ) {
-		const hasAnyConnectionOptions = some( keyringConnections, { isConnected: false } );
+		const hasAnyConnectionOptions = some(
+			keyringConnections,
+			( keyringConnection ) =>
+				keyringConnection.isConnected === false || keyringConnection.isConnected === undefined
+		);
 
-		if ( keyringConnections.length === 0 ) {
+		if ( ! this.state.keyringId || keyringConnections.length === 0 || ! hasAnyConnectionOptions ) {
 			this.setState( { isConnecting: false } );
-		} else if ( ! hasAnyConnectionOptions ) {
-			this.setState( { isConnecting: false } );
+			return false;
 		}
 
-		return keyringConnections.length && hasAnyConnectionOptions;
+		return true;
 	}
 
 	render() {
-		const { service, translate } = this.props;
+		const { primary, service, translate } = this.props;
 		const { isConnecting, isRefreshing } = this.state;
 		const status = service ? this.getConnectionStatus() : 'unknown';
-		let primary = false,
+		let localPrimary = false,
 			warning = false,
 			label;
 
@@ -177,21 +185,21 @@ class KeyringConnectButton extends Component {
 			label = translate( 'Connecting…' );
 		} else {
 			label = this.props.children;
-			primary = true;
+			localPrimary = primary;
 		}
 
 		return (
-			<div>
+			<Fragment>
 				<QueryKeyringServices />
 				<Button
-					primary={ primary }
+					primary={ localPrimary }
 					scary={ warning }
 					onClick={ this.onClick }
 					disabled={ isPending }
 				>
 					{ label }
 				</Button>
-			</div>
+			</Fragment>
 		);
 	}
 }

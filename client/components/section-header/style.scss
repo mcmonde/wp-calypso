@@ -1,33 +1,41 @@
 .section-header.card {
+	align-items: flex-start;
 	display: flex;
-	align-items: center;
+	flex-flow: row wrap;
+	line-height: 28px;
 	padding-top: 11px;
 	padding-bottom: 11px;
 	position: relative;
-	line-height: 28px;
 
-	&:after {
+	&::after {
 		content: '';
 	}
 
-	&.is-empty .section-header__label:after {
+	&.is-empty .section-header__label::after {
 		content: '\00a0';
 	}
 }
 
 .section-header__label {
 	display: flex;
-		align-items: center;
+	align-items: center;
 	flex-grow: 1;
 	position: relative;
 	overflow: hidden;
 
-	&:before {
-		@include long-content-fade( $color : $white );
+	@include breakpoint-deprecated( '<480px' ) {
+		line-height: 1.4;
+		margin: 4px 0;
 	}
 
-	.count {
+	.count,
+	.support-info {
 		margin-left: 8px;
+	}
+
+	.support-info {
+		position: relative;
+		top: 3px;
 	}
 }
 
@@ -39,8 +47,8 @@
 }
 
 .section-header__label {
-	color: $gray-dark;
-	font-size: 14px;
+	color: var( --color-neutral-70 );
+	font-size: $font-body-small;
 }
 
 .section-header__actions {
@@ -51,5 +59,11 @@
 
 	& > .button:last-child {
 		margin-right: 0;
+	}
+}
+
+.is-placeholder {
+	.section-header__label {
+		@include placeholder();
 	}
 }

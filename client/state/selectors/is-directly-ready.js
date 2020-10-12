@@ -3,10 +3,9 @@
  *
  *
  *
- * @format
  * @see lib/directly for more about Directly
- * @param {Object}  state  Global state tree
- * @return {Boolean}        Whether the widget is ready
+ * @param {object}  state  Global state tree
+ * @returns {boolean}        Whether the widget is ready
  */
 
 /**
@@ -14,6 +13,8 @@
  */
 import { STATUS_READY } from 'state/help/directly/constants';
 
+import 'state/help/init';
+
 export default function getDirectlyStatus( state ) {
-	return state.help.directly.status === STATUS_READY;
+	return state.help?.directly.status === STATUS_READY;
 }

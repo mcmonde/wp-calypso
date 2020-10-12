@@ -1,4 +1,9 @@
 /**
+ * External dependencies
+ */
+import { mapValues } from 'lodash';
+
+/**
  * Internal dependencies
  */
 import * as api from 'woocommerce/woocommerce-services/api';
@@ -19,11 +24,11 @@ export default ( orderId, siteId, dispatch, origin, destination, packages ) => {
 
 	return new Promise( ( resolve, reject ) => {
 		let error = null;
-		const setError = ( err ) => error = err;
+		const setError = ( err ) => ( error = err );
 		const setSuccess = ( json ) => {
 			dispatch( {
 				type: WOOCOMMERCE_SERVICES_SHIPPING_LABEL_SET_RATES,
-				rates: json.rates,
+				rates: mapValues( json.rates, ( pckg ) => ( 'rates' in pckg ? pckg : pckg.default ) ),
 				requestData,
 				siteId,
 				orderId,
@@ -46,7 +51,8 @@ export default ( orderId, siteId, dispatch, origin, destination, packages ) => {
 		};
 
 		setIsSaving( true );
-		api.post( siteId, api.url.getLabelRates( orderId ), requestData )
+		api
+			.post( siteId, api.url.getLabelRates( orderId ), requestData )
 			.then( setSuccess )
 			.catch( setError )
 			.then( () => setIsSaving( false ) );

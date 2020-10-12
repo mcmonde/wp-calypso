@@ -1,14 +1,17 @@
-/** @format */
-
 /**
  * Internal dependencies
  */
-
+import { combineReducers, withStorageKey } from 'state/utils';
 import approve from './approve/reducer';
-import { combineReducers } from 'state/utils';
+import earnings from './earnings/reducer';
+import settings from './settings/reducer';
 import status from './status/reducer';
 
-export default combineReducers( {
+const combinedReducer = combineReducers( {
 	approve,
+	earnings,
+	settings,
 	status,
 } );
+
+export default withStorageKey( 'wordads', combinedReducer );

@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -13,20 +11,26 @@ import { includes, isEmpty } from 'lodash';
 /**
  * Internal dependencies
  */
-import Banner from 'components/banner';
+import UpsellNudge from 'blocks/upsell-nudge';
 import FoldableCard from 'components/foldable-card';
 import FormFieldset from 'components/forms/form-fieldset';
 import FormLabel from 'components/forms/form-label';
 import FormTextInput from 'components/forms/form-text-input';
 import FormInputValidation from 'components/forms/form-input-validation';
-import Gridicon from 'gridicons';
-import InfoPopover from 'components/info-popover';
+import Gridicon from 'components/gridicon';
+import SupportInfo from 'components/support-info';
 import ExternalLink from 'components/external-link';
 import { getSelectedSiteId } from 'state/ui/selectors';
-import { isJetpackSettingsSaveFailure } from 'state/selectors';
+import isJetpackSettingsSaveFailure from 'state/selectors/is-jetpack-settings-save-failure';
 import FormSettingExplanation from 'components/forms/form-setting-explanation';
 import { hasFeature } from 'state/sites/plans/selectors';
-import { FEATURE_SPAM_AKISMET_PLUS, PLAN_JETPACK_PERSONAL } from 'lib/plans/constants';
+import { shouldShowOfferResetFlow } from 'lib/plans/config';
+import {
+	FEATURE_SPAM_AKISMET_PLUS,
+	FEATURE_JETPACK_ANTI_SPAM,
+	FEATURE_JETPACK_ANTI_SPAM_MONTHLY,
+	PLAN_JETPACK_PERSONAL,
+} from 'lib/plans/constants';
 
 const SpamFilteringSettings = ( {
 	currentAkismetKey,
@@ -34,6 +38,7 @@ const SpamFilteringSettings = ( {
 	fields,
 	hasAkismetFeature,
 	hasAkismetKeyError,
+	hasAntiSpam,
 	isRequestingSettings,
 	isSavingSettings,
 	onChangeField,
@@ -54,14 +59,20 @@ const SpamFilteringSettings = ( {
 		className,
 		header = null;
 
-	if ( ! inTransition && ! hasAkismetFeature && ! isValidKey ) {
+	if (
+		! shouldShowOfferResetFlow() &&
+		! inTransition &&
+		! ( hasAkismetFeature || hasAntiSpam ) &&
+		! isValidKey
+	) {
 		return (
-			<Banner
-				description={ translate( 'Detect and tweeze spam automatically, with Akismet.' ) }
+			<UpsellNudge
+				description={ translate( 'Automatically remove spam from comments and contact forms.' ) }
 				event={ 'calypso_akismet_settings_upgrade_nudge' }
 				feature={ FEATURE_SPAM_AKISMET_PLUS }
 				plan={ PLAN_JETPACK_PERSONAL }
 				title={ translate( 'Defend your site against spam! Upgrade to Jetpack Personal.' ) }
+				showIcon={ true }
 			/>
 		);
 	}
@@ -95,18 +106,10 @@ const SpamFilteringSettings = ( {
 		>
 			<FormFieldset>
 				<div className="spam-filtering__settings site-settings__child-settings">
-					<div className="spam-filtering__info-link-container site-settings__info-link-container">
-						<InfoPopover>
-							{ translate( 'Removes spam from comments and contact forms.' ) }{' '}
-							<ExternalLink
-								target="_blank"
-								icon={ false }
-								href={ 'https://jetpack.com/features/security/spam-filtering/' }
-							>
-								{ translate( 'Learn more' ) }
-							</ExternalLink>
-						</InfoPopover>
-					</div>
+					<SupportInfo
+						text={ translate( 'Removes spam from comments and contact forms.' ) }
+						link="https://jetpack.com/features/security/spam-filtering/"
+					/>
 					<FormLabel htmlFor="wordpress_api_key">{ translate( 'Your API Key' ) }</FormLabel>
 					<FormTextInput
 						name="wordpress_api_key"
@@ -115,10 +118,9 @@ const SpamFilteringSettings = ( {
 						disabled={ inTransition || ! akismetActive }
 						onChange={ onChangeField( 'wordpress_api_key' ) }
 					/>
-					{ ( isValidKey || isInvalidKey ) &&
-						! inTransition && (
-							<FormInputValidation isError={ isInvalidKey } text={ validationText } />
-						) }
+					{ ( isValidKey || isInvalidKey ) && ! inTransition && (
+						<FormInputValidation isError={ isInvalidKey } text={ validationText } />
+					) }
 					{ ( ! wordpress_api_key || isInvalidKey || ! isValidKey ) && (
 						<FormSettingExplanation>
 							{ translate(
@@ -156,9 +158,13 @@ export default connect( ( state, { dirtyFields, fields } ) => {
 		isJetpackSettingsSaveFailure( state, selectedSiteId, fields ) &&
 		includes( dirtyFields, 'wordpress_api_key' );
 	const hasAkismetFeature = hasFeature( state, selectedSiteId, FEATURE_SPAM_AKISMET_PLUS );
+	const hasAntiSpam =
+		hasFeature( state, selectedSiteId, FEATURE_JETPACK_ANTI_SPAM ) ||
+		hasFeature( state, selectedSiteId, FEATURE_JETPACK_ANTI_SPAM_MONTHLY );
 
 	return {
 		hasAkismetFeature,
 		hasAkismetKeyError,
+		hasAntiSpam,
 	};
 } )( localize( SpamFilteringSettings ) );

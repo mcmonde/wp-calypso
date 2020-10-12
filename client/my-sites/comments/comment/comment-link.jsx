@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -20,7 +19,7 @@ export class CommentLink extends PureComponent {
 		navigate: PropTypes.func,
 	};
 
-	handleClick = event => {
+	handleClick = ( event ) => {
 		if ( ! window ) {
 			return;
 		}

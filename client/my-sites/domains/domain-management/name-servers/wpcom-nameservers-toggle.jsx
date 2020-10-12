@@ -1,9 +1,6 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import PropTypes from 'prop-types';
 import React from 'react';
 import { connect } from 'react-redux';
@@ -12,6 +9,7 @@ import { localize } from 'i18n-calypso';
 /**
  * Internal dependencies
  */
+import { Card } from '@automattic/components';
 import Toggle from 'components/forms/form-toggle';
 import { CHANGE_NAME_SERVERS } from 'lib/url/support';
 import { composeAnalytics, recordGoogleEvent, recordTracksEvent } from 'state/analytics/actions';
@@ -24,7 +22,7 @@ class NameserversToggle extends React.PureComponent {
 
 	render() {
 		return (
-			<div className="name-servers__dns is-compact card">
+			<Card compact className="name-servers__dns">
 				<span className="name-servers__title">
 					{ this.props.translate( 'Use WordPress.com Name Servers' ) }
 				</span>
@@ -34,13 +32,12 @@ class NameserversToggle extends React.PureComponent {
 						id="wp-nameservers"
 						name="wp-nameservers"
 						onChange={ this.handleToggle }
-						type="checkbox"
 						checked={ this.props.enabled }
 						value="active"
 					/>
 				</form>
 				{ this.renderExplanation() }
-			</div>
+			</Card>
 		);
 	}
 
@@ -104,7 +101,7 @@ const wpcomNameServersToggleButtonClick = ( domainName, enabled ) => {
 	);
 };
 
-const wpcomNameServersLearnMoreClick = domainName =>
+const wpcomNameServersLearnMoreClick = ( domainName ) =>
 	composeAnalytics(
 		recordGoogleEvent(
 			'Domain Management',

@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -6,14 +5,21 @@ import i18n from 'i18n-calypso';
 
 export {
 	addLocaleToPath,
-	addLocaleToWpcomUrl,
 	getLanguage,
+	getLanguageRouteParam,
+	getLanguageSlugs,
 	getLocaleFromPath,
-	getSupportLocale,
 	isDefaultLocale,
 	isLocaleVariant,
+	isLocaleRtl,
+	localizeUrl,
 	canBeTranslated,
 	removeLocaleFromPath,
+	getPathParts,
+	filterLanguageRevisions,
+	translationExists,
+	isMagnificentLocale,
+	isTranslatedIncompletely,
 } from './utils';
 
 export const getLocaleSlug = () => i18n.getLocaleSlug();

@@ -1,21 +1,18 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import React, { Component } from 'react';
 import { localize } from 'i18n-calypso';
 
 /**
  * Internal dependencies
  */
-import FormButton from 'components/forms/form-button';
-import FormButtonsBar from 'components/forms/form-buttons-bar';
-import FormLabel from 'components/forms/form-label';
-import FormTextInput from 'components/forms/form-text-input';
-import Notice from 'components/notice';
-import NoticeAction from 'components/notice/notice-action';
+import FormButton from 'calypso/components/forms/form-button';
+import FormButtonsBar from 'calypso/components/forms/form-buttons-bar';
+import FormLabel from 'calypso/components/forms/form-label';
+import FormVerificationCodeInput from 'calypso/components/forms/form-verification-code-input';
+import Notice from 'calypso/components/notice';
+import NoticeAction from 'calypso/components/notice/notice-action';
 
 class RecoveryPhoneValidationNotice extends Component {
 	constructor() {
@@ -30,13 +27,13 @@ class RecoveryPhoneValidationNotice extends Component {
 		event.preventDefault();
 	}
 
-	onValidate = event => {
+	onValidate = ( event ) => {
 		event.preventDefault();
 
 		this.props.onValidate( this.state.candidateCode );
 	};
 
-	onChange = event => {
+	onChange = ( event ) => {
 		event.preventDefault();
 
 		this.setState( {
@@ -53,33 +50,30 @@ class RecoveryPhoneValidationNotice extends Component {
 
 		return (
 			<form onSubmit={ this.onSubmit }>
-				<Notice
-					className="security-account-recovery__validation-notice"
-					status="is-warning"
-					text={ translate(
-						'Please validate your recovery SMS number. Check your phone for a validation code.'
-					) }
-					showDismiss={ false }
-				>
-					{ ! hasSent && (
+				{ ! hasSent && (
+					<Notice
+						className="security-account-recovery__validation-notice"
+						status="is-warning"
+						text={ translate(
+							'Please validate your recovery SMS number. Check your phone for a validation code.'
+						) }
+						showDismiss={ false }
+					>
 						<NoticeAction href="#" onClick={ this.props.onResend }>
 							{ translate( 'Resend' ) }
 						</NoticeAction>
-					) }
-				</Notice>
+					</Notice>
+				) }
 
 				<FormLabel className="security-account-recovery__recovery-phone-validation-label">
 					{ translate( 'Enter the code you receive via SMS:' ) }
 				</FormLabel>
 
-				<FormTextInput
-					autoComplete="off"
+				<FormVerificationCodeInput
 					disabled={ isValidating }
-					placeholder={ translate( 'e.g. 1234 5678' ) }
+					method={ 'sms' }
 					onChange={ this.onChange }
 					value={ candidateCode }
-					pattern="[0-9 ]*"
-					type="tel"
 				/>
 
 				<FormButtonsBar className="security-account-recovery__recovery-phone-validation-buttons">

@@ -8,24 +8,8 @@ exports[`PlansSkipButton should render 1`] = `
     type="button"
   >
     Start with free
-    <t
+    <Memo([object Object])
       icon="arrow-right"
-      size={18}
-    />
-  </Button>
-</div>
-`;
-
-exports[`PlansSkipButton should render arrow-left in rtl mode 1`] = `
-<div
-  className="plans-skip-button"
->
-  <Button
-    type="button"
-  >
-    Start with free
-    <t
-      icon="arrow-left"
       size={18}
     />
   </Button>

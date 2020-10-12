@@ -1,25 +1,30 @@
 /**
- * @format
  * @jest-environment jsdom
  */
+
+/* eslint jest/expect-expect: ["error", { "assertFunctionNames": ["expectSelectedItems", "expect"] }] */
 
 /**
  * External dependencies
  */
 import { expect } from 'chai';
 import { mount } from 'enzyme';
-import { toArray } from 'lodash';
+import { defer, toArray } from 'lodash';
 import React from 'react';
+import moment from 'moment';
 
 /**
  * Internal dependencies
  */
 import { MediaLibraryList as MediaList } from '../list';
 import fixtures from './fixtures';
-import MediaLibrarySelectedData from 'components/data/media-library-selected-data';
 import Dispatcher from 'dispatcher';
-import MediaActions from 'lib/media/actions';
-import MediaLibrarySelectedStore from 'lib/media/library-selected-store';
+
+/**
+ * Module variables
+ */
+const DUMMY_SITE_ID = 2916284;
+const mockSelectedItems = [];
 
 jest.mock( 'lib/user', () => () => {} );
 jest.mock( 'components/infinite-list', () => require( 'components/empty-component' ) );
@@ -28,27 +33,30 @@ jest.mock( 'my-sites/media-library/list-plan-upgrade-nudge', () =>
 	require( 'components/empty-component' )
 );
 
-/**
- * Module variables
- */
-const DUMMY_SITE_ID = 2916284;
-
 describe( 'MediaLibraryList item selection', () => {
 	let wrapper, mediaList;
+
+	const setMediaLibrarySelectedItems = jest.fn();
 
 	function toggleItem( itemIndex, shiftClick ) {
 		mediaList.toggleItem( fixtures.media[ itemIndex ], shiftClick );
 	}
 
 	function expectSelectedItems() {
-		expect( MediaLibrarySelectedStore.getAll( DUMMY_SITE_ID ) ).to.have.members(
-			toArray( arguments ).map( function( arg ) {
-				return fixtures.media[ arg ];
-			} )
-		);
+		defer( function () {
+			expect( mockSelectedItems ).to.have.members(
+				toArray( arguments ).map( function ( arg ) {
+					return fixtures.media[ arg ];
+				} )
+			);
+		} );
 	}
 
-	beforeAll( function() {
+	beforeEach( () => {
+		mockSelectedItems.length = 0;
+	} );
+
+	beforeAll( function () {
 		Dispatcher.handleServerAction( {
 			type: 'RECEIVE_MEDIA_ITEMS',
 			siteId: DUMMY_SITE_ID,
@@ -56,27 +64,24 @@ describe( 'MediaLibraryList item selection', () => {
 		} );
 	} );
 
-	beforeEach( () => {
-		MediaActions.setLibrarySelectedItems( DUMMY_SITE_ID, [] );
-
-		if ( wrapper ) {
-			wrapper.unmount();
-		}
-	} );
-
 	describe( 'multiple selection', () => {
 		beforeEach( () => {
 			wrapper = mount(
-				<MediaLibrarySelectedData siteId={ DUMMY_SITE_ID }>
-					<MediaList
-						filterRequiresUpgrade={ false }
-						site={ { ID: DUMMY_SITE_ID } }
-						media={ fixtures.media }
-						mediaScale={ 0.24 }
-					/>
-				</MediaLibrarySelectedData>
+				<MediaList
+					filterRequiresUpgrade={ false }
+					site={ { ID: DUMMY_SITE_ID } }
+					media={ fixtures.media }
+					mediaScale={ 0.24 }
+					moment={ moment }
+					selectedItems={ [] }
+					setMediaLibrarySelectedItems={ setMediaLibrarySelectedItems }
+				/>
 			);
 			mediaList = wrapper.find( MediaList ).instance();
+		} );
+
+		afterEach( () => {
+			wrapper.unmount();
 		} );
 
 		test( 'allows selecting single items', () => {
@@ -150,17 +155,22 @@ describe( 'MediaLibraryList item selection', () => {
 	describe( 'single selection', () => {
 		beforeEach( () => {
 			wrapper = mount(
-				<MediaLibrarySelectedData siteId={ DUMMY_SITE_ID }>
-					<MediaList
-						filterRequiresUpgrade={ false }
-						site={ { ID: DUMMY_SITE_ID } }
-						media={ fixtures.media }
-						mediaScale={ 0.24 }
-						single
-					/>
-				</MediaLibrarySelectedData>
+				<MediaList
+					filterRequiresUpgrade={ false }
+					site={ { ID: DUMMY_SITE_ID } }
+					media={ fixtures.media }
+					mediaScale={ 0.24 }
+					moment={ moment }
+					single
+					selectedItems={ [] }
+					setMediaLibrarySelectedItems={ setMediaLibrarySelectedItems }
+				/>
 			);
 			mediaList = wrapper.find( MediaList ).instance();
+		} );
+
+		afterEach( () => {
+			wrapper.unmount();
 		} );
 
 		test( 'allows selecting a single item', () => {
@@ -192,8 +202,11 @@ describe( 'MediaLibraryList item selection', () => {
 					site={ { ID: DUMMY_SITE_ID } }
 					media={ media }
 					mediaScale={ 0.24 }
+					moment={ moment }
 					source={ source }
 					single
+					selectedItems={ [] }
+					setMediaLibrarySelectedItems={ setMediaLibrarySelectedItems }
 				/>
 			)
 				.find( MediaList )
@@ -208,49 +221,6 @@ describe( 'MediaLibraryList item selection', () => {
 		test( 'should use the source name as the item group for an ungrouped source', () => {
 			const grid = getList( fixtures.media, 'pexels' ).render();
 			expect( grid.props.getItemGroup() ).to.equal( 'pexels' );
-		} );
-	} );
-
-	describe( 'google photos', () => {
-		let largeLibrary = [];
-
-		const getList = ( media, source ) => {
-			return mount(
-				<MediaList
-					filterRequiresUpgrade={ false }
-					site={ { ID: DUMMY_SITE_ID } }
-					media={ media }
-					mediaScale={ 0.24 }
-					source={ source }
-					single
-				/>
-			)
-				.find( MediaList )
-				.instance();
-		};
-
-		beforeAll( () => {
-			while ( largeLibrary.length < 1000 ) {
-				largeLibrary = largeLibrary.concat( fixtures.media );
-			}
-		} );
-
-		test( 'displays a trailing message when media library showing > 1000 google photos', () => {
-			const list = getList( largeLibrary, 'google_photos' );
-
-			expect( list.renderTrailingItems() ).to.not.be.null;
-		} );
-
-		test( 'doesnt displays a trailing message when media library showing > 1000 non-google photos', () => {
-			const list = getList( largeLibrary, '' );
-
-			expect( list.renderTrailingItems() ).to.be.null;
-		} );
-
-		test( 'doesnt display a trailing message when media library showing < 1000 photos', () => {
-			const list = getList( largeLibrary.slice( 0, 10 ), 'google_photos' );
-
-			expect( list.renderTrailingItems() ).to.be.null;
 		} );
 	} );
 } );

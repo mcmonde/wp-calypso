@@ -1,5 +1,4 @@
 /**
- * @format
  * @jest-environment jsdom
  */
 
@@ -30,7 +29,7 @@ describe( 'index', () => {
 		showDropZone: () => {},
 	};
 
-	beforeAll( function() {
+	beforeAll( function () {
 		container = document.createElement( 'div' );
 		container.id = 'container';
 		window.MutationObserver = sinon.stub().returns( {
@@ -39,14 +38,14 @@ describe( 'index', () => {
 		} );
 	} );
 
-	afterAll( function() {
+	afterAll( function () {
 		if ( global.window && global.window.MutationObserver ) {
 			delete global.window.MutationObserver;
 		}
 	} );
 
 	beforeEach( () => {
-		sandbox = sinon.sandbox.create();
+		sandbox = sinon.createSandbox();
 	} );
 
 	afterEach( () => {
@@ -57,7 +56,7 @@ describe( 'index', () => {
 	test( 'should render as a child of its container by default', () => {
 		const tree = ReactDom.render( React.createElement( DropZone, requiredProps ), container );
 
-		expect( tree.refs.zone.parentNode.id ).to.equal( 'container' );
+		expect( tree.zoneRef.current.parentNode.id ).to.equal( 'container' );
 	} );
 
 	test( 'should accept a fullScreen prop to be rendered at the root', () => {
@@ -69,8 +68,8 @@ describe( 'index', () => {
 			container
 		);
 
-		expect( tree.refs.zone.parentNode.id ).to.not.equal( 'container' );
-		expect( tree.refs.zone.parentNode.parentNode ).to.eql( document.body );
+		expect( tree.zoneRef.current.parentNode.id ).to.not.equal( 'container' );
+		expect( tree.zoneRef.current.parentNode.parentNode ).to.eql( document.body );
 	} );
 
 	test( 'should render default content if none is provided', () => {
@@ -116,29 +115,33 @@ describe( 'index', () => {
 		expect( tree.state.isDraggingOverElement ).to.not.be.ok;
 	} );
 
-	test( 'should start observing the body for mutations when dragging over', done => {
-		const tree = ReactDom.render( React.createElement( DropZone, requiredProps ), container ),
-			dragEnterEvent = new window.MouseEvent( 'dragenter' );
+	test( 'should start observing the body for mutations when dragging over', () => {
+		return new Promise( ( done ) => {
+			const tree = ReactDom.render( React.createElement( DropZone, requiredProps ), container ),
+				dragEnterEvent = new window.MouseEvent( 'dragenter' );
 
-		window.dispatchEvent( dragEnterEvent );
+			window.dispatchEvent( dragEnterEvent );
 
-		process.nextTick( function() {
-			expect( tree.observer ).to.be.ok;
-			done();
+			process.nextTick( function () {
+				expect( tree.observer ).to.be.ok;
+				done();
+			} );
 		} );
 	} );
 
-	test( 'should stop observing the body for mutations upon drag ending', done => {
-		const tree = ReactDom.render( React.createElement( DropZone, requiredProps ), container ),
-			dragEnterEvent = new window.MouseEvent( 'dragenter' ),
-			dragLeaveEvent = new window.MouseEvent( 'dragleave' );
+	test( 'should stop observing the body for mutations upon drag ending', () => {
+		return new Promise( ( done ) => {
+			const tree = ReactDom.render( React.createElement( DropZone, requiredProps ), container ),
+				dragEnterEvent = new window.MouseEvent( 'dragenter' ),
+				dragLeaveEvent = new window.MouseEvent( 'dragleave' );
 
-		window.dispatchEvent( dragEnterEvent );
-		window.dispatchEvent( dragLeaveEvent );
+			window.dispatchEvent( dragEnterEvent );
+			window.dispatchEvent( dragLeaveEvent );
 
-		process.nextTick( function() {
-			expect( tree.observer ).to.be.undefined;
-			done();
+			process.nextTick( function () {
+				expect( tree.observer ).to.be.undefined;
+				done();
+			} );
 		} );
 	} );
 
@@ -148,7 +151,7 @@ describe( 'index', () => {
 		const tree = ReactDom.render(
 			React.createElement( DropZone, {
 				...requiredProps,
-				onVerifyValidTransfer: function() {
+				onVerifyValidTransfer: function () {
 					return false;
 				},
 			} ),
@@ -237,7 +240,7 @@ describe( 'index', () => {
 				...requiredProps,
 				fullScreen: true, // bypass a Node.contains check on the drop event
 				onFilesDrop: spyDrop,
-				onVerifyValidTransfer: function() {
+				onVerifyValidTransfer: function () {
 					return false;
 				},
 			} ),
@@ -266,8 +269,8 @@ describe( 'index', () => {
 		const dragEnterEvent = new window.MouseEvent( 'dragenter' );
 		window.dispatchEvent( dragEnterEvent );
 
-		expect( rendered ).to.have.length.of( 2 );
-		rendered.forEach( function( zone ) {
+		expect( rendered ).to.have.lengthOf( 2 );
+		rendered.forEach( function ( zone ) {
 			expect( zone.state.isDraggingOverDocument ).to.be.ok;
 			expect( zone.state.isDraggingOverElement ).to.not.be.ok;
 		} );

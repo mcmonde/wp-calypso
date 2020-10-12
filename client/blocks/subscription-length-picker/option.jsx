@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -16,6 +14,7 @@ import { localize } from 'i18n-calypso';
 
 import Badge from 'components/badge';
 import { TERM_ANNUALLY, TERM_BIENNIALLY, TERM_MONTHLY } from 'lib/plans/constants';
+import FormRadio from 'calypso/components/forms/form-radio';
 
 const TYPE_NEW_SALE = 'new-sale';
 const TYPE_UPGRADE = 'upgrade';
@@ -33,6 +32,7 @@ export class SubscriptionLengthOption extends React.Component {
 		value: PropTypes.any.isRequired,
 		onCheck: PropTypes.func,
 		translate: PropTypes.func.isRequired,
+		shouldShowTax: PropTypes.bool,
 	};
 
 	static defaultProps = {
@@ -40,6 +40,7 @@ export class SubscriptionLengthOption extends React.Component {
 		checked: false,
 		savePercent: 0,
 		onCheck: () => null,
+		shouldShowTax: false,
 	};
 
 	constructor( props ) {
@@ -55,9 +56,8 @@ export class SubscriptionLengthOption extends React.Component {
 		return (
 			<label className={ className } htmlFor={ this.htmlId }>
 				<div className="subscription-length-picker__option-radio-wrapper">
-					<input
+					<FormRadio
 						id={ this.htmlId }
-						type="radio"
 						className="subscription-length-picker__option-radio"
 						checked={ checked }
 						onChange={ this.handleChange }
@@ -73,6 +73,7 @@ export class SubscriptionLengthOption extends React.Component {
 
 	renderNewSaleContent() {
 		const { checked, price, savePercent, term, translate } = this.props;
+
 		return (
 			<React.Fragment>
 				<div className="subscription-length-picker__option-header">
@@ -93,6 +94,7 @@ export class SubscriptionLengthOption extends React.Component {
 				</div>
 				<div className="subscription-length-picker__option-description">
 					<div className="subscription-length-picker__option-price">{ price }</div>
+					{ this.renderPlusTax() }
 					<div className="subscription-length-picker__option-side-note">
 						{ term !== TERM_MONTHLY ? this.renderPricePerMonth() : false }
 					</div>
@@ -103,23 +105,27 @@ export class SubscriptionLengthOption extends React.Component {
 
 	renderUpgradeContent() {
 		const { price, priceBeforeDiscount, translate } = this.props;
+		const hasDiscount = priceBeforeDiscount && priceBeforeDiscount !== price;
 		return (
 			<React.Fragment>
 				<div className="subscription-length-picker__option-header">
 					<div className="subscription-length-picker__option-term">{ this.getTermText() }</div>
 				</div>
 				<div className="subscription-length-picker__option-description">
-					{ priceBeforeDiscount && priceBeforeDiscount !== price ? (
+					{ hasDiscount && (
 						<div className="subscription-length-picker__option-old-price">
 							{ priceBeforeDiscount }
 						</div>
-					) : (
-						false
 					) }
-					<div className="subscription-length-picker__option-price">{ price }</div>
-					<div className="subscription-length-picker__option-credit-info">
-						{ translate( 'Credit applied' ) }
+					<div className="subscription-length-picker__option-price">
+						{ price }
+						{ this.renderPlusTax() }
 					</div>
+					{ hasDiscount && (
+						<div className="subscription-length-picker__option-credit-info">
+							{ translate( 'Credit applied' ) }
+						</div>
+					) }
 				</div>
 			</React.Fragment>
 		);
@@ -129,13 +135,25 @@ export class SubscriptionLengthOption extends React.Component {
 		const { term, translate } = this.props;
 		switch ( term ) {
 			case TERM_BIENNIALLY:
-				return translate( '%s year', '%s years', { count: 2, args: '2' } );
+				return translate( '%s year', '%s years', {
+					count: 2,
+					args: '2',
+					context: 'subscription length',
+				} );
 
 			case TERM_ANNUALLY:
-				return translate( '%s year', '%s years', { count: 1, args: '1' } );
+				return translate( '%s year', '%s years', {
+					count: 1,
+					args: '1',
+					context: 'subscription length',
+				} );
 
 			case TERM_MONTHLY:
-				return translate( '%s month', '%s months', { count: 1, args: '1' } );
+				return translate( '%s month', '%s months', {
+					count: 1,
+					args: '1',
+					context: 'subscription length',
+				} );
 		}
 	}
 
@@ -148,7 +166,24 @@ export class SubscriptionLengthOption extends React.Component {
 			: translate( '%(price)s / month', args );
 	}
 
-	handleChange = e => {
+	renderPlusTax() {
+		const { shouldShowTax, translate } = this.props;
+
+		if ( ! shouldShowTax ) {
+			return null;
+		}
+
+		return (
+			<sup className="subscription-length-picker__option-tax">
+				{ translate( '+tax', {
+					comment:
+						'This string is displayed immediately next to a localized price with a currency symbol, and is indicating that there may be an additional charge on top of the displayed price.',
+				} ) }
+			</sup>
+		);
+	}
+
+	handleChange = ( e ) => {
 		if ( e.target.checked ) {
 			this.props.onCheck( {
 				value: this.props.value,

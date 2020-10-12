@@ -1,5 +1,3 @@
-/** @format */
-
 export const type = {
 	MAPPED: 'MAPPED',
 	REGISTERED: 'REGISTERED',
@@ -25,11 +23,17 @@ export const registrar = {
 
 export const domainAvailability = {
 	AVAILABLE: 'available',
-	BLACKLISTED: 'blacklisted_domain',
+	AVAILABLE_PREMIUM: 'available_premium',
+	AVAILABILITY_CHECK_ERROR: 'availability_check_error',
+	CONFLICTING_CNAME_EXISTS: 'conflicting_cname_exists',
+	DISALLOWED: 'blacklisted_domain',
+	DOMAIN_SUGGESTIONS_THROTTLED: 'domain_suggestions_throttled',
+	DOTBLOG_SUBDOMAIN: 'dotblog_subdomain',
 	EMPTY_QUERY: 'empty_query',
 	EMPTY_RESULTS: 'empty_results',
 	FORBIDDEN: 'forbidden_domain',
 	FORBIDDEN_SUBDOMAIN: 'forbidden_subdomain',
+	IN_REDEMPTION: 'in_redemption',
 	INVALID: 'invalid_domain',
 	INVALID_QUERY: 'invalid_query',
 	INVALID_TLD: 'invalid_tld',
@@ -49,11 +53,15 @@ export const domainAvailability = {
 	REGISTERED_SAME_SITE: 'registered_on_same_site',
 	RESTRICTED: 'restricted_domain',
 	TLD_NOT_SUPPORTED: 'tld_not_supported',
+	TLD_NOT_SUPPORTED_AND_DOMAIN_NOT_AVAILABLE: 'tld_not_supported_and_domain_not_available',
+	TLD_NOT_SUPPORTED_TEMPORARILY: 'tld_not_supported_temporarily',
 	TRANSFER_PENDING: 'transfer_pending',
 	TRANSFER_PENDING_SAME_USER: 'transfer_pending_same_user',
 	TRANSFERRABLE: 'transferrable',
+	TRANSFERRABLE_PREMIUM: 'transferrable_premium',
 	UNKNOWN: 'unknown',
 	UNKOWN_ACTIVE: 'unknown_active_domain_with_wpcom',
+	WPCOM_STAGING_DOMAIN: 'wpcom_staging_domain',
 };
 
 export const dnsTemplates = {
@@ -73,5 +81,25 @@ export const dnsTemplates = {
 
 export const domainProductSlugs = {
 	TRANSFER_IN: 'domain_transfer',
-	TRANSFER_IN_PRIVACY: 'domain_transfer_privacy',
+};
+
+export const gdprConsentStatus = {
+	NONE: 'NONE',
+	PENDING: 'PENDING',
+	PENDING_ASYNC: 'PENDING_ASYNC',
+	ACCEPTED_CONTRACTUAL_MINIMUM: 'ACCEPTED_CONTRACTUAL_MINIMUM',
+	ACCEPTED_FULL: 'ACCEPTED_FULL',
+	DENIED: 'DENIED',
+	FORCED_ALL_CONTRACTUAL: 'FORCED_ALL_CONTRACTUAL',
+};
+
+export const domainConnect = {
+	DISCOVERY_TXT_RECORD_NAME: '_domainconnect',
+	API_URL: 'public-api.wordpress.com/rest/v1.3/domain-connect',
+};
+
+export const sslStatuses = {
+	SSL_DISABLED: 'disabled',
+	SSL_PENDING: 'pending',
+	SSL_ACTIVE: 'active',
 };

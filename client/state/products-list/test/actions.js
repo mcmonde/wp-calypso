@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -14,13 +13,13 @@ import {
 	PRODUCTS_LIST_REQUEST,
 	PRODUCTS_LIST_REQUEST_FAILURE,
 } from 'state/action-types';
-import useNock from 'test/helpers/use-nock';
+import useNock from 'test-helpers/use-nock';
 
 describe( 'actions', () => {
 	const spy = sinon.spy();
 
 	beforeEach( () => {
-		spy.reset();
+		spy.resetHistory();
 	} );
 
 	const guided_transfer = {
@@ -46,7 +45,7 @@ describe( 'actions', () => {
 	} );
 
 	describe( '#requestProductsList()', () => {
-		useNock( nock => {
+		useNock( ( nock ) => {
 			nock( 'https://public-api.wordpress.com:443' )
 				.get( '/rest/v1.1/products' )
 				.twice()

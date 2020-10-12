@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -33,7 +31,7 @@ export default class extends React.Component {
 		exclude: PropTypes.oneOfType( [ PropTypes.arrayOf( PropTypes.number ), PropTypes.func ] ),
 	};
 
-	componentWillMount() {
+	UNSAFE_componentWillMount() {
 		debug( 'Mounting SiteUsersFetcher' );
 		UsersStore.on( 'change', this._updateSiteUsers );
 		this._fetchIfEmpty();
@@ -47,7 +45,7 @@ export default class extends React.Component {
 		pollers.remove( this._poller );
 	}
 
-	componentWillReceiveProps( nextProps ) {
+	UNSAFE_componentWillReceiveProps( nextProps ) {
 		if ( ! nextProps.fetchOptions ) {
 			return;
 		}
@@ -62,18 +60,20 @@ export default class extends React.Component {
 	}
 
 	render() {
-		var childrenProps = Object.assign( omit( this.props, 'children' ), this.state );
-		// Clone the child element along and pass along state (containing data from the store)
-		return React.cloneElement( this.props.children, childrenProps );
+		const childrenProps = Object.assign( omit( this.props, 'children' ), this.state );
+
+		// If child elements are passed, clone them and
+		// pass along state (containing data from the store)
+		return this.props.children ? React.cloneElement( this.props.children, childrenProps ) : null;
 	}
 
-	_updateSiteUsers = fetchOptions => {
+	_updateSiteUsers = ( fetchOptions ) => {
 		fetchOptions = fetchOptions || this.props.fetchOptions;
 		this.setState( this._getState( fetchOptions ) );
 	};
 
-	_getState = fetchOptions => {
-		var paginationData, users;
+	_getState = ( fetchOptions ) => {
+		let paginationData, users;
 		fetchOptions = fetchOptions || this.props.fetchOptions;
 		fetchOptions = Object.assign( {}, defaultOptions, fetchOptions );
 		paginationData = UsersStore.getPaginationData( fetchOptions );
@@ -85,7 +85,7 @@ export default class extends React.Component {
 			// users[1] will be a list of the excluded users.
 			users = partition(
 				users,
-				function( user ) {
+				function ( user ) {
 					if ( 'function' === typeof this.props.exclude ) {
 						return ! this.props.exclude( user );
 					}
@@ -102,7 +102,7 @@ export default class extends React.Component {
 		} );
 	};
 
-	_fetchIfEmpty = fetchOptions => {
+	_fetchIfEmpty = ( fetchOptions ) => {
 		fetchOptions = fetchOptions || this.props.fetchOptions;
 		if ( ! fetchOptions || ! fetchOptions.siteId ) {
 			return;
@@ -113,8 +113,8 @@ export default class extends React.Component {
 			return;
 		}
 		// defer fetch requests to avoid dispatcher conflicts
-		setTimeout( function() {
-			var paginationData = UsersStore.getPaginationData( fetchOptions );
+		setTimeout( function () {
+			const paginationData = UsersStore.getPaginationData( fetchOptions );
 			if ( paginationData.fetchingUsers ) {
 				return;
 			}

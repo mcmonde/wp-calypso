@@ -1,13 +1,15 @@
-const spawnSync = require( 'child_process' ).spawnSync;
+const { spawnSync } = require( 'child_process' );
 const fs = require( 'fs' );
 
 if ( ! fs.existsSync( 'node_modules' ) ) {
-	console.log( 'No "node_modules" present, installing dependencies...' );
-	const installResult = spawnSync( 'npm', [ 'install' ], {
+	console.log( 'No "node_modules" present, installing dependencies…' );
+	const installResult = spawnSync( 'yarn', [ 'install', '--frozen-lockfile' ], {
 		shell: true,
 		stdio: 'inherit',
-	} ).status;
-	if ( installResult ) {
-		process.exit( installResult );
+		env: { PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 'true', ...process.env },
+	} );
+	if ( installResult.status ) {
+		console.error( 'failed to install: exited with code %d', installResult.status );
+		process.exit( installResult.status );
 	}
 }

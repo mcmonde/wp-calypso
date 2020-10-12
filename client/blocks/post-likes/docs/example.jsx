@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -13,17 +11,15 @@ import FormLabel from 'components/forms/form-label';
 import FormCheckbox from 'components/forms/form-checkbox';
 import PostLikes from '../';
 import PostLikesPopover from '../popover';
-import Button from 'components/button';
+import { Button } from '@automattic/components';
 
 class PostLikesExample extends React.PureComponent {
-	constructor() {
-		super();
-		this.state = {
-			showDisplayNames: false,
-			showPopover: false,
-			popoverContext: null,
-		};
-	}
+	popoverContext = React.createRef();
+
+	state = {
+		showDisplayNames: false,
+		showPopover: false,
+	};
 
 	toggleDisplayNames = () => {
 		this.setState( {
@@ -43,12 +39,6 @@ class PostLikesExample extends React.PureComponent {
 		} );
 	};
 
-	setPopoverContext = element => {
-		this.setState( {
-			popoverContext: element,
-		} );
-	};
-
 	render() {
 		return (
 			<div>
@@ -64,7 +54,7 @@ class PostLikesExample extends React.PureComponent {
 					postId={ 37769 }
 					showDisplayNames={ this.state.showDisplayNames }
 				/>
-				<Button ref={ this.setPopoverContext } onClick={ this.togglePopover }>
+				<Button ref={ this.popoverContext } onClick={ this.togglePopover }>
 					Toggle likes popover
 				</Button>
 				{ this.state.showPopover && (
@@ -72,7 +62,7 @@ class PostLikesExample extends React.PureComponent {
 						siteId={ 3584907 }
 						postId={ 39717 }
 						showDisplayNames={ this.state.showDisplayNames }
-						context={ this.state.popoverContext }
+						context={ this.popoverContext.current }
 						position="bottom"
 						onClose={ this.closePopover }
 					/>

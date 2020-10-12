@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -10,17 +8,16 @@ import debugModule from 'debug';
  * Internal dependencies
  */
 import config from 'config';
-import userModule from 'lib/user';
+import user from 'lib/user';
 
 /**
  * Module Variables
  */
-const user = userModule();
 const debug = debugModule( 'calypso:user:utilities' );
 
 const userUtils = {
 	getLogoutUrl( redirect ) {
-		const userData = user.get();
+		const userData = user().get();
 		let url = '/logout',
 			subdomain = '';
 
@@ -52,15 +49,19 @@ const userUtils = {
 		const logoutUrl = userUtils.getLogoutUrl( redirect );
 
 		// Clear any data stored locally within the user data module or localStorage
-		user.clear( () => ( location.href = logoutUrl ) );
+		user()
+			.clear()
+			.then( () => {
+				window.location.href = logoutUrl;
+			} );
 	},
 
 	getLocaleSlug() {
-		return user.get().localeSlug;
+		return user().get().localeSlug;
 	},
 
 	isLoggedIn() {
-		return Boolean( user.data );
+		return Boolean( user().data );
 	},
 };
 

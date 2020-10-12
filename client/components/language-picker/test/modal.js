@@ -1,5 +1,4 @@
 /**
- * @format
  * @jest-environment jsdom
  */
 
@@ -24,6 +23,7 @@ describe( 'LanguagePickerModal', () => {
 	const defaultProps = {
 		onSelected: noop,
 		onClose: noop,
+		recordTracksEvent: noop,
 		isVisible: true,
 		languages: [
 			{
@@ -244,9 +244,20 @@ describe( 'LanguagePickerModal', () => {
 			);
 
 			expect( suggestedLanguagesTexts ).toHaveLength( 3 );
-			expect( suggestedLanguagesTexts.at( 0 ).text() ).toEqual( 'English (UK)' );
-			expect( suggestedLanguagesTexts.at( 1 ).text() ).toEqual( 'English' );
-			expect( suggestedLanguagesTexts.at( 2 ).text() ).toEqual( 'Italiano' );
+			expect( suggestedLanguagesTexts.at( 0 ).childAt( 0 ).text() ).toEqual( 'English (UK)' );
+			expect( suggestedLanguagesTexts.at( 1 ).childAt( 0 ).text() ).toEqual( 'English' );
+			expect( suggestedLanguagesTexts.at( 2 ).childAt( 0 ).text() ).toEqual( 'Italiano' );
+		} );
+
+		test( 'should omit the current user locale from suggestions', () => {
+			const wrapper = shallow( <LanguagePickerModal { ...defaultProps } currentUserLocale="it" /> );
+			const suggestedLanguagesTexts = wrapper.find(
+				'.language-picker__modal-suggested-list .language-picker__modal-text'
+			);
+
+			expect( suggestedLanguagesTexts ).toHaveLength( 2 );
+			expect( suggestedLanguagesTexts.at( 0 ).childAt( 0 ).text() ).toEqual( 'English (UK)' );
+			expect( suggestedLanguagesTexts.at( 1 ).childAt( 0 ).text() ).toEqual( 'English' );
 		} );
 
 		test( 'should not render when there are no suggested languages', () => {
@@ -298,7 +309,7 @@ describe( 'LanguagePickerModal', () => {
 						defaultProps.languages[ 0 ],
 					],
 				},
-			].forEach( item => {
+			].forEach( ( item ) => {
 				Object.defineProperty( global.navigator, 'languages', {
 					get: () => item.navigatorLanguages,
 					configurable: true,
@@ -323,11 +334,211 @@ describe( 'LanguagePickerModal', () => {
 			test( 'should switch country lists when user clicks a language group tab', () => {
 				const wrapper = shallow( <LanguagePickerModal { ...defaultProps } /> );
 				expect( wrapper.state().filter ).toEqual( DEFAULT_LANGUAGE_GROUP );
-				wrapper
-					.find( 'NavItem' )
-					.at( 1 )
-					.simulate( 'click' );
+				wrapper.find( 'NavItem' ).at( 1 ).simulate( 'click' );
 				expect( wrapper.state().filter ).toEqual( LANGUAGE_GROUPS[ 1 ].id );
+			} );
+		} );
+	} );
+
+	describe( 'keyboard support', () => {
+		const simulateKeyDownEvent = ( key ) => {
+			window.dispatchEvent( new KeyboardEvent( 'keydown', { key } ) ); // eslint-disable-line no-undef
+		};
+
+		test( 'should update isSearchOpen state properly when search fires onOnSearchClose and onSearchOpen', () => {
+			const wrapper = shallow( <LanguagePickerModal { ...defaultProps } /> );
+			const searchWrapper = wrapper.find( 'Search' );
+
+			expect( wrapper.state().isSearchOpen ).toBe( false );
+
+			searchWrapper.prop( 'onSearchOpen' )();
+			expect( wrapper.state().isSearchOpen ).toBe( true );
+
+			searchWrapper.prop( 'onSearchClose' )();
+			expect( wrapper.state().isSearchOpen ).toBe( false );
+		} );
+
+		test( 'should expand search field when start typing', () => {
+			const wrapper = shallow( <LanguagePickerModal { ...defaultProps } /> );
+
+			simulateKeyDownEvent( 'a' );
+
+			expect( wrapper.state().isSearchOpen ).toBe( true );
+			expect( wrapper.state().search ).toBe( 'a' );
+		} );
+
+		test( "should not expand search field when start typing with space key as it's used to select focused language item", () => {
+			const wrapper = shallow( <LanguagePickerModal { ...defaultProps } /> );
+
+			simulateKeyDownEvent( ' ' );
+
+			expect( wrapper.state().isSearchOpen ).toBe( false );
+			expect( wrapper.state().search ).toBe( false );
+		} );
+
+		test( 'should auto select a language if search matches its slug', () => {
+			const wrapper = shallow( <LanguagePickerModal { ...defaultProps } /> );
+			const languages = defaultProps.languages.map( ( { langSlug } ) => langSlug );
+
+			expect( wrapper.state().selectedLanguageSlug ).toBe( 'en' );
+
+			languages.forEach( ( langSlug ) => {
+				wrapper.instance().handleSearch( langSlug );
+				expect( wrapper.state().selectedLanguageSlug ).toBe( langSlug );
+			} );
+		} );
+
+		test( 'should confirm language selection when pressing enter key', () => {
+			const mockOnSelected = jest.fn();
+
+			shallow( <LanguagePickerModal { ...defaultProps } onSelected={ mockOnSelected } /> );
+			simulateKeyDownEvent( 'Enter' );
+
+			expect( mockOnSelected ).toHaveBeenCalled();
+		} );
+
+		test( 'should navigate through languages with arrow keys', () => {
+			const getLanguagesListColumnsCount =
+				LanguagePickerModal.prototype.getLanguagesListColumnsCount;
+
+			// Mock getLanguagesListColumnsCount method of LanguagePickerModal
+			// as we can't use it in test environment because it's using
+			// getBoundingClientRect internally
+			LanguagePickerModal.prototype.getLanguagesListColumnsCount = jest.fn( () => 2 );
+
+			const wrapper = shallow( <LanguagePickerModal { ...defaultProps } /> );
+
+			// Set a search state that will match most of the test languages
+			wrapper.setState( { search: 'i' } );
+			const filteredLanguages = wrapper.instance().getFilteredLanguages();
+
+			wrapper.setState( { selectedLanguageSlug: filteredLanguages[ 0 ].langSlug } );
+
+			const horizontalStep = 1;
+			const verticalStep = wrapper.instance().getLanguagesListColumnsCount();
+
+			for ( let i = 0; i < filteredLanguages.length - 1; i += horizontalStep ) {
+				simulateKeyDownEvent( 'ArrowRight' );
+				expect( wrapper.state().selectedLanguageSlug ).toBe(
+					filteredLanguages[ i + horizontalStep ].langSlug
+				);
+			}
+
+			for ( let i = filteredLanguages.length - 1; i > 0; i -= horizontalStep ) {
+				simulateKeyDownEvent( 'ArrowLeft' );
+				expect( wrapper.state().selectedLanguageSlug ).toBe(
+					filteredLanguages[ i - horizontalStep ].langSlug
+				);
+			}
+
+			for ( let i = 0; i < filteredLanguages.length - verticalStep - 1; i += verticalStep ) {
+				simulateKeyDownEvent( 'ArrowDown' );
+				expect( wrapper.state().selectedLanguageSlug ).toBe(
+					filteredLanguages[ i + verticalStep ].langSlug
+				);
+			}
+
+			const selectedLanguageIndex = filteredLanguages.findIndex(
+				( { langSlug } ) => langSlug === wrapper.state().selectedLanguageSlug
+			);
+
+			for ( let i = selectedLanguageIndex; i > 0; i -= verticalStep ) {
+				simulateKeyDownEvent( 'ArrowUp' );
+				expect( wrapper.state().selectedLanguageSlug ).toBe(
+					filteredLanguages[ i - verticalStep ].langSlug
+				);
+			}
+
+			LanguagePickerModal.prototype.getLanguagesListColumnsCount = getLanguagesListColumnsCount;
+		} );
+	} );
+
+	describe( 'events', () => {
+		let recordTracksEvent;
+		let wrapper;
+
+		beforeEach( () => {
+			recordTracksEvent = jest.fn();
+
+			wrapper = shallow(
+				<LanguagePickerModal { ...defaultProps } recordTracksEvent={ recordTracksEvent } />
+			);
+		} );
+
+		test( 'should fire when language does not change', () => {
+			expect( wrapper.state( 'selectedLanguageSlug' ) ).toEqual( defaultProps.selected );
+
+			wrapper.instance().handleClose();
+
+			expect( recordTracksEvent ).toHaveBeenCalledWith( 'calypso_languagepicker_closed', {
+				searched: false,
+				is_closing_without_selection: false,
+				did_select_language: false,
+			} );
+		} );
+
+		test( 'should fire when dialog is closing due to cancellation', () => {
+			wrapper.instance().handleSearch( 'it' );
+
+			expect( wrapper.state( 'selectedLanguageSlug' ) ).not.toEqual( defaultProps.selected );
+
+			wrapper.instance().handleClose( /* isClosingWithoutSelection = */ true );
+
+			expect( recordTracksEvent ).toHaveBeenCalledWith( 'calypso_languagepicker_closed', {
+				searched: true,
+				is_closing_without_selection: true,
+				did_select_language: true,
+			} );
+		} );
+
+		describe( 'when searched', () => {
+			test( 'should fire an event with searched prop set to true', () => {
+				wrapper.instance().handleSearch( 'It' );
+
+				expect( wrapper.state( 'search' ) ).toEqual( 'It' );
+
+				wrapper.instance().handleClose();
+
+				expect( recordTracksEvent ).toHaveBeenCalledWith( 'calypso_languagepicker_closed', {
+					searched: true,
+					is_closing_without_selection: false,
+					did_select_language: true,
+				} );
+			} );
+
+			test( 'should fire an event with searched prop set to true if search closed', () => {
+				wrapper.instance().handleSearch( 'it' );
+				// pass an empty string to simluate when someone searches and then closes
+				// the search box
+				wrapper.instance().handleSearch( '' );
+
+				expect( wrapper.state( 'search' ) ).toEqual( '' );
+
+				wrapper.instance().handleClose();
+
+				expect( recordTracksEvent ).toHaveBeenCalledWith( 'calypso_languagepicker_closed', {
+					searched: true,
+					is_closing_without_selection: false,
+					did_select_language: true,
+				} );
+			} );
+		} );
+
+		describe( 'when not searched', () => {
+			test( 'should fire an event with searched prop set to false', () => {
+				expect( wrapper.state( 'search' ) ).toBe( false );
+
+				wrapper.instance().handleLanguageItemClick( 'it', { preventDefault: noop } );
+
+				expect( wrapper.state( 'selectedLanguageSlug' ) ).toEqual( 'it' );
+
+				wrapper.instance().handleClose();
+
+				expect( recordTracksEvent ).toHaveBeenCalledWith( 'calypso_languagepicker_closed', {
+					searched: false,
+					is_closing_without_selection: false,
+					did_select_language: true,
+				} );
 			} );
 		} );
 	} );

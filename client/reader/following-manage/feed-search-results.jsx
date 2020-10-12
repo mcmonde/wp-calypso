@@ -1,23 +1,22 @@
-/** @format */
 /**
- * External Dependencies
+ * External dependencies
  */
 import PropTypes from 'prop-types';
 import React from 'react';
 import { connect } from 'react-redux';
 import { localize } from 'i18n-calypso';
 import { take, times } from 'lodash';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 import classnames from 'classnames';
 
 /**
- * Internal Dependencies
+ * Internal dependencies
  */
-import Button from 'components/button';
+import { Button } from '@automattic/components';
 import ReaderSubscriptionListItemPlaceholder from 'blocks/reader-subscription-list-item/placeholder';
 import { READER_FOLLOWING_MANAGE_SEARCH_RESULT } from 'reader/follow-sources';
-import InfiniteStream from 'components/reader-infinite-stream';
-import { siteRowRenderer } from 'components/reader-infinite-stream/row-renderers';
+import InfiniteStream from 'reader/components/reader-infinite-stream';
+import { siteRowRenderer } from 'reader/components/reader-infinite-stream/row-renderers';
 import { requestFeedSearch } from 'state/reader/feed-searches/actions';
 
 class FollowingManageSearchFeedsResults extends React.Component {
@@ -31,14 +30,14 @@ class FollowingManageSearchFeedsResults extends React.Component {
 		width: PropTypes.number,
 	};
 
-	hasNextPage = offset => {
+	hasNextPage = ( offset ) => {
 		if ( this.props.showMoreResults ) {
 			return offset < this.props.searchResultsCount;
 		}
 		return false;
 	};
 
-	fetchNextPage = offset =>
+	fetchNextPage = ( offset ) =>
 		this.props.requestFeedSearch( {
 			query: this.props.query,
 			offset,
@@ -63,7 +62,7 @@ class FollowingManageSearchFeedsResults extends React.Component {
 		if ( ! searchResults ) {
 			return (
 				<div className={ classNames }>
-					{ times( 10, i => (
+					{ times( 10, ( i ) => (
 						<ReaderSubscriptionListItemPlaceholder key={ `placeholder-${ i }` } />
 					) ) }
 				</div>
@@ -92,20 +91,18 @@ class FollowingManageSearchFeedsResults extends React.Component {
 					hasNextPage={ showMoreResults ? this.hasNextPage : undefined }
 					rowRenderer={ siteRowRenderer }
 				/>
-				{ ! showMoreResults &&
-					searchResultsCount > 10 && (
-						<div className="following-manage__show-more">
-							<Button
-								compact
-								icon
-								onClick={ onShowMoreResultsClicked }
-								className="following-manage__show-more-button button"
-							>
-								<Gridicon icon="chevron-down" />
-								{ translate( 'Show more' ) }
-							</Button>
-						</div>
-					) }
+				{ ! showMoreResults && searchResultsCount > 10 && (
+					<div className="following-manage__show-more">
+						<Button
+							compact
+							onClick={ onShowMoreResultsClicked }
+							className="following-manage__show-more-button button"
+						>
+							<Gridicon icon="chevron-down" />
+							{ translate( 'Show more' ) }
+						</Button>
+					</div>
+				) }
 			</div>
 		);
 	}

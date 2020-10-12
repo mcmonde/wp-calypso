@@ -8,7 +8,7 @@ import { localize } from 'i18n-calypso';
 /**
  * Internal dependencies
  */
-import Card from 'components/card';
+import { Card } from '@automattic/components';
 import SectionHeader from 'components/section-header';
 import FormSelect from 'components/forms/form-select';
 import FormSettingExplanation from 'components/forms/form-setting-explanation';
@@ -28,13 +28,8 @@ function getExplanation( promotionType, translate ) {
 	}
 }
 
-const PromotionFormTypeCard = ( {
-	siteId,
-	promotion,
-	editPromotion,
-	translate,
-} ) => {
-	const promotionType = ( promotion && promotion.type ? promotion.type : '' );
+const PromotionFormTypeCard = ( { siteId, promotion, editPromotion, translate } ) => {
+	const promotionType = promotion && promotion.type ? promotion.type : '';
 
 	const productTypesDisabled = Boolean( promotion.couponId );
 	const couponTypesDisabled = Boolean( promotion.productId );
@@ -77,9 +72,13 @@ PromotionFormTypeCard.propTypes = {
 	siteId: PropTypes.number,
 	promotion: PropTypes.shape( {
 		id: PropTypes.isRequired,
-		type: PropTypes.oneOf(
-			[ 'product_sale', 'fixed_product', 'fixed_cart', 'percent', 'free_shipping' ]
-		).isRequired,
+		type: PropTypes.oneOf( [
+			'product_sale',
+			'fixed_product',
+			'fixed_cart',
+			'percent',
+			'free_shipping',
+		] ).isRequired,
 	} ),
 	editPromotion: PropTypes.func.isRequired,
 };

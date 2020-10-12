@@ -1,11 +1,8 @@
-/** @format */
-
 /**
  * Internal dependencies
  */
 import fromApi, { convertProcessingStatus } from '../from-api';
 import { ORDER_TRANSACTION_STATUS } from 'state/order-transactions/constants';
-import { SchemaError } from 'lib/make-json-schema-parser';
 
 describe( 'wpcom-api', () => {
 	describe( 'fromApi()', () => {
@@ -52,7 +49,7 @@ describe( 'wpcom-api', () => {
 				fromApi( invalidResponse );
 			};
 
-			expect( invalidateCall ).toThrowError( SchemaError );
+			expect( invalidateCall ).toThrow( Error, 'Failed to validate with JSON schema' );
 		} );
 	} );
 

@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -10,7 +9,7 @@ import { repeat } from 'lodash';
  */
 import PostComment from 'blocks/comments/post-comment';
 import { POST_COMMENT_DISPLAY_TYPES } from 'state/comments/constants';
-import Card from 'components/card';
+import { Card } from '@automattic/components';
 
 const mockComment = {
 	author: {
@@ -57,23 +56,23 @@ const mockComments = [
 ];
 
 const commentsTree = {
-	'0': {
+	0: {
 		children: [ 1 ],
 		data: mockComments[ 0 ],
 	},
-	'1': {
+	1: {
 		children: [],
 		data: mockComments[ 1 ],
 	},
-	'2': {
+	2: {
 		children: [],
 		data: mockComments[ 2 ],
 	},
-	'3': {
+	3: {
 		children: [ 1 ],
 		data: mockComments[ 3 ],
 	},
-	'4': {
+	4: {
 		children: [ 1 ],
 		data: mockComments[ 4 ],
 	},

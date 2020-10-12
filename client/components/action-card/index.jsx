@@ -1,17 +1,20 @@
-/** @format */
-
 /**
  * External dependencies
  */
 import React from 'react';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 import PropTypes from 'prop-types';
+import classnames from 'classnames';
 
 /**
  * Internal dependencies
  */
-import CompactCard from 'components/card/compact';
-import Button from 'components/button';
+import { Card, Button } from '@automattic/components';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 const ActionCard = ( {
 	headerText,
@@ -23,8 +26,19 @@ const ActionCard = ( {
 	buttonHref,
 	buttonOnClick,
 	children,
+	compact,
+	classNames,
+	buttonDisabled,
+	illustration,
 } ) => (
-	<CompactCard className="action-card">
+	<Card className={ classnames( 'action-card', classNames ) } compact={ compact }>
+		{ illustration && (
+			<img
+				className="action-card__illustration"
+				alt="concierge session signup form header"
+				src={ illustration }
+			/>
+		) }
 		<div className="action-card__main">
 			<h2 className="action-card__heading">{ headerText }</h2>
 			<p>{ mainText }</p>
@@ -36,12 +50,13 @@ const ActionCard = ( {
 					href={ buttonHref }
 					target={ buttonTarget }
 					onClick={ buttonOnClick }
+					disabled={ buttonDisabled }
 				>
 					{ buttonText } { buttonIcon && <Gridicon icon={ buttonIcon } /> }
 				</Button>
 			) }
 		</div>
-	</CompactCard>
+	</Card>
 );
 
 ActionCard.propTypes = {
@@ -53,7 +68,15 @@ ActionCard.propTypes = {
 	buttonOnClick: PropTypes.func,
 	buttonHref: PropTypes.string,
 	buttonTarget: PropTypes.string,
+	buttonDisabled: PropTypes.bool,
 	children: PropTypes.any,
+	compact: PropTypes.bool,
+	illustration: PropTypes.string,
+};
+
+ActionCard.defaultProps = {
+	compact: true,
+	buttonDisabled: false,
 };
 
 export default ActionCard;

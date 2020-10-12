@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -10,14 +8,14 @@ import { connect } from 'react-redux';
  * Internal dependencies
  */
 import { requestInlineHelpSearchResults } from 'state/inline-help/actions';
-import { isRequestingInlineHelpSearchResultsForQuery } from 'state/inline-help/selectors';
+import isRequestingInlineHelpSearchResultsForQuery from 'state/inline-help/selectors/is-requesting-inline-help-search-results-for-query';
 
 class QueryInlineHelpSearch extends Component {
-	componentWillMount() {
+	UNSAFE_componentWillMount() {
 		this.request( this.props );
 	}
 
-	componentWillReceiveProps( nextProps ) {
+	UNSAFE_componentWillReceiveProps( nextProps ) {
 		if ( this.props.query === nextProps.query ) {
 			return;
 		}
@@ -26,7 +24,7 @@ class QueryInlineHelpSearch extends Component {
 	}
 
 	request( props ) {
-		if ( props.requesting || ! props.query ) {
+		if ( props.requesting ) {
 			return;
 		}
 

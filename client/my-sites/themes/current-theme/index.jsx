@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -14,13 +12,18 @@ import { localize } from 'i18n-calypso';
 /**
  * Internal dependencies
  */
-import Card from 'components/card';
+import { Card } from '@automattic/components';
 import CurrentThemeButton from './button';
 import { connectOptions } from '../theme-options';
 import { trackClick } from '../helpers';
 import { getActiveTheme, getCanonicalTheme } from 'state/themes/selectors';
 import QueryActiveTheme from 'components/data/query-active-theme';
 import QueryCanonicalTheme from 'components/data/query-canonical-theme';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 /*
  * Show current active theme for a site, with
@@ -40,7 +43,7 @@ class CurrentTheme extends Component {
 		currentTheme: PropTypes.object,
 	};
 
-	trackClick = event => trackClick( 'current theme', event );
+	trackClick = ( event ) => trackClick( 'current theme', event );
 
 	render() {
 		const { currentTheme, currentThemeId, siteId, translate } = this.props,
@@ -49,7 +52,7 @@ class CurrentTheme extends Component {
 
 		const options = pickBy(
 			this.props.options,
-			option =>
+			( option ) =>
 				option.icon && ! ( option.hideForTheme && option.hideForTheme( currentThemeId, siteId ) )
 		);
 
@@ -64,7 +67,7 @@ class CurrentTheme extends Component {
 				<div className="current-theme__current">
 					{ showScreenshotPlaceholder && <div className="current-theme__img-placeholder" /> }
 					{ showScreenshot && (
-						<img src={ currentTheme.screenshot + '?w=150' } className="current-theme__img" />
+						<img src={ currentTheme.screenshot + '?w=150' } className="current-theme__img" alt="" />
 					) }
 					<span className="current-theme__label">{ translate( 'Current Theme' ) }</span>
 					<span className="current-theme__name">{ text }</span>

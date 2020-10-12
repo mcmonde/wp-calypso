@@ -1,5 +1,3 @@
-/** @format */
-
 jest.mock( 'lib/plans/constants', () => ( {
 	GROUP_WPCOM: 'GROUP_WPCOM',
 	GROUP_JETPACK: 'GROUP_JETPACK',
@@ -12,7 +10,10 @@ jest.mock( 'lib/plans/constants', () => ( {
 	TYPE_PERSONAL: 'TYPE_PERSONAL',
 	TYPE_PREMIUM: 'TYPE_PREMIUM',
 	TYPE_BUSINESS: 'TYPE_BUSINESS',
+	TYPE_ECOMMERCE: 'TYPE_ECOMMERCE',
+} ) );
 
+jest.mock( 'lib/plans/plans-list', () => ( {
 	PLANS_LIST: {
 		jetpack_premium_monthly: {
 			term: 'TERM_MONTHLY',

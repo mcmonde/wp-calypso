@@ -1,11 +1,9 @@
-/** @format */
-
 /**
  * External dependencies
  */
 
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, { Fragment } from 'react';
 import { connect } from 'react-redux';
 
 /**
@@ -15,11 +13,11 @@ import QueryTheme from 'components/data/query-theme';
 import { isWpcomTheme, isWporgTheme } from 'state/themes/selectors';
 
 const QueryCanonicalTheme = ( { siteId, themeId, isWpcom, isWporg } ) => (
-	<div>
+	<Fragment>
 		<QueryTheme themeId={ themeId } siteId="wpcom" />
 		{ ! isWpcom && <QueryTheme themeId={ themeId } siteId="wporg" /> }
 		{ ! isWpcom && ! isWporg && siteId && <QueryTheme themeId={ themeId } siteId={ siteId } /> }
-	</div>
+	</Fragment>
 );
 
 QueryCanonicalTheme.propTypes = {

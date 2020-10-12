@@ -1,4 +1,3 @@
-/** @format */
 export const itemSchema = {
 	type: 'object',
 	additionalProperties: false,
@@ -14,6 +13,7 @@ export const itemSchema = {
 				'jetpack_support',
 				'label',
 				'multiple_external_user_ID_support',
+				'external_users_only',
 				'type',
 			],
 			properties: {
@@ -26,6 +26,7 @@ export const itemSchema = {
 				jetpack_support: { type: 'boolean' },
 				label: { type: 'string' },
 				multiple_external_user_ID_support: { type: 'boolean' },
+				external_users_only: { type: 'boolean' },
 				type: { type: 'string' },
 			},
 		},

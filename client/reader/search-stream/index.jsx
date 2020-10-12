@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External Dependencies
  */
@@ -13,33 +12,38 @@ import classnames from 'classnames';
 /**
  * Internal Dependencies
  */
-import ControlItem from 'components/segmented-control/item';
+import BlankSuggestions from 'reader/components/reader-blank-suggestions';
 import SegmentedControl from 'components/segmented-control';
-import CompactCard from 'components/card/compact';
+import { CompactCard } from '@automattic/components';
 import DocumentHead from 'components/data/document-head';
 import SearchInput from 'components/search';
 import { recordAction, recordTrack } from 'reader/stats';
 import SiteResults from './site-results';
 import PostResults from './post-results';
-import ReaderMain from 'components/reader-main';
-import { addQueryArgs } from 'lib/url';
+import ReaderMain from 'reader/components/reader-main';
+import { addQueryArgs, resemblesUrl, withoutHttp, addSchemeIfMissing } from 'lib/url';
 import SearchStreamHeader, { SEARCH_TYPES } from './search-stream-header';
 import { SORT_BY_RELEVANCE, SORT_BY_LAST_UPDATED } from 'state/reader/feed-searches/actions';
 import withDimensions from 'lib/with-dimensions';
 import SuggestionProvider from './suggestion-provider';
 import Suggestion from './suggestion';
-import { resemblesUrl, withoutHttp, addSchemeIfMissing } from 'lib/url';
-import { getReaderAliasedFollowFeedUrl } from 'state/selectors';
+import { getReaderAliasedFollowFeedUrl } from 'state/reader/follows/selectors';
 import { SEARCH_RESULTS_URL_INPUT } from 'reader/follow-sources';
 import FollowButton from 'reader/follow-button';
 import MobileBackToSidebar from 'components/mobile-back-to-sidebar';
+import { getSearchPlaceholderText } from 'reader/search/utils';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 const WIDE_DISPLAY_CUTOFF = 660;
 
-const updateQueryArg = params =>
+const updateQueryArg = ( params ) =>
 	page.replace( addQueryArgs( params, window.location.pathname + window.location.search ) );
 
-const pickSort = sort => ( sort === 'date' ? SORT_BY_LAST_UPDATED : SORT_BY_RELEVANCE );
+const pickSort = ( sort ) => ( sort === 'date' ? SORT_BY_LAST_UPDATED : SORT_BY_RELEVANCE );
 
 const SpacerDiv = withDimensions( ( { width, height } ) => (
 	<div
@@ -53,33 +57,16 @@ const SpacerDiv = withDimensions( ( { width, height } ) => (
 class SearchStream extends React.Component {
 	static propTypes = {
 		query: PropTypes.string,
+		streamKey: PropTypes.string,
 	};
 
-	componentWillReceiveProps( nextProps ) {
-		if ( nextProps.query !== this.props.query ) {
-			this.updateState( nextProps );
-		}
-	}
-
-	updateState = ( props = this.props ) => {
-		const newState = {
-			title: this.getTitle( props ),
-		};
-		if ( newState.title !== this.state.title ) {
-			this.setState( newState || props.translate( 'Search' ) );
-		}
-	};
-
-	getTitle = ( props = this.props ) => {
-		return props.query;
-	};
+	getTitle = ( props = this.props ) => props.query || props.translate( 'Search' );
 
 	state = {
 		selected: SEARCH_TYPES.POSTS,
-		title: this.getTitle(),
 	};
 
-	updateQuery = newValue => {
+	updateQuery = ( newValue ) => {
 		this.scrollToTop();
 		const trimmedValue = trim( newValue ).substring( 0, 1024 );
 		if (
@@ -114,24 +101,25 @@ class SearchStream extends React.Component {
 		updateQueryArg( { sort } );
 	};
 
-	handleFixedAreaMounted = ref => ( this.fixedAreaRef = ref );
+	handleFixedAreaMounted = ( ref ) => ( this.fixedAreaRef = ref );
 
-	handleSearchTypeSelection = searchType => updateQueryArg( { show: searchType } );
+	handleSearchTypeSelection = ( searchType ) => updateQueryArg( { show: searchType } );
 
 	render() {
 		const { query, translate, searchType, suggestions, readerAliasedFollowFeedUrl } = this.props;
-		const sortOrder = this.props.postsStore && this.props.postsStore.sortOrder;
+		const sortOrder = this.props.sort;
 		const wideDisplay = this.props.width > WIDE_DISPLAY_CUTOFF;
 		const showFollowByUrl = resemblesUrl( query );
 		const queryWithoutProtocol = withoutHttp( query );
 
 		let searchPlaceholderText = this.props.searchPlaceholderText;
 		if ( ! searchPlaceholderText ) {
-			searchPlaceholderText = translate( 'Search billions of WordPress posts…' );
+			searchPlaceholderText = getSearchPlaceholderText();
 		}
 
 		const documentTitle = translate( '%s ‹ Reader', {
-			args: this.state.title,
+			args: this.getTitle(),
+			comment: '%s is the section name. For example: "My Likes"',
 		} );
 
 		const TEXT_RELEVANCE_SORT = translate( 'Relevance', {
@@ -150,7 +138,7 @@ class SearchStream extends React.Component {
 			'is-post-results': searchType === SEARCH_TYPES.POSTS && query,
 		} );
 		const suggestionList = initial(
-			flatMap( suggestions, suggestion => [
+			flatMap( suggestions, ( suggestion ) => [
 				<Suggestion
 					suggestion={ suggestion.text }
 					source="search"
@@ -161,6 +149,7 @@ class SearchStream extends React.Component {
 			] )
 		);
 
+		/* eslint-disable jsx-a11y/no-autofocus */
 		return (
 			<div>
 				<DocumentHead title={ documentTitle } />
@@ -185,20 +174,32 @@ class SearchStream extends React.Component {
 						/>
 						{ query && (
 							<SegmentedControl compact className="search-stream__sort-picker">
-								<ControlItem selected={ sortOrder !== 'date' } onClick={ this.useRelevanceSort }>
+								<SegmentedControl.Item
+									selected={ sortOrder !== 'date' }
+									onClick={ this.useRelevanceSort }
+								>
 									{ TEXT_RELEVANCE_SORT }
-								</ControlItem>
-								<ControlItem selected={ sortOrder === 'date' } onClick={ this.useDateSort }>
+								</SegmentedControl.Item>
+								<SegmentedControl.Item
+									selected={ sortOrder === 'date' }
+									onClick={ this.useDateSort }
+								>
 									{ TEXT_DATE_SORT }
-								</ControlItem>
+								</SegmentedControl.Item>
 							</SegmentedControl>
 						) }
 					</CompactCard>
 					{ showFollowByUrl && (
 						<div className="search-stream__url-follow">
 							<FollowButton
-								followLabel={ translate( 'Follow %s', { args: queryWithoutProtocol } ) }
-								followingLabel={ translate( 'Following %s', { args: queryWithoutProtocol } ) }
+								followLabel={ translate( 'Follow %s', {
+									args: queryWithoutProtocol,
+									comment: '%s is the name of the site being followed. For example: "Discover"',
+								} ) }
+								followingLabel={ translate( 'Following %s', {
+									args: queryWithoutProtocol,
+									comment: '%s is the name of the site being followed. For example: "Discover"',
+								} ) }
 								siteUrl={ addSchemeIfMissing( readerAliasedFollowFeedUrl, 'http' ) }
 								followSource={ SEARCH_RESULTS_URL_INPUT }
 							/>
@@ -211,16 +212,7 @@ class SearchStream extends React.Component {
 							wideDisplay={ wideDisplay }
 						/>
 					) }
-					{ ! query && (
-						<div className="search-stream__blank-suggestions">
-							{ suggestions &&
-								this.props.translate( 'Suggestions: {{suggestions /}}.', {
-									components: {
-										suggestions: suggestionList,
-									},
-								} ) }
-						</div>
-					) }
+					{ ! query && <BlankSuggestions suggestions={ suggestionList } /> }
 				</div>
 				<SpacerDiv domTarget={ this.fixedAreaRef } />
 				{ wideDisplay && (
@@ -254,12 +246,13 @@ class SearchStream extends React.Component {
 				) }
 			</div>
 		);
+		/* eslint-enable jsx-a11y/no-autofocus */
 	}
 }
 
 /* eslint-disable */
 // wrapping with Main so that we can use withWidth helper to pass down whole width of Main
-const wrapWithMain = Component => props => (
+const wrapWithMain = ( Component ) => ( props ) => (
 	<ReaderMain className="search-stream search-stream__with-sites" wideLayout>
 		<Component { ...props } />
 	</ReaderMain>

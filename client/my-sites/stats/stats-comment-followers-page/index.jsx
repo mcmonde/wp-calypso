@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -18,7 +16,7 @@ import StatsListLegend from '../stats-list/legend';
 import StatsModulePlaceholder from '../stats-module/placeholder';
 import ErrorPanel from '../stats-error';
 import Pagination from 'components/pagination';
-import Card from 'components/card';
+import { Card } from '@automattic/components';
 import SectionHeader from 'components/section-header';
 import QuerySiteStats from 'components/data/query-site-stats';
 import { getSelectedSiteId } from 'state/ui/selectors';
@@ -114,11 +112,9 @@ class StatModuleFollowersPage extends Component {
 				<SectionHeader label={ translate( 'Comments Followers' ) } />
 				<Card className={ classNames( classes ) }>
 					<div className="module-content">
-						{ noData &&
-							! hasError &&
-							! isLoading && (
-								<ErrorPanel className="is-empty-message" message={ translate( 'No followers' ) } />
-							) }
+						{ noData && ! hasError && ! isLoading && (
+							<ErrorPanel className="is-empty-message" message={ translate( 'No followers' ) } />
+						) }
 
 						{ paginationSummary }
 

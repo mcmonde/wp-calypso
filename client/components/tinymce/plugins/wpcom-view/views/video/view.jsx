@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -35,7 +33,11 @@ function VideoView( { siteId, content, width } ) {
 		)
 	);
 
-	return <Shortcode { ...{ siteId, width } }>{ shortcode }</Shortcode>;
+	return (
+		<Shortcode siteId={ siteId } width={ width } allowSameOrigin={ true }>
+			{ shortcode }
+		</Shortcode>
+	);
 }
 
 VideoView.propTypes = {
@@ -44,6 +46,6 @@ VideoView.propTypes = {
 	width: PropTypes.number,
 };
 
-export default connect( state => ( {
+export default connect( ( state ) => ( {
 	siteId: getSelectedSiteId( state ),
 } ) )( resizableView( VideoView ) );

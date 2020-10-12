@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -42,7 +40,7 @@ import {
 	SOCIAL_CREATE_ACCOUNT_REQUEST_FAILURE,
 	SOCIAL_CREATE_ACCOUNT_REQUEST_SUCCESS,
 	ROUTE_SET,
-	USER_RECEIVE,
+	CURRENT_USER_RECEIVE,
 } from 'state/action-types';
 
 describe( 'reducer', () => {
@@ -52,6 +50,7 @@ describe( 'reducer', () => {
 			'isFormDisabled',
 			'isRequesting',
 			'isRequestingTwoFactorAuth',
+			'lastCheckedUsernameOrEmail',
 			'magicLogin',
 			'redirectTo',
 			'requestError',
@@ -494,7 +493,10 @@ describe( 'reducer', () => {
 				data,
 			} );
 
-			expect( state ).to.eql( { ...data } );
+			expect( state ).to.eql( {
+				two_step_id: 12345678,
+				two_step_nonce: 'abcdefgh1234',
+			} );
 		} );
 
 		test( 'should set twoFactorAuth to null value if a request is unsuccessful', () => {
@@ -516,7 +518,10 @@ describe( 'reducer', () => {
 				data,
 			} );
 
-			expect( state ).to.eql( { ...data } );
+			expect( state ).to.eql( {
+				two_step_id: 12345678,
+				two_step_nonce: 'abcdefgh1234',
+			} );
 		} );
 
 		test( 'should set twoFactorAuth to null value if a social request is unsuccessful', () => {
@@ -644,7 +649,7 @@ describe( 'reducer', () => {
 			const state = { createError: {} };
 
 			const newState = socialAccount( state, {
-				type: USER_RECEIVE,
+				type: CURRENT_USER_RECEIVE,
 			} );
 
 			expect( newState.createError ).to.be.null;
@@ -697,7 +702,7 @@ describe( 'reducer', () => {
 			const state = { createError: {} };
 
 			const newState = socialAccountLink( state, {
-				type: USER_RECEIVE,
+				type: CURRENT_USER_RECEIVE,
 			} );
 
 			expect( newState ).to.to.eql( { isLinking: false } );

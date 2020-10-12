@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -9,12 +7,12 @@ import { get } from 'lodash';
  * Internal dependencies
  */
 import config, { isEnabled } from 'config';
-import { planMatches } from 'lib/plans';
-import { TYPE_BUSINESS, GROUP_WPCOM } from 'lib/plans/constants';
+import { isWpComBusinessPlan, isWpComEcommercePlan } from 'lib/plans';
 import { userCan } from 'lib/site/utils';
 
 /**
  * Returns true if Automated Transfer is enabled for the given site
+ *
  * @param { object } site - a full site object
  * @returns { boolean } - true if AT is enabled for the site
  */
@@ -39,17 +37,12 @@ export function isATEnabled( site ) {
 		return true;
 	}
 
-	// Site has Business plan
+	// Site has Business or eCommerce plan
 	const planSlug = get( site, 'plan.product_slug' );
-	if ( ! planMatches( planSlug, { type: TYPE_BUSINESS, group: GROUP_WPCOM } ) ) {
+	if ( ! isWpComBusinessPlan( planSlug ) && ! isWpComEcommercePlan( planSlug ) ) {
 		return false;
 	}
 
 	// Current User can manage site
-	const canManageSite = userCan( 'manage_options', site );
-	if ( ! canManageSite ) {
-		return false;
-	}
-
-	return true;
+	return userCan( 'manage_options', site );
 }

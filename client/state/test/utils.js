@@ -1,41 +1,28 @@
-/** @format */
 /**
  * External dependencies
  */
-import { expect } from 'chai';
 import deepFreeze from 'deep-freeze';
-import { spy } from 'sinon';
 
 /**
  * Internal dependencies
  */
-import { testSchema } from './mocks/schema';
-import { DESERIALIZE, SERIALIZE } from 'state/action-types';
+import { APPLY_STORED_STATE, DESERIALIZE, SERIALIZE } from 'state/action-types';
 import {
-	cachingActionCreatorFactory,
-	createReducer,
 	extendAction,
 	keyedReducer,
 	withSchemaValidation,
 	combineReducers,
 	isValidStateWithSchema,
 	withoutPersistence,
+	withEnhancers,
+	withStorageKey,
 } from 'state/utils';
 import warn from 'lib/warn';
-
-const jestExpect = global.expect;
 
 jest.mock( 'lib/warn', () => jest.fn() );
 
 describe( 'utils', () => {
 	beforeEach( () => warn.mockReset() );
-
-	const currentState = deepFreeze( {
-			test: [ 'one', 'two', 'three' ],
-		} ),
-		actionSerialize = { type: SERIALIZE },
-		actionDeserialize = { type: DESERIALIZE };
-	let reducer;
 
 	describe( 'extendAction()', () => {
 		test( 'should return an updated action object, merging data', () => {
@@ -53,7 +40,7 @@ describe( 'utils', () => {
 				}
 			);
 
-			expect( action ).to.eql( {
+			expect( action ).toEqual( {
 				type: 'ACTION_TEST',
 				meta: {
 					preserve: true,
@@ -63,9 +50,9 @@ describe( 'utils', () => {
 		} );
 
 		test( 'should return an updated action thunk, merging data on dispatch', () => {
-			const dispatch = spy();
+			const dispatch = jest.fn();
 			const action = extendAction(
-				thunkDispatch =>
+				( thunkDispatch ) =>
 					thunkDispatch( {
 						type: 'ACTION_TEST',
 						meta: {
@@ -80,7 +67,7 @@ describe( 'utils', () => {
 			);
 
 			action( dispatch );
-			expect( dispatch ).to.have.been.calledWithExactly( {
+			expect( dispatch ).toHaveBeenCalledWith( {
 				type: 'ACTION_TEST',
 				meta: {
 					preserve: true,
@@ -90,7 +77,7 @@ describe( 'utils', () => {
 		} );
 
 		test( 'should return an updated action thunk, accepting also getState', () => {
-			const dispatch = spy();
+			const dispatch = jest.fn();
 			const getState = () => ( { selectedSiteId: 42 } );
 
 			const action = extendAction(
@@ -110,7 +97,7 @@ describe( 'utils', () => {
 			);
 
 			action( dispatch, getState );
-			expect( dispatch ).to.have.been.calledWithExactly( {
+			expect( dispatch ).toHaveBeenCalledWith( {
 				type: 'ACTION_TEST',
 				siteId: 42,
 				meta: {
@@ -121,10 +108,10 @@ describe( 'utils', () => {
 		} );
 
 		test( 'should return an updated nested action thunk, merging data on dispatch', () => {
-			const dispatch = spy();
+			const dispatch = jest.fn();
 			const action = extendAction(
-				thunkDispatch =>
-					thunkDispatch( nestedThunkDispatch =>
+				( thunkDispatch ) =>
+					thunkDispatch( ( nestedThunkDispatch ) =>
 						nestedThunkDispatch( {
 							type: 'ACTION_TEST',
 							meta: {
@@ -140,8 +127,8 @@ describe( 'utils', () => {
 			);
 
 			action( dispatch );
-			dispatch.getCall( 0 ).args[ 0 ]( dispatch );
-			expect( dispatch ).to.have.been.calledWithExactly( {
+			dispatch.mock.calls[ 0 ][ 0 ]( dispatch );
+			expect( dispatch ).toHaveBeenCalledWith( {
 				type: 'ACTION_TEST',
 				meta: {
 					preserve: true,
@@ -151,125 +138,10 @@ describe( 'utils', () => {
 		} );
 	} );
 
-	describe( '#createReducer()', () => {
-		describe( 'with null initial state and no handlers', () => {
-			beforeAll( () => {
-				reducer = createReducer( null, {} );
-			} );
-
-			test( 'should return a function', () => {
-				expect( reducer ).to.be.a.function;
-			} );
-
-			test( 'should return initial state when hydration action passed', () => {
-				expect( reducer( undefined, { type: '@@calypso/INIT' } ) ).to.be.null;
-			} );
-
-			test( 'should return identical state when invalid action passed', () => {
-				const invalidAction = {};
-				expect( reducer( currentState, invalidAction ) ).to.equal( currentState );
-			} );
-
-			test( 'should return identical state when unknown action type passed', () => {
-				const unknownAction = { type: 'UNKNOWN' };
-				expect( reducer( currentState, unknownAction ) ).to.equal( currentState );
-			} );
-
-			test( 'should return undefined when serialize action type passed', () => {
-				expect( reducer( currentState, actionSerialize ) ).to.be.undefined;
-			} );
-
-			test( 'should return default null state when deserialize action type passed', () => {
-				expect( reducer( currentState, actionDeserialize ) ).to.be.null;
-			} );
-
-			test( 'should throw an error when passed an undefined type', () => {
-				expect( () => reducer( undefined, { type: undefined } ) ).to.throw;
-			} );
-		} );
-
-		describe( 'with reducers and default state provided', () => {
-			const initialState = {},
-				TEST_ADD = 'TEST_ADD';
-
-			beforeAll( () => {
-				reducer = createReducer( initialState, {
-					[ TEST_ADD ]: ( state, action ) => {
-						return {
-							test: [ ...state.test, action.value ],
-						};
-					},
-				} );
-			} );
-
-			test( 'should return undefined state when SERIALIZE action type passed', () => {
-				expect( reducer( currentState, actionSerialize ) ).to.be.undefined;
-			} );
-
-			test( 'should return default {} state when DESERIALIZE action type passed', () => {
-				expect( reducer( currentState, actionDeserialize ) ).to.be.equal( initialState );
-			} );
-
-			test( 'should add new value to test array when acc action passed', () => {
-				const addAction = {
-					type: TEST_ADD,
-					value: 'four',
-				};
-
-				const newState = reducer( currentState, addAction );
-
-				expect( newState ).to.not.equal( currentState );
-				expect( newState ).to.be.eql( {
-					test: [ 'one', 'two', 'three', 'four' ],
-				} );
-			} );
-		} );
-
-		describe( 'with schema provided', () => {
-			const initialState = {};
-
-			beforeAll( () => {
-				reducer = createReducer( initialState, {}, testSchema );
-			} );
-
-			test( 'should return current state when serialize action type passed', () => {
-				expect( reducer( currentState, actionSerialize ) ).to.be.deep.equal( currentState );
-			} );
-
-			test( 'should return initial state when valid initial state and deserialize action type passed', () => {
-				expect( reducer( currentState, actionDeserialize ) ).to.be.deep.equal( currentState );
-			} );
-
-			test( 'should return default state when invalid initial state and deserialize action type passed', () => {
-				expect( reducer( { invalid: 'state' }, actionDeserialize ) ).to.be.deep.equal(
-					initialState
-				);
-			} );
-		} );
-
-		describe( 'with default actions overrides', () => {
-			const overriddenState = { overridden: 'state' };
-
-			beforeAll( () => {
-				reducer = createReducer( null, {
-					[ SERIALIZE ]: () => overriddenState,
-					[ DESERIALIZE ]: () => overriddenState,
-				} );
-			} );
-
-			test( 'should return overridden state when serialize action type passed', () => {
-				expect( reducer( currentState, actionSerialize ) ).to.be.deep.equal( overriddenState );
-			} );
-
-			test( 'should return overridden state when deserialize action type passed', () => {
-				expect( reducer( currentState, actionDeserialize ) ).to.be.deep.equal( overriddenState );
-			} );
-		} );
-	} );
 	describe( '#keyedReducer', () => {
-		const grow = name => ( { type: 'GROW', name } );
-		const reset = name => ( { type: 'RESET', name } );
-		const remove = name => ( { type: 'REMOVE', name } );
+		const grow = ( name ) => ( { type: 'GROW', name } );
+		const reset = ( name ) => ( { type: 'RESET', name } );
+		const remove = ( name ) => ( { type: 'REMOVE', name } );
 
 		const age = ( state = 0, action ) => {
 			if ( 'GROW' === action.type ) {
@@ -287,33 +159,33 @@ describe( 'utils', () => {
 		} );
 
 		test( 'should only accept string-type key names', () => {
-			expect( () => keyedReducer( null, age ) ).to.throw( TypeError );
-			expect( () => keyedReducer( undefined, age ) ).to.throw( TypeError );
-			expect( () => keyedReducer( [], age ) ).to.throw( TypeError );
-			expect( () => keyedReducer( {}, age ) ).to.throw( TypeError );
-			expect( () => keyedReducer( true, age ) ).to.throw( TypeError );
-			expect( () => keyedReducer( 10, age ) ).to.throw( TypeError );
-			expect( () => keyedReducer( 15.4, age ) ).to.throw( TypeError );
-			expect( () => keyedReducer( '', age ) ).to.throw( TypeError );
-			expect( () => keyedReducer( 'key', age ) ).to.not.throw( TypeError );
+			expect( () => keyedReducer( null, age ) ).toThrow( TypeError );
+			expect( () => keyedReducer( undefined, age ) ).toThrow( TypeError );
+			expect( () => keyedReducer( [], age ) ).toThrow( TypeError );
+			expect( () => keyedReducer( {}, age ) ).toThrow( TypeError );
+			expect( () => keyedReducer( true, age ) ).toThrow( TypeError );
+			expect( () => keyedReducer( 10, age ) ).toThrow( TypeError );
+			expect( () => keyedReducer( 15.4, age ) ).toThrow( TypeError );
+			expect( () => keyedReducer( '', age ) ).toThrow( TypeError );
+			expect( () => keyedReducer( 'key', age ) ).not.toThrow( TypeError );
 		} );
 
 		test( 'should only accept a function as the reducer argument', () => {
-			expect( () => keyedReducer( 'key', null ) ).to.throw( TypeError );
-			expect( () => keyedReducer( 'key', undefined ) ).to.throw( TypeError );
-			expect( () => keyedReducer( 'key', [] ) ).to.throw( TypeError );
-			expect( () => keyedReducer( 'key', {} ) ).to.throw( TypeError );
-			expect( () => keyedReducer( 'key', true ) ).to.throw( TypeError );
-			expect( () => keyedReducer( 'key', 10 ) ).to.throw( TypeError );
-			expect( () => keyedReducer( 'key', 15.4 ) ).to.throw( TypeError );
-			expect( () => keyedReducer( 'key', '' ) ).to.throw( TypeError );
-			expect( () => keyedReducer( 'key' ) ).to.throw( TypeError );
-			expect( () => keyedReducer( 'key', () => {} ).to.not.throw( TypeError ) );
+			expect( () => keyedReducer( 'key', null ) ).toThrow( TypeError );
+			expect( () => keyedReducer( 'key', undefined ) ).toThrow( TypeError );
+			expect( () => keyedReducer( 'key', [] ) ).toThrow( TypeError );
+			expect( () => keyedReducer( 'key', {} ) ).toThrow( TypeError );
+			expect( () => keyedReducer( 'key', true ) ).toThrow( TypeError );
+			expect( () => keyedReducer( 'key', 10 ) ).toThrow( TypeError );
+			expect( () => keyedReducer( 'key', 15.4 ) ).toThrow( TypeError );
+			expect( () => keyedReducer( 'key', '' ) ).toThrow( TypeError );
+			expect( () => keyedReducer( 'key' ) ).toThrow( TypeError );
+			expect( () => keyedReducer( 'key', () => {} ).not.toThrow( TypeError ) );
 		} );
 
 		test( 'should create keyed state given simple reducers', () => {
 			const keyed = keyedReducer( 'name', age );
-			expect( keyed( undefined, grow( 'Calypso' ) ) ).to.eql( {
+			expect( keyed( undefined, grow( 'Calypso' ) ) ).toEqual( {
 				Calypso: 1,
 			} );
 		} );
@@ -321,14 +193,14 @@ describe( 'utils', () => {
 		test( 'should handle keyNames referencing nested keys', () => {
 			const keyed = keyedReducer( 'person.name', age );
 			const action = { type: 'GROW', person: { name: 'Calypso' } };
-			expect( keyed( undefined, action ) ).to.eql( {
+			expect( keyed( undefined, action ) ).toEqual( {
 				Calypso: 1,
 			} );
 		} );
 
 		test( 'should only affect the keyed item in a collection', () => {
 			const keyed = keyedReducer( 'name', age );
-			expect( keyed( prevState, grow( 'Calypso' ) ) ).to.eql( {
+			expect( keyed( prevState, grow( 'Calypso' ) ) ).toEqual( {
 				Bonobo: 13,
 				Calypso: 1,
 			} );
@@ -336,62 +208,43 @@ describe( 'utils', () => {
 
 		test( 'should skip if no key is provided in the action', () => {
 			const keyed = keyedReducer( 'name', age );
-			expect( keyed( prevState, { type: 'GROW' } ) ).to.equal( prevState );
+			expect( keyed( prevState, { type: 'GROW' } ) ).toBe( prevState );
 		} );
 
 		test( 'should handle falsey keys', () => {
 			const keyed = keyedReducer( 'name', age );
-			expect( keyed( { [ 0 ]: 10 }, grow( 0 ) ) ).to.eql( { 0: 11 } );
+			expect( keyed( { [ 0 ]: 10 }, grow( 0 ) ) ).toEqual( { 0: 11 } );
 		} );
 
 		test( 'should handle coerced-to-string keys', () => {
 			const keyed = keyedReducer( 'name', age );
-			expect( keyed( { 10: 10 }, grow( '10' ) ) ).to.eql( { 10: 11 } );
-			expect( keyed( { [ 10 ]: 10 }, grow( '10' ) ) ).to.eql( { 10: 11 } );
-			expect( keyed( { [ 10 ]: 10 }, grow( 10 ) ) ).to.eql( { 10: 11 } );
-			expect( keyed( { 10: 10 }, grow( 10 ) ) ).to.eql( { 10: 11 } );
+			expect( keyed( { 10: 10 }, grow( '10' ) ) ).toEqual( { 10: 11 } );
+			expect( keyed( { [ 10 ]: 10 }, grow( '10' ) ) ).toEqual( { 10: 11 } );
+			expect( keyed( { [ 10 ]: 10 }, grow( 10 ) ) ).toEqual( { 10: 11 } );
+			expect( keyed( { 10: 10 }, grow( 10 ) ) ).toEqual( { 10: 11 } );
 		} );
 
 		test( 'should return without changes if no actual changes occur', () => {
 			const keyed = keyedReducer( 'name', age );
-			expect( keyed( prevState, { type: 'STAY', name: 'Bonobo' } ) ).to.equal( prevState );
+			expect( keyed( prevState, { type: 'STAY', name: 'Bonobo' } ) ).toBe( prevState );
 		} );
 
 		test( 'should not initialize a state if no changes and not keyed (simple state)', () => {
 			const keyed = keyedReducer( 'name', age );
-			expect( keyed( prevState, { type: 'STAY', name: 'Calypso' } ) ).to.equal( prevState );
+			expect( keyed( prevState, { type: 'STAY', name: 'Calypso' } ) ).toBe( prevState );
 		} );
 
 		test( 'should remove keys if set back to initialState', () => {
 			const keyed = keyedReducer( 'name', age );
-			expect( keyed( { 10: 10 }, reset( '10' ) ) ).to.eql( {} );
+			expect( keyed( { 10: 10 }, reset( '10' ) ) ).toEqual( {} );
 		} );
 
 		test( 'should remove keys if set to undefined', () => {
 			const keyed = keyedReducer( 'name', age );
-			expect( keyed( { 10: 10 }, remove( '10' ) ) ).to.eql( {} );
+			expect( keyed( { 10: 10 }, remove( '10' ) ) ).toEqual( {} );
 		} );
 
-		test( 'should apply global actions to every item', () => {
-			const counter = ( state = 0, { type } ) => {
-				switch ( type ) {
-					case 'INC':
-					case 'INC_ALL':
-						return state + 1;
-					default:
-						return state;
-				}
-			};
-
-			const keyed = keyedReducer( 'id', counter, [ 'INC_ALL' ] );
-
-			const prev = { 14: 5, 23: 19 };
-
-			expect( keyed( prev, { type: 'INC', id: 14 } ) ).to.eql( { 14: 6, 23: 19 } );
-			expect( keyed( prev, { type: 'INC_ALL' } ) ).to.eql( { 14: 6, 23: 20 } );
-		} );
-
-		test( 'should have SERIALIZE and DESERIALIZE as default global actions', () => {
+		test( 'should handle SERIALIZE and DESERIALIZE as global actions', () => {
 			const chickenReducer = ( state = '', { type } ) => {
 				switch ( type ) {
 					case 'SET_CHICKEN':
@@ -408,71 +261,90 @@ describe( 'utils', () => {
 			const keyed = keyedReducer( 'id', chickenReducer );
 			const prev = { 1: 'chicken' };
 
-			expect( keyed( prev, { type: 'SET_CHICKEN', id: 2 } ) ).to.eql( {
+			expect( keyed( prev, { type: 'SET_CHICKEN', id: 2 } ) ).toEqual( {
 				1: 'chicken',
 				2: 'chicken',
 			} );
-			expect( keyed( prev, { type: 'SERIALIZE' } ) ).to.eql( { 1: 'serialized chicken' } );
-			expect( keyed( prev, { type: 'DESERIALIZE' } ) ).to.eql( { 1: 'deserialized chicken' } );
+			expect( keyed( prev, { type: 'SERIALIZE' } ).root() ).toEqual( { 1: 'serialized chicken' } );
+			expect( keyed( prev, { type: 'DESERIALIZE' } ) ).toEqual( { 1: 'deserialized chicken' } );
 		} );
 
-		test( 'should not apply global actions if not whitelisted', () => {
-			const counter = ( state = 0, { type } ) => {
+		test( 'should omit initial/undefined state from SERIALIZE/DESERIALIZE results', () => {
+			const itemReducer = ( state = 0, { type } ) => {
 				switch ( type ) {
-					case 'INC':
-						return state + 1;
-					case 'DESERIALIZE':
-						return parseInt( state, 16 );
 					case 'SERIALIZE':
-						return state.toString( 16 );
+					case 'DESERIALIZE':
+						// don't persist unlucky numbers
+						return state !== 13 ? state : undefined;
 					default:
 						return state;
 				}
 			};
 
-			const keyed = keyedReducer( 'id', counter, [] );
-
-			const prev = { 14: 5, 23: 19 };
-
-			expect( keyed( prev, { type: 'INC', id: 14 } ) ).to.eql( { 14: 6, 23: 19 } );
-			expect( keyed( prev, { type: 'SERIALIZE' } ) ).to.equal( prev );
-			expect( keyed( prev, { type: 'DESERIALIZE' } ) ).to.equal( prev );
+			const keyed = keyedReducer( 'id', itemReducer );
+			const state = { a: 13, b: 0, c: 1 };
+			expect( keyed( state, { type: 'SERIALIZE' } ).root() ).toEqual( { c: 1 } );
+			expect( keyed( state, { type: 'DESERIALIZE' } ) ).toEqual( { c: 1 } );
 		} );
 
-		test( 'should prune items after global actions are applied', () => {
-			const counter = ( state = 0, { type } ) => {
-				switch ( type ) {
-					case 'INC':
-						return state + 1;
-					case 'PURGE':
-						return state <= 10 ? state : undefined;
-					default:
-						return state;
-				}
+		test( 'should not serialize empty state', () => {
+			const keyed = keyedReducer( 'id', age );
+			expect( keyed( {}, { type: 'SERIALIZE' } ) ).toBeUndefined();
+		} );
+
+		test( 'should serialize non-empty state', () => {
+			const keyed = keyedReducer( 'id', age );
+
+			// state with non-initial value
+			const state = { 1: 1 };
+			const serialized = keyed( state, { type: 'SERIALIZE' } );
+			expect( serialized.root() ).toEqual( { 1: 1 } );
+		} );
+
+		test( 'should not serialize nested empty state', () => {
+			const schema = {
+				type: 'object',
+				additionalProperties: false,
+				patternProperties: { '^\\d+$': { type: 'number' } },
 			};
 
-			const keyed = keyedReducer( 'id', counter, [ 'PURGE' ] );
+			const keyedWithPersistence = withSchemaValidation( schema, keyedReducer( 'id', age ) );
+			const nestedReducer = combineReducers( { a: keyedWithPersistence } );
 
-			const prev = { 14: 5, 23: 19 };
+			// state with non-initial value should serialize: sanity check that we are testing the
+			// right thing.
+			// Another reason why empty state might not be persisted is that the tested reducer didn't
+			// opt in into persistence in the first place -- and we DON'T want to test that!
+			const stateWithData = { a: { 1: 1 } };
+			const serializedWithData = nestedReducer( stateWithData, { type: 'SERIALIZE' } );
+			expect( serializedWithData.root() ).toEqual( { a: { 1: 1 } } );
 
-			expect( keyed( prev, { type: 'PURGE' } ) ).to.eql( { 14: 5 } );
+			// initial state should not serialize
+			const state = nestedReducer( undefined, { type: 'INIT' } );
+			expect( state ).toEqual( { a: {} } );
+			expect( nestedReducer( state, { type: 'SERIALIZE' } ) ).toBeUndefined();
+		} );
+
+		test( 'should deserialize no state into default empty state', () => {
+			const keyed = keyedReducer( 'id', age );
+			expect( keyed( undefined, { type: 'DESERIALIZE' } ) ).toEqual( {} );
 		} );
 	} );
 
 	describe( '#isValidStateWithSchema', () => {
 		test( 'should return true for valid state', () => {
 			const result = isValidStateWithSchema( 'a string', { type: 'string' } );
-			jestExpect( result ).toBe( true );
+			expect( result ).toBe( true );
 		} );
 
 		test( 'should return false for invalid state', () => {
 			const result = isValidStateWithSchema( 'a string', { type: 'null' } );
-			jestExpect( result ).toBe( false );
+			expect( result ).toBe( false );
 		} );
 
 		test( 'should warn for invalid state', () => {
 			isValidStateWithSchema( 'a string', { type: 'null' } );
-			jestExpect( warn ).toHaveBeenCalledTimes( 1 );
+			expect( warn ).toHaveBeenCalledTimes( 1 );
 		} );
 	} );
 
@@ -507,24 +379,24 @@ describe( 'utils', () => {
 		test( 'should invalidate DESERIALIZED state', () => {
 			const validated = withSchemaValidation( schema, age );
 
-			expect( validated( -5, load ) ).to.equal( 0 );
+			expect( validated( -5, load ) ).toBe( 0 );
 		} );
 
 		test( 'should not invalidate normal state', () => {
 			const validated = withSchemaValidation( schema, age );
 
-			expect( validated( -5, normal ) ).to.equal( -5 );
+			expect( validated( -5, normal ) ).toBe( -5 );
 		} );
 
 		test( 'should validate initial state', () => {
 			const validated = withSchemaValidation( schema, age );
 
-			expect( validated( 5, load ) ).to.equal( 5 );
+			expect( validated( 5, load ) ).toBe( 5 );
 		} );
 
 		test( 'actions work as expected with schema', () => {
 			const validated = withSchemaValidation( schema, age );
-			expect( validated( 5, grow ) ).to.equal( 6 );
+			expect( validated( 5, grow ) ).toBe( 6 );
 		} );
 	} );
 
@@ -537,9 +409,9 @@ describe( 'utils', () => {
 			minimum: 0,
 		};
 
-		const age = ( state = 0, action ) => ( 'GROW' === action.type ? state + 1 : state );
-		age.schema = schema;
-
+		const age = withSchemaValidation( schema, ( state = 0, action ) =>
+			'GROW' === action.type ? state + 1 : state
+		);
 		const height = ( state = 160, action ) => ( 'GROW' === action.type ? state + 1 : state );
 		const count = ( state = 1, action ) => ( 'GROW' === action.type ? state + 1 : state );
 
@@ -576,37 +448,37 @@ describe( 'utils', () => {
 
 		test( 'should return initial state on init', () => {
 			const state = reducers( undefined, { type: '@@calypso/INIT' } );
-			expect( state ).to.eql( { age: 0, height: 160 } );
+			expect( state ).toEqual( { age: 0, height: 160 } );
 		} );
 
 		test( 'should return initial state on DESERIALIZE', () => {
 			const state = reducers( undefined, load );
-			expect( state ).to.eql( { age: 0, height: 160 } );
+			expect( state ).toEqual( { age: 0, height: 160 } );
 		} );
 
 		test( 'should not persist height, because it is missing a schema', () => {
 			const state = reducers( appState, write );
-			expect( state ).to.eql( { age: 20 } );
+			expect( state.root() ).toEqual( { age: 20 } );
 		} );
 
 		test( 'should not load height, because it is missing a schema', () => {
 			const state = reducers( appState, load );
-			expect( state ).to.eql( { age: 20, height: 160 } );
+			expect( state ).toEqual( { age: 20, height: 160 } );
 		} );
 
 		test( 'should validate age', () => {
 			const state = reducers( { age: -5 }, load );
-			expect( state ).to.eql( { age: 0, height: 160 } );
+			expect( state ).toEqual( { age: 0, height: 160 } );
 		} );
 
 		test( 'actions work as expected', () => {
 			const state = reducers( appState, grow );
-			expect( state ).to.eql( { age: 21, height: 172 } );
+			expect( state ).toEqual( { age: 21, height: 172 } );
 		} );
 
 		test( 'undefined or missing state is not serialized and does not cause errors', () => {
 			const empty = reducers( undefined, write );
-			expect( empty ).to.be.undefined;
+			expect( empty ).toBeUndefined();
 
 			const nested = combineReducers( {
 				person: reducers,
@@ -614,7 +486,7 @@ describe( 'utils', () => {
 			} );
 
 			const missingPerson = nested( { date: new Date( 100 ) }, write );
-			expect( missingPerson ).to.eql( { date: 100 } );
+			expect( missingPerson.root() ).toEqual( { date: 100 } );
 		} );
 
 		test( 'nested reducers work on load', () => {
@@ -628,13 +500,13 @@ describe( 'utils', () => {
 				count,
 			} );
 			const valid = nested( { person: { age: 22, date: 224 } }, load );
-			expect( valid ).to.eql( {
+			expect( valid ).toEqual( {
 				person: { age: 22, height: 160, date: new Date( 224 ) },
 				count: 1,
 			} );
 
 			const invalid = nested( { person: { age: -5, height: 100, date: -5 } }, load );
-			expect( invalid ).to.eql( {
+			expect( invalid ).toEqual( {
 				person: { age: 0, height: 160, date: new Date( 0 ) },
 				count: 1,
 			} );
@@ -651,10 +523,10 @@ describe( 'utils', () => {
 				count,
 			} );
 			const valid = nested( { person: { age: 22, date: new Date( 224 ) } }, write );
-			expect( valid ).to.eql( { person: { age: 22, date: 224 } } );
+			expect( valid.root() ).toEqual( { person: { age: 22, date: 224 } } );
 
 			const invalid = nested( { person: { age: -5, height: 100, date: new Date( -500 ) } }, write );
-			expect( invalid ).to.eql( { person: { age: -5, date: -500 } } );
+			expect( invalid.root() ).toEqual( { person: { age: -5, date: -500 } } );
 		} );
 
 		test( 'nested reducers leave out a state slice where none of the children is persisted', () => {
@@ -677,7 +549,7 @@ describe( 'utils', () => {
 				},
 				write
 			);
-			expect( stored ).to.eql( { age: 40 } );
+			expect( stored.root() ).toEqual( { age: 40 } );
 		} );
 
 		test( 'deeply nested reducers work on load', () => {
@@ -694,7 +566,7 @@ describe( 'utils', () => {
 				count,
 			} );
 			const valid = veryNested( { bob: { person: { age: 22, date: 224 } }, count: 122 }, load );
-			expect( valid ).to.eql( {
+			expect( valid ).toEqual( {
 				bob: { person: { age: 22, height: 160, date: new Date( 224 ) } },
 				count: 1,
 			} );
@@ -703,7 +575,7 @@ describe( 'utils', () => {
 				{ bob: { person: { age: -5, height: 22, date: -500 } }, count: 123 },
 				load
 			);
-			expect( invalid ).to.eql( {
+			expect( invalid ).toEqual( {
 				bob: { person: { age: 0, height: 160, date: new Date( 0 ) } },
 				count: 1,
 			} );
@@ -726,13 +598,13 @@ describe( 'utils', () => {
 				{ bob: { person: { age: 22, date: new Date( 234 ) } }, count: 122 },
 				write
 			);
-			expect( valid ).to.eql( { bob: { person: { age: 22, date: 234 } } } );
+			expect( valid.root() ).toEqual( { bob: { person: { age: 22, date: 234 } } } );
 
 			const invalid = veryNested(
 				{ bob: { person: { age: -5, height: 22, date: new Date( -5 ) } }, count: 123 },
 				write
 			);
-			expect( invalid ).to.eql( { bob: { person: { age: -5, date: -5 } } } );
+			expect( invalid.root() ).toEqual( { bob: { person: { age: -5, date: -5 } } } );
 		} );
 
 		test( 'deeply nested reducers work with reducer with a custom handler', () => {
@@ -748,13 +620,13 @@ describe( 'utils', () => {
 				count,
 			} );
 			const valid = veryNested( { bob: { person: { date: new Date( 234 ) } }, count: 122 }, write );
-			expect( valid ).to.eql( { bob: { person: { date: 234 } } } );
+			expect( valid.root() ).toEqual( { bob: { person: { date: 234 } } } );
 
 			const invalid = veryNested(
 				{ bob: { person: { height: 22, date: new Date( -5 ) } }, count: 123 },
 				write
 			);
-			expect( invalid ).to.eql( { bob: { person: { date: -5 } } } );
+			expect( invalid.root() ).toEqual( { bob: { person: { date: -5 } } } );
 		} );
 
 		test( 'uses the provided validation from withSchemaValidation', () => {
@@ -764,23 +636,10 @@ describe( 'utils', () => {
 			} );
 
 			const valid = reducers( { height: 22, count: 44 }, write );
-			expect( valid ).to.eql( { height: 22 } );
+			expect( valid.root() ).toEqual( { height: 22 } );
 
 			const invalid = reducers( { height: -1, count: 44 }, load );
-			expect( invalid ).to.eql( { height: 160, count: 1 } );
-		} );
-
-		test( 'uses the provided validation from createReducer', () => {
-			reducers = combineReducers( {
-				height: createReducer( 160, {}, schema ),
-				count,
-			} );
-
-			const valid = reducers( { height: 22, count: 44 }, write );
-			expect( valid ).to.eql( { height: 22 } );
-
-			const invalid = reducers( { height: -1, count: 44 }, load );
-			expect( invalid ).to.eql( { height: 160, count: 1 } );
+			expect( invalid ).toEqual( { height: 160, count: 1 } );
 		} );
 	} );
 
@@ -805,112 +664,289 @@ describe( 'utils', () => {
 		beforeAll( () => ( wrapped = withoutPersistence( age ) ) );
 
 		test( 'should pass through normal actions', () => {
-			expect( wrapped( 10, { type: 'GROW' } ) ).to.equal( 11 );
-			expect( wrapped( 10, { type: 'FADE' } ) ).to.equal( 10 );
+			expect( wrapped( 10, { type: 'GROW' } ) ).toBe( 11 );
+			expect( wrapped( 10, { type: 'FADE' } ) ).toBe( 10 );
 		} );
 
 		test( 'should DESERIALIZE to `initialState`', () => {
-			expect( wrapped( 10, { type: DESERIALIZE } ) ).to.equal( 0 );
+			expect( wrapped( 10, { type: DESERIALIZE } ) ).toBe( 0 );
 		} );
 
 		test( 'should SERIALIZE to `undefined`', () => {
-			expect( wrapped( 10, { type: SERIALIZE } ) ).to.be.undefined;
+			expect( wrapped( 10, { type: SERIALIZE } ) ).toBeUndefined();
 		} );
 	} );
 
-	describe( '#cachingActionCreatorFactory', () => {
-		let passThrough;
-		let dispatch;
-		let successfulWorker;
-		let failingWorker;
-		let loadingActionCreator;
-		let successActionCreator;
-		let failureActionCreator;
-
-		let connectedLoadingActionCreator;
-		let connectedSuccessActionCreator;
-		let connectedFailureActionCreator;
-
-		beforeEach( () => {
-			passThrough = pass => pass;
-
-			dispatch = spy( passThrough );
-			successfulWorker = spy( () => Promise.resolve( 'success_data' ) );
-			failingWorker = spy( () => Promise.reject( 'error_data' ) );
-
-			loadingActionCreator = spy( () => dispatch( { type: 'loading' } ) );
-			successActionCreator = spy( () => dispatch( { type: 'success' } ) );
-			failureActionCreator = spy( () => dispatch( { type: 'failure' } ) );
-
-			connectedLoadingActionCreator = () => loadingActionCreator;
-			connectedSuccessActionCreator = () => successActionCreator;
-			connectedFailureActionCreator = () => failureActionCreator;
-		} );
-
-		test( 'should call apropriate action creators on success', () => {
-			const actionCreator = cachingActionCreatorFactory(
-				successfulWorker,
-				connectedLoadingActionCreator,
-				connectedSuccessActionCreator,
-				connectedFailureActionCreator
+	describe( '#withEnhancers', () => {
+		it( 'should enhance action creator', () => {
+			const actionCreator = () => ( { type: 'HELLO' } );
+			const enhancedActionCreator = withEnhancers( actionCreator, ( action ) =>
+				Object.assign( { name: 'test' }, action )
 			);
+			const thunk = enhancedActionCreator();
+			const getState = () => ( {} );
+			let dispatchedAction = null;
+			const dispatch = ( action ) => ( dispatchedAction = action );
+			thunk( dispatch, getState );
 
-			const dispatchResult = actionCreator( 123 )( dispatch );
-			expect( loadingActionCreator ).to.be.calledWith( 123 );
-
-			return dispatchResult.then( () => {
-				expect( successActionCreator ).to.be.calledWith( 'success_data' );
-				expect( failureActionCreator ).not.to.be.called;
+			expect( dispatchedAction ).toEqual( {
+				name: 'test',
+				type: 'HELLO',
 			} );
 		} );
 
-		test( 'should call apropriate action creators on failure', () => {
-			const actionCreator = cachingActionCreatorFactory(
-				failingWorker,
-				connectedLoadingActionCreator,
-				connectedSuccessActionCreator,
-				connectedFailureActionCreator
-			);
+		it( 'should enhance with multiple enhancers, from last to first', () => {
+			const actionCreator = () => ( { type: 'HELLO' } );
+			const enhancedActionCreator = withEnhancers( actionCreator, [
+				( action ) => Object.assign( { name: 'test' }, action ),
+				( action ) => Object.assign( { name: 'test!!!' }, action ),
+				( action ) => Object.assign( { meetup: 'akumal' }, action ),
+			] );
+			const thunk = enhancedActionCreator();
+			const getState = () => ( {} );
+			let dispatchedAction = null;
+			const dispatch = ( action ) => ( dispatchedAction = action );
+			thunk( dispatch, getState );
 
-			const dispatchResult = actionCreator( 123 )( dispatch );
-			expect( loadingActionCreator ).to.be.calledWith( 123 );
-
-			return dispatchResult.then( () => {
-				expect( failureActionCreator ).to.be.calledWith( 'error_data' );
-				expect( successActionCreator ).not.to.be.called;
+			expect( dispatchedAction ).toEqual( {
+				name: 'test',
+				type: 'HELLO',
+				meetup: 'akumal',
 			} );
 		} );
 
-		test( 'should cache same parameters successful call', () => {
-			const actionCreator = cachingActionCreatorFactory(
-				successfulWorker,
-				connectedLoadingActionCreator,
-				connectedSuccessActionCreator,
-				connectedFailureActionCreator
-			);
+		it( 'should provider enhancers with getState function', () => {
+			let providedGetState = null;
+			const actionCreator = () => ( { type: 'HELLO' } );
+			const enhancedActionCreator = withEnhancers( actionCreator, [
+				( action, getState ) => {
+					providedGetState = getState;
+					Object.assign( { name: 'test' }, action );
+				},
+			] );
+			const thunk = enhancedActionCreator();
+			const getState = () => ( {} );
+			const dispatch = ( action ) => action;
+			thunk( dispatch, getState );
 
-			const firstCall = actionCreator( 123 )( dispatch );
-			const secondCall = firstCall.then( () => actionCreator( 123 )( dispatch ) );
-
-			return secondCall.then( () => expect( successfulWorker ).to.be.calledOnce );
+			expect( providedGetState ).toEqual( getState );
 		} );
 
-		test( 'should not cache same parameters failed call', () => {
-			const actionCreator = cachingActionCreatorFactory(
-				failingWorker,
-				connectedLoadingActionCreator,
-				connectedSuccessActionCreator,
-				connectedFailureActionCreator
+		it( 'should accept an action creator as first parameter', () => {
+			const actionCreator = () => ( { type: 'HELLO' } );
+			const enhancedActionCreator = withEnhancers(
+				withEnhancers( actionCreator, ( action ) => Object.assign( { name: 'test' }, action ) ),
+				( action ) => Object.assign( { hello: 'world' }, action )
 			);
 
-			const callActionCreator = () => actionCreator( 123 )( dispatch );
+			const thunk = enhancedActionCreator();
+			const getState = () => ( {} );
+			let dispatchedAction = null;
+			const dispatch = ( action ) => ( dispatchedAction = action );
+			thunk( dispatch, getState );
 
-			const firstCall = callActionCreator();
-			const secondCall = firstCall.then( callActionCreator, callActionCreator );
-
-			return Promise.all( [ firstCall, secondCall ] ).then(
-				() => expect( failingWorker ).to.be.calledTwice
-			);
+			expect( dispatchedAction ).toEqual( {
+				name: 'test',
+				hello: 'world',
+				type: 'HELLO',
+			} );
 		} );
+	} );
+} );
+
+describe( 'addReducer', () => {
+	// creator of toy reducers that initialize to `initialValue` and don't react to other actions
+	const toyReducer = ( initialValue ) => ( state = initialValue ) => state;
+
+	describe( 'basic tests', () => {
+		test( 'can add a new top-level reducer', () => {
+			const origReducer = combineReducers( {
+				a: toyReducer( 'Hello from A' ),
+			} );
+
+			const newReducer = origReducer.addReducer( [ 'b' ], toyReducer( 'Hello from B' ) );
+
+			expect( newReducer( undefined, { type: 'INIT' } ) ).toEqual( {
+				a: 'Hello from A',
+				b: 'Hello from B',
+			} );
+		} );
+
+		test( 'can add a new nested reducer', () => {
+			const origReducer = combineReducers( {
+				a: combineReducers( {
+					a: toyReducer( 'Hello from A.A' ),
+				} ),
+			} );
+
+			const newReducer = origReducer
+				.addReducer( [ 'a', 'b' ], toyReducer( 'Hello from A.B' ) )
+				.addReducer( [ 'a', 'c', 'd' ], toyReducer( 'Hello from A.C.D' ) );
+
+			expect( newReducer( undefined, { type: 'INIT' } ) ).toEqual( {
+				a: {
+					a: 'Hello from A.A',
+					b: 'Hello from A.B',
+					c: {
+						d: 'Hello from A.C.D',
+					},
+				},
+			} );
+		} );
+
+		test( 'fails when trying to add reducer to an occupied', () => {
+			const origReducer = combineReducers( {
+				a: toyReducer( 'Hello from A' ),
+			} );
+
+			expect( () => {
+				origReducer.addReducer( [ 'a' ], toyReducer( 'Hello from wannabe A' ) );
+			} ).toThrow( "Reducer with key 'a' is already registered" );
+		} );
+
+		test( 'fails when trying to add reducer to an unsupported spot', () => {
+			const origReducer = combineReducers( {
+				a: toyReducer( 'Hello from A' ),
+			} );
+
+			expect( () => {
+				origReducer.addReducer( [ 'a', 'b' ], toyReducer( 'Hello from A.B' ) );
+			} ).toThrow( "New reducer can be added only into a reducer created with 'combineReducers'" );
+		} );
+	} );
+
+	describe( 'interaction with persistence', () => {
+		const persistedToyReducer = ( initialState ) =>
+			withSchemaValidation( { type: 'string' }, toyReducer( initialState ) );
+
+		test( 'storageKey survives adding a new reducer', () => {
+			const origReducer = withStorageKey(
+				'foo',
+				combineReducers( {
+					a: withStorageKey(
+						'keyA',
+						combineReducers( {
+							b: persistedToyReducer( 'Hello from keyA.b' ),
+						} )
+					),
+				} )
+			);
+
+			const newReducer = origReducer.addReducer(
+				[ 'a', 'c' ],
+				persistedToyReducer( 'Hello from keyA.c' )
+			);
+
+			const state = newReducer( undefined, { type: 'INIT' } );
+			const serializedState = newReducer( state, { type: 'SERIALIZE' } );
+
+			expect( serializedState.get() ).toEqual( {
+				keyA: {
+					b: 'Hello from keyA.b',
+					c: 'Hello from keyA.c',
+				},
+			} );
+		} );
+	} );
+} );
+
+describe( 'withStorageKey', () => {
+	test( 'reducer with storage key is serialized into separate object', () => {
+		// persisted reducer that will be a part of root state
+		const posts = withSchemaValidation( { type: 'string' }, ( state = 'postsState' ) => state );
+
+		// persisted reducer with its own persistence key
+		const reader = withStorageKey(
+			'readerKey',
+			withSchemaValidation( { type: 'string' }, ( state = 'readerState' ) => state )
+		);
+
+		// combine the two reducers into one
+		const reducer = combineReducers( {
+			posts,
+			reader,
+		} );
+
+		// initialize the state
+		const state = reducer( undefined, { type: 'INIT' } );
+
+		// and serialize
+		const result = reducer( state, { type: 'SERIALIZE' } );
+
+		expect( result.get() ).toEqual( {
+			root: { posts: 'postsState' },
+			readerKey: 'readerState',
+		} );
+	} );
+} );
+
+describe( 'applyStoredState', () => {
+	// factory to manufacture toy reducers with custom persistence
+	const toyReducer = () => {
+		const r = ( state = null ) => state;
+		r.hasCustomPersistence = true;
+		return r;
+	};
+
+	test( 'stored state is correctly implanted into the right location', () => {
+		const reducer = combineReducers( {
+			a: toyReducer(),
+			b: withStorageKey( 'B', toyReducer() ),
+		} );
+		const action = { type: APPLY_STORED_STATE, storageKey: 'B', storedState: 'b+' };
+		const state = {
+			a: 'a',
+			b: 'b',
+		};
+		expect( reducer( state, action ) ).toEqual( {
+			a: 'a',
+			b: 'b+',
+		} );
+	} );
+
+	test( 'stored state is correctly implanted into a nested location', () => {
+		const reducer = combineReducers( {
+			a: toyReducer(),
+			b: combineReducers( {
+				c: toyReducer(),
+				d: withStorageKey( 'D', toyReducer() ),
+			} ),
+		} );
+		const action = { type: APPLY_STORED_STATE, storageKey: 'D', storedState: 'd+' };
+		const state = {
+			a: 'a',
+			b: {
+				c: 'c',
+				d: 'd',
+			},
+		};
+		expect( reducer( state, action ) ).toEqual( {
+			a: 'a',
+			b: {
+				c: 'c',
+				d: 'd+',
+			},
+		} );
+	} );
+
+	test( "implanting a stored state doesn't change identity of other state trees", () => {
+		const reducer = combineReducers( {
+			a: combineReducers( {
+				b: toyReducer(),
+				c: toyReducer(),
+			} ),
+			d: withStorageKey( 'D', toyReducer() ),
+		} );
+		const action = { type: APPLY_STORED_STATE, storageKey: 'D', storedState: 'd+' };
+		const prevState = {
+			a: {
+				b: 'b',
+				c: 'c',
+			},
+			d: 'd',
+		};
+		const nextState = reducer( prevState, action );
+		expect( nextState.a ).toBe( prevState.a ); // identical objects
+		expect( nextState.d ).toBe( 'd+' ); // stored state got implanted
 	} );
 } );

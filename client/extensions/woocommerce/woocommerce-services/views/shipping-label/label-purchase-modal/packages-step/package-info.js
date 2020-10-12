@@ -12,7 +12,7 @@ import { isEmpty, map, some } from 'lodash';
 /**
  * Internal dependencies
  */
-import Button from 'components/button';
+import { Button } from '@automattic/components';
 import FieldError from 'woocommerce/woocommerce-services/components/field-error';
 import FormLabel from 'components/forms/form-label';
 import FormLegend from 'components/forms/form-legend';
@@ -34,11 +34,7 @@ import {
 import { getPackageGroupsForLabelPurchase } from 'woocommerce/woocommerce-services/state/packages/selectors';
 
 const renderPackageDimensions = ( dimensions, dimensionUnit ) => {
-	return [
-		dimensions.length,
-		dimensions.width,
-		dimensions.height,
-	]
+	return [ dimensions.length, dimensions.width, dimensions.height ]
 		.map( ( dimension ) => `${ dimension } ${ dimensionUnit }` )
 		.join( ' x ' );
 };
@@ -74,14 +70,19 @@ const PackageInfo = ( props ) => {
 				itemIndex={ itemIndex }
 				packageId={ packageId }
 				showRemove
-				isIndividualPackage={ isIndividualPackage } />
+				isIndividualPackage={ isIndividualPackage }
+			/>
 		);
 	};
 
 	const renderPackageOption = ( box ) => {
 		const dimensions = getBoxDimensions( box );
 		const boxId = box.id || box.name;
-		return ( <option value={ boxId } key={ boxId }>{ box.name } - { renderPackageDimensions( dimensions, dimensionUnit ) }</option> );
+		return (
+			<option value={ boxId } key={ boxId }>
+				{ box.name } - { renderPackageDimensions( dimensions, dimensionUnit ) }
+			</option>
+		);
 	};
 
 	const onAddItem = () => props.openAddItem( orderId, siteId );
@@ -91,7 +92,11 @@ const PackageInfo = ( props ) => {
 			return null;
 		}
 
-		return ( <Button className="packages-step__add-item-btn" compact onClick={ onAddItem }>{ translate( 'Add items' ) }</Button> );
+		return (
+			<Button className="packages-step__add-item-btn" compact onClick={ onAddItem }>
+				{ translate( 'Add items' ) }
+			</Button>
+		);
 	};
 
 	const packageOptionChange = ( e ) => {
@@ -99,7 +104,7 @@ const PackageInfo = ( props ) => {
 	};
 
 	const renderItems = () => {
-		const canAddItems = some( selected, ( sel, selId ) => ( packageId !== selId && sel.items.length ) );
+		const canAddItems = some( selected, ( sel, selId ) => packageId !== selId && sel.items.length );
 
 		if ( ! pckg.items.length ) {
 			return (
@@ -114,9 +119,11 @@ const PackageInfo = ( props ) => {
 
 		const elements = pckg.items.map( renderItemInfo );
 		if ( canAddItems ) {
-			elements.push( <div key={ elements.length } className="packages-step__add-item-row">
-				{ renderAddItemButton() }
-			</div> );
+			elements.push(
+				<div key={ elements.length } className="packages-step__add-item-row">
+					{ renderAddItemButton() }
+				</div>
+			);
 		}
 
 		return elements;
@@ -125,14 +132,20 @@ const PackageInfo = ( props ) => {
 	const renderPackageSelect = () => {
 		if ( isIndividualPackage ) {
 			const dimensionsClass = classNames( { 'is-error': pckgErrors.dimensions } );
-			return ( <div>
-				<div className="packages-step__package-items-header">
-					<FormLegend>{ translate( 'Individually Shipped Item' ) }</FormLegend>
+			return (
+				<div>
+					<div className="packages-step__package-items-header">
+						<FormLegend>{ translate( 'Individually Shipped Item' ) }</FormLegend>
+					</div>
+					<span className="packages-step__package-item-description">
+						{ translate( 'Item Dimensions' ) } -{ ' ' }
+					</span>
+					<span className={ dimensionsClass }>
+						{ renderPackageDimensions( pckg, dimensionUnit ) }
+					</span>
+					{ pckgErrors.dimensions && <FieldError text={ pckgErrors.dimensions } /> }
 				</div>
-				<span className="packages-step__package-item-description">{ translate( 'Item Dimensions' ) } - </span>
-				<span className={ dimensionsClass }>{ renderPackageDimensions( pckg, dimensionUnit ) }</span>
-				{ pckgErrors.dimensions && <FieldError text={ pckgErrors.dimensions } /> }
-			</div> );
+			);
 		}
 
 		return (
@@ -140,16 +153,25 @@ const PackageInfo = ( props ) => {
 				<div className="packages-step__package-items-header">
 					<FormLegend>{ translate( 'Shipping Package' ) }</FormLegend>
 				</div>
-				<FormSelect onChange={ packageOptionChange } value={ pckg.box_id } isError={ pckgErrors.box_id || pckgErrors.dimensions }>
-					<option value={ 'not_selected' } key={ 'not_selected' }>{ translate( 'Please select a package' ) }</option> )
+				<FormSelect
+					onChange={ packageOptionChange }
+					value={ pckg.box_id }
+					isError={ pckgErrors.box_id || pckgErrors.dimensions }
+				>
+					<option value={ 'not_selected' } key={ 'not_selected' }>
+						{ translate( 'Please select a package' ) }
+					</option>{ ' ' }
+					)
 					{ map( packageGroups, ( group, groupId ) => {
 						if ( isEmpty( group.definitions ) ) {
 							return null;
 						}
 
-						return <optgroup label={ group.title } key={ groupId }>
-							{ map( group.definitions, renderPackageOption ) }
-						</optgroup>;
+						return (
+							<optgroup label={ group.title } key={ groupId }>
+								{ map( group.definitions, renderPackageOption ) }
+							</optgroup>
+						);
 					} ) }
 				</FormSelect>
 			</div>
@@ -186,7 +208,8 @@ const PackageInfo = ( props ) => {
 						isError={ Boolean( pckgErrors.weight ) }
 						type="number"
 						noWrap
-						suffix={ weightUnit } />
+						suffix={ weightUnit }
+					/>
 					{ pckgErrors.weight && <FieldError text={ pckgErrors.weight } /> }
 				</div>
 				<div className="packages-step__package-signature">
@@ -206,7 +229,8 @@ const PackageInfo = ( props ) => {
 							{ translate( 'Yes, from an adult', {
 								comment: 'Package requires signature from an adult during delivery.',
 							} ) }
-						</option> )
+						</option>{ ' ' }
+						)
 					</FormSelect>
 				</div>
 			</div>
@@ -238,17 +262,20 @@ const mapStateToProps = ( state, { orderId, siteId } ) => {
 		selected: shippingLabel.form.packages.selected,
 		dimensionUnit: storeOptions.dimension_unit,
 		weightUnit: storeOptions.weight_unit,
-		packageGroups: getPackageGroupsForLabelPurchase( state, siteId ),
+		packageGroups: getPackageGroupsForLabelPurchase( state, orderId, siteId ),
 	};
 };
 
 const mapDispatchToProps = ( dispatch ) => {
-	return bindActionCreators( {
-		updatePackageWeight,
-		setPackageType,
-		openAddItem,
-		setPackageSignature,
-	}, dispatch );
+	return bindActionCreators(
+		{
+			updatePackageWeight,
+			setPackageType,
+			openAddItem,
+			setPackageSignature,
+		},
+		dispatch
+	);
 };
 
 export default connect( mapStateToProps, mapDispatchToProps )( localize( PackageInfo ) );

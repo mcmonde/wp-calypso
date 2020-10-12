@@ -1,8 +1,8 @@
-/** @format */
 /**
  * External dependencies
  */
 import React from 'react';
+import { size } from 'lodash';
 
 /**
  * Internal dependencies
@@ -10,7 +10,7 @@ import React from 'react';
 import { ConversationCaterpillar } from 'blocks/conversation-caterpillar';
 import { posts } from 'blocks/reader-post-card/docs/fixtures';
 import { comments, commentsTree } from 'blocks/conversation-caterpillar/docs/fixtures';
-import Card from 'components/card';
+import { Card } from '@automattic/components';
 
 const ConversationCaterpillarExample = () => {
 	return (
@@ -21,6 +21,7 @@ const ConversationCaterpillarExample = () => {
 					blogId={ 123 }
 					postId={ 12 }
 					commentsTree={ commentsTree }
+					commentCount={ size( comments ) }
 					commentsToShow={ {} }
 					expandComments={ () => {} }
 				/>

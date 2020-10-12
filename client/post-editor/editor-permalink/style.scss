@@ -1,5 +1,5 @@
 .editor-permalink .gridicon {
-	fill: $gray;
+	fill: var( --color-neutral-light );
 	cursor: pointer;
 }
 
@@ -26,8 +26,8 @@
 
 .editor-permalink__popover .editor-slug .form-text-input {
 	border: none;
-	color: $gray-darken-10;
-	font-size: 13px;
+	color: var( --color-neutral-40 );
+	font-size: $font-body-small;
 	padding: 4px 0;
 	min-width: 100px;
 	width: 160px;
@@ -38,8 +38,8 @@
 }
 
 .editor-permalink__url-path {
-	color: $gray-lighten-10;
-	font-size: 13px;
+	color: var( --color-neutral-20 );
+	font-size: $font-body-small;
 	margin-right: 0;
 }
 

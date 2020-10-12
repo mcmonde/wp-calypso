@@ -1,8 +1,11 @@
-/** @format */
+/**
+ * Internal dependencies
+ */
+import { domForHtml } from 'lib/post-normalizer/utils';
 
 export const getStateKey = ( siteId, postId ) => `${ siteId }-${ postId }`;
 
-export const deconstructStateKey = key => {
+export const deconstructStateKey = ( key ) => {
 	const [ siteId, postId ] = key.split( '-' );
 	return { siteId: +siteId, postId: +postId };
 };
@@ -15,12 +18,11 @@ export const commentHasLink = ( commentContent, apiSuppliedValue ) => {
 		return apiSuppliedValue;
 	}
 
-	if ( typeof DOMParser !== 'undefined' && DOMParser.prototype.parseFromString ) {
-		const parser = new DOMParser();
-		const commentDom = parser.parseFromString( commentContent, 'text/html' );
-
-		return !! commentDom.getElementsByTagName( 'a' ).length;
+	try {
+		return !! domForHtml( commentContent ).getElementsByTagName( 'a' ).length;
+	} catch ( e ) {
+		return false;
 	}
-
-	return false;
 };
+
+export const getCommentDate = ( { date } ) => new Date( date );

@@ -1,22 +1,28 @@
-/** @format */
-
 /**
  * External dependencies
  */
 
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
 import { noop } from 'lodash';
 import classNames from 'classnames';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 import { localize } from 'i18n-calypso';
 
 /**
  * Internal dependencies
  */
-import analytics from 'lib/analytics';
+import { bumpStat } from 'lib/analytics/mc';
 import FormTextInput from 'components/forms/form-text-input';
-import MediaActions from 'lib/media/actions';
+import { ScreenReaderText } from '@automattic/components';
+import { clearMediaItemErrors } from 'state/media/actions';
+import { addMedia } from 'state/media/thunks';
+
+/**
+ * Style dependencies
+ */
+import './upload-url.scss';
 
 class MediaLibraryUploadUrl extends Component {
 	static propTypes = {
@@ -24,6 +30,7 @@ class MediaLibraryUploadUrl extends Component {
 		site: PropTypes.object,
 		onAddMedia: PropTypes.func,
 		onClose: PropTypes.func,
+		addMedia: PropTypes.func,
 	};
 
 	static defaultProps = {
@@ -36,7 +43,7 @@ class MediaLibraryUploadUrl extends Component {
 		isError: false,
 	};
 
-	upload = event => {
+	upload = ( event ) => {
 		event.preventDefault();
 
 		const isError = ! event.target.checkValidity();
@@ -46,23 +53,23 @@ class MediaLibraryUploadUrl extends Component {
 			return;
 		}
 
-		MediaActions.clearValidationErrors( this.props.site.ID );
-		MediaActions.add( this.props.site, this.state.value );
+		this.props.clearMediaItemErrors( this.props.site.ID );
+		this.props.addMedia( this.state.value, this.props.site );
 
 		this.setState( { value: '', isError: false } );
 		this.props.onAddMedia();
 		this.props.onClose();
-		analytics.mc.bumpStat( 'editor_upload_via', 'url' );
+		bumpStat( 'editor_upload_via', 'url' );
 	};
 
-	onChange = event => {
+	onChange = ( event ) => {
 		this.setState( {
 			isError: false,
 			value: event.target.value,
 		} );
 	};
 
-	onKeyDown = event => {
+	onKeyDown = ( event ) => {
 		if ( event.key === 'Escape' ) {
 			return this.props.onClose( event );
 		}
@@ -87,17 +94,19 @@ class MediaLibraryUploadUrl extends Component {
 					onChange={ this.onChange }
 					onKeyDown={ this.onKeyDown }
 					isError={ this.state.isError }
+					// eslint-disable-next-line jsx-a11y/no-autofocus
 					autoFocus
 					required
 				/>
 
 				<div className="media-library__upload-url-button-group">
+					{ /* eslint-disable-next-line wpcalypso/jsx-classname-namespace */ }
 					<button type="submit" className="button is-primary">
 						{ translate( 'Upload', { context: 'verb' } ) }
 					</button>
 
 					<button type="button" className="media-library__upload-url-cancel" onClick={ onClose }>
-						<span className="screen-reader-text">{ translate( 'Cancel' ) }</span>
+						<ScreenReaderText>{ translate( 'Cancel' ) }</ScreenReaderText>
 						<Gridicon icon="cross" />
 					</button>
 				</div>
@@ -106,4 +115,6 @@ class MediaLibraryUploadUrl extends Component {
 	}
 }
 
-export default localize( MediaLibraryUploadUrl );
+export default connect( null, { addMedia, clearMediaItemErrors } )(
+	localize( MediaLibraryUploadUrl )
+);

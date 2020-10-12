@@ -1,50 +1,50 @@
-/*
- * Suggestions list
- */
 .keyed-suggestions__suggestions {
 	display: flex;
 	flex-direction: column;
 }
 
 .keyed-suggestions__category {
-	background-color: $gray-light;
-	border: 1px solid darken( $gray-light, 10% );
-	border-top: 0px;
+	background-color: var( --color-neutral-0 );
+	border: 1px solid var( --color-neutral-5 );
+	border-top: 0;
 	padding: 4px 8px;
-	font-size: 13px;
+	font-size: $font-body-small;
+	display: flex;
+	align-items: center;
 
 	.keyed-suggestions__category-name {
 		text-transform: uppercase;
-		color: $gray-dark;
+		color: var( --color-neutral-70 );
 	}
 
 	.keyed-suggestions__category-counter {
 		margin-left: 6px;
 		text-transform: uppercase;
-		color: $gray-text-min;
+		color: var( --color-text-subtle );
+		flex: 1;
 	}
 
 	.keyed-suggestions__category-show-all {
-		float: right;
+		font-size: $font-body-small;
 		cursor: pointer;
 	}
 }
 
 .keyed-suggestions__value {
 	display: flex;
-	padding: 10px 10px;
-	background: $white;
-	border: 1px solid darken( $gray-light, 10% );
-	border-top: 0px;
-	font-size: 15px;
+	padding: 10px;
+	background: var( --color-surface );
+	border: 1px solid var( --color-neutral-5 );
+	border-top: 0;
+	font-size: $font-body;
 	cursor: pointer;
 
 	&.has-highlight {
-		background-color: $blue-medium;
-		color: $white;
+		background-color: var( --color-primary );
+		color: var( --color-text-inverted );
 
 		.keyed-suggestions__value-description {
-			color: $white;
+			color: var( --color-text-inverted );
 		}
 	}
 }
@@ -62,7 +62,7 @@
 	}
 
 	.keyed-suggestions__value-emphasis {
-		font-weight: bold;
+		font-weight: 600;
 		color: inherit;
 	}
 }
@@ -73,16 +73,16 @@
 	flex: 1 1 auto;
 	margin-left: 0.5em;
 	padding-top: 3px;
-	color: $gray-text-min;
-	font-size: 13px;
+	color: var( --color-text-subtle );
+	font-size: $font-body-small;
 	height: 19px; /* font-size + 2*padding */
 	overflow: hidden;
 
-	&:before {
-		@include long-content-fade( $color : $white );
+	&::before {
+		@include long-content-fade();
 
 		.has-highlight & {
-			@include long-content-fade( $color : $blue-medium );
+			@include long-content-fade( $color: var( --color-primary-rgb ) );
 		}
 	}
 }

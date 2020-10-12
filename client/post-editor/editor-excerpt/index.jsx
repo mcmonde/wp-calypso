@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -10,21 +8,21 @@ import { localize } from 'i18n-calypso';
 /**
  * Internal dependencies
  */
-import { recordStat, recordEvent } from 'lib/posts/stats';
+import { recordEditorStat, recordEditorEvent } from 'state/posts/stats';
 import TrackInputChanges from 'components/track-input-changes';
 import FormTextarea from 'components/forms/form-textarea';
 import { getSelectedSiteId } from 'state/ui/selectors';
-import { getEditorPostId } from 'state/ui/editor/selectors';
+import { getEditorPostId } from 'state/editor/selectors';
 import { getEditedPostValue } from 'state/posts/selectors';
 import { editPost } from 'state/posts/actions';
 
 class EditorExcerpt extends React.Component {
 	recordExcerptChangeStats = () => {
-		recordStat( 'excerpt_changed' );
-		recordEvent( 'Changed Excerpt' );
+		this.props.recordEditorStat( 'excerpt_changed' );
+		this.props.recordEditorEvent( 'Changed Excerpt' );
 	};
 
-	onExcerptChange = event => {
+	onExcerptChange = ( event ) => {
 		const excerpt = event.target.value;
 		this.props.editPost( this.props.siteId, this.props.postId, { excerpt } );
 	};
@@ -49,14 +47,12 @@ class EditorExcerpt extends React.Component {
 }
 
 export default connect(
-	state => {
+	( state ) => {
 		const siteId = getSelectedSiteId( state );
 		const postId = getEditorPostId( state );
 		const excerpt = getEditedPostValue( state, siteId, postId, 'excerpt' );
 
 		return { siteId, postId, excerpt };
 	},
-	{
-		editPost,
-	}
+	{ editPost, recordEditorStat, recordEditorEvent }
 )( localize( EditorExcerpt ) );

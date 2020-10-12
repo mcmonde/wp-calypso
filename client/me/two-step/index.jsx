@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -12,18 +10,26 @@ import { localize } from 'i18n-calypso';
 /**
  * Internal dependencies
  */
-import AppPasswords from 'me/application-passwords';
-import Card from 'components/card';
-import DocumentHead from 'components/data/document-head';
-import Main from 'components/main';
-import MeSidebarNavigation from 'me/sidebar-navigation';
-import ReauthRequired from 'me/reauth-required';
-import Security2faBackupCodes from 'me/security-2fa-backup-codes';
-import Security2faDisable from 'me/security-2fa-disable';
-import Security2faSetup from 'me/security-2fa-setup';
-import SecuritySectionNav from 'me/security-section-nav';
-import twoStepAuthorization from 'lib/two-step-authorization';
-import PageViewTracker from 'lib/analytics/page-view-tracker';
+import AppPasswords from 'calypso/me/application-passwords';
+import { Card } from '@automattic/components';
+import config from 'calypso/config';
+import DocumentHead from 'calypso/components/data/document-head';
+import HeaderCake from 'calypso/components/header-cake';
+import Main from 'calypso/components/main';
+import MeSidebarNavigation from 'calypso/me/sidebar-navigation';
+import ReauthRequired from 'calypso/me/reauth-required';
+import Security2faBackupCodes from 'calypso/me/security-2fa-backup-codes';
+import Security2faDisable from 'calypso/me/security-2fa-disable';
+import Security2faSetup from 'calypso/me/security-2fa-setup';
+import SecuritySectionNav from 'calypso/me/security-section-nav';
+import Security2faKey from 'calypso/me/security-2fa-key';
+import twoStepAuthorization from 'calypso/lib/two-step-authorization';
+import PageViewTracker from 'calypso/lib/analytics/page-view-tracker';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 const debug = debugFactory( 'calypso:me:two-step' );
 
@@ -101,8 +107,8 @@ class TwoStep extends Component {
 		for ( let i = 0; i < 5; i++ ) {
 			placeholders.push(
 				<p className="two-step__placeholder-text" key={ '2fa-placeholder' + i }>
-					{' '}
-					&nbsp;{' '}
+					{ ' ' }
+					&nbsp;{ ' ' }
 				</p>
 			);
 		}
@@ -140,6 +146,14 @@ class TwoStep extends Component {
 		return <AppPasswords />;
 	};
 
+	render2faKey = () => {
+		if ( ! this.state.initialized || this.state.doingSetup ) {
+			return null;
+		}
+
+		return <Security2faKey />;
+	};
+
 	renderBackupCodes = () => {
 		if ( ! this.state.initialized || this.state.doingSetup ) {
 			return null;
@@ -149,19 +163,28 @@ class TwoStep extends Component {
 	};
 
 	render() {
+		const { path, translate } = this.props;
+		const useCheckupMenu = config.isEnabled( 'security/security-checkup' );
+
 		return (
-			<Main className="two-step">
+			<Main className="security two-step">
 				<PageViewTracker path="/me/security/two-step" title="Me > Two-Step Authentication" />
 				<MeSidebarNavigation />
 
-				<SecuritySectionNav path={ this.props.path } />
-
 				<ReauthRequired twoStepAuthorization={ twoStepAuthorization } />
 
-				<DocumentHead title={ this.props.translate( 'Two-Step Authentication' ) } />
+				<DocumentHead title={ translate( 'Two-Step Authentication' ) } />
+
+				{ ! useCheckupMenu && <SecuritySectionNav path={ path } /> }
+				{ useCheckupMenu && (
+					<HeaderCake backText={ translate( 'Back' ) } backHref="/me/security">
+						{ translate( 'Two-Step Authentication' ) }
+					</HeaderCake>
+				) }
 
 				<Card>{ this.renderTwoStepSection() }</Card>
 
+				{ this.render2faKey() }
 				{ this.renderBackupCodes() }
 				{ this.renderApplicationPasswords() }
 			</Main>

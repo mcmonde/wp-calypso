@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -6,7 +5,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import { noop } from 'lodash';
 import { localize } from 'i18n-calypso';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 import { connect } from 'react-redux';
 
 /**
@@ -15,6 +14,11 @@ import { connect } from 'react-redux';
 import wpcom from 'lib/wp';
 import FilePicker from 'components/file-picker';
 import { successNotice, errorNotice } from 'state/notices/actions';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class ReaderImportButton extends React.Component {
 	static propTypes = {
@@ -27,14 +31,14 @@ class ReaderImportButton extends React.Component {
 
 	state = { disabled: false };
 
-	onClick = event => {
+	onClick = ( event ) => {
 		// Don't allow picking of a new file if there's an import in progress
 		if ( this.state.disabled ) {
 			event.preventDefault();
 		}
 	};
 
-	onPick = files => {
+	onPick = ( files ) => {
 		// We only care about the first file in the list
 		const file = files[ 0 ];
 		if ( ! file ) {
@@ -64,11 +68,11 @@ class ReaderImportButton extends React.Component {
 		}
 	};
 
-	onImportProgress = event => {
+	onImportProgress = ( event ) => {
 		this.props.onProgress( event );
 	};
 
-	onImportSuccess = feedImport => {
+	onImportSuccess = ( feedImport ) => {
 		const message = this.props.translate(
 			"{{em}}%(name)s{{/em}} has been received. You'll get an email when your import is complete.",
 			{
@@ -79,7 +83,7 @@ class ReaderImportButton extends React.Component {
 		this.props.successNotice( message );
 	};
 
-	onImportFailure = error => {
+	onImportFailure = ( error ) => {
 		if ( ! error ) {
 			return null;
 		}

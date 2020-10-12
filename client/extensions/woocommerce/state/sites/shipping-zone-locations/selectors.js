@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -17,10 +15,10 @@ export const getRawShippingZoneLocations = ( state, siteId = getSelectedSiteId( 
 };
 
 /**
- * @param {Object} state Whole Redux state tree
- * @param {Number} zoneId Shipping Zone ID to check
- * @param {Number} [siteId] Site ID to check. If not provided, the Site ID selected in the UI will be used
- * @return {boolean} Whether the locations for the given zone have been successfully loaded from the server
+ * @param {object} state Whole Redux state tree
+ * @param {number} zoneId Shipping Zone ID to check
+ * @param {number} [siteId] Site ID to check. If not provided, the Site ID selected in the UI will be used
+ * @returns {boolean} Whether the locations for the given zone have been successfully loaded from the server
  */
 export const areShippingZoneLocationsLoaded = (
 	state,
@@ -32,10 +30,10 @@ export const areShippingZoneLocationsLoaded = (
 };
 
 /**
- * @param {Object} state Whole Redux state tree
- * @param {Number} zoneId Shipping Zone ID to check
- * @param {Number} [siteId] Site ID to check. If not provided, the Site ID selected in the UI will be used
- * @return {boolean} Whether the locations for the given zone are currently being retrieved from the server
+ * @param {object} state Whole Redux state tree
+ * @param {number} zoneId Shipping Zone ID to check
+ * @param {number} [siteId] Site ID to check. If not provided, the Site ID selected in the UI will be used
+ * @returns {boolean} Whether the locations for the given zone are currently being retrieved from the server
  */
 export const areShippingZoneLocationsLoading = (
 	state,
@@ -52,20 +50,21 @@ export const areShippingZoneLocationsLoading = (
  * in WP-Admin (which doesn't have as many restrictions), then it could be that he configured the zones in a way
  * that can't be reliably represented in Calypso, and as such the UI must forbid him to add new zones or edit
  * existing zones locations.
- * @param {Object} reduxState Whole Redux state tree
- * @param {Number} [siteId] Site ID to check. If not provided, the Site ID selected in the UI will be used
- * @return {boolean} Whether the shipping zones have valid locations to be edited in Calypso
+ *
+ * @param {object} appState Whole Redux state tree
+ * @param {number} [siteId] Site ID to check. If not provided, the Site ID selected in the UI will be used
+ * @returns {boolean} Whether the shipping zones have valid locations to be edited in Calypso
  */
 export const areShippingZonesLocationsValid = (
-	reduxState,
-	siteId = getSelectedSiteId( reduxState )
+	appState,
+	siteId = getSelectedSiteId( appState )
 ) => {
 	const continentsSet = new Set();
 	const countriesSet = new Set();
 	const statesSet = new Set();
-	const allLocations = getRawShippingZoneLocations( reduxState, siteId );
+	const allLocations = getRawShippingZoneLocations( appState, siteId );
 	for ( const zoneId of Object.keys( allLocations ) ) {
-		if ( ! areShippingZoneLocationsLoaded( reduxState, zoneId, siteId ) ) {
+		if ( ! areShippingZoneLocationsLoaded( appState, zoneId, siteId ) ) {
 			continue;
 		}
 		// The "Locations not covered by your other zones" zone is always valid, it doesn't have any locations

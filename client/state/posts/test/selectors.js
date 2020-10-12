@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -24,8 +22,8 @@ import {
 	isPostsLastPageForQuery,
 	getPostsForQueryIgnoringPage,
 	isRequestingPostsForQueryIgnoringPage,
-	isEditedPostPrivate,
-	isPrivateEditedPostPasswordValid,
+	isEditedPostPasswordProtected,
+	isEditedPostPasswordProtectedWithValidPassword,
 	getEditedPost,
 	getPostEdits,
 	getEditedPostValue,
@@ -969,14 +967,13 @@ describe( 'selectors', () => {
 						queries: {},
 						edits: {
 							2916284: {
-								'': {
-									title: 'Ribs &amp; Chicken',
-								},
+								'': [ { title: 'Ribs &amp; Chicken' } ],
 							},
 						},
 					},
 				},
-				2916284
+				2916284,
+				null
 			);
 
 			expect( editedPost ).to.eql( { title: 'Ribs &amp; Chicken' } );
@@ -990,9 +987,7 @@ describe( 'selectors', () => {
 						queries: {},
 						edits: {
 							2916284: {
-								841: {
-									title: 'Hello World!',
-								},
+								841: [ { title: 'Hello World!' } ],
 							},
 						},
 					},
@@ -1024,9 +1019,7 @@ describe( 'selectors', () => {
 						},
 						edits: {
 							2916284: {
-								841: {
-									title: 'Hello World!',
-								},
+								841: [ { title: 'Hello World!' } ],
 							},
 						},
 					},
@@ -1035,10 +1028,7 @@ describe( 'selectors', () => {
 				841
 			);
 
-			expect( editedPost ).to.eql( {
-				...postObject,
-				title: 'Hello World!',
-			} );
+			expect( editedPost ).to.eql( { ...postObject, title: 'Hello World!' } );
 		} );
 
 		test( 'should return revisions merged with original post nested properties', () => {
@@ -1063,11 +1053,13 @@ describe( 'selectors', () => {
 						},
 						edits: {
 							2916284: {
-								841: {
-									discussion: {
-										pings_open: true,
+								841: [
+									{
+										discussion: {
+											pings_open: true,
+										},
 									},
-								},
+								],
 							},
 						},
 					},
@@ -1118,11 +1110,13 @@ describe( 'selectors', () => {
 						},
 						edits: {
 							2916284: {
-								841: {
-									terms: {
-										post_tag: [ 'tag2', 'tag3' ],
+								841: [
+									{
+										terms: {
+											post_tag: [ 'tag2', 'tag3' ],
+										},
 									},
-								},
+								],
 							},
 						},
 					},
@@ -1173,11 +1167,13 @@ describe( 'selectors', () => {
 						},
 						edits: {
 							2916284: {
-								841: {
-									terms: {
-										post_tag: [ 'tag1' ],
+								841: [
+									{
+										terms: {
+											post_tag: [ 'tag1' ],
+										},
 									},
-								},
+								],
 							},
 						},
 					},
@@ -1223,9 +1219,7 @@ describe( 'selectors', () => {
 					},
 					edits: {
 						2916284: {
-							841: {
-								title: 'Hello World',
-							},
+							841: [ { title: 'Hello World' } ],
 						},
 					},
 				},
@@ -1247,9 +1241,7 @@ describe( 'selectors', () => {
 			// edits key will not change
 			const edits = {
 				2916284: {
-					841: {
-						title: 'Hello World',
-					},
+					841: [ { title: 'Hello World' } ],
 				},
 			};
 
@@ -1331,17 +1323,13 @@ describe( 'selectors', () => {
 			// edits are different for each state
 			const edits1 = {
 				2916284: {
-					841: {
-						title: 'Hello World',
-					},
+					841: [ { title: 'Hello World' } ],
 				},
 			};
 
 			const edits2 = {
 				2916284: {
-					841: {
-						title: 'Hello World!',
-					},
+					841: [ { title: 'Hello World!' } ],
 				},
 			};
 
@@ -1411,9 +1399,7 @@ describe( 'selectors', () => {
 						queries: {},
 						edits: {
 							2916284: {
-								'': {
-									title: 'Hello World!',
-								},
+								'': [ { title: 'Hello World!' } ],
 							},
 						},
 					},
@@ -1434,9 +1420,7 @@ describe( 'selectors', () => {
 						queries: {},
 						edits: {
 							2916284: {
-								841: {
-									title: 'Hello World!',
-								},
+								841: [ { title: 'Hello World!' } ],
 							},
 						},
 					},
@@ -1489,9 +1473,7 @@ describe( 'selectors', () => {
 						},
 						edits: {
 							2916284: {
-								841: {
-									title: 'Hello World!',
-								},
+								841: [ { title: 'Hello World!' } ],
 							},
 						},
 					},
@@ -1526,11 +1508,13 @@ describe( 'selectors', () => {
 						},
 						edits: {
 							2916284: {
-								841: {
-									discussion: {
-										pings_open: true,
+								841: [
+									{
+										discussion: {
+											pings_open: true,
+										},
 									},
-								},
+								],
 							},
 						},
 					},
@@ -1544,9 +1528,9 @@ describe( 'selectors', () => {
 		} );
 	} );
 
-	describe( 'isEditedPostPrivate()', () => {
+	describe( 'isEditedPostPasswordProtected()', () => {
 		test( 'should return false if the post does not exist', () => {
-			const privatePost = isEditedPostPrivate(
+			const protectedPost = isEditedPostPasswordProtected(
 				{
 					posts: {
 						items: {},
@@ -1558,7 +1542,7 @@ describe( 'selectors', () => {
 				841
 			);
 
-			expect( privatePost ).to.be.false;
+			expect( protectedPost ).to.be.false;
 		} );
 
 		test( 'should return false if post password is a zero length string', () => {
@@ -1569,7 +1553,7 @@ describe( 'selectors', () => {
 				title: 'Hello World',
 				password: 'secret',
 			};
-			const privatePost = isEditedPostPrivate(
+			const protectedPost = isEditedPostPasswordProtected(
 				{
 					posts: {
 						items: {
@@ -1582,9 +1566,7 @@ describe( 'selectors', () => {
 						},
 						edits: {
 							2916284: {
-								841: {
-									password: '',
-								},
+								841: [ { password: '' } ],
 							},
 						},
 					},
@@ -1593,7 +1575,7 @@ describe( 'selectors', () => {
 				841
 			);
 
-			expect( privatePost ).to.be.false;
+			expect( protectedPost ).to.be.false;
 		} );
 
 		test( 'should return true if post password is a non-zero length string', () => {
@@ -1604,7 +1586,7 @@ describe( 'selectors', () => {
 				title: 'Hello World',
 				password: '',
 			};
-			const privatePost = isEditedPostPrivate(
+			const protectedPost = isEditedPostPasswordProtected(
 				{
 					posts: {
 						items: {
@@ -1617,9 +1599,7 @@ describe( 'selectors', () => {
 						},
 						edits: {
 							2916284: {
-								841: {
-									password: 'secret',
-								},
+								841: [ { password: 'secret' } ],
 							},
 						},
 					},
@@ -1628,7 +1608,7 @@ describe( 'selectors', () => {
 				841
 			);
 
-			expect( privatePost ).to.be.true;
+			expect( protectedPost ).to.be.true;
 		} );
 
 		test( 'should return true if post password is whitespace only', () => {
@@ -1639,7 +1619,7 @@ describe( 'selectors', () => {
 				title: 'Hello World',
 				password: '',
 			};
-			const privatePost = isEditedPostPrivate(
+			const protectedPost = isEditedPostPasswordProtected(
 				{
 					posts: {
 						items: {
@@ -1652,9 +1632,7 @@ describe( 'selectors', () => {
 						},
 						edits: {
 							2916284: {
-								841: {
-									password: ' ',
-								},
+								841: [ { password: ' ' } ],
 							},
 						},
 					},
@@ -1663,13 +1641,13 @@ describe( 'selectors', () => {
 				841
 			);
 
-			expect( privatePost ).to.be.true;
+			expect( protectedPost ).to.be.true;
 		} );
 	} );
 
-	describe( 'isPrivateEditedPostPasswordValid()', () => {
+	describe( 'isEditedPostPasswordProtectedWithValidPassword()', () => {
 		test( 'should return false if the post does not exist', () => {
-			const isPasswordValid = isPrivateEditedPostPasswordValid(
+			const isPasswordValid = isEditedPostPasswordProtectedWithValidPassword(
 				{
 					posts: {
 						items: {},
@@ -1692,7 +1670,7 @@ describe( 'selectors', () => {
 				title: 'Hello World',
 				password: 'secret',
 			};
-			const isPasswordValid = isPrivateEditedPostPasswordValid(
+			const isPasswordValid = isEditedPostPasswordProtectedWithValidPassword(
 				{
 					posts: {
 						items: {
@@ -1705,9 +1683,7 @@ describe( 'selectors', () => {
 						},
 						edits: {
 							2916284: {
-								841: {
-									password: '',
-								},
+								841: [ { password: '' } ],
 							},
 						},
 					},
@@ -1727,7 +1703,7 @@ describe( 'selectors', () => {
 				title: 'Hello World',
 				password: '',
 			};
-			const isPasswordValid = isPrivateEditedPostPasswordValid(
+			const isPasswordValid = isEditedPostPasswordProtectedWithValidPassword(
 				{
 					posts: {
 						items: {
@@ -1740,9 +1716,7 @@ describe( 'selectors', () => {
 						},
 						edits: {
 							2916284: {
-								841: {
-									password: 'secret',
-								},
+								841: [ { password: 'secret' } ],
 							},
 						},
 					},
@@ -1762,7 +1736,7 @@ describe( 'selectors', () => {
 				title: 'Hello World',
 				password: '',
 			};
-			const isPasswordValid = isPrivateEditedPostPasswordValid(
+			const isPasswordValid = isEditedPostPasswordProtectedWithValidPassword(
 				{
 					posts: {
 						items: {
@@ -1775,9 +1749,7 @@ describe( 'selectors', () => {
 						},
 						edits: {
 							2916284: {
-								841: {
-									password: ' ',
-								},
+								841: [ { password: ' ' } ],
 							},
 						},
 					},
@@ -1812,6 +1784,9 @@ describe( 'selectors', () => {
 						},
 						edits: {},
 					},
+					editor: {
+						rawContent: {},
+					},
 				},
 				2916284,
 				841
@@ -1838,11 +1813,12 @@ describe( 'selectors', () => {
 						},
 						edits: {
 							2916284: {
-								841: {
-									type: 'post',
-								},
+								841: [ { type: 'post' } ],
 							},
 						},
+					},
+					editor: {
+						rawContent: {},
 					},
 				},
 				2916284,
@@ -1859,11 +1835,12 @@ describe( 'selectors', () => {
 						queries: {},
 						edits: {
 							2916284: {
-								'': {
-									type: 'jetpack-portfolio',
-								},
+								'': [ { type: 'jetpack-portfolio' } ],
 							},
 						},
+					},
+					editor: {
+						rawContent: {},
 					},
 				},
 				2916284
@@ -1879,11 +1856,12 @@ describe( 'selectors', () => {
 						queries: {},
 						edits: {
 							2916284: {
-								'': {
-									status: 'draft',
-								},
+								'': [ { status: 'draft' } ],
 							},
 						},
+					},
+					editor: {
+						rawContent: {},
 					},
 				},
 				2916284
@@ -1899,11 +1877,12 @@ describe( 'selectors', () => {
 						queries: {},
 						edits: {
 							2916284: {
-								'': {
-									status: 'publish',
-								},
+								'': [ { status: 'publish' } ],
 							},
 						},
+					},
+					editor: {
+						rawContent: {},
 					},
 				},
 				2916284
@@ -1919,11 +1898,12 @@ describe( 'selectors', () => {
 						queries: {},
 						edits: {
 							2916284: {
-								'': {
-									author: 'testonesite2014',
-								},
+								'': [ { author: 'testonesite2014' } ],
 							},
 						},
+					},
+					editor: {
+						rawContent: {},
 					},
 				},
 				2916284
@@ -1950,11 +1930,12 @@ describe( 'selectors', () => {
 						},
 						edits: {
 							2916284: {
-								841: {
-									title: 'Hello World',
-								},
+								841: [ { title: 'Hello World' } ],
 							},
 						},
+					},
+					editor: {
+						rawContent: {},
 					},
 				},
 				2916284,
@@ -1962,6 +1943,42 @@ describe( 'selectors', () => {
 			);
 
 			expect( isDirty ).to.be.false;
+		} );
+
+		test( 'should return true if edited post is unchanged but the raw content is different', () => {
+			const isDirty = isEditedPostDirty(
+				{
+					posts: {
+						queries: {
+							2916284: new PostQueryManager( {
+								items: {
+									841: {
+										ID: 841,
+										site_ID: 2916284,
+										global_ID: '3d097cb7c5473c169bba0eb8e3c6cb64',
+										content: 'Hello World',
+									},
+								},
+							} ),
+						},
+						edits: {
+							2916284: {
+								841: [ { content: 'Hello World' } ],
+							},
+						},
+					},
+					editor: {
+						rawContent: {
+							initial: 'Hello World',
+							current: 'Hello World!',
+						},
+					},
+				},
+				2916284,
+				841
+			);
+
+			expect( isDirty ).to.be.true;
 		} );
 
 		test( 'should return true if saved post value does not equal edited post value', () => {
@@ -1982,11 +1999,12 @@ describe( 'selectors', () => {
 						},
 						edits: {
 							2916284: {
-								841: {
-									title: 'Hello World!',
-								},
+								841: [ { title: 'Hello World!' } ],
 							},
 						},
+					},
+					editor: {
+						rawContent: {},
 					},
 				},
 				2916284,
@@ -2013,11 +2031,12 @@ describe( 'selectors', () => {
 						},
 						edits: {
 							2916284: {
-								841: {
-									parent: 10,
-								},
+								841: [ { parent: 10 } ],
 							},
 						},
+					},
+					editor: {
+						rawContent: {},
 					},
 				},
 				2916284,
@@ -2047,11 +2066,12 @@ describe( 'selectors', () => {
 						},
 						edits: {
 							2916284: {
-								841: {
-									parent: 10,
-								},
+								841: [ { parent: 10 } ],
 							},
 						},
+					},
+					editor: {
+						rawContent: {},
 					},
 				},
 				2916284,
@@ -2079,11 +2099,12 @@ describe( 'selectors', () => {
 						},
 						edits: {
 							2916284: {
-								841: {
-									date: moment( '2017-09-14T15:47:33-04:00' ),
-								},
+								841: [ { date: moment( '2017-09-14T15:47:33-04:00' ) } ],
 							},
 						},
+					},
+					editor: {
+						rawContent: {},
 					},
 				},
 				2916284,
@@ -2111,11 +2132,12 @@ describe( 'selectors', () => {
 						},
 						edits: {
 							2916284: {
-								841: {
-									date: moment( '2016-09-14T15:47:33-04:00' ),
-								},
+								841: [ { date: moment( '2016-09-14T15:47:33-04:00' ) } ],
 							},
 						},
+					},
+					editor: {
+						rawContent: {},
 					},
 				},
 				2916284,
@@ -2148,14 +2170,19 @@ describe( 'selectors', () => {
 						},
 						edits: {
 							2916284: {
-								841: {
-									discussion: {
-										comment_status: 'closed',
-										ping_status: 'open',
+								841: [
+									{
+										discussion: {
+											comment_status: 'closed',
+											ping_status: 'open',
+										},
 									},
-								},
+								],
 							},
 						},
+					},
+					editor: {
+						rawContent: {},
 					},
 				},
 				2916284,
@@ -2188,14 +2215,19 @@ describe( 'selectors', () => {
 						},
 						edits: {
 							2916284: {
-								841: {
-									discussion: {
-										comment_status: 'open',
-										ping_status: 'open',
+								841: [
+									{
+										discussion: {
+											comment_status: 'open',
+											ping_status: 'open',
+										},
 									},
-								},
+								],
 							},
 						},
+					},
+					editor: {
+						rawContent: {},
 					},
 				},
 				2916284,
@@ -2226,14 +2258,19 @@ describe( 'selectors', () => {
 						},
 						edits: {
 							2916284: {
-								841: {
-									author: {
-										ID: 123,
-										name: 'Bob Trujillo',
+								841: [
+									{
+										author: {
+											ID: 123,
+											name: 'Bob Trujillo',
+										},
 									},
-								},
+								],
 							},
 						},
+					},
+					editor: {
+						rawContent: {},
 					},
 				},
 				2916284,
@@ -2264,11 +2301,12 @@ describe( 'selectors', () => {
 						},
 						edits: {
 							2916284: {
-								841: {
-									featured_image: 123,
-								},
+								841: [ { featured_image: 123 } ],
 							},
 						},
+					},
+					editor: {
+						rawContent: {},
 					},
 				},
 				2916284,
@@ -2294,15 +2332,17 @@ describe( 'selectors', () => {
 			// check unapplied metadata update
 			const updateEdits = {
 				2916284: {
-					841: {
-						metadata: [
-							{
-								key: 'seo_description',
-								value: 'Hello World',
-								operation: 'update',
-							},
-						],
-					},
+					841: [
+						{
+							metadata: [
+								{
+									key: 'seo_description',
+									value: 'Hello World',
+									operation: 'update',
+								},
+							],
+						},
+					],
 				},
 			};
 
@@ -2313,6 +2353,9 @@ describe( 'selectors', () => {
 							queries,
 							edits: updateEdits,
 						},
+						editor: {
+							rawContent: {},
+						},
 					},
 					2916284,
 					841
@@ -2322,9 +2365,7 @@ describe( 'selectors', () => {
 			// check unapplied metadata delete
 			const deleteEdits = {
 				2916284: {
-					841: {
-						metadata: [ { key: 'seo_description', operation: 'delete' } ],
-					},
+					841: [ { metadata: [ { key: 'seo_description', operation: 'delete' } ] } ],
 				},
 			};
 
@@ -2334,6 +2375,9 @@ describe( 'selectors', () => {
 						posts: {
 							queries,
 							edits: deleteEdits,
+						},
+						editor: {
+							rawContent: {},
 						},
 					},
 					2916284,
@@ -2360,18 +2404,23 @@ describe( 'selectors', () => {
 							},
 							edits: {
 								2916284: {
-									841: {
-										metadata: [
-											{
-												key: 'seo_description',
-												value: 'Hello World',
-												operation: 'update',
-											},
-											{ key: 'geo_latitude', operation: 'delete' },
-										],
-									},
+									841: [
+										{
+											metadata: [
+												{
+													key: 'seo_description',
+													value: 'Hello World',
+													operation: 'update',
+												},
+												{ key: 'geo_latitude', operation: 'delete' },
+											],
+										},
+									],
 								},
 							},
+						},
+						editor: {
+							rawContent: {},
 						},
 					},
 					2916284,
@@ -2389,9 +2438,7 @@ describe( 'selectors', () => {
 			// edits key will not change
 			const edits = {
 				2916284: {
-					841: {
-						title: 'Hello World',
-					},
+					841: [ { title: 'Hello World' } ],
 				},
 			};
 
@@ -2428,6 +2475,9 @@ describe( 'selectors', () => {
 					queries: queries1,
 					edits,
 				},
+				editor: {
+					rawContent: {},
+				},
 			};
 
 			const state2 = {
@@ -2435,6 +2485,9 @@ describe( 'selectors', () => {
 					items,
 					queries: queries2,
 					edits,
+				},
+				editor: {
+					rawContent: {},
 				},
 			};
 
@@ -2950,9 +3003,7 @@ describe( 'selectors', () => {
 						},
 						edits: {
 							2916284: {
-								841: {
-									slug: 'jedi',
-								},
+								841: [ { slug: 'jedi' } ],
 							},
 						},
 					},
@@ -3045,9 +3096,7 @@ describe( 'selectors', () => {
 						},
 						edits: {
 							2916284: {
-								841: {
-									slug: 'ewok',
-								},
+								841: [ { slug: 'ewok' } ],
 							},
 						},
 					},
@@ -3081,9 +3130,7 @@ describe( 'selectors', () => {
 						},
 						edits: {
 							2916284: {
-								841: {
-									slug: '',
-								},
+								841: [ { slug: '' } ],
 							},
 						},
 					},

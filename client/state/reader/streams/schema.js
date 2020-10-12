@@ -1,5 +1,3 @@
-/** @format */
-
 export default {
 	type: 'object',
 	patternProperties: {
@@ -8,7 +6,7 @@ export default {
 			properties: {
 				items: { type: 'array' },
 				selected: { type: 'object' },
-				pendingItems: { type: 'array' },
+				pendingItems: { type: 'object' },
 				lastPage: { type: 'boolean' },
 				isRequesting: { type: 'boolean' },
 				pageHandle: { type: 'string' },

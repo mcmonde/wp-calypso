@@ -1,21 +1,17 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 import classnames from 'classnames';
 import { connect } from 'react-redux';
 import { localize } from 'i18n-calypso';
-import { get } from 'lodash';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 
 /**
  * Internal dependencies
  */
-import Button from 'components/button';
+import { Button } from '@automattic/components';
 import EditorPublishDate from 'post-editor/editor-publish-date';
 import EditorVisibility from 'post-editor/editor-visibility';
 import FormCheckbox from 'components/forms/form-checkbox';
@@ -23,14 +19,17 @@ import FormLabel from 'components/forms/form-label';
 import EditorConfirmationSidebarHeader from './header';
 import { editPost } from 'state/posts/actions';
 import { getSelectedSiteId } from 'state/ui/selectors';
-import { getEditorPostId } from 'state/ui/editor/selectors';
-import { getPublishButtonStatus } from 'post-editor/editor-publish-button';
+import { getEditorPostId, getEditorPublishButtonStatus } from 'state/editor/selectors';
 import {
-	isEditedPostPrivate,
-	isPrivateEditedPostPasswordValid,
+	isEditedPostPasswordProtected,
+	isEditedPostPasswordProtectedWithValidPassword,
 	getEditedPost,
 } from 'state/posts/selectors';
-import { canCurrentUser } from 'state/selectors';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class EditorConfirmationSidebar extends Component {
 	static propTypes = {
@@ -38,15 +37,28 @@ class EditorConfirmationSidebar extends Component {
 		onPrivatePublish: PropTypes.func,
 		onPublish: PropTypes.func,
 		post: PropTypes.object,
-		savedPost: PropTypes.object,
-		isPrivatePost: PropTypes.bool,
-		isPrivatePostPasswordValid: PropTypes.bool,
+		isPasswordProtectedWithInvalidPassword: PropTypes.bool,
 		setPostDate: PropTypes.func,
 		setStatus: PropTypes.func,
 		status: PropTypes.string,
 	};
 
-	getCloseOverlayHandler = context => () => this.props.setStatus( { status: 'closed', context } );
+	state = {
+		doFullRender: false,
+	};
+
+	static getDerivedStateFromProps( props, state ) {
+		// In order to improve performance, `doFullRender` determines whether the
+		// sidebar should be rendered or not. The content has to be rendered
+		// the first time the sidebar is not in a 'closed' status.
+		if ( ! state.doFullRender && props.status !== 'closed' ) {
+			return { doFullRender: true };
+		}
+		return null;
+	}
+
+	getCloseOverlayHandler = ( context ) => () =>
+		this.props.setStatus( { status: 'closed', context } );
 
 	closeAndPublish = () => {
 		this.props.setStatus( { status: 'closed', context: 'publish' } );
@@ -67,20 +79,15 @@ class EditorConfirmationSidebar extends Component {
 	}
 
 	renderPublishButton() {
-		if ( ! this.props.siteId || ! this.props.post || ! this.props.savedPost ) {
-			return;
+		if ( this.props.publishButtonStatus === null ) {
+			return null;
 		}
 
-		const publishButtonStatus = getPublishButtonStatus(
-			this.props.post,
-			this.props.savedPost,
-			this.props.canUserPublishPosts
-		);
-		const buttonLabel = this.getPublishButtonLabel( publishButtonStatus );
-		const enabled = ! this.props.isPrivatePost || this.props.isPrivatePostPasswordValid;
+		const buttonLabel = this.getPublishButtonLabel( this.props.publishButtonStatus );
+		const disabled = this.props.isPasswordProtectedWithInvalidPassword;
 
 		return (
-			<Button disabled={ ! enabled } onClick={ this.closeAndPublish }>
+			<Button primary disabled={ disabled } onClick={ this.closeAndPublish }>
 				{ buttonLabel }
 			</Button>
 		);
@@ -102,50 +109,23 @@ class EditorConfirmationSidebar extends Component {
 	}
 
 	renderPrivacyControl() {
-		const { post, onPrivatePublish } = this.props;
-
-		if ( ! post ) {
-			return;
-		}
-
-		const { password, type } = post || {};
-		const status = get( post, 'status', 'draft' );
-		const savedStatus = get( this.props, 'savedPost.status' );
-		const savedPassword = get( this.props, 'savedPost.password' );
-		const props = {
-			onPrivatePublish,
-			type,
-			password,
-			status,
-			savedStatus,
-			savedPassword,
-			context: 'confirmation-sidebar',
-		};
-
-		return <EditorVisibility { ...props } />;
+		return (
+			<EditorVisibility
+				onPrivatePublish={ this.props.onPrivatePublish }
+				context="confirmation-sidebar"
+			/>
+		);
 	}
 
 	renderPublishingBusyButton() {
-		if ( 'publishing' !== this.props.status ) {
-			return;
+		if ( 'publishing' !== this.props.status || this.props.publishButtonStatus === null ) {
+			return null;
 		}
 
-		if ( ! this.props.site || ! this.props.post || ! this.props.savedPost ) {
-			return;
-		}
-
-		const publishButtonStatus = getPublishButtonStatus(
-			this.props.post,
-			this.props.savedPost,
-			this.props.canUserPublishPosts
-		);
-		const buttonLabel = this.getBusyButtonLabel( publishButtonStatus );
+		const buttonLabel = this.getBusyButtonLabel( this.props.publishButtonStatus );
 
 		return (
-			<Button
-				disabled
-				className="editor-confirmation-sidebar__publishing-button is-busy is-primary"
-			>
+			<Button disabled primary busy className="editor-confirmation-sidebar__publishing-button">
 				{ buttonLabel }
 			</Button>
 		);
@@ -165,7 +145,7 @@ class EditorConfirmationSidebar extends Component {
 					<span>
 						{ this.props.translate( 'Show this every time I publish', {
 							comment:
-								'This string appears in the bottom of a publish confirmation sidebar.' +
+								'This string appears in the bottom of a publish confirmation sidebar. ' +
 								'There is limited space. Longer strings will wrap.',
 						} ) }
 					</span>
@@ -178,18 +158,25 @@ class EditorConfirmationSidebar extends Component {
 		const isSidebarActive = this.props.status === 'open';
 		const isOverlayActive = this.props.status !== 'closed';
 
+		if ( ! this.state.doFullRender ) {
+			return (
+				<div className="editor-confirmation-sidebar">
+					<div key="sidebar" className="editor-confirmation-sidebar__sidebar" />
+				</div>
+			);
+		}
+
 		return (
 			<div
-				className={ classnames( {
-					'editor-confirmation-sidebar': true,
+				className={ classnames( 'editor-confirmation-sidebar', {
 					'is-active': isOverlayActive,
 				} ) }
 			>
 				{ this.renderPublishingBusyButton() }
 
 				<div
-					className={ classnames( {
-						'editor-confirmation-sidebar__sidebar': true,
+					key="sidebar"
+					className={ classnames( 'editor-confirmation-sidebar__sidebar', {
 						'is-active': isSidebarActive,
 					} ) }
 				>
@@ -223,21 +210,21 @@ class EditorConfirmationSidebar extends Component {
 }
 
 export default connect(
-	state => {
+	( state ) => {
 		const siteId = getSelectedSiteId( state );
 		const postId = getEditorPostId( state );
 		const post = getEditedPost( state, siteId, postId );
-		const isPrivatePost = isEditedPostPrivate( state, siteId, postId );
-		const isPrivatePostPasswordValid = isPrivateEditedPostPasswordValid( state, siteId, postId );
-		const canUserPublishPosts = canCurrentUser( state, siteId, 'publish_posts' );
+		const isPasswordProtectedWithInvalidPassword =
+			isEditedPostPasswordProtected( state, siteId, postId ) &&
+			! isEditedPostPasswordProtectedWithValidPassword( state, siteId, postId );
+		const publishButtonStatus = getEditorPublishButtonStatus( state );
 
 		return {
 			siteId,
 			postId,
 			post,
-			isPrivatePost,
-			isPrivatePostPasswordValid,
-			canUserPublishPosts,
+			isPasswordProtectedWithInvalidPassword,
+			publishButtonStatus,
 		};
 	},
 	{ editPost }

@@ -1,9 +1,6 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { localize } from 'i18n-calypso';
@@ -21,7 +18,12 @@ import ThemeSetupPlaceholder from './theme-setup-placeholder';
 import { getSelectedSiteId, getSelectedSiteSlug } from 'state/ui/selectors';
 import { getActiveTheme, getTheme } from 'state/themes/selectors';
 import { isJetpackSite } from 'state/sites/selectors';
-import { toggleDialog } from 'state/ui/theme-setup/actions';
+import { toggleDialog } from 'state/theme-setup/actions';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class ThemeSetup extends Component {
 	componentDidUpdate( prevProps ) {
@@ -59,7 +61,7 @@ class ThemeSetup extends Component {
 	}
 }
 
-const mapStateToProps = state => {
+const mapStateToProps = ( state ) => {
 	const siteId = getSelectedSiteId( state );
 	const siteIsJetpack = isJetpackSite( state, siteId );
 	const siteSlug = getSelectedSiteSlug( state ) || '';

@@ -1,5 +1,4 @@
 /**
- * @format
  * @jest-environment jsdom
  */
 /**
@@ -30,15 +29,15 @@ jest.mock( 'page', () => {
 
 describe( 'MapDomain component', () => {
 	beforeEach( () => {
-		pageSpy.reset();
-		pageSpy.redirect.reset();
+		pageSpy.resetHistory();
+		pageSpy.redirect.resetHistory();
 	} );
 
 	const defaultProps = {
 		cart: {},
 		productsList: {},
 		domainsWithPlansOnly: false,
-		translate: string => string,
+		translate: ( string ) => string,
 		isSiteUpgradeable: true,
 		selectedSite: {
 			ID: 500,

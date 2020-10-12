@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -56,6 +54,7 @@ const RelatedContentPreview = ( { showHeadline, showThumbnails, translate } ) =>
 				) }
 
 				<div className="related-posts__preview-items">
+					{ /* eslint-disable jsx-a11y/anchor-is-valid */ }
 					{ posts.map( ( post, index ) => {
 						return (
 							<div className="related-posts__preview-post" key={ index }>
@@ -71,6 +70,7 @@ const RelatedContentPreview = ( { showHeadline, showThumbnails, translate } ) =>
 							</div>
 						);
 					} ) }
+					{ /* eslint-enable jsx-a11y/anchor-is-valid */ }
 				</div>
 			</div>
 		</div>

@@ -1,9 +1,6 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
@@ -16,17 +13,24 @@ import { get } from 'lodash';
 import Gravatar from 'components/gravatar';
 import AuthorSelector from 'blocks/author-selector';
 import { hasTouch } from 'lib/touch-detect';
-import * as stats from 'lib/posts/stats';
+import { recordEditorStat, recordEditorEvent } from 'state/posts/stats';
 import { getSelectedSiteId } from 'state/ui/selectors';
-import { getEditorPostId } from 'state/ui/editor/selectors';
+import { getEditorPostId, isEditorNewPost } from 'state/editor/selectors';
 import { getSite } from 'state/sites/selectors';
 import { getEditedPost } from 'state/posts/selectors';
 import { editPost } from 'state/posts/actions';
 import { getCurrentUser } from 'state/current-user/selectors';
 
+/**
+ * Style dependencies
+ */
+import './style.scss';
+
 export class EditorAuthor extends Component {
 	static propTypes = {
+		site: PropTypes.object,
 		post: PropTypes.object,
+		author: PropTypes.object,
 		isNew: PropTypes.bool,
 	};
 
@@ -46,7 +50,7 @@ export class EditorAuthor extends Component {
 					siteId: site.ID,
 					onSelect: this.onSelect,
 					popoverPosition,
-				}
+			  }
 			: {};
 
 		return (
@@ -70,9 +74,9 @@ export class EditorAuthor extends Component {
 		);
 	}
 
-	onSelect = author => {
-		stats.recordStat( 'advanced_author_changed' );
-		stats.recordEvent( 'Changed Author' );
+	onSelect = ( author ) => {
+		this.props.recordEditorStat( 'advanced_author_changed' );
+		this.props.recordEditorEvent( 'Changed Author' );
 
 		const siteId = get( this.props.site, 'ID', null );
 		const postId = get( this.props.post, 'ID', null );
@@ -96,15 +100,18 @@ export class EditorAuthor extends Component {
 }
 
 export default connect(
-	state => {
+	( state ) => {
 		const siteId = getSelectedSiteId( state );
 		const postId = getEditorPostId( state );
+		const isNew = isEditorNewPost( state );
 
 		const site = getSite( state, siteId );
 		const post = getEditedPost( state, siteId, postId );
-		const author = get( post, 'author', getCurrentUser( state ) );
+		const postAuthor = get( post, 'author' );
+		//default to current user when null or falsey
+		const author = postAuthor ? postAuthor : getCurrentUser( state );
 
-		return { site, post, author };
+		return { site, post, author, isNew };
 	},
-	{ editPost }
+	{ editPost, recordEditorStat, recordEditorEvent }
 )( localize( EditorAuthor ) );

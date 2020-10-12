@@ -1,5 +1,4 @@
 /**
- * @format
  * @jest-environment jsdom
  */
 
@@ -34,12 +33,12 @@ const DEFAULT_PROPS = deepFreeze( {
 		authApproved: false,
 		blogname: 'Example Blog',
 		clientId: CLIENT_ID,
+		closeWindowAfterLogin: false,
 		from: 'banner-44-slide-1-dashboard',
 		homeUrl: `http://${ SITE_SLUG }`,
 		jpVersion: '5.4',
 		nonce: 'fooBarNonce',
 		redirectAfterAuth: `http://${ SITE_SLUG }/wp-admin/admin.php?page=jetpack`,
-		// eslint-disable-next-line max-len
 		redirectUri: `http://${ SITE_SLUG }/wp-admin/admin.php?page=jetpack&action=authorize&_wpnonce=fooBarNonce&redirect=http%3A%2F%2F${ SITE_SLUG }%2Fwp-admin%2Fadmin.php%3Fpage%3Djetpack`,
 		scope: 'administrator:fooBarBaz',
 		secret: 'fooBarSecret',
@@ -63,6 +62,12 @@ const DEFAULT_PROPS = deepFreeze( {
 		display_name: "A User's Name",
 	},
 	userAlreadyConnected: false,
+} );
+
+jest.mock( 'config', () => {
+	const mock = () => 'development';
+	mock.isEnabled = jest.fn( () => true );
+	return mock;
 } );
 
 describe( 'JetpackAuthorize', () => {
@@ -121,29 +126,33 @@ describe( 'JetpackAuthorize', () => {
 		} );
 	} );
 
-	describe( 'isWoo', () => {
-		const isWoo = new JetpackAuthorize().isWoo;
-
-		test( 'should return true for woo wizard', () => {
-			const props = { authQuery: { from: 'woocommerce-services-auto-authorize' } };
-			expect( isWoo( props ) ).toBe( true );
-		} );
+	describe( 'isWooRedirect', () => {
+		const isWooRedirect = new JetpackAuthorize().isWooRedirect;
 
 		test( 'should return true for woo services', () => {
+			const props = { authQuery: { from: 'woocommerce-services-auto-authorize' } };
+			expect( isWooRedirect( props ) ).toBe( true );
+		} );
+
+		test( 'should return true for old woo setup wizard', () => {
 			const props = { authQuery: { from: 'woocommerce-setup-wizard' } };
-			expect( isWoo( props ) ).toBe( true );
+			expect( isWooRedirect( props ) ).toBe( true );
+		} );
+
+		test( 'should return true for new woo onboarding', () => {
+			const props = { authQuery: { from: 'woocommerce-onboarding' } };
+			expect( isWooRedirect( props ) ).toBe( true );
 		} );
 
 		test( 'returns false with non-woo from', () => {
 			const props = { authQuery: { from: 'elsewhere' } };
-			expect( isWoo( props ) ).toBe( false );
+			expect( isWooRedirect( props ) ).toBeFalsy();
 		} );
 	} );
 
 	describe( 'shouldAutoAuthorize', () => {
-		const renderableComponent = <JetpackAuthorize { ...DEFAULT_PROPS } />;
-
 		test( 'should return true for sso', () => {
+			const renderableComponent = <JetpackAuthorize { ...DEFAULT_PROPS } />;
 			const component = shallow( renderableComponent );
 			component.instance().isSso = () => true;
 			const result = component.instance().shouldAutoAuthorize();
@@ -151,9 +160,43 @@ describe( 'JetpackAuthorize', () => {
 			expect( result ).toBe( true );
 		} );
 
-		test( 'should return true for woo', () => {
+		test( 'should return true for woo services', () => {
+			const renderableComponent = <JetpackAuthorize { ...DEFAULT_PROPS } />;
 			const component = shallow( renderableComponent );
-			component.instance().isWoo = () => true;
+			component.setProps( {
+				authQuery: {
+					...DEFAULT_PROPS.authQuery,
+					from: 'woocommerce-services-auto-authorize',
+				},
+			} );
+			const result = component.instance().shouldAutoAuthorize();
+
+			expect( result ).toBe( true );
+		} );
+
+		test( 'should return false for woocommerce onboarding', () => {
+			const renderableComponent = <JetpackAuthorize { ...DEFAULT_PROPS } />;
+			const component = shallow( renderableComponent );
+			component.setProps( {
+				authQuery: {
+					...DEFAULT_PROPS.authQuery,
+					from: 'woocommerce-onboarding',
+				},
+			} );
+			const result = component.instance().shouldAutoAuthorize();
+
+			expect( result ).toBe( false );
+		} );
+
+		test( 'should return true for the old woocommerc setup wizard', () => {
+			const renderableComponent = <JetpackAuthorize { ...DEFAULT_PROPS } />;
+			const component = shallow( renderableComponent );
+			component.setProps( {
+				authQuery: {
+					...DEFAULT_PROPS.authQuery,
+					from: 'woocommerce-setup-wizard',
+				},
+			} );
 			const result = component.instance().shouldAutoAuthorize();
 
 			expect( result ).toBe( true );

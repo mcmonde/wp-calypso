@@ -1,11 +1,11 @@
 .app-promo {
 	position: relative;
 	max-width: 300px;
-	margin: 0 auto 15px auto;
+	margin: 0 auto 5px;
 	padding: 5px 0;
 	overflow: hidden;
 
-	@include breakpoint( "<660px" ) {
+	@include breakpoint-deprecated( '<660px' ) {
 		display: none;
 	}
 }
@@ -19,11 +19,12 @@
 .app-promo .app-promo__dismiss {
 	position: absolute;
 	right: 17px;
-	top: 12px;
+	top: 6px;
 	cursor: pointer;
+	padding: 5px 0;
 
 	svg {
-		fill: $gray-lighten-20;
+		fill: var( --color-neutral-10 );
 	}
 }
 
@@ -31,17 +32,27 @@
 	display: block;
 	margin: 0 10px;
 	padding: 8px 34px 8px 50px;
-	background-color: $white;
-	color: $blue-medium;
-	font-size: 12px;
-	box-shadow: 0 0 0 1px transparentize( $gray-lighten-20, .5 ),
-		0 1px 2px $gray-lighten-30;
+	height: auto;
+	border-radius: 0;
+	line-height: 1.5;
+	background-color: var( --color-surface );
+	color: var( --color-primary );
+	font-size: $font-body-extra-small;
+	box-shadow: 0 0 0 1px rgba( var( --color-neutral-10-rgb ), 0.5 ),
+		0 1px 2px var( --color-neutral-0 );
+	font-weight: 400;
 
 	&:hover {
+		color: var( --color-primary );
 		text-decoration: underline;
+		cursor: pointer;
 	}
 }
 
-.app-promo__screen-reader-text {
-	@extend .screen-reader-text;
+.app-promo__dialog {
+	max-width: 480px;
+}
+
+button.app-promo__link {
+	text-align: left;
 }

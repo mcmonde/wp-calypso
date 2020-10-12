@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -6,12 +5,12 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import classnames from 'classnames';
 import { localize } from 'i18n-calypso';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 
 /**
  * Internal dependencies
  */
-import Card from 'components/card';
+import { Card } from '@automattic/components';
 import { isExternal } from 'lib/url';
 import FollowButton from 'blocks/follow-button/button';
 
@@ -49,17 +48,16 @@ const ListStreamHeader = ( {
 				</div>
 			) }
 
-			{ showEdit &&
-				editUrl && (
-					<div className="list-stream__header-edit">
-						<a href={ editUrl } rel={ isExternal( editUrl ) ? 'external' : '' }>
-							<span className="list-stream__header-action-icon">
-								<Gridicon icon="cog" size={ 24 } />
-							</span>
-							<span className="list-stream__header-action-label">{ translate( 'Edit' ) }</span>
-						</a>
-					</div>
-				) }
+			{ showEdit && editUrl && (
+				<div className="list-stream__header-edit">
+					<a href={ editUrl } rel={ isExternal( editUrl ) ? 'external' : '' }>
+						<span className="list-stream__header-action-icon">
+							<Gridicon icon="cog" size={ 24 } />
+						</span>
+						<span className="list-stream__header-action-label">{ translate( 'Edit' ) }</span>
+					</a>
+				</div>
+			) }
 		</Card>
 	);
 };

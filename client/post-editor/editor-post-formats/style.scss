@@ -5,15 +5,16 @@
 
 .editor-post-formats__format {
 	margin: 12px 0;
+
+	.form-radio__label {
+		color: var( --color-text );
+		font-size: $font-body-extra-small;
+		position: relative;
+		padding-left: 26px;
+		cursor: pointer;
+	}
 }
 
-.editor-post-formats__format-label {
-	color: $gray-text;
-	font-size: 12px;
-	position: relative;
-	padding-left: 26px;
-	cursor: pointer;
-}
 
 .editor-post-formats__format-icon {
 	position: absolute;
@@ -21,7 +22,7 @@
 		left: 0;
 	transform: translateY( -50% );
 	line-height: 1;
-	fill: $gray-darken-20;
+	fill: var( --color-neutral-50 );
 
 	.gridicon {
 		margin-top: 3px;
@@ -29,5 +30,5 @@
 }
 
 .editor-post-formats__help-link {
-	font-size: 12px;
+	font-size: $font-body-extra-small;
 }

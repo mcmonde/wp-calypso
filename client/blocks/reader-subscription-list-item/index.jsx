@@ -1,22 +1,18 @@
-/** @format */
 /**
- * External Dependencies
+ * External dependencies
  */
 import React from 'react';
 import classnames from 'classnames';
-import { isEmpty, get } from 'lodash';
+import { flowRight as compose, isEmpty, get } from 'lodash';
 import { localize } from 'i18n-calypso';
-import moment from 'moment';
 
 /**
- * Internal Dependencies
+ * Internal dependencies
  */
 import ReaderAvatar from 'blocks/reader-avatar';
 import FollowButton from 'reader/follow-button';
 import { getStreamUrl } from 'reader/route';
-import ReaderEmailSettings from 'blocks/reader-email-settings';
 import ReaderSiteNotificationSettings from 'blocks/reader-site-notification-settings';
-import config from 'config';
 import {
 	getSiteName,
 	getSiteDescription,
@@ -24,27 +20,26 @@ import {
 	getFeedUrl,
 	getSiteUrl,
 } from 'reader/get-helpers';
-import { untrailingslashit } from 'lib/route';
 import ReaderSubscriptionListItemPlaceholder from 'blocks/reader-subscription-list-item/placeholder';
 import { recordTrack, recordTrackWithRailcar } from 'reader/stats';
 import ExternalLink from 'components/external-link';
+import { withLocalizedMoment } from 'components/localized-moment';
+import { formatUrlForDisplay } from 'reader/lib/feed-display-helper';
 
 /**
- * Takes in a string and removes the starting https, www., and removes a trailing slash
- *
- * @param {String} url - the url to format
- * @returns {String} - the formatted url.  e.g. "https://www.wordpress.com/" --> "wordpress.com"
+ * Style dependencies
  */
-const formatUrlForDisplay = url => untrailingslashit( url.replace( /^https?:\/\/(www\.)?/, '' ) );
+import './style.scss';
 
 function ReaderSubscriptionListItem( {
+	moment,
+	translate,
 	url,
 	feedId,
 	feed,
 	siteId,
 	site,
 	className = '',
-	translate,
 	followSource,
 	showNotificationSettings,
 	showLastUpdatedDate,
@@ -62,7 +57,6 @@ function ReaderSubscriptionListItem( {
 	const siteUrl = getSiteUrl( { feed, site } );
 	const isMultiAuthor = get( site, 'is_multi_author', false );
 	const preferGravatar = ! isMultiAuthor;
-	const lastUpdatedDate = showLastUpdatedDate && moment( get( feed, 'last_update' ) ).fromNow();
 
 	if ( ! site && ! feed ) {
 		return <ReaderSubscriptionListItemPlaceholder />;
@@ -85,12 +79,6 @@ function ReaderSubscriptionListItem( {
 	const recordAuthorClick = () => recordEvent( 'calypso_reader_author_link_clicked' );
 	const recordSiteUrlClick = () => recordEvent( 'calypso_reader_site_url_clicked' );
 	const recordAvatarClick = () => recordEvent( 'calypso_reader_avatar_clicked' );
-
-	const notificationSettings = config.isEnabled( 'reader/new-post-notifications' ) ? (
-		<ReaderSiteNotificationSettings siteId={ siteId } />
-	) : (
-		<ReaderEmailSettings siteId={ siteId } />
-	);
 
 	return (
 		<div className={ classnames( 'reader-subscription-list-item', className ) }>
@@ -119,24 +107,23 @@ function ReaderSubscriptionListItem( {
 					}
 				</span>
 				<div className="reader-subscription-list-item__site-excerpt">{ siteExcerpt }</div>
-				{ ! isMultiAuthor &&
-					! isEmpty( authorName ) && (
-						<span className="reader-subscription-list-item__by-text">
-							{ translate( 'by {{author/}}', {
-								components: {
-									author: (
-										<a
-											href={ streamUrl }
-											className="reader-subscription-list-item__link"
-											onClick={ recordAuthorClick }
-										>
-											{ authorName }
-										</a>
-									),
-								},
-							} ) }
-						</span>
-					) }
+				{ ! isMultiAuthor && ! isEmpty( authorName ) && (
+					<span className="reader-subscription-list-item__by-text">
+						{ translate( 'by {{author/}}', {
+							components: {
+								author: (
+									<a
+										href={ streamUrl }
+										className="reader-subscription-list-item__link"
+										onClick={ recordAuthorClick }
+									>
+										{ authorName }
+									</a>
+								),
+							},
+						} ) }
+					</span>
+				) }
 				{ siteUrl && (
 					<div className="reader-subscription-list-item__site-url-timestamp">
 						<ExternalLink
@@ -148,9 +135,9 @@ function ReaderSubscriptionListItem( {
 						>
 							{ formatUrlForDisplay( siteUrl ) }
 						</ExternalLink>
-						{ showLastUpdatedDate && (
+						{ showLastUpdatedDate && feed && feed.last_update && (
 							<span className="reader-subscription-list-item__timestamp">
-								{ feed && feed.last_update && translate( 'updated %s', { args: lastUpdatedDate } ) }
+								{ translate( 'updated %s', { args: moment( feed.last_update ).fromNow() } ) }
 							</span>
 						) }
 					</div>
@@ -164,10 +151,12 @@ function ReaderSubscriptionListItem( {
 					siteId={ siteId }
 					railcar={ railcar }
 				/>
-				{ isFollowing && showNotificationSettings && notificationSettings }
+				{ isFollowing && showNotificationSettings && (
+					<ReaderSiteNotificationSettings siteId={ siteId } />
+				) }
 			</div>
 		</div>
 	);
 }
 
-export default localize( ReaderSubscriptionListItem );
+export default compose( localize, withLocalizedMoment )( ReaderSubscriptionListItem );

@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -11,9 +9,10 @@ import { localize } from 'i18n-calypso';
 /**
  * Internal dependencies
  */
-import Card from 'components/card';
+import { Card } from '@automattic/components';
 import JetpackModuleToggle from 'my-sites/site-settings/jetpack-module-toggle';
-import SectionHeader from 'components/section-header';
+import SettingsSectionHeader from 'my-sites/site-settings/settings-section-header';
+import SupportInfo from 'components/support-info';
 import { hasFeature } from 'state/sites/plans/selectors';
 import { isJetpackSite } from 'state/sites/selectors';
 import { getSelectedSiteId } from 'state/ui/selectors';
@@ -28,11 +27,11 @@ const SeoSettingsHelpCard = ( {
 } ) => {
 	const seoHelpLink = siteIsJetpack
 		? 'https://jetpack.com/support/seo-tools/'
-		: 'https://en.blog.wordpress.com/2013/03/22/seo-on-wordpress-com/';
+		: 'https://wpbizseo.wordpress.com/';
 
 	return (
 		<div id="seo">
-			<SectionHeader label={ translate( 'Search engine optimization' ) } />
+			<SettingsSectionHeader title={ translate( 'Search engine optimization' ) } />
 			{ hasAdvancedSEOFeature && (
 				<Card className="seo-settings__help">
 					<p>
@@ -51,6 +50,16 @@ const SeoSettingsHelpCard = ( {
 					</p>
 
 					{ siteIsJetpack && (
+						<SupportInfo
+							text={ translate(
+								'To help improve your search page ranking, you can customize how the content titles' +
+									' appear for your site. You can reorder items such as ‘Site Name’ and ‘Tagline’,' +
+									' and also add custom separators between the items.'
+							) }
+							link="https://jetpack.com/support/seo-tools/"
+						/>
+					) }
+					{ siteIsJetpack && (
 						<JetpackModuleToggle
 							siteId={ siteId }
 							moduleSlug="seo-tools"
@@ -64,7 +73,7 @@ const SeoSettingsHelpCard = ( {
 	);
 };
 
-export default connect( state => {
+export default connect( ( state ) => {
 	const siteId = getSelectedSiteId( state );
 	const siteIsJetpack = isJetpackSite( state, siteId );
 	const hasAdvancedSEOFeature = hasFeature( state, siteId, FEATURE_ADVANCED_SEO );

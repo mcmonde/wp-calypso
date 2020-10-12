@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -8,7 +6,7 @@ import { expect } from 'chai';
 /**
  * Internal dependencies
  */
-import { areAllSitesSingleUser } from 'state/selectors';
+import areAllSitesSingleUser from 'state/selectors/are-all-sites-single-user';
 import { userState } from './fixtures/user-state';
 
 describe( 'areAllSitesSingleUser()', () => {

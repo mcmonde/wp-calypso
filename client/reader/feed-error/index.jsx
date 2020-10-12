@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -9,7 +8,7 @@ import i18n, { localize } from 'i18n-calypso';
 /**
  * Internal dependencies
  */
-import ReaderMain from 'components/reader-main';
+import ReaderMain from 'reader/components/reader-main';
 import MobileBackToSidebar from 'components/mobile-back-to-sidebar';
 import EmptyContent from 'components/empty-content';
 import { recordAction, recordGaEvent, recordTrack } from 'reader/stats';
@@ -32,13 +31,14 @@ class FeedError extends React.Component {
 	};
 
 	render() {
+		/* eslint-disable wpcalypso/jsx-classname-namespace */
 		const action = (
 				<a
 					className="empty-content__action button is-primary"
 					onClick={ this.recordAction }
 					href="/read/search"
 				>
-					{ this.props.translate( 'Find Sites to Follow' ) }
+					{ this.props.translate( 'Find sites to follow' ) }
 				</a>
 			),
 			secondaryAction = (
@@ -47,7 +47,7 @@ class FeedError extends React.Component {
 					onClick={ this.recordSecondaryAction }
 					href="/discover"
 				>
-					{ this.props.translate( 'Explore Discover' ) }
+					{ this.props.translate( 'Explore' ) }
 				</a>
 			);
 
@@ -66,6 +66,7 @@ class FeedError extends React.Component {
 				/>
 			</ReaderMain>
 		);
+		/* eslint-enable wpcalypso/jsx-classname-namespace */
 	}
 }
 

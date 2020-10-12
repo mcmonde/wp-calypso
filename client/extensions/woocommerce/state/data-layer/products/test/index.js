@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -315,14 +313,10 @@ describe( 'handlers', () => {
 
 	describe( '#productsRequest', () => {
 		test( 'should dispatch a get action', () => {
-			const dispatch = spy();
-
 			const action = fetchProducts( 123, {} );
+			const result = productsRequest( action );
 
-			productsRequest( { dispatch }, action );
-
-			expect( dispatch ).to.have.been.calledOnce;
-			expect( dispatch ).to.have.been.calledWith(
+			expect( result ).to.eql(
 				http(
 					{
 						method: 'GET',
@@ -344,7 +338,10 @@ describe( 'handlers', () => {
 		test( 'should dispatch a success action on a good response', () => {
 			const dispatch = spy();
 
-			const products = [ { id: 1, name: 'Mittens' }, { id: 2, name: 'Scarf' } ];
+			const products = [
+				{ id: 1, name: 'Mittens' },
+				{ id: 2, name: 'Scarf' },
+			];
 			const data = {
 				status: 200,
 				body: products,

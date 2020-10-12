@@ -1,31 +1,28 @@
-Gauge
-======
+# Gauge
 
-This component renders a simple gauge using a `<canvas/>` element that shows a percentage visually.
+This component renders a simple gauge to show a percentage visually.
 
-#### How to use:
+## How to use
 
 ```js
 import Gauge from 'components/gauge';
 
-render() {
-    return (
-  		<Gauge percentage={ 40 } metric={ 'Visits' } />
-    );
+function render() {
+	return <Gauge percentage={ 40 } metric={ 'Visits' } />;
 }
 ```
 
-#### Required Props
+## Required Props
 
-* `percentage`: a numeric percentage between 0-100.
+- `percentage`: a numeric percentage between 0-100.
 
-#### Optional Props
+## Optional Props
 
-The following props may also be used.  Default values are shown inside [].
+The following props may be used to override defaults.
 
-* `width`: [ 100 ] numeric width of canvas
-* `height`: [ 100 ] numeric height of canvas
-* `lineWidth`: [ 14 ] numeric width of arc stroke in the canvas
-* `labelSize`: [ 20 ] numeric size used for `px` of the label
-* `colors`: [ '#c8d7e1', '#004069' ] array of colors used for the arcs. First value is the background color, second value is used to show percentage
-* `metric`: text label for the numerical value above it
+- `size`: Size (width and height) of element in pixels
+- `lineWidth`: Width of arc stroke in pixels
+- `labelSize`: Font size of label in pixels
+- `colorBg`: Background color
+- `colorFg`: Foreground color. The percentage bar displayed over the background.
+- `metric`: Text label for the percentage.

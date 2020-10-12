@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -17,7 +15,7 @@ import QuerySitePlans from 'components/data/query-site-plans';
 import { getSite, getSitePlanSlug } from 'state/sites/selectors';
 import { getSitePosts } from 'state/posts/selectors';
 import { getCurrentUser } from 'state/current-user/selectors';
-import Card from 'components/card';
+import { Card } from '@automattic/components';
 import QuerySites from 'components/data/query-sites';
 import FormToggle from 'components/forms/form-toggle/compact';
 import Notice from 'components/notice';
@@ -38,16 +36,15 @@ class PostShareExample extends Component {
 				{ siteId && <QuerySitePlans siteId={ siteId } /> }
 				{ siteId && <QueryPosts siteId={ siteId } query={ { number: 1, type: 'post' } } /> }
 
-				{ site &&
-					post && (
-						<p>
-							Site: <strong>{ site.name }</strong> ({ siteId })<br />
-							Plan: <strong>{ planSlug }</strong>
-							<br />
-							Post: <em>{ post.title }</em>
-							<br />
-						</p>
-					) }
+				{ site && post && (
+					<p>
+						Site: <strong>{ site.name }</strong> ({ siteId })<br />
+						Plan: <strong>{ planSlug }</strong>
+						<br />
+						Post: <em>{ post.title }</em>
+						<br />
+					</p>
+				) }
 
 				<p onClick={ this.toggleEnable }>
 					<label>
@@ -73,7 +70,7 @@ class PostShareExample extends Component {
 	}
 }
 
-const ConnectedPostShareExample = connect( state => {
+const ConnectedPostShareExample = connect( ( state ) => {
 	const user = getCurrentUser( state );
 	const siteId = get( user, 'primary_blog' );
 	const site = getSite( state, siteId );

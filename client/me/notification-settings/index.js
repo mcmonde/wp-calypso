@@ -1,45 +1,18 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import page from 'page';
 
 /**
  * Internal dependencies
  */
-import meController from 'me/controller';
-import controller from './controller';
-import { makeLayout, render as clientRender } from 'controller';
+import { notifications, comments, updates, subscriptions } from './controller';
+import { sidebar } from 'calypso/me/controller';
+import { makeLayout, render as clientRender } from 'calypso/controller';
 
-export default function() {
-	page(
-		'/me/notifications',
-		meController.sidebar,
-		controller.notifications,
-		makeLayout,
-		clientRender
-	);
-	page(
-		'/me/notifications/comments',
-		meController.sidebar,
-		controller.comments,
-		makeLayout,
-		clientRender
-	);
-	page(
-		'/me/notifications/updates',
-		meController.sidebar,
-		controller.updates,
-		makeLayout,
-		clientRender
-	);
-	page(
-		'/me/notifications/subscriptions',
-		meController.sidebar,
-		controller.notificationSubscriptions,
-		makeLayout,
-		clientRender
-	);
+export default function () {
+	page( '/me/notifications', sidebar, notifications, makeLayout, clientRender );
+	page( '/me/notifications/comments', sidebar, comments, makeLayout, clientRender );
+	page( '/me/notifications/updates', sidebar, updates, makeLayout, clientRender );
+	page( '/me/notifications/subscriptions', sidebar, subscriptions, makeLayout, clientRender );
 }

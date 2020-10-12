@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -7,7 +6,7 @@ import { expect } from 'chai';
 /**
  * Internal dependencies
  */
-import { getParentComment } from 'state/selectors';
+import { getParentComment } from 'state/comments/selectors';
 
 const state = {
 	comments: {

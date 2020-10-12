@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -19,7 +17,7 @@ import { renderWithReduxStore } from 'lib/react-helpers';
  *
  * @param {object} editor An instance of TinyMCE
  */
-const embed = editor => {
+function embed( editor ) {
 	let embedDialogContainer;
 
 	/**
@@ -34,7 +32,7 @@ const embed = editor => {
 			embedUrl: selectedEmbedNode.innerText || selectedEmbedNode.textContent,
 			isVisible: visible,
 			onCancel: () => render( false ),
-			onUpdate: newUrl => {
+			onUpdate: ( newUrl ) => {
 				editor.execCommand( 'mceInsertContent', false, newUrl );
 				render( false );
 			},
@@ -64,7 +62,7 @@ const embed = editor => {
 		embedDialogContainer.parentNode.removeChild( embedDialogContainer );
 		embedDialogContainer = null;
 	} );
-};
+}
 
 export default () => {
 	tinymce.PluginManager.add( 'embed', embed );

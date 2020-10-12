@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -15,11 +13,16 @@ import { localize } from 'i18n-calypso';
  */
 import QuerySiteStats from 'components/data/query-site-stats';
 import { getSelectedSiteId, getSelectedSiteSlug } from 'state/ui/selectors';
-import { getSiteStatsViewSummary } from 'state/selectors';
-import Card from 'components/card';
+import { getSiteStatsViewSummary } from 'state/stats/lists/selectors';
+import { Card } from '@automattic/components';
 import Months from './months';
-import SegmentedControl from 'components/segmented-control';
+import SimplifiedSegmentedControl from 'components/segmented-control/simplified';
 import StatsModulePlaceholder from '../stats-module/placeholder';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class StatsViews extends Component {
 	static propTypes = {
@@ -35,7 +38,7 @@ class StatsViews extends Component {
 		chartOption: 'total',
 	};
 
-	toggleViews = option => {
+	toggleViews = ( option ) => {
 		this.setState( {
 			chartOption: option.value,
 		} );
@@ -44,8 +47,8 @@ class StatsViews extends Component {
 	render() {
 		const { query, siteId, statType, viewData, translate, siteSlug } = this.props;
 		const monthViewOptions = [
-			{ value: 'total', label: translate( 'Months and Years' ) },
-			{ value: 'average', label: translate( 'Average per Day' ) },
+			{ value: 'total', label: translate( 'Months and years' ) },
+			{ value: 'average', label: translate( 'Average per day' ) },
 		];
 
 		return (
@@ -54,7 +57,7 @@ class StatsViews extends Component {
 				<Card className={ classNames( 'stats-views', { 'is-loading': ! viewData } ) }>
 					<StatsModulePlaceholder isLoading={ ! viewData } />
 					{ viewData && (
-						<SegmentedControl
+						<SimplifiedSegmentedControl
 							className="stats-views__month-control"
 							options={ monthViewOptions }
 							onSelect={ this.toggleViews }
@@ -65,7 +68,7 @@ class StatsViews extends Component {
 					<div className="stats-views__key-container">
 						<span className="stats-views__key-label">
 							{ translate( 'Fewer Views', {
-								context: 'Legend label in stats all time views table',
+								context: 'Legend label in stats all-time views table',
 							} ) }
 						</span>
 						<ul className="stats-views__key">
@@ -77,7 +80,7 @@ class StatsViews extends Component {
 						</ul>
 						<span className="stats-views__key-label">
 							{ translate( 'More Views', {
-								context: 'Legend label in stats all time views table',
+								context: 'Legend label in stats all-time views table',
 							} ) }
 						</span>
 					</div>
@@ -87,7 +90,7 @@ class StatsViews extends Component {
 	}
 }
 
-export default connect( state => {
+export default connect( ( state ) => {
 	const query = { quantity: -1, stat_fields: 'views' };
 	const statType = 'statsVisits';
 	const siteId = getSelectedSiteId( state );

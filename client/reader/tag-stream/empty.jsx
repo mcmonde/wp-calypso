@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -12,6 +11,7 @@ import { localize } from 'i18n-calypso';
 import EmptyContent from 'components/empty-content';
 import { recordAction, recordGaEvent, recordTrack } from 'reader/stats';
 import { isDiscoverEnabled } from 'reader/discover/helper';
+import { withPerformanceTrackerStop } from 'lib/performance-tracking';
 
 class TagEmptyContent extends React.Component {
 	static propTypes = {
@@ -35,8 +35,13 @@ class TagEmptyContent extends React.Component {
 	};
 
 	render() {
+		/* eslint-disable wpcalypso/jsx-classname-namespace */
 		const action = (
-			<a className="empty-content__action button is-primary" onClick={ this.recordAction } href="/">
+			<a
+				className="empty-content__action button is-primary"
+				onClick={ this.recordAction }
+				href="/read"
+			>
 				{ this.props.translate( 'Back to Following' ) }
 			</a>
 		);
@@ -47,7 +52,7 @@ class TagEmptyContent extends React.Component {
 				onClick={ this.recordSecondaryAction }
 				href="/discover"
 			>
-				{ this.props.translate( 'Explore Discover' ) }
+				{ this.props.translate( 'Explore' ) }
 			</a>
 		) : null;
 
@@ -71,7 +76,8 @@ class TagEmptyContent extends React.Component {
 				illustrationWidth={ 400 }
 			/>
 		);
+		/* eslint-enable wpcalypso/jsx-classname-namespace */
 	}
 }
 
-export default localize( TagEmptyContent );
+export default withPerformanceTrackerStop( localize( TagEmptyContent ) );

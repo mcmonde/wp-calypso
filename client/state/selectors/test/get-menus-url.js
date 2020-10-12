@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -8,7 +6,7 @@ import { expect } from 'chai';
 /**
  * Internal dependencies
  */
-import { getMenusUrl } from 'state/selectors';
+import getMenusUrl from 'state/selectors/get-menus-url';
 
 const state = {
 	currentUser: {

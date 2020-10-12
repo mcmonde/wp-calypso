@@ -1,27 +1,25 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
+import { isMobile } from '@automattic/viewport';
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { localize } from 'i18n-calypso';
-import classNames from 'classnames';
 import { get } from 'lodash';
 
 /**
  * Internal dependencies
  */
+import GlobalNoticesContainer from 'components/global-notices/container';
 import Notice from 'components/notice';
 import { getSelectedSiteId, getSelectedSite } from 'state/ui/selectors';
-import { getEditorPostId } from 'state/ui/editor/selectors';
+import { getEditorPostId } from 'state/editor/selectors';
 import { getEditedPost } from 'state/posts/selectors';
 import { getPostType } from 'state/post-types/selectors';
 import QueryPostTypes from 'components/data/query-post-types';
+import { withLocalizedMoment } from 'components/localized-moment';
 import { setLayoutFocus } from 'state/ui/layout-focus/actions';
-import { isMobile } from 'lib/viewport';
 import { recordTracksEvent } from 'state/analytics/actions';
 
 export class EditorNotice extends Component {
@@ -48,7 +46,7 @@ export class EditorNotice extends Component {
 		this.props.recordTracksEvent( 'calypso_editor_notice_add_page_prompt_click' );
 	};
 
-	componentWillReceiveProps( nextProps ) {
+	UNSAFE_componentWillReceiveProps( nextProps ) {
 		if (
 			isMobile() &&
 			( ( ! this.props.message && nextProps.message ) || ( ! this.props.error && nextProps.error ) )
@@ -71,34 +69,50 @@ export class EditorNotice extends Component {
 	}
 
 	getText( key ) {
-		/* eslint-disable max-len */
 		const { translate, type, typeObject, site, postUrl, postDate, moment } = this.props;
 		const formattedPostDate = moment( postDate ).format( 'lll' );
 		const typeLabel = get( typeObject, 'labels.singular_name', type );
 
 		switch ( key ) {
-			case 'warnPublishDateChange':
-				// This message can only appear for type === 'post'.  See
-				// PostEditor#checkForDateChange().
-				return translate(
-					'Are you sure about that? If you change the date, existing links to your post will stop working.'
-				);
-
 			case 'publishFailure':
+				if ( 'post' === type ) {
+					return translate( 'Publishing of post failed.' );
+				}
+
+				if ( 'page' === type ) {
+					return translate( 'Publishing of page failed.' );
+				}
+
 				return translate( 'Publishing of %(typeLabel)s failed.', {
-					args: { typeLabel: typeLabel.toLowerCase() },
+					args: { typeLabel: typeLabel },
 				} );
 
 			case 'saveFailure':
 				return translate( 'Saving of draft failed.' );
 
 			case 'trashFailure':
+				if ( 'page' === type ) {
+					return translate( 'Trashing of page failed!' );
+				}
+
+				if ( 'post' === type ) {
+					return translate( 'Trashing of post failed!' );
+				}
+
 				return translate( 'Trashing of %(typeLabel)s failed.', {
-					args: { typeLabel: typeLabel.toLowerCase() },
+					args: { typeLabel: typeLabel },
 				} );
 
 			case 'published':
 				if ( ! site ) {
+					if ( 'page' === type ) {
+						return translate( 'Page published!' );
+					}
+
+					if ( 'post' === type ) {
+						return translate( 'Post published!' );
+					}
+
 					return translate( '%(typeLabel)s published!', { args: { typeLabel: typeLabel } } );
 				}
 
@@ -116,6 +130,20 @@ export class EditorNotice extends Component {
 					} );
 				}
 
+				if ( 'post' === type ) {
+					return translate( 'Post published on {{postLink/}}! {{a}}Add another post{{/a}}', {
+						components: {
+							postLink: (
+								<a href={ postUrl } onClick={ this.handleViewPostClick }>
+									{ site.title }
+								</a>
+							),
+							a: <a href={ `/post/${ site.slug }` } onClick={ this.handleAddPagePromptClick } />,
+						},
+						comment: 'Editor: Message displayed when a post is published, with a link to the post.',
+					} );
+				}
+
 				return translate( '%(typeLabel)s published on {{postLink/}}!', {
 					args: { typeLabel: typeLabel },
 					components: {
@@ -130,10 +158,26 @@ export class EditorNotice extends Component {
 				} );
 
 			case 'scheduled':
+				if ( 'post' === type ) {
+					return translate( 'Post scheduled for %(formattedPostDate)s!', {
+						args: { formattedPostDate },
+						comment:
+							'Editor: Message displayed when a post is scheduled, with the scheduled date and time.',
+					} );
+				}
+
+				if ( 'page' === type ) {
+					return translate( 'Page scheduled for %(formattedPostDate)s!', {
+						args: { formattedPostDate },
+						comment:
+							'Editor: Message displayed when a page is scheduled, with the scheduled date and time.',
+					} );
+				}
+
 				return translate( '%(typeLabel)s scheduled for %(formattedPostDate)s!', {
 					args: { typeLabel, formattedPostDate },
 					comment:
-						'Editor: Message displayed when a post, page, or post of a custom type is scheduled, with the scheduled date and time.',
+						'Editor: Message displayed when a post of a custom type is scheduled, with the scheduled date and time.',
 				} );
 
 			case 'publishedPrivately':
@@ -154,16 +198,35 @@ export class EditorNotice extends Component {
 				return translate( 'View Preview' );
 
 			case 'updated':
+				if ( 'page' === type ) {
+					return translate( 'Page updated! {{pageLink}}Visit page{{/pageLink}}.', {
+						components: {
+							pageLink: <a href={ postUrl } onClick={ this.handleViewPostClick } />,
+						},
+						comment:
+							'Editor: Message displayed when a page is updated, with a link to the updated page.',
+					} );
+				}
+
+				if ( 'post' === type ) {
+					return translate( 'Post updated! {{postLink}}Visit post{{/postLink}}.', {
+						components: {
+							postLink: <a href={ postUrl } onClick={ this.handleViewPostClick } />,
+						},
+						comment:
+							'Editor: Message displayed when a post is updated, with a link to the updated post.',
+					} );
+				}
+
 				return translate( '%(typeLabel)s updated! {{postLink}}Visit %(typeLabel)s{{/postLink}}.', {
 					args: { typeLabel },
 					components: {
 						postLink: <a href={ postUrl } onClick={ this.handleViewPostClick } />,
 					},
 					comment:
-						'Editor: Message displayed when a page, post, or post of a custom type is updated, with a link to the updated post.',
+						'Editor: Message displayed when a post of a custom type is updated, with a link to the updated post.',
 				} );
 		}
-		/* eslint-enable max-len */
 	}
 
 	render() {
@@ -171,16 +234,16 @@ export class EditorNotice extends Component {
 		const text = this.getErrorMessage() || this.getText( message );
 
 		return (
-			<div className={ classNames( 'editor-notice', { 'is-global': true } ) }>
+			<GlobalNoticesContainer>
 				{ siteId && <QueryPostTypes siteId={ siteId } /> }
-				{ text && <Notice { ...{ status, text, onDismissClick } } showDismiss={ true } /> }
-			</div>
+				{ text && <Notice { ...{ status, text, onDismissClick } } showDismiss /> }
+			</GlobalNoticesContainer>
 		);
 	}
 }
 
 export default connect(
-	state => {
+	( state ) => {
 		const siteId = getSelectedSiteId( state );
 		const post = getEditedPost( state, siteId, getEditorPostId( state ) );
 		if ( ! post ) {
@@ -200,4 +263,4 @@ export default connect(
 		setLayoutFocus,
 		recordTracksEvent,
 	}
-)( localize( EditorNotice ) );
+)( localize( withLocalizedMoment( EditorNotice ) ) );

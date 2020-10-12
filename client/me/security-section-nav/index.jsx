@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -12,10 +10,10 @@ import i18n from 'i18n-calypso';
 /**
  * Internal dependencies
  */
-import config from 'config';
-import NavItem from 'components/section-nav/item';
-import NavTabs from 'components/section-nav/tabs';
-import SectionNav from 'components/section-nav';
+import config from 'calypso/config';
+import NavItem from 'calypso/components/section-nav/item';
+import NavTabs from 'calypso/components/section-nav/tabs';
+import SectionNav from 'calypso/components/section-nav';
 
 export default class extends React.Component {
 	static displayName = 'SecuritySectionNav';
@@ -34,7 +32,7 @@ export default class extends React.Component {
 				? {
 						title: i18n.translate( 'Social Login' ),
 						path: '/me/security/social-login',
-					}
+				  }
 				: null,
 			{
 				title: i18n.translate( 'Two-Step Authentication' ),
@@ -43,7 +41,7 @@ export default class extends React.Component {
 			{
 				title: config.isEnabled( 'signup/social-management' )
 					? // This was shortened from 'Connected Applications' due to space constraints.
-						i18n.translate( 'Connected Apps' )
+					  i18n.translate( 'Connected Apps' )
 					: i18n.translate( 'Connected Applications' ),
 				path: '/me/security/connected-applications',
 			},
@@ -51,19 +49,19 @@ export default class extends React.Component {
 				title: i18n.translate( 'Account Recovery' ),
 				path: '/me/security/account-recovery',
 			},
-		].filter( tab => tab !== null );
+		].filter( ( tab ) => tab !== null );
 
 		return tabs;
 	};
 
 	getFilteredPath = () => {
-		var paramIndex = this.props.path.indexOf( '?' );
+		const paramIndex = this.props.path.indexOf( '?' );
 		return paramIndex < 0 ? this.props.path : this.props.path.substring( 0, paramIndex );
 	};
 
 	getSelectedText = () => {
-		var text = '',
-			filteredPath = this.getFilteredPath(),
+		let text = '';
+		const filteredPath = this.getFilteredPath(),
 			found = find( this.getNavtabs(), { path: filteredPath } );
 
 		if ( 'undefined' !== typeof found ) {
@@ -81,7 +79,7 @@ export default class extends React.Component {
 		return (
 			<SectionNav selectedText={ this.getSelectedText() }>
 				<NavTabs>
-					{ this.getNavtabs().map( function( tab ) {
+					{ this.getNavtabs().map( function ( tab ) {
 						return (
 							<NavItem
 								key={ tab.path }

@@ -1,6 +1,16 @@
-.navigation-link {
-	cursor: pointer;
-	display: inline-block;
-	margin: 24px 12px;
-	text-align: center;
+.button.is-borderless.navigation-link {
+	padding: 0;
+	color: var( --color-text-inverted );
+	font-size: $font-body-small;
+	font-weight: 600;
+
+	svg {
+		fill: var( --color-text-inverted );
+	}
+}
+
+.navigation-link--has-skip-heading {
+	transform: translateY( -3px );
+	//override unessecary super specificity added by another class
+	padding-top: 0 !important;
 }

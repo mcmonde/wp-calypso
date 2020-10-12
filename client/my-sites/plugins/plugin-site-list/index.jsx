@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -11,10 +10,16 @@ import PropTypes from 'prop-types';
 /**
  * Internal dependencies
  */
-import { isConnectedSecondaryNetworkSite, getNetworkSites } from 'state/selectors';
+import getNetworkSites from 'state/selectors/get-network-sites';
+import isConnectedSecondaryNetworkSite from 'state/selectors/is-connected-secondary-network-site';
 import PluginSite from 'my-sites/plugins/plugin-site/plugin-site';
 import PluginsStore from 'lib/plugins/store';
 import SectionHeader from 'components/section-header';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 export class PluginSiteList extends Component {
 	static propTypes = {
@@ -64,8 +69,8 @@ export class PluginSiteList extends Component {
 // TODO: make this memoized after sites-list is removed and `sites` comes from Redux
 function getSitesWithSecondarySites( state, sites ) {
 	return sites
-		.filter( site => ! isConnectedSecondaryNetworkSite( state, site.ID ) )
-		.map( site => ( {
+		.filter( ( site ) => ! isConnectedSecondaryNetworkSite( state, site.ID ) )
+		.map( ( site ) => ( {
 			site,
 			secondarySites: getNetworkSites( state, site.ID ),
 		} ) );

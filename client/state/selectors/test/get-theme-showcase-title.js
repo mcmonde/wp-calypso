@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -8,7 +6,7 @@ import { expect } from 'chai';
 /**
  * Internal dependencies
  */
-import { getThemeShowcaseTitle } from 'state/selectors';
+import { getThemeShowcaseTitle } from 'state/themes/selectors';
 import { state } from './fixtures/theme-filters';
 
 describe( 'getThemeShowcaseTitle()', () => {

@@ -1,28 +1,27 @@
-/** @format */
 /**
  * External dependencies
  */
-import { createReducer, combineReducers } from 'state/utils';
+import { combineReducers, withStorageKey } from 'state/utils';
 import {
 	COUNTRIES_DOMAINS_UPDATED,
 	COUNTRIES_PAYMENTS_UPDATED,
 	COUNTRIES_SMS_UPDATED,
 } from 'state/action-types';
 
-const domains = createReducer( [], {
-	[ COUNTRIES_DOMAINS_UPDATED ]: ( countries, action ) => action.countries,
+const createListReducer = ( updatedActionType ) => ( state = [], action ) => {
+	switch ( action.type ) {
+		case updatedActionType:
+			return action.countries;
+		default:
+			return state;
+	}
+};
+
+const combinedReducer = combineReducers( {
+	domains: createListReducer( COUNTRIES_DOMAINS_UPDATED ),
+	payments: createListReducer( COUNTRIES_PAYMENTS_UPDATED ),
+	sms: createListReducer( COUNTRIES_SMS_UPDATED ),
 } );
 
-const payments = createReducer( [], {
-	[ COUNTRIES_PAYMENTS_UPDATED ]: ( countries, action ) => action.countries,
-} );
-
-const sms = createReducer( [], {
-	[ COUNTRIES_SMS_UPDATED ]: ( countries, action ) => action.countries,
-} );
-
-export default combineReducers( {
-	domains,
-	payments,
-	sms,
-} );
+const countriesReducer = withStorageKey( 'countries', combinedReducer );
+export default countriesReducer;

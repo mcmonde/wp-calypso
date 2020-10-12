@@ -1,12 +1,19 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import PropTypes from 'prop-types';
 import React from 'react';
 import classNames from 'classnames';
+
+/**
+ * Internal dependencies
+ */
+import FormFieldset from 'components/forms/form-fieldset';
+
+/**
+ * Style dependencies
+ */
+import './fieldset.scss';
 
 export default class extends React.Component {
 	static displayName = 'EditorMediaModalFieldset';
@@ -17,10 +24,12 @@ export default class extends React.Component {
 
 	render() {
 		return (
-			<fieldset className={ classNames( 'editor-media-modal__fieldset', this.props.className ) }>
+			<FormFieldset
+				className={ classNames( 'editor-media-modal__fieldset', this.props.className ) }
+			>
 				<legend className="editor-media-modal__fieldset-legend">{ this.props.legend }</legend>
 				{ this.props.children }
-			</fieldset>
+			</FormFieldset>
 		);
 	}
 }

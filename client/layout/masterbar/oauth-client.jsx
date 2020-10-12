@@ -1,41 +1,58 @@
-/** @format */
-
 /**
  * External dependencies
  */
 
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 import React from 'react';
 import PropTypes from 'prop-types';
 
 /**
  * Internal dependencies
  */
-import { addLocaleToWpcomUrl, getLocaleSlug } from 'lib/i18n-utils';
-import { isWooOAuth2Client } from 'lib/oauth2-clients';
+import {
+	isCrowdsignalOAuth2Client,
+	isWooOAuth2Client,
+	isJetpackCloudOAuth2Client,
+} from 'lib/oauth2-clients';
+import { localizeUrl } from 'lib/i18n-utils';
+import CrowdsignalOauthMasterbar from './crowdsignal';
+import JetpackLogo from 'components/jetpack-logo';
 
-const OauthClientMasterbar = ( { oauth2Client } ) => (
+/**
+ * Style dependencies
+ */
+import './oauth-client.scss';
+
+const DefaultOauthClientMasterbar = ( { oauth2Client } ) => (
 	<header className="masterbar masterbar__oauth-client">
 		<nav>
 			<ul className="masterbar__oauth-client-main-nav">
 				<li className="masterbar__oauth-client-current">
-					{ oauth2Client.icon && (
+					{ isJetpackCloudOAuth2Client( oauth2Client ) ? (
 						<div className="masterbar__oauth-client-logo">
-							<img src={ oauth2Client.icon } />
+							<JetpackLogo full monochrome={ false } size={ 28 } />
 						</div>
+					) : (
+						oauth2Client.icon && (
+							<div className="masterbar__oauth-client-logo">
+								<img src={ oauth2Client.icon } alt={ oauth2Client.title } />
+							</div>
+						)
 					) }
 				</li>
 
-				{ isWooOAuth2Client( oauth2Client ) ? (
+				{ isWooOAuth2Client( oauth2Client ) && (
 					<li className="masterbar__oauth-client-close">
 						<a href="https://woocommerce.com">
 							Cancel <span>X</span>
 						</a>
 					</li>
-				) : (
+				) }
+
+				{ ! isWooOAuth2Client( oauth2Client ) && ! isJetpackCloudOAuth2Client( oauth2Client ) && (
 					<li className="masterbar__oauth-client-wpcc-sign-in">
 						<a
-							href={ addLocaleToWpcomUrl( 'https://wordpress.com/', getLocaleSlug() ) }
+							href={ localizeUrl( 'https://wordpress.com/' ) }
 							className="masterbar__oauth-client-wpcom"
 							target="_self"
 						>
@@ -48,6 +65,14 @@ const OauthClientMasterbar = ( { oauth2Client } ) => (
 		</nav>
 	</header>
 );
+
+const OauthClientMasterbar = ( { oauth2Client } ) => {
+	if ( isCrowdsignalOAuth2Client( oauth2Client ) ) {
+		return <CrowdsignalOauthMasterbar oauth2Client={ oauth2Client } />;
+	}
+
+	return <DefaultOauthClientMasterbar oauth2Client={ oauth2Client } />;
+};
 
 OauthClientMasterbar.displayName = 'OauthClientMasterbar';
 OauthClientMasterbar.propTypes = {

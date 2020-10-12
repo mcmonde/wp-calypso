@@ -1,10 +1,13 @@
-/** @format */
-
 /**
  * External dependencies
  */
 
 import React, { Component } from 'react';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class VerticalNav extends Component {
 	render() {

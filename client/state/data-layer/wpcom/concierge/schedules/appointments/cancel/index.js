@@ -1,10 +1,8 @@
-/** @format */
-
 /**
  * Internal dependencies
  */
 import { http } from 'state/data-layer/wpcom-http/actions';
-import { dispatchRequestEx } from 'state/data-layer/wpcom-http/utils';
+import { dispatchRequest } from 'state/data-layer/wpcom-http/utils';
 import { updateConciergeBookingStatus } from 'state/concierge/actions';
 import { errorNotice } from 'state/notices/actions';
 import { CONCIERGE_APPOINTMENT_CANCEL } from 'state/action-types';
@@ -16,15 +14,15 @@ import {
 import fromApi from './from-api';
 import { recordTracksEvent, withAnalytics } from 'state/analytics/actions';
 
-export const cancelConciergeAppointment = action => {
+import { registerHandlers } from 'state/data-layer/handler-registry';
+
+export const cancelConciergeAppointment = ( action ) => {
 	return [
 		updateConciergeBookingStatus( CONCIERGE_STATUS_CANCELLING ),
 		http(
 			{
 				method: 'POST',
-				path: `/concierge/schedules/${ action.scheduleId }/appointments/${
-					action.appointmentId
-				}/cancel`,
+				path: `/concierge/schedules/${ action.scheduleId }/appointments/${ action.appointmentId }/cancel`,
 				apiNamespace: 'wpcom/v2',
 				body: {},
 			},
@@ -49,8 +47,10 @@ export const onError = () => {
 	];
 };
 
-export default {
+registerHandlers( 'state/data-layer/wpcom/concierge/schedules/appointments/cancel/index.js', {
 	[ CONCIERGE_APPOINTMENT_CANCEL ]: [
-		dispatchRequestEx( { fetch: cancelConciergeAppointment, onSuccess, onError, fromApi } ),
+		dispatchRequest( { fetch: cancelConciergeAppointment, onSuccess, onError, fromApi } ),
 	],
-};
+} );
+
+export default {};

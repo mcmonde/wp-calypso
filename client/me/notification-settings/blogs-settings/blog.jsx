@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -7,23 +5,22 @@
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import Immutable from 'immutable';
 import classNames from 'classnames';
 
 /**
  * Internal dependencies
  */
-import { getSite } from 'state/sites/selectors';
-import Card from 'components/card';
+import { getSite } from 'calypso/state/sites/selectors';
+import { Card } from '@automattic/components';
 import Header from './header';
-import SettingsForm from 'me/notification-settings/settings-form';
+import SettingsForm from 'calypso/me/notification-settings/settings-form';
 
 class BlogSettings extends Component {
 	static propTypes = {
 		site: PropTypes.object.isRequired,
 		devices: PropTypes.object,
 		disableToggle: PropTypes.bool,
-		settings: PropTypes.instanceOf( Immutable.Map ).isRequired,
+		settings: PropTypes.object.isRequired,
 		hasUnsavedChanges: PropTypes.bool.isRequired,
 		onToggle: PropTypes.func.isRequired,
 		onSave: PropTypes.func.isRequired,
@@ -66,7 +63,7 @@ class BlogSettings extends Component {
 			'scheduled_publicize',
 		];
 
-		if ( site.options.is_wpcom_store ) {
+		if ( site.options.woocommerce_is_active ) {
 			settingKeys.push( 'store_order' );
 		}
 

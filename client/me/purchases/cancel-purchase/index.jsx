@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -6,55 +5,58 @@ import { connect } from 'react-redux';
 import { localize } from 'i18n-calypso';
 import page from 'page';
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, { Fragment } from 'react';
 
 /**
  * Internal Dependencies
  */
-import Card from 'components/card';
+import { Card, CompactCard } from '@automattic/components';
 import CancelPurchaseButton from './button';
-import CancelPurchaseLoadingPlaceholder from 'me/purchases/cancel-purchase/loading-placeholder';
+import CancelPurchaseLoadingPlaceholder from 'calypso/me/purchases/cancel-purchase/loading-placeholder';
 import CancelPurchaseRefundInformation from './refund-information';
-import CompactCard from 'components/card/compact';
 import {
 	getName,
+	hasAmountAvailableToRefund,
 	isCancelable,
 	isOneTimePurchase,
 	isRefundable,
 	isSubscription,
-} from 'lib/purchases';
-import {
-	getPurchase,
-	getSelectedSite,
-	goToManagePurchase,
-	isDataLoading,
-	recordPageView,
-} from 'me/purchases/utils';
+} from 'calypso/lib/purchases';
+import { isDataLoading } from 'calypso/me/purchases/utils';
 import {
 	getByPurchaseId,
 	hasLoadedUserPurchasesFromServer,
 	getIncludedDomainPurchase,
-} from 'state/purchases/selectors';
-import { getSelectedSite as getSelectedSiteSelector } from 'state/ui/selectors';
-import HeaderCake from 'components/header-cake';
-import { isDomainRegistration, isDomainTransfer } from 'lib/products-values';
-import { isRequestingSites } from 'state/sites/selectors';
-import Main from 'components/main';
-import { managePurchase, purchasesRoot } from '../paths';
-import QueryUserPurchases from 'components/data/query-user-purchases';
-import ProductLink from 'me/purchases/product-link';
-import titles from 'me/purchases/titles';
-import userFactory from 'lib/user';
+} from 'calypso/state/purchases/selectors';
+import HeaderCake from 'calypso/components/header-cake';
+import { isDomainRegistration, isDomainTransfer } from 'calypso/lib/products-values';
+import { isRequestingSites, getSite } from 'calypso/state/sites/selectors';
+import { managePurchase, purchasesRoot } from 'calypso/me/purchases/paths';
+import QueryUserPurchases from 'calypso/components/data/query-user-purchases';
+import { withLocalizedMoment } from 'calypso/components/localized-moment';
+import ProductLink from 'calypso/me/purchases/product-link';
+import titles from 'calypso/me/purchases/titles';
+import TrackPurchasePageView from 'calypso/me/purchases/track-purchase-page-view';
+import { getCurrentUserId } from 'calypso/state/current-user/selectors';
 
-const user = userFactory();
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class CancelPurchase extends React.Component {
 	static propTypes = {
+		purchaseListUrl: PropTypes.string,
+		getManagePurchaseUrlFor: PropTypes.func,
+		getConfirmCancelDomainUrlFor: PropTypes.func,
 		hasLoadedSites: PropTypes.bool.isRequired,
 		hasLoadedUserPurchasesFromServer: PropTypes.bool.isRequired,
-		selectedPurchase: PropTypes.object,
 		includedDomainPurchase: PropTypes.object,
-		selectedSite: PropTypes.oneOfType( [ PropTypes.bool, PropTypes.object ] ),
+		purchase: PropTypes.object,
+		purchaseId: PropTypes.number.isRequired,
+		site: PropTypes.object,
+		siteSlug: PropTypes.string.isRequired,
+		userId: PropTypes.number,
 	};
 
 	state = {
@@ -62,22 +64,23 @@ class CancelPurchase extends React.Component {
 		confirmCancelBundledDomain: false,
 	};
 
-	componentWillMount() {
+	static defaultProps = {
+		getManagePurchaseUrlFor: managePurchase,
+		purchaseListUrl: purchasesRoot,
+	};
+
+	UNSAFE_componentWillMount() {
 		if ( ! this.isDataValid() ) {
 			this.redirect( this.props );
 			return;
 		}
-
-		recordPageView( 'cancel_purchase', this.props );
 	}
 
-	componentWillReceiveProps( nextProps ) {
+	UNSAFE_componentWillReceiveProps( nextProps ) {
 		if ( this.isDataValid() && ! this.isDataValid( nextProps ) ) {
 			this.redirect( nextProps );
 			return;
 		}
-
-		recordPageView( 'cancel_purchase', this.props, nextProps );
 	}
 
 	isDataValid = ( props = this.props ) => {
@@ -85,45 +88,37 @@ class CancelPurchase extends React.Component {
 			return true;
 		}
 
-		const purchase = getPurchase( props );
-		const selectedSite = getSelectedSite( props );
+		const { purchase } = props;
 
 		// For domain transfers, we only allow cancel if it's also refundable
 		const isDomainTransferCancelable = isRefundable( purchase ) || ! isDomainTransfer( purchase );
 
-		return selectedSite && purchase && isCancelable( purchase ) && isDomainTransferCancelable;
+		return purchase && isCancelable( purchase ) && isDomainTransferCancelable;
 	};
 
-	redirect = props => {
-		const purchase = getPurchase( props );
-		const selectedSite = getSelectedSite( props );
-		let redirectPath = purchasesRoot;
+	redirect = ( props ) => {
+		const { purchase, siteSlug } = props;
+		let redirectPath = this.props.purchaseListUrl;
 
-		if (
-			selectedSite &&
-			purchase &&
-			( ! isCancelable( purchase ) || isDomainTransfer( purchase ) )
-		) {
-			redirectPath = managePurchase( selectedSite.slug, purchase.id );
+		if ( siteSlug && purchase && ( ! isCancelable( purchase ) || isDomainTransfer( purchase ) ) ) {
+			redirectPath = this.props.getManagePurchaseUrlFor( siteSlug, purchase.id );
 		}
 
 		page.redirect( redirectPath );
 	};
 
-	onCancelConfirmationStateChange = newState => {
+	onCancelConfirmationStateChange = ( newState ) => {
 		this.setState( newState );
 	};
 
 	renderFooterText = () => {
-		const purchase = getPurchase( this.props );
-		const { refundText, renewDate, refundAmount, currencySymbol } = purchase;
+		const { purchase } = this.props;
+		const { refundText, expiryDate, totalRefundText } = purchase;
 
-		if ( isRefundable( purchase ) ) {
+		if ( hasAmountAvailableToRefund( purchase ) ) {
 			if ( this.state.cancelBundledDomain && this.props.includedDomainPurchase ) {
-				const fullRefundText =
-					currencySymbol + ( refundAmount + this.props.includedDomainPurchase.amount );
 				return this.props.translate( '%(refundText)s to be refunded', {
-					args: { refundText: fullRefundText },
+					args: { refundText: totalRefundText },
 					context: 'refundText is of the form "[currency-symbol][amount]" i.e. "$20"',
 				} );
 			}
@@ -133,17 +128,23 @@ class CancelPurchase extends React.Component {
 			} );
 		}
 
-		const renewalDate = this.props.moment( renewDate ).format( 'LL' );
+		const expirationDate = this.props.moment( expiryDate ).format( 'LL' );
 
 		if ( isDomainRegistration( purchase ) ) {
-			return this.props.translate( 'Domain will be removed on %(renewalDate)s', {
-				args: { renewalDate },
-			} );
+			return this.props.translate(
+				'After you confirm this change, the domain will be removed on %(expirationDate)s',
+				{
+					args: { expirationDate },
+				}
+			);
 		}
 
-		return this.props.translate( 'Subscription will be removed on %(renewalDate)s', {
-			args: { renewalDate },
-		} );
+		return this.props.translate(
+			'After you confirm this change, the subscription will be removed on %(expirationDate)s',
+			{
+				args: { expirationDate },
+			}
+		);
 	};
 
 	render() {
@@ -154,16 +155,17 @@ class CancelPurchase extends React.Component {
 		if ( isDataLoading( this.props ) ) {
 			return (
 				<div>
-					<QueryUserPurchases userId={ user.get().ID } />
+					<QueryUserPurchases userId={ this.props.userId } />
 					<CancelPurchaseLoadingPlaceholder
 						purchaseId={ this.props.purchaseId }
-						selectedSite={ this.props.selectedSite }
+						siteSlug={ this.props.siteSlug }
+						getManagePurchaseUrlFor={ this.props.getManagePurchaseUrlFor }
 					/>
 				</div>
 			);
 		}
 
-		const purchase = getPurchase( this.props );
+		const { purchase } = this.props;
 		const purchaseName = getName( purchase );
 		const { siteName, domain: siteDomain } = purchase;
 
@@ -182,8 +184,17 @@ class CancelPurchase extends React.Component {
 		}
 
 		return (
-			<Main className="cancel-purchase">
-				<HeaderCake onClick={ goToManagePurchase.bind( null, this.props ) }>
+			<Fragment>
+				<TrackPurchasePageView
+					eventName="calypso_cancel_purchase_purchase_view"
+					purchaseId={ this.props.purchaseId }
+				/>
+				<HeaderCake
+					backHref={ this.props.getManagePurchaseUrlFor(
+						this.props.siteSlug,
+						this.props.purchaseId
+					) }
+				>
 					{ titles.cancelPurchase }
 				</HeaderCake>
 
@@ -202,7 +213,7 @@ class CancelPurchase extends React.Component {
 				<CompactCard className="cancel-purchase__product-information">
 					<div className="cancel-purchase__purchase-name">{ purchaseName }</div>
 					<div className="cancel-purchase__site-title">{ siteName || siteDomain }</div>
-					<ProductLink selectedPurchase={ purchase } selectedSite={ this.props.selectedSite } />
+					<ProductLink purchase={ purchase } selectedSite={ this.props.site } />
 				</CompactCard>
 				<CompactCard className="cancel-purchase__footer">
 					<div className="cancel-purchase__refund-amount">
@@ -212,11 +223,14 @@ class CancelPurchase extends React.Component {
 						purchase={ purchase }
 						includedDomainPurchase={ this.props.includedDomainPurchase }
 						disabled={ this.state.cancelBundledDomain && ! this.state.confirmCancelBundledDomain }
-						selectedSite={ this.props.selectedSite }
+						selectedSite={ this.props.site }
+						siteSlug={ this.props.siteSlug }
 						cancelBundledDomain={ this.state.cancelBundledDomain }
+						purchaseListUrl={ this.props.purchaseListUrl }
+						getConfirmCancelDomainUrlFor={ this.props.getConfirmCancelDomainUrlFor }
 					/>
 				</CompactCard>
-			</Main>
+			</Fragment>
 		);
 	}
 }
@@ -226,8 +240,9 @@ export default connect( ( state, props ) => {
 	return {
 		hasLoadedSites: ! isRequestingSites( state ),
 		hasLoadedUserPurchasesFromServer: hasLoadedUserPurchasesFromServer( state ),
-		selectedPurchase: purchase,
+		purchase,
 		includedDomainPurchase: getIncludedDomainPurchase( state, purchase ),
-		selectedSite: getSelectedSiteSelector( state ),
+		site: getSite( state, purchase ? purchase.siteId : null ),
+		userId: getCurrentUserId( state ),
 	};
-} )( localize( CancelPurchase ) );
+} )( localize( withLocalizedMoment( CancelPurchase ) ) );

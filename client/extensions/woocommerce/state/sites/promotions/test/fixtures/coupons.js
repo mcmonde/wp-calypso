@@ -26,4 +26,3 @@ export const coupon3 = {
 	date_expires_gmt: '2017-11-09T08:08:24',
 	product_categories: [ 22 ],
 };
-

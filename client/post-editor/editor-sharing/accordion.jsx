@@ -1,9 +1,7 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
+import { isMobile } from '@automattic/viewport';
 import PropTypes from 'prop-types';
 import { localize } from 'i18n-calypso';
 import React from 'react';
@@ -15,37 +13,40 @@ import { includes, reduce } from 'lodash';
  * Internal dependencies
  */
 import Accordion from 'components/accordion';
+import FormLabel from 'components/forms/form-label';
 import FormTextInput from 'components/forms/form-text-input';
 import PostMetadata from 'lib/post-metadata';
 import Sharing from './';
 import AccordionSection from 'components/accordion/section';
-import * as postUtils from 'lib/posts/utils';
-import { isMobile } from 'lib/viewport';
+import * as postUtils from 'state/posts/utils';
 import QueryPublicizeConnections from 'components/data/query-publicize-connections';
 import { getCurrentUserId } from 'state/current-user/selectors';
 import { getSelectedSiteId } from 'state/ui/selectors';
-import { getEditorPostId } from 'state/ui/editor/selectors';
-import { getEditedPostValue } from 'state/posts/selectors';
-import { isJetpackModuleActive } from 'state/sites/selectors';
+import { getEditorPostId } from 'state/editor/selectors';
+import { getEditedPost, getEditedPostValue } from 'state/posts/selectors';
+import { getSiteSlug, isJetpackModuleActive } from 'state/sites/selectors';
 import { getSiteUserConnections } from 'state/sharing/publicize/selectors';
-import { hasBrokenSiteUserConnection, isPublicizeEnabled } from 'state/selectors';
+import hasBrokenSiteUserConnection from 'state/selectors/has-broken-site-user-connection';
+import hasInvalidSiteUserConnection from 'state/selectors/has-invalid-site-user-connection';
+import isPublicizeEnabled from 'state/selectors/is-publicize-enabled';
 import { recordGoogleEvent } from 'state/analytics/actions';
 
 class EditorSharingAccordion extends React.Component {
 	static propTypes = {
-		site: PropTypes.object,
+		siteId: PropTypes.number,
+		siteSlug: PropTypes.string,
 		post: PropTypes.object,
-		isNew: PropTypes.bool,
 		connections: PropTypes.array,
 		hasBrokenConnection: PropTypes.bool,
+		hasInvalidConnection: PropTypes.bool,
 		isPublicizeEnabled: PropTypes.bool,
 		isSharingActive: PropTypes.bool,
 		isLikesActive: PropTypes.bool,
 	};
 
-	getSubtitle = () => {
-		const { isPublicizeEnabled, post, connections } = this.props;
-		if ( ! isPublicizeEnabled || ! post || ! connections ) {
+	getSubtitle() {
+		const { post, connections } = this.props;
+		if ( ! this.props.isPublicizeEnabled || ! post || ! connections ) {
 			return;
 		}
 
@@ -63,9 +64,9 @@ class EditorSharingAccordion extends React.Component {
 			},
 			[]
 		).join( ', ' );
-	};
+	}
 
-	renderShortUrl = () => {
+	renderShortUrl() {
 		const classes = classNames( 'editor-sharing__shortlink', {
 			'is-standalone': this.hideSharing(),
 		} );
@@ -76,9 +77,9 @@ class EditorSharingAccordion extends React.Component {
 
 		return (
 			<div className={ classes }>
-				<label className="editor-sharing__shortlink-label" htmlFor="shortlink-field">
+				<FormLabel className="editor-sharing__shortlink-label" htmlFor="shortlink-field">
 					{ this.props.translate( 'Shortlink' ) }
-				</label>
+				</FormLabel>
 				<FormTextInput
 					className="editor-sharing__shortlink-field"
 					id="shortlink-field"
@@ -89,12 +90,13 @@ class EditorSharingAccordion extends React.Component {
 				/>
 			</div>
 		);
-	};
+	}
 
-	hideSharing = () => {
-		const { isSharingActive, isLikesActive, isPublicizeEnabled } = this.props;
-		return ! isSharingActive && ! isLikesActive && ! isPublicizeEnabled;
-	};
+	hideSharing() {
+		return (
+			! this.props.isSharingActive && ! this.props.isLikesActive && ! this.props.isPublicizeEnabled
+		);
+	}
 
 	render() {
 		const hideSharing = this.hideSharing();
@@ -115,7 +117,18 @@ class EditorSharingAccordion extends React.Component {
 				text: this.props.translate( 'A broken connection requires repair', {
 					comment: 'Publicize connection deauthorized, needs user action to fix',
 				} ),
-				url: `/sharing/${ this.props.site.slug }`,
+				url: `/marketing/connections/${ this.props.siteSlug }`,
+				position: isMobile() ? 'top left' : 'top',
+				onClick: this.props.onStatusClick,
+			};
+		}
+
+		if ( this.props.hasInvalidConnection ) {
+			status = {
+				type: 'error',
+				text: this.props.translate( 'A connection is broken and must be removed', {
+					comment: 'Publicize connection is invalid.',
+				} ),
 				position: isMobile() ? 'top left' : 'top',
 				onClick: this.props.onStatusClick,
 			};
@@ -129,9 +142,9 @@ class EditorSharingAccordion extends React.Component {
 				className={ classes }
 				e2eTitle="sharing"
 			>
-				{ this.props.site && <QueryPublicizeConnections siteId={ this.props.site.ID } /> }
+				{ this.props.siteId && <QueryPublicizeConnections siteId={ this.props.siteId } /> }
 				<AccordionSection>
-					{ ! hideSharing && <Sharing site={ this.props.site } post={ this.props.post } /> }
+					{ ! hideSharing && <Sharing /> }
 					{ this.renderShortUrl() }
 				</AccordionSection>
 			</Accordion>
@@ -140,17 +153,22 @@ class EditorSharingAccordion extends React.Component {
 }
 
 export default connect(
-	state => {
+	( state ) => {
 		const siteId = getSelectedSiteId( state );
 		const userId = getCurrentUserId( state );
 		const postId = getEditorPostId( state );
+		const post = getEditedPost( state, siteId, postId );
 		const postType = getEditedPostValue( state, siteId, postId, 'type' );
 		const isSharingActive = false !== isJetpackModuleActive( state, siteId, 'sharedaddy' );
 		const isLikesActive = false !== isJetpackModuleActive( state, siteId, 'likes' );
 
 		return {
+			siteId,
+			siteSlug: getSiteSlug( state, siteId ),
+			post,
 			connections: getSiteUserConnections( state, siteId, userId ),
 			hasBrokenConnection: hasBrokenSiteUserConnection( state, siteId, userId ),
+			hasInvalidConnection: hasInvalidSiteUserConnection( state, siteId, userId ),
 			isSharingActive,
 			isLikesActive,
 			isPublicizeEnabled: isPublicizeEnabled( state, siteId, postType ),

@@ -1,15 +1,15 @@
-/** @format */
-
 /**
  * Internal dependencies
  */
-
 import {
 	DIRECTLY_ASK_QUESTION,
 	DIRECTLY_INITIALIZATION_START,
 	DIRECTLY_INITIALIZATION_SUCCESS,
 	DIRECTLY_INITIALIZATION_ERROR,
 } from 'state/action-types';
+import 'state/data-layer/third-party/directly';
+
+import 'state/help/init';
 
 export function askQuestion( questionText, name, email ) {
 	return { type: DIRECTLY_ASK_QUESTION, questionText, name, email };

@@ -24,11 +24,11 @@ class QueryLabelSettings extends Component {
 		}
 	}
 
-	componentWillMount() {
+	UNSAFE_componentWillMount() {
 		this.fetch( this.props );
 	}
 
-	componentWillReceiveProps( nextProps ) {
+	UNSAFE_componentWillReceiveProps( nextProps ) {
 		this.fetch( nextProps );
 	}
 
@@ -47,7 +47,11 @@ export default connect(
 		fetching: areSettingsFetching( state ),
 		error: areSettingsErrored( state ),
 	} ),
-	( dispatch ) => bindActionCreators( {
-		fetchSettings,
-	}, dispatch )
+	( dispatch ) =>
+		bindActionCreators(
+			{
+				fetchSettings,
+			},
+			dispatch
+		)
 )( QueryLabelSettings );

@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -13,26 +11,27 @@ import { connect } from 'react-redux';
  * Internal dependencies
  */
 import config from 'config';
-import SectionHeader from 'components/section-header';
-import Card from 'components/card';
-import Button from 'components/button';
+import { Card, Button } from '@automattic/components';
 import JetpackModuleToggle from 'my-sites/site-settings/jetpack-module-toggle';
 import FormLegend from 'components/forms/form-legend';
 import FormFieldset from 'components/forms/form-fieldset';
 import FormLabel from 'components/forms/form-label';
 import { getSelectedSiteId } from 'state/ui/selectors';
 import { regeneratePostByEmail } from 'state/jetpack/settings/actions';
-import {
-	isJetpackModuleActive,
-	isJetpackModuleUnavailableInDevelopmentMode,
-	isJetpackSiteInDevelopmentMode,
-	isRegeneratingJetpackPostByEmail,
-} from 'state/selectors';
-import InfoPopover from 'components/info-popover';
-import ExternalLink from 'components/external-link';
+import isJetpackModuleActive from 'state/selectors/is-jetpack-module-active';
+import isJetpackModuleUnavailableInDevelopmentMode from 'state/selectors/is-jetpack-module-unavailable-in-development-mode';
+import isJetpackSiteInDevelopmentMode from 'state/selectors/is-jetpack-site-in-development-mode';
+import isRegeneratingJetpackPostByEmail from 'state/selectors/is-regenerating-jetpack-post-by-email';
+import SupportInfo from 'components/support-info';
 import ClipboardButtonInput from 'components/clipboard-button-input';
 import PressThis from '../press-this';
 import QueryJetpackConnection from 'components/data/query-jetpack-connection';
+import SettingsSectionHeader from 'my-sites/site-settings/settings-section-header';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class PublishingTools extends Component {
 	componentDidUpdate() {
@@ -87,7 +86,9 @@ class PublishingTools extends Component {
 
 		return (
 			<div className="publishing-tools__module-settings site-settings__child-settings">
-				<FormLabel className={ labelClassName }>{ translate( 'Email Address' ) }</FormLabel>
+				<FormLabel className={ labelClassName }>
+					{ translate( 'Send your new posts to this email address:' ) }
+				</FormLabel>
 				<ClipboardButtonInput
 					className="publishing-tools__email-address"
 					disabled={
@@ -118,21 +119,12 @@ class PublishingTools extends Component {
 
 		return (
 			<FormFieldset>
-				<div className="publishing-tools__info-link-container site-settings__info-link-container">
-					<InfoPopover position="left">
-						{ translate(
-							'Allows you to publish new posts by sending an email to a special address.'
-						) }{' '}
-						<ExternalLink
-							href="https://jetpack.com/support/post-by-email/"
-							icon={ false }
-							target="_blank"
-						>
-							{ translate( 'Learn more' ) }
-						</ExternalLink>
-					</InfoPopover>
-				</div>
-
+				<SupportInfo
+					text={ translate(
+						'Allows you to publish new posts by sending an email to a special address.'
+					) }
+					link="https://jetpack.com/support/post-by-email/"
+				/>
 				<JetpackModuleToggle
 					siteId={ selectedSiteId }
 					moduleSlug="post-by-email"
@@ -166,7 +158,7 @@ class PublishingTools extends Component {
 			<div>
 				<QueryJetpackConnection siteId={ selectedSiteId } />
 
-				<SectionHeader label={ translate( 'Publishing Tools' ) } />
+				<SettingsSectionHeader title={ translate( 'Publishing Tools' ) } />
 
 				<Card className="publishing-tools__card site-settings__module-settings">
 					{ this.renderPostByEmailModule() }
@@ -192,7 +184,7 @@ PublishingTools.propTypes = {
 };
 
 export default connect(
-	state => {
+	( state ) => {
 		const selectedSiteId = getSelectedSiteId( state );
 		const regeneratingPostByEmail = isRegeneratingJetpackPostByEmail( state, selectedSiteId );
 		const siteInDevMode = isJetpackSiteInDevelopmentMode( state, selectedSiteId );

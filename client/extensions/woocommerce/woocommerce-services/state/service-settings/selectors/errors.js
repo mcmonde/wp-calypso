@@ -119,15 +119,16 @@ export default createSelector(
 		}
 		const method = getCurrentlyOpenShippingZoneMethod( state, siteId );
 		const schema = getShippingMethodSchema( state, method.methodType, siteId ).formSchema;
-		const editedFields = omit( zone.methods.currentlyEditingChanges, [ 'id', 'methodType', 'enabled' ] );
+		const editedFields = omit( zone.methods.currentlyEditingChanges, [
+			'id',
+			'methodType',
+			'enabled',
+		] );
 		const fieldsToCheck = mapValues( editedFields, () => true );
 		const rawErrors = getRawFormErrors( schema, method, fieldsToCheck );
 		return parseErrorsList( rawErrors );
 	},
 	( state, siteId = getSelectedSiteId( state ) ) => {
-		return [
-			siteId,
-			getCurrentlyEditingShippingZone( state, siteId ),
-		];
+		return [ siteId, getCurrentlyEditingShippingZone( state, siteId ) ];
 	}
 );

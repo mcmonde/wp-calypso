@@ -1,85 +1,82 @@
-/** @format */
-
-/**
- * External dependencies
- */
-import { expect } from 'chai';
-
 /**
  * Internal dependencies
  */
-import { handleMediaItemRequest, receiveMediaItem, receiveMediaItemError } from '../';
-import { requestMediaSuccess, requestMediaError, requestMedia } from '../';
+import {
+	requestMediaItem,
+	receiveMediaItem,
+	receiveMediaItemError,
+	requestMedia,
+	requestMediaError,
+	requestMediaSuccess,
+} from '../';
 import { MEDIA_ITEM_REQUEST } from 'state/action-types';
 import { http } from 'state/data-layer/wpcom-http/actions';
 import {
 	failMediaItemRequest,
 	failMediaRequest,
 	receiveMedia,
-	requestingMedia,
-	requestingMediaItem,
+	setNextPageHandle,
 	successMediaItemRequest,
 	successMediaRequest,
 } from 'state/media/actions';
-import { useSandbox } from 'test/helpers/use-sinon';
 
 describe( 'media request', () => {
-	let dispatch;
-
-	useSandbox( sandbox => ( dispatch = sandbox.spy() ) );
-
-	const getState = () => ( {
-		media: {
-			queryRequests: {
-				2916284: {
-					'[]': true,
+	test( 'should dispatch SUCCESS action when request completes', () => {
+		const dispatch = jest.fn();
+		const getState = jest.fn( () => ( {
+			media: {
+				fetching: {
+					2916284: {
+						query: {
+							mime_type: 'image/',
+						},
+					},
 				},
 			},
-		},
-	} );
+		} ) );
 
-	test( 'should dispatch REQUESTING action when request triggers', () => {
-		requestMedia( { dispatch, getState }, { siteId: 2916284, query: 'a=b' } );
-		expect( dispatch ).to.have.been.calledWith( requestingMedia( 2916284, 'a=b' ) );
-	} );
+		const meta = Symbol( 'media request meta' );
 
-	test( 'should dispatch SUCCESS action when request completes', () => {
+		const query = { number: 20, mime_type: 'image/' };
+
 		requestMediaSuccess(
-			{ dispatch },
-			{ siteId: 2916284, query: 'a=b' },
-			{ media: { ID: 10, title: 'media title' }, found: true }
+			{ siteId: 2916284, query },
+			{ media: { ID: 10, title: 'media title' }, found: true, meta }
+		)( dispatch, getState );
+
+		expect( dispatch ).toHaveBeenCalledWith( successMediaRequest( 2916284, query ) );
+		expect( dispatch ).toHaveBeenCalledWith(
+			receiveMedia( 2916284, { ID: 10, title: 'media title' }, true, query )
 		);
-		expect( dispatch ).to.have.been.calledWith( successMediaRequest( 2916284, 'a=b' ) );
-		expect( dispatch ).to.have.been.calledWith(
-			receiveMedia( 2916284, { ID: 10, title: 'media title' }, true, 'a=b' )
-		);
+		expect( dispatch ).toHaveBeenCalledWith( setNextPageHandle( 2916284, meta ) );
 	} );
 
 	test( 'should dispatch FAILURE action when request fails', () => {
-		requestMediaError( { dispatch }, { siteId: 2916284, query: 'a=b' } );
-		expect( dispatch ).to.have.been.calledWith( failMediaRequest( 2916284, 'a=b' ) );
+		const dispatch = jest.fn();
+
+		requestMediaError( { siteId: 2916284, query: 'a=b' } )( dispatch );
+
+		expect( dispatch ).toHaveBeenCalledWith( failMediaRequest( 2916284, 'a=b' ) );
 	} );
 
 	test( 'should dispatch http request', () => {
-		requestMedia( { dispatch, getState }, { siteId: 2916284, query: 'a=b' } );
-		expect( dispatch ).to.have.been.calledWith(
-			http(
-				{
-					method: 'GET',
-					path: '/sites/2916284/media',
-					apiVersion: '1.1',
-				},
-				{ siteId: 2916284, query: 'a=b' }
-			)
+		expect( requestMedia( { siteId: 2916284, query: 'a=b' } ) ).toEqual(
+			expect.arrayContaining( [
+				http(
+					{
+						method: 'GET',
+						path: '/sites/2916284/media',
+						apiVersion: '1.1',
+						query: 'a=b',
+					},
+					{ siteId: 2916284, query: 'a=b' }
+				),
+			] )
 		);
 	} );
 } );
 
-describe( 'handleMediaItemRequest', () => {
-	let dispatch;
-
-	useSandbox( sandbox => ( dispatch = sandbox.spy() ) );
-
+describe( 'requestMediaItem', () => {
 	test( 'should dispatch an http action', () => {
 		const siteId = 12345;
 		const mediaId = 67890;
@@ -88,27 +85,22 @@ describe( 'handleMediaItemRequest', () => {
 			mediaId,
 			siteId,
 		};
-		handleMediaItemRequest( { dispatch }, action );
-		expect( dispatch ).to.have.been.calledTwice;
-		expect( dispatch ).to.have.been.calledWith( requestingMediaItem( siteId ) );
-		expect( dispatch ).to.have.been.calledWith(
-			http(
-				{
-					apiVersion: '1.2',
-					method: 'GET',
-					path: `/sites/${ siteId }/media/${ mediaId }`,
-				},
-				action
-			)
+		expect( requestMediaItem( action ) ).toEqual(
+			expect.arrayContaining( [
+				http(
+					{
+						apiVersion: '1.2',
+						method: 'GET',
+						path: `/sites/${ siteId }/media/${ mediaId }`,
+					},
+					action
+				),
+			] )
 		);
 	} );
 } );
 
 describe( 'receiveMediaItem', () => {
-	let dispatch;
-
-	useSandbox( sandbox => ( dispatch = sandbox.spy() ) );
-
 	test( 'should dispatch media recieve actions', () => {
 		const siteId = 12345;
 		const mediaId = 67890;
@@ -118,18 +110,17 @@ describe( 'receiveMediaItem', () => {
 			siteId,
 		};
 		const media = { ID: 91827364 };
-		receiveMediaItem( { dispatch }, action, media );
-		expect( dispatch ).to.have.been.calledTwice,
-			expect( dispatch ).to.have.been.calledWith( receiveMedia( siteId, media ) );
-		expect( dispatch ).to.have.been.calledWith( successMediaItemRequest( siteId, mediaId ) );
+
+		const dispatch = jest.fn();
+
+		receiveMediaItem( action, media )( dispatch );
+
+		expect( dispatch ).toHaveBeenNthCalledWith( 1, receiveMedia( siteId, media ) );
+		expect( dispatch ).toHaveBeenNthCalledWith( 2, successMediaItemRequest( siteId, mediaId ) );
 	} );
 } );
 
 describe( 'receiveMediaItemError', () => {
-	let dispatch;
-
-	useSandbox( sandbox => ( dispatch = sandbox.spy() ) );
-
 	test( 'should dispatch failure', () => {
 		const siteId = 12345;
 		const mediaId = 67890;
@@ -138,7 +129,11 @@ describe( 'receiveMediaItemError', () => {
 			mediaId,
 			siteId,
 		};
-		receiveMediaItemError( { dispatch }, action );
-		expect( dispatch ).to.have.been.calledWith( failMediaItemRequest( siteId, mediaId ) );
+
+		const dispatch = jest.fn();
+
+		receiveMediaItemError( action )( dispatch );
+
+		expect( dispatch ).toHaveBeenCalledWith( failMediaItemRequest( siteId, mediaId ) );
 	} );
 } );

@@ -3,7 +3,7 @@
  */
 import React from 'react';
 import PropTypes from 'prop-types';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 import { localize } from 'i18n-calypso';
 import classNames from 'classnames';
 
@@ -13,7 +13,18 @@ import classNames from 'classnames';
 import Spinner from 'components/spinner';
 import FoldableCard from 'components/foldable-card';
 
-const StepContainer = ( { isSuccess, isWarning, isError, isProgress, title, summary, children, expanded, toggleStep, translate } ) => {
+const StepContainer = ( {
+	isSuccess,
+	isWarning,
+	isError,
+	isProgress,
+	title,
+	summary,
+	children,
+	expanded,
+	toggleStep,
+	translate,
+} ) => {
 	const getIcon = () => {
 		if ( isSuccess ) {
 			return 'checkmark-circle';
@@ -36,10 +47,11 @@ const StepContainer = ( { isSuccess, isWarning, isError, isProgress, title, summ
 		<span className={ className }>
 			<span>{ summary }</span>
 			<div className="label-purchase-modal__step-status">
-				{ isProgress
-					? <Spinner size={ 18 } />
-					: <Gridicon icon={ getIcon() } className={ className } size={ 18 } />
-				}
+				{ isProgress ? (
+					<Spinner size={ 18 } />
+				) : (
+					<Gridicon icon={ getIcon() } className={ className } size={ 18 } />
+				) }
 			</div>
 		</span>
 	);

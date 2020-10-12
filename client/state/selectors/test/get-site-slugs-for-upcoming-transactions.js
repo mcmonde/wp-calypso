@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -8,7 +6,7 @@ import { expect } from 'chai';
 /**
  * Internal dependencies
  */
-import { getSiteSlugsForUpcomingTransactions } from 'state/selectors';
+import getSiteSlugsForUpcomingTransactions from 'state/selectors/get-site-slugs-for-upcoming-transactions';
 
 describe( 'getSiteSlugsForUpcomingTransactions()', () => {
 	beforeEach( () => {
@@ -26,7 +24,10 @@ describe( 'getSiteSlugsForUpcomingTransactions()', () => {
 			},
 			billingTransactions: {
 				items: {
-					upcoming: [ { id: 123456, blog_id: '2916284' }, { id: 888888, blog_id: '1234567' } ],
+					upcoming: [
+						{ id: 123456, blog_id: '2916284' },
+						{ id: 888888, blog_id: '1234567' },
+					],
 				},
 			},
 		};
@@ -47,7 +48,10 @@ describe( 'getSiteSlugsForUpcomingTransactions()', () => {
 			},
 			billingTransactions: {
 				items: {
-					upcoming: [ { id: 123456, blog_id: '2916284' }, { id: 234567, blog_id: '2916284' } ],
+					upcoming: [
+						{ id: 123456, blog_id: '2916284' },
+						{ id: 234567, blog_id: '2916284' },
+					],
 				},
 			},
 		};

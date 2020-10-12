@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -10,8 +8,7 @@ import { includes, pick } from 'lodash';
 /**
  * Internal dependencies
  */
-import Button from 'components/button';
-import Card from 'components/card';
+import { Button, Card } from '@automattic/components';
 import ExternalLink from 'components/external-link';
 import FormFieldset from 'components/forms/form-fieldset';
 import FormLabel from 'components/forms/form-label';
@@ -94,12 +91,10 @@ const Caching = ( {
 								name="cache_type"
 								onChange={ handleRadio }
 								value="PHP"
-							/>
-							<span>
-								{ translate( 'Simple {{em}}(Recommended){{/em}}', {
+								label={ translate( 'Simple {{em}}(Recommended){{/em}}', {
 									components: { em: <em /> },
 								} ) }
-							</span>
+							/>
 						</FormLabel>
 
 						<FormLabel>
@@ -109,8 +104,8 @@ const Caching = ( {
 								name="cache_type"
 								onChange={ handleRadio }
 								value="mod_rewrite"
+								label={ translate( 'Expert' ) }
 							/>
-							<span>{ translate( 'Expert' ) }</span>
 						</FormLabel>
 						<FormSettingExplanation>
 							{ translate(
@@ -125,7 +120,7 @@ const Caching = ( {
 	);
 };
 
-const getFormSettings = settings => {
+const getFormSettings = ( settings ) => {
 	return pick( settings, [ 'cache_type', 'is_cache_enabled' ] );
 };
 

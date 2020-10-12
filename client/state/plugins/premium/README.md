@@ -1,5 +1,4 @@
-Premium Plugins
-===============
+# Premium Plugins
 
 A module for managing the automatic install & configuration of premium plugins
 
@@ -19,12 +18,12 @@ fetchInstallInstructions( 106093271 );
 
 ### `installPlugin( plugin: object, siteId: object )`
 
-Start the install process for a plugin. Plugin object should be pulled from the [PluginsStore](https://github.com/Automattic/wp-calypso/tree/master/client/lib/plugins).
+Start the install process for a plugin. Plugin object should be pulled from the [PluginsStore](https://github.com/Automattic/wp-calypso/tree/HEAD/client/lib/plugins).
 
 ```js
 import { installPlugin } from 'state/plugins/premium/actions';
 
-let plugin = PluginsStore.getSitePlugin( site, 'vaultpress' );
+const plugin = PluginsStore.getSitePlugin( site, 'vaultpress' );
 installPlugin( plugin, site );
 ```
 
@@ -35,22 +34,25 @@ Data from the aforementioned actions is added to the global state tree, under `p
 ```js
 state.plugins.premium = {
 	isRequesting: {
-		'exampleSiteId': false
+		exampleSiteId: false,
 	},
 	plugins: {
-		'exampleSiteId': [ {
-			slug: 'vaultpress',
-			name: 'VaultPress',
-			key: 'vp-api-key',
-			status: 'wait',
-			error: null
-		}, {
-			slug: 'akismet',
-			name: 'Akismet',
-			key: 'ak-api-key',
-			status: 'wait',
-			error: null
-		} ]
-	}
-}
+		exampleSiteId: [
+			{
+				slug: 'vaultpress',
+				name: 'VaultPress',
+				key: 'vp-api-key',
+				status: 'wait',
+				error: null,
+			},
+			{
+				slug: 'akismet',
+				name: 'Akismet',
+				key: 'ak-api-key',
+				status: 'wait',
+				error: null,
+			},
+		],
+	},
+};
 ```

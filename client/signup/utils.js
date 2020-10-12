@@ -1,37 +1,22 @@
-/** @format **/
 /**
- * Exernal dependencies
+ * External dependencies
  */
-import { filter, find, indexOf, isEmpty, merge, pick } from 'lodash';
+import { filter, find, includes, indexOf, isEmpty, pick, sortBy } from 'lodash';
+import { translate } from 'i18n-calypso';
 
 /**
  * Internal dependencies
  */
-import { getLanguage } from 'lib/i18n-utils';
-import steps from 'signup/config/steps';
+import steps from 'signup/config/steps-pure';
 import flows from 'signup/config/flows';
-import formState from 'lib/form-state';
-import userFactory from 'lib/user';
-const user = userFactory();
+import user from 'lib/user';
 
 const { defaultFlowName } = flows;
 
 export function getFlowName( parameters ) {
-	const flow =
-		parameters.flowName && isFlowName( parameters.flowName )
-			? parameters.flowName
-			: defaultFlowName;
-	return maybeFilterFlowName( flow, flows.filterFlowName );
-}
-
-function maybeFilterFlowName( flowName, filterCallback ) {
-	if ( filterCallback && typeof filterCallback === 'function' ) {
-		const filteredFlow = filterCallback( flowName );
-		if ( isFlowName( filteredFlow ) ) {
-			return filteredFlow;
-		}
-	}
-	return flowName;
+	return parameters.flowName && isFlowName( parameters.flowName )
+		? parameters.flowName
+		: defaultFlowName;
 }
 
 function isFlowName( pathFragment ) {
@@ -51,18 +36,7 @@ export function getStepSectionName( parameters ) {
 }
 
 function isStepSectionName( pathFragment ) {
-	return ! isStepName( pathFragment ) && ! isLocale( pathFragment );
-}
-
-export function getLocale( parameters ) {
-	return find(
-		pick( parameters, [ 'flowName', 'stepName', 'stepSectionName', 'lang' ] ),
-		isLocale
-	);
-}
-
-function isLocale( pathFragment ) {
-	return ! isEmpty( getLanguage( pathFragment ) );
+	return ! isStepName( pathFragment );
 }
 
 export function getStepUrl( flowName, stepName, stepSectionName, localeSlug ) {
@@ -72,7 +46,7 @@ export function getStepUrl( flowName, stepName, stepSectionName, localeSlug ) {
 		// when the user is logged in, the locale slug is meaningless in a
 		// signup URL, as the page will be translated in the language the user
 		// has in their settings.
-		locale = localeSlug && ! user.get() ? `/${ localeSlug }` : '';
+		locale = localeSlug && ! user().get() ? `/${ localeSlug }` : '';
 
 	if ( flowName === defaultFlowName ) {
 		// we don't include the default flow name in the route
@@ -83,11 +57,11 @@ export function getStepUrl( flowName, stepName, stepSectionName, localeSlug ) {
 }
 
 export function getValidPath( parameters ) {
-	const locale = getLocale( parameters ),
-		flowName = getFlowName( parameters ),
-		currentFlowSteps = flows.getFlow( flowName ).steps,
-		stepName = getStepName( parameters ) || currentFlowSteps[ 0 ],
-		stepSectionName = getStepSectionName( parameters );
+	const locale = parameters.lang;
+	const flowName = getFlowName( parameters );
+	const currentFlowSteps = flows.getFlow( flowName ).steps;
+	const stepName = getStepName( parameters ) || currentFlowSteps[ 0 ];
+	const stepSectionName = getStepSectionName( parameters );
 
 	if ( currentFlowSteps.length === 0 ) {
 		return '/';
@@ -111,22 +85,18 @@ export function getFlowSteps( flowName ) {
 	return flow.steps;
 }
 
+export function getFlowPageTitle( flowName ) {
+	const flow = flows.getFlow( flowName );
+	return flow.pageTitle || translate( 'Create a site' );
+}
+
 export function getValueFromProgressStore( { signupProgress, stepName, fieldName } ) {
-	const siteStepProgress = find( signupProgress, step => step.stepName === stepName );
+	const siteStepProgress = find( signupProgress, ( step ) => step.stepName === stepName );
 	return siteStepProgress ? siteStepProgress[ fieldName ] : null;
 }
 
-export function mergeFormWithValue( { form, fieldName, fieldValue } ) {
-	if ( ! formState.getFieldValue( form, fieldName ) ) {
-		return merge( form, {
-			[ fieldName ]: { value: fieldValue },
-		} );
-	}
-	return form;
-}
-
-export function getDestination( destination, dependencies, flowName ) {
-	return flows.filterDestination( destination, dependencies, flowName );
+export function getDestination( destination, dependencies, flowName, localeSlug ) {
+	return flows.filterDestination( destination, dependencies, flowName, localeSlug );
 }
 
 export function getThemeForDesignType( designType ) {
@@ -148,11 +118,11 @@ export function getThemeForSiteGoals( siteGoals ) {
 	const siteGoalsValue = siteGoals.split( ',' );
 
 	if ( siteGoalsValue.indexOf( 'sell' ) !== -1 ) {
-		return 'pub/dara';
+		return 'pub/radcliffe-2';
 	}
 
 	if ( siteGoalsValue.indexOf( 'promote' ) !== -1 ) {
-		return 'pub/dara';
+		return 'pub/radcliffe-2';
 	}
 
 	if ( siteGoalsValue.indexOf( 'educate' ) !== -1 ) {
@@ -166,11 +136,11 @@ export function getThemeForSiteGoals( siteGoals ) {
 	return 'pub/independent-publisher-2';
 }
 
-export function getSiteTypeForSiteGoals( siteGoals, flow ) {
+export function getDesignTypeForSiteGoals( siteGoals, flow ) {
 	const siteGoalsValue = siteGoals.split( ',' );
 
 	//Identify stores for the store signup flow
-	if ( siteGoals === 'sell' || flow === 'store-nux' ) {
+	if ( siteGoals === 'sell' || flow === 'ecommerce' ) {
 		return 'store';
 	}
 
@@ -189,12 +159,50 @@ export function getSiteTypeForSiteGoals( siteGoals, flow ) {
 	return 'blog';
 }
 
+export function getFilteredSteps( flowName, progress ) {
+	const flow = flows.getFlow( flowName );
+
+	if ( ! flow ) {
+		return [];
+	}
+
+	return sortBy(
+		// filter steps...
+		filter( progress, ( step ) => includes( flow.steps, step.stepName ) ),
+		// then order according to the flow definition...
+		( { stepName } ) => flow.steps.indexOf( stepName )
+	);
+}
+
+export function getFirstInvalidStep( flowName, progress ) {
+	return find( getFilteredSteps( flowName, progress ), { status: 'invalid' } );
+}
+
+export function getCompletedSteps( flowName, progress, options = {} ) {
+	// Option to check that the current `flowName` matches the `lastKnownFlow`.
+	// This is to ensure that when resuming progress, we only do so if
+	// the last known flow matches the one that the user is returning to.
+	if ( options.shouldMatchFlowName ) {
+		return filter(
+			getFilteredSteps( flowName, progress ),
+			( step ) => 'in-progress' !== step.status && step.lastKnownFlow === flowName
+		);
+	}
+	return filter(
+		getFilteredSteps( flowName, progress ),
+		( step ) => 'in-progress' !== step.status
+	);
+}
+
 export function canResumeFlow( flowName, progress ) {
 	const flow = flows.getFlow( flowName );
-	const flowStepsInProgressStore = filter(
-		progress,
-		step => -1 !== flow.steps.indexOf( step.stepName )
-	);
-
+	const flowStepsInProgressStore = getCompletedSteps( flowName, progress, {
+		shouldMatchFlowName: true,
+	} );
 	return flowStepsInProgressStore.length > 0 && ! flow.disallowResume;
 }
+
+export const shouldForceLogin = ( flowName ) => {
+	const flow = flows.getFlow( flowName );
+	return !! flow && flow.forceLogin;
+};

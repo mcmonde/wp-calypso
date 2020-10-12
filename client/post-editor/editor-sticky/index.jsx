@@ -1,26 +1,28 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import PropTypes from 'prop-types';
 import { localize } from 'i18n-calypso';
-import React from 'react';
+import React, { Fragment } from 'react';
 import classnames from 'classnames';
 import { connect } from 'react-redux';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 
 /**
  * Internal dependencies
  */
 import Tooltip from 'components/tooltip';
-import Button from 'components/button';
-import { recordStat, recordEvent } from 'lib/posts/stats';
+import { Button } from '@automattic/components';
+import { recordEditorStat, recordEditorEvent } from 'state/posts/stats';
 import { editPost } from 'state/posts/actions';
 import { getSelectedSiteId } from 'state/ui/selectors';
-import { getEditorPostId } from 'state/ui/editor/selectors';
+import { getEditorPostId } from 'state/editor/selectors';
 import { getEditedPostValue } from 'state/posts/selectors';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class EditorSticky extends React.Component {
 	static displayName = 'EditorSticky';
@@ -47,8 +49,8 @@ class EditorSticky extends React.Component {
 			stickyEventLabel = 'Off';
 		}
 
-		recordStat( stickyStat );
-		recordEvent( 'Changed Sticky Setting', stickyEventLabel );
+		this.props.recordEditorStat( stickyStat );
+		this.props.recordEditorEvent( 'Changed Sticky Setting', stickyEventLabel );
 
 		this.props.editPost( this.props.siteId, this.props.postId, {
 			sticky: ! this.props.sticky,
@@ -64,46 +66,55 @@ class EditorSticky extends React.Component {
 		this.setState( { tooltip: false } );
 	};
 
+	stickyPostButtonRef = React.createRef();
+
 	render() {
-		const classes = classnames( 'editor-sticky', { 'is-sticky': this.props.sticky } );
+		const { sticky, translate } = this.props;
+		const classes = classnames( 'editor-sticky', { 'is-sticky': sticky } );
+		const tooltipLabel = sticky ? (
+			<span>{ translate( 'Marked as sticky' ) }</span>
+		) : (
+			<div>
+				{ translate( 'Mark as sticky' ) }
+				<span className="editor-sticky__explanation">
+					{ translate( 'Stick post to the front page' ) }
+				</span>
+			</div>
+		);
 
 		return (
-			<Button
-				borderless
-				className={ classes }
-				onClick={ this.toggleStickyStatus }
-				onMouseEnter={ this.enableTooltip }
-				onMouseLeave={ this.disableTooltip }
-				aria-label={ this.props.translate( 'Stick post to the front page' ) }
-				ref="stickyPostButton"
-			>
-				<Gridicon icon="bookmark" />
-				{ this.props.sticky && (
-					<Tooltip
-						className="editor-sticky__tooltip"
-						context={ this.refs && this.refs.stickyPostButton }
-						isVisible={ this.state.tooltip }
-						position="bottom left"
-					>
-						<span>{ this.props.translate( 'Marked as sticky' ) }</span>
-					</Tooltip>
-				) }
-			</Button>
+			<Fragment>
+				<Button
+					borderless
+					className={ classes }
+					onClick={ this.toggleStickyStatus }
+					onMouseEnter={ this.enableTooltip }
+					onMouseLeave={ this.disableTooltip }
+					aria-label={ translate( 'Stick post to the front page' ) }
+					ref={ this.stickyPostButtonRef }
+				>
+					<Gridicon icon="bookmark" />
+				</Button>
+				<Tooltip
+					className="editor-sticky__tooltip"
+					context={ this.stickyPostButtonRef.current }
+					isVisible={ this.state.tooltip }
+					position="bottom left"
+				>
+					{ tooltipLabel }
+				</Tooltip>
+			</Fragment>
 		);
 	}
 }
 
 export default connect(
-	state => {
+	( state ) => {
 		const postId = getEditorPostId( state );
 		const siteId = getSelectedSiteId( state );
 		const sticky = getEditedPostValue( state, siteId, postId, 'sticky' );
 
-		return {
-			postId,
-			siteId,
-			sticky,
-		};
+		return { postId, siteId, sticky };
 	},
-	{ editPost }
+	{ editPost, recordEditorStat, recordEditorEvent }
 )( localize( EditorSticky ) );

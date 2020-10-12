@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * Internal dependencies
  */
@@ -13,7 +11,9 @@ import {
 	SIMPLE_PAYMENTS_PRODUCTS_LIST_RECEIVE_DELETE,
 } from 'state/action-types';
 
-export const requestProducts = siteId => ( {
+import 'state/data-layer/wpcom/sites/simple-payments';
+
+export const requestProducts = ( siteId ) => ( {
 	siteId,
 	type: SIMPLE_PAYMENTS_PRODUCTS_LIST,
 } );

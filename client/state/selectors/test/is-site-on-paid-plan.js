@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -11,6 +10,7 @@ import deepFreeze from 'deep-freeze';
 import isSiteOnPaidPlan from '../is-site-on-paid-plan';
 import {
 	PLAN_BUSINESS,
+	PLAN_ECOMMERCE,
 	PLAN_FREE,
 	PLAN_JETPACK_BUSINESS,
 	PLAN_JETPACK_FREE,
@@ -38,6 +38,11 @@ describe( 'isSiteOnPaidPlan', () => {
 
 	test( 'should return true when on paid plan', () => {
 		getCurrentPlan.returns( { productSlug: PLAN_BUSINESS } );
+		expect( isSiteOnPaidPlan( state, 'site1' ) ).to.be.true;
+	} );
+
+	test( 'should return true when on eCommerce plan', () => {
+		getCurrentPlan.returns( { productSlug: PLAN_ECOMMERCE } );
 		expect( isSiteOnPaidPlan( state, 'site1' ) ).to.be.true;
 	} );
 

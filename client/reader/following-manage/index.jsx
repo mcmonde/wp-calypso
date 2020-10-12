@@ -1,8 +1,7 @@
-/** @format */
 /**
  * External Dependencies
  */
-import React, { Component } from 'react';
+import React, { Component, Fragment } from 'react';
 import { connect } from 'react-redux';
 import { trim, debounce, random, take, reject, includes } from 'lodash';
 import { localize } from 'i18n-calypso';
@@ -13,26 +12,31 @@ import { stringify } from 'qs';
 /**
  * Internal Dependencies
  */
-import CompactCard from 'components/card/compact';
+import { CompactCard } from '@automattic/components';
 import DocumentHead from 'components/data/document-head';
 import SearchInput from 'components/search';
-import ReaderMain from 'components/reader-main';
+import HeaderCake from 'components/header-cake';
+import ReaderMain from 'reader/components/reader-main';
+import { getBlockedSites } from 'state/reader/site-blocks/selectors';
+import { getDismissedSites } from 'state/reader/site-dismissals/selectors';
 import {
-	getReaderFeedsForQuery,
 	getReaderFeedsCountForQuery,
-	getReaderRecommendedSites,
-	getReaderRecommendedSitesPagingOffset,
-	getBlockedSites,
+	getReaderFeedsForQuery,
+} from 'state/reader/feed-searches/selectors';
+import {
 	getReaderAliasedFollowFeedUrl,
 	getReaderFollowsCount,
-} from 'state/selectors';
+} from 'state/reader/follows/selectors';
+import {
+	getReaderRecommendedSites,
+	getReaderRecommendedSitesPagingOffset,
+} from 'state/reader/recommended-sites/selectors';
 import QueryReaderFeedsSearch from 'components/data/query-reader-feeds-search';
 import QueryReaderRecommendedSites from 'components/data/query-reader-recommended-sites';
 import RecommendedSites from 'blocks/reader-recommended-sites';
 import FollowingManageSubscriptions from './subscriptions';
 import FollowingManageSearchFeedsResults from './feed-search-results';
 import FollowingManageEmptyContent from './empty';
-import MobileBackToSidebar from 'components/mobile-back-to-sidebar';
 import FollowButton from 'reader/follow-button';
 import {
 	READER_FOLLOWING_MANAGE_URL_INPUT,
@@ -41,6 +45,11 @@ import {
 import { resemblesUrl, withoutHttp, addSchemeIfMissing, addQueryArgs } from 'lib/url';
 import { recordTrack, recordAction } from 'reader/stats';
 import { SORT_BY_RELEVANCE } from 'state/reader/feed-searches/actions';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 const PAGE_SIZE = 4;
 let recommendationsSeed = random( 0, 10000 );
@@ -65,12 +74,8 @@ class FollowingManage extends Component {
 		width: 800,
 	};
 
-	componentWillUnmount() {
-		recommendationsSeed = random( 0, 1000 );
-	}
-
 	// TODO make this common between our different search pages?
-	updateQuery = newValue => {
+	updateQuery = ( newValue ) => {
 		this.scrollToTop();
 		const trimmedValue = trim( newValue ).substring( 0, 1024 );
 		if (
@@ -100,9 +105,9 @@ class FollowingManage extends Component {
 		window.scrollTo( 0, 0 );
 	};
 
-	handleStreamMounted = ref => ( this.streamRef = ref );
-	handleSearchBoxMounted = ref => ( this.searchBoxRef = ref );
-	handleWindowScrollerMounted = ref => ( this.windowScrollerRef = ref );
+	handleStreamMounted = ( ref ) => ( this.streamRef = ref );
+	handleSearchBoxMounted = ( ref ) => ( this.searchBoxRef = ref );
+	handleWindowScrollerMounted = ( ref ) => ( this.windowScrollerRef = ref );
 
 	resizeSearchBox = () => {
 		if ( this.searchBoxRef && this.streamRef ) {
@@ -130,14 +135,20 @@ class FollowingManage extends Component {
 	}
 
 	componentWillUnmount() {
+		recommendationsSeed = random( 0, 1000 );
 		window.removeEventListener( 'resize', this.resizeListener );
 		clearInterval( this.windowScrollerRef );
 	}
 
 	shouldRequestMoreRecs = () => {
-		const { recommendedSites, blockedSites } = this.props;
+		const { recommendedSites, blockedSites, dismissedSites } = this.props;
 
-		return reject( recommendedSites, site => includes( blockedSites, site.blogId ) ).length <= 4;
+		return (
+			reject(
+				recommendedSites,
+				( site ) => includes( blockedSites, site.blogId ) || includes( dismissedSites, site.blogId )
+			).length <= 4
+		);
 	};
 
 	handleShowMoreClicked = () => {
@@ -179,6 +190,7 @@ class FollowingManage extends Component {
 			recommendedSites,
 			recommendedSitesPagingOffset,
 			blockedSites,
+			dismissedSites,
 			followsCount,
 			readerAliasedFollowFeedUrl,
 		} = this.props;
@@ -188,62 +200,73 @@ class FollowingManage extends Component {
 		const sitesQueryWithoutProtocol = withoutHttp( sitesQuery );
 		const showFollowByUrl = this.shouldShowFollowByUrl();
 		const isFollowByUrlWithNoSearchResults = showFollowByUrl && searchResultsCount === 0;
-		const filteredRecommendedSites = reject( recommendedSites, site =>
-			includes( blockedSites, site.blogId )
+
+		const filteredRecommendedSites = reject(
+			recommendedSites,
+			( site ) => includes( blockedSites, site.blogId ) || includes( dismissedSites, site.blogId )
 		);
 
+		/* eslint-disable jsx-a11y/no-autofocus */
 		return (
-			<ReaderMain className="following-manage">
-				<DocumentHead title={ 'Manage Following' } />
-				<MobileBackToSidebar>
-					<h1>{ translate( 'Streams' ) }</h1>
-				</MobileBackToSidebar>
-				{ ! searchResults &&
-					sitesQuery && <QueryReaderFeedsSearch query={ sitesQuery } excludeFollowed={ true } /> }
-				{ this.shouldRequestMoreRecs() && (
-					<QueryReaderRecommendedSites
-						seed={ recommendationsSeed }
-						offset={ recommendedSitesPagingOffset + PAGE_SIZE || 0 }
-					/>
-				) }
-				<h2 className="following-manage__header">{ translate( 'Follow Something New' ) }</h2>
-				<div ref={ this.handleStreamMounted } />
-				<div className="following-manage__fixed-area" ref={ this.handleSearchBoxMounted }>
-					<CompactCard className="following-manage__input-card">
-						<SearchInput
-							onSearch={ this.updateQuery }
-							onSearchClose={ this.handleSearchClosed }
-							autoFocus={ this.props.autoFocusInput }
-							delaySearch={ true }
-							delayTimeout={ 500 }
-							placeholder={ searchPlaceholderText }
-							additionalClasses="following-manage__search-new"
-							initialValue={ sitesQuery }
-							value={ sitesQuery }
-							maxLength={ 500 }
-							disableAutocorrect={ true }
-						/>
-					</CompactCard>
-
-					{ showFollowByUrl && (
-						<div className="following-manage__url-follow">
-							<FollowButton
-								followLabel={ translate( 'Follow %s', { args: sitesQueryWithoutProtocol } ) }
-								followingLabel={ translate( 'Following %s', { args: sitesQueryWithoutProtocol } ) }
-								siteUrl={ addSchemeIfMissing( readerAliasedFollowFeedUrl, 'http' ) }
-								followSource={ READER_FOLLOWING_MANAGE_URL_INPUT }
-							/>
-						</div>
-					) }
+			<Fragment>
+				<div className="following-manage__header">
+					<HeaderCake backHref={ '/read' }>
+						<h1>{ translate( 'Manage Followed Sites' ) }</h1>
+					</HeaderCake>
 				</div>
-				{ ! sitesQuery && (
-					<RecommendedSites
-						sites={ take( filteredRecommendedSites, 2 ) }
-						followSource={ READER_FOLLOWING_MANAGE_RECOMMENDATION }
-					/>
-				) }
-				{ !! sitesQuery &&
-					! isFollowByUrlWithNoSearchResults && (
+				<ReaderMain className="following-manage">
+					<DocumentHead title={ 'Manage Following' } />
+					{ ! searchResults && sitesQuery && (
+						<QueryReaderFeedsSearch query={ sitesQuery } excludeFollowed={ true } />
+					) }
+					{ this.shouldRequestMoreRecs() && (
+						<QueryReaderRecommendedSites
+							seed={ recommendationsSeed }
+							offset={ recommendedSitesPagingOffset + PAGE_SIZE || 0 }
+						/>
+					) }
+					<div ref={ this.handleStreamMounted } />
+					<div className="following-manage__fixed-area" ref={ this.handleSearchBoxMounted }>
+						<CompactCard className="following-manage__input-card">
+							<SearchInput
+								onSearch={ this.updateQuery }
+								onSearchClose={ this.handleSearchClosed }
+								autoFocus={ this.props.autoFocusInput }
+								delaySearch={ true }
+								delayTimeout={ 500 }
+								placeholder={ searchPlaceholderText }
+								additionalClasses="following-manage__search-new"
+								initialValue={ sitesQuery }
+								value={ sitesQuery }
+								maxLength={ 500 }
+								disableAutocorrect={ true }
+							/>
+						</CompactCard>
+
+						{ showFollowByUrl && (
+							<div className="following-manage__url-follow">
+								<FollowButton
+									followLabel={ translate( 'Follow %s', {
+										args: sitesQueryWithoutProtocol,
+										comment: '%s is the name of the site being followed. For example: "Discover"',
+									} ) }
+									followingLabel={ translate( 'Following %s', {
+										args: sitesQueryWithoutProtocol,
+										comment: '%s is the name of the site being followed. For example: "Discover"',
+									} ) }
+									siteUrl={ addSchemeIfMissing( readerAliasedFollowFeedUrl, 'http' ) }
+									followSource={ READER_FOLLOWING_MANAGE_URL_INPUT }
+								/>
+							</div>
+						) }
+					</div>
+					{ ! sitesQuery && (
+						<RecommendedSites
+							sites={ take( filteredRecommendedSites, 2 ) }
+							followSource={ READER_FOLLOWING_MANAGE_RECOMMENDATION }
+						/>
+					) }
+					{ !! sitesQuery && ! isFollowByUrlWithNoSearchResults && (
 						<FollowingManageSearchFeedsResults
 							searchResults={ searchResults }
 							showMoreResults={ showMoreResults }
@@ -253,17 +276,19 @@ class FollowingManage extends Component {
 							query={ sitesQuery }
 						/>
 					) }
-				{ showExistingSubscriptions && (
-					<FollowingManageSubscriptions
-						width={ this.state.width }
-						query={ subsQuery }
-						sortOrder={ subsSortOrder }
-						windowScrollerRef={ this.handleWindowScrollerMounted }
-					/>
-				) }
-				{ ! hasFollows && <FollowingManageEmptyContent /> }
-			</ReaderMain>
+					{ showExistingSubscriptions && (
+						<FollowingManageSubscriptions
+							width={ this.state.width }
+							query={ subsQuery }
+							sortOrder={ subsSortOrder }
+							windowScrollerRef={ this.handleWindowScrollerMounted }
+						/>
+					) }
+					{ ! hasFollows && <FollowingManageEmptyContent /> }
+				</ReaderMain>
+			</Fragment>
 		);
+		/* eslint-enable jsx-a11y/no-autofocus */
 	}
 }
 
@@ -281,6 +306,7 @@ export default connect( ( state, { sitesQuery } ) => ( {
 	recommendedSites: getReaderRecommendedSites( state, recommendationsSeed ),
 	recommendedSitesPagingOffset: getReaderRecommendedSitesPagingOffset( state, recommendationsSeed ),
 	blockedSites: getBlockedSites( state ),
+	dismissedSites: getDismissedSites( state ),
 	readerAliasedFollowFeedUrl: sitesQuery && getReaderAliasedFollowFeedUrl( state, sitesQuery ),
 	followsCount: getReaderFollowsCount( state ),
 } ) )( localize( FollowingManage ) );

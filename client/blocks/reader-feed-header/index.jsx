@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External Dependencies
  */
@@ -7,29 +6,37 @@ import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 import { localize } from 'i18n-calypso';
 import { connect } from 'react-redux';
+import config from 'config';
 
 /**
  * Internal Dependencies
  */
-import Card from 'components/card';
+import { Card } from '@automattic/components';
 import ReaderFollowButton from 'reader/follow-button';
-import { isAuthorNameBlacklisted } from 'reader/lib/author-name-blacklist';
+import { isAuthorNameBlocked } from 'reader/lib/author-name-blocklist';
 import HeaderBack from 'reader/header-back';
 import { getSiteDescription, getSiteName, getSiteUrl } from 'reader/get-helpers';
 import SiteIcon from 'blocks/site-icon';
 import BlogStickers from 'blocks/blog-stickers';
 import ReaderFeedHeaderSiteBadge from './badge';
-import ReaderEmailSettings from 'blocks/reader-email-settings';
 import ReaderSiteNotificationSettings from 'blocks/reader-site-notification-settings';
-import config from 'config';
-import userSettings from 'lib/user-settings';
-import { isFollowing } from 'state/selectors';
+import getUserSetting from 'state/selectors/get-user-setting';
+import { isFollowing } from 'state/reader/follows/selectors';
+import QueryUserSettings from 'components/data/query-user-settings';
+import Gridicon from 'components/gridicon';
+import { requestMarkAllAsSeen } from 'state/reader/seen-posts/actions';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class FeedHeader extends Component {
 	static propTypes = {
 		site: PropTypes.object,
 		feed: PropTypes.object,
 		showBack: PropTypes.bool,
+		streamKey: PropTypes.string,
 	};
 
 	getFollowerCount = ( feed, site ) => {
@@ -44,14 +51,21 @@ class FeedHeader extends Component {
 		return null;
 	};
 
+	markAllAsSeen = () => {
+		this.props.requestMarkAllAsSeen( {
+			identifier: this.props.streamKey,
+			feedIds: [ this.props.feed.feed_ID ],
+			feedUrls: [ this.props.feed.URL ],
+		} );
+	};
+
 	render() {
-		const { site, feed, showBack, translate, following } = this.props;
+		const { site, feed, showBack, translate, following, isEmailBlocked } = this.props;
 		const followerCount = this.getFollowerCount( feed, site );
 		const ownerDisplayName = site && ! site.is_multi_author && site.owner && site.owner.name;
 		const description = getSiteDescription( { site, feed } );
 		const siteTitle = getSiteName( { feed, site } );
 		const siteUrl = getSiteUrl( { feed, site } );
-		const isEmailBlocked = userSettings.getSetting( 'subscription_delivery_email_blocked' );
 		const siteId = site && site.ID;
 
 		const classes = classnames( 'reader-feed-header', {
@@ -59,38 +73,47 @@ class FeedHeader extends Component {
 			'has-back-button': showBack,
 		} );
 
-		const notificationSettings = config.isEnabled( 'reader/new-post-notifications' ) ? (
-			<ReaderSiteNotificationSettings siteId={ siteId } />
-		) : (
-			<ReaderEmailSettings siteId={ siteId } />
-		);
-
 		return (
 			<div className={ classes }>
+				<QueryUserSettings />
 				<div className="reader-feed-header__back-and-follow">
 					{ showBack && <HeaderBack /> }
 					<div className="reader-feed-header__follow">
 						{ followerCount && (
 							<span className="reader-feed-header__follow-count">
-								{' '}
+								{ ' ' }
 								{ translate( '%s follower', '%s followers', {
 									count: followerCount,
 									args: [ this.props.numberFormat( followerCount ) ],
+									comment: '%s is the number of followers. For example: "12,000,000"',
 								} ) }
 							</span>
 						) }
 						<div className="reader-feed-header__follow-and-settings">
-							{ feed &&
-								! feed.is_error && (
-									<div className="reader-feed-header__follow-button">
-										<ReaderFollowButton siteUrl={ feed.feed_URL } iconSize={ 24 } />
-									</div>
-								) }
-							{ site &&
-								following &&
-								! isEmailBlocked && (
-									<div className="reader-feed-header__email-settings">{ notificationSettings }</div>
-								) }
+							{ feed && ! feed.is_error && (
+								<div className="reader-feed-header__follow-button">
+									<ReaderFollowButton siteUrl={ feed.feed_URL } iconSize={ 24 } />
+								</div>
+							) }
+
+							{ site && following && ! isEmailBlocked && (
+								<div className="reader-feed-header__email-settings">
+									<ReaderSiteNotificationSettings siteId={ siteId } />
+								</div>
+							) }
+
+							{ config.isEnabled( 'reader/seen-posts' ) && feed && (
+								<button
+									onClick={ this.markAllAsSeen }
+									className="reader-feed-header__seen-button"
+									disabled={ feed.unseen_count === 0 }
+								>
+									<Gridicon icon="visible" size={ 18 } />
+									<span title={ translate( 'Mark all as seen' ) }>
+										{ translate( 'Mark all as seen' ) }
+									</span>
+								</button>
+							) }
 						</div>
 					</div>
 				</div>
@@ -111,16 +134,15 @@ class FeedHeader extends Component {
 					</div>
 					<div className="reader-feed-header__details">
 						<span className="reader-feed-header__description">{ description }</span>
-						{ ownerDisplayName &&
-							! isAuthorNameBlacklisted( ownerDisplayName ) && (
-								<span className="reader-feed-header__byline">
-									{ translate( 'by %(author)s', {
-										args: {
-											author: ownerDisplayName,
-										},
-									} ) }
-								</span>
-							) }
+						{ ownerDisplayName && ! isAuthorNameBlocked( ownerDisplayName ) && (
+							<span className="reader-feed-header__byline">
+								{ translate( 'by %(author)s', {
+									args: {
+										author: ownerDisplayName,
+									},
+								} ) }
+							</span>
+						) }
 					</div>
 				</Card>
 			</div>
@@ -128,6 +150,10 @@ class FeedHeader extends Component {
 	}
 }
 
-export default connect( ( state, ownProps ) => ( {
-	following: ownProps.feed && isFollowing( state, { feedUrl: ownProps.feed.feed_URL } ),
-} ) )( localize( FeedHeader ) );
+export default connect(
+	( state, ownProps ) => ( {
+		following: ownProps.feed && isFollowing( state, { feedUrl: ownProps.feed.feed_URL } ),
+		isEmailBlocked: getUserSetting( state, 'subscription_delivery_email_blocked' ),
+	} ),
+	{ requestMarkAllAsSeen }
+)( localize( FeedHeader ) );

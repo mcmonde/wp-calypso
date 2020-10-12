@@ -1,12 +1,9 @@
-$accordion-padding: 16px;
 $accordion-subtitle-height: 16px;
-$accordion-background-collapsed: $white; // same as body
-$accordion-background-hover: lighten( $gray, 35% );
-$accordion-background-expanded: $white;
+$accordion-background-collapsed: var( --color-surface ); // same as body
+$accordion-background-expanded: var( --color-surface );
 
 .accordion {
-	box-shadow: 0 -1px 0 lighten( $gray, 26% ),
-		0 1px 0 lighten( $gray, 26% );
+	box-shadow: 0 -1px 0 var( --color-neutral-5 ), 0 1px 0 var( --color-neutral-5 );
 	margin-top: 1px;
 	position: relative;
 }
@@ -22,32 +19,32 @@ $accordion-background-expanded: $white;
 	margin: 0;
 	padding: $accordion-padding;
 	padding-right: ( $accordion-padding + 22px );
-	color: $gray-dark;
-	background-color: $accordion-background-collapsed;
+	color: var( --color-neutral-70 );
+	background-color: var( --color-surface );
 	text-align: left;
 	transition: all 150ms ease-in;
 
 	&:hover {
-		background-color: $accordion-background-hover;
+		background-color: var( --color-neutral-0 );
 
 		.accordion__title {
-			color: $blue-medium;
+			color: var( --color-accent );
 		}
 
 		.accordion__arrow {
-			color: $blue-medium;
+			color: var( --color-accent );
 		}
 	}
 
 	.accordion__arrow {
 		position: absolute;
-			top: 50%;
-			right: ( $accordion-padding - 4px );
+		top: 50%;
+		right: ( $accordion-padding - 4px );
 		transform: translateY( -50% );
-		color: $gray-darken-10;
+		color: var( --color-neutral-40 );
 		height: 24px;
 		.gridicon {
-			transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275), color 0.2s ease-in;
+			transition: transform 0.15s cubic-bezier( 0.175, 0.885, 0.32, 1.275 ), color 0.2s ease-in;
 		}
 	}
 
@@ -58,9 +55,8 @@ $accordion-background-expanded: $white;
 }
 
 .accordion.is-expanded {
-
 	.accordion__toggle {
-		background-color: $accordion-background-expanded;
+		background-color: var( --color-surface );
 
 		.accordion__arrow {
 			.gridicon {
@@ -76,9 +72,9 @@ $accordion-background-expanded: $white;
 
 .accordion__icon {
 	position: absolute;
-		left: $accordion-padding;
-		top: 50%;
-		transform: translateY( -50% );
+	left: $accordion-padding;
+	top: 50%;
+	transform: translateY( -50% );
 	margin-top: 3px;
 
 	.gridicon {
@@ -90,8 +86,8 @@ $accordion-background-expanded: $white;
 .accordion__title,
 .accordion__subtitle {
 	display: block;
-	font-size: 13px;
-	font-weight: 500;
+	font-size: $font-body-small;
+	font-weight: 600;
 	line-height: $accordion-subtitle-height;
 	transition: all 150ms ease-in;
 
@@ -105,8 +101,8 @@ $accordion-background-expanded: $white;
 }
 
 .accordion__subtitle {
-	font-size: 11px;
-	color: $gray-text-min;
+	font-size: $font-body-extra-small;
+	color: var( --color-text-subtle );
 	font-weight: 400;
 	white-space: nowrap;
 	overflow: hidden;
@@ -116,26 +112,26 @@ $accordion-background-expanded: $white;
 
 .accordion:not( .is-expanded ) .accordion__toggle .accordion__subtitle {
 	&::after {
-		@include long-content-fade( $color: $accordion-background-collapsed );
+		@include long-content-fade( $color: var( --color-surface-rgb ) );
 	}
 }
 
 .accordion:not( .is-expanded ) .accordion__toggle:hover .accordion__subtitle {
 	&::after {
-		@include long-content-fade( $color: $accordion-background-hover );
+		@include long-content-fade( $color: var( --color-neutral-0-rgb ) );
 	}
 }
 
 .accordion.is-expanded .accordion__subtitle {
 	&::after {
-		@include long-content-fade( $color: $accordion-background-expanded );
+		@include long-content-fade( $color: var( --color-surface-rgb ) );
 	}
 }
 
 .accordion__content {
 	overflow: hidden;
 	height: 0;
-	background-color: $accordion-background-expanded;
+	background-color: var( --color-surface );
 }
 
 .accordion.is-expanded .accordion__content {
@@ -156,19 +152,19 @@ $accordion-background-expanded: $white;
 
 .accordion__status {
 	position: absolute;
-		right: ( $accordion-padding + 20px + 4px );
-		top: 50%;
+	right: ( $accordion-padding + 20px + 4px );
+	top: 50%;
 	transform: translateY( -50% );
 	padding: 4px;
 
 	&::before {
 		content: '';
 		position: absolute;
-			top: 4px;
-			left: 4px;
+		top: 4px;
+		left: 4px;
 		width: 14px;
 		height: 14px;
-		background-color: $white;
+		background-color: var( --color-surface );
 		border-radius: 50%;
 	}
 
@@ -181,26 +177,14 @@ $accordion-background-expanded: $white;
 	}
 
 	&.is-warning {
-		color: $alert-yellow;
-
-		&:hover {
-			color: lighten( $alert-yellow, 5% );
-		}
+		color: var( --color-warning-40 );
 	}
 
 	&.is-error {
-		color: $alert-red;
-
-		&:hover {
-			color: lighten( $alert-red, 5% );
-		}
+		color: var( --color-error-40 );
 	}
 
 	&.is-info {
-		color: $blue-wordpress;
-
-		&:hover {
-			color: lighten( $blue-wordpress, 5% );
-		}
+		color: var( --color-neutral-40 );
 	}
 }

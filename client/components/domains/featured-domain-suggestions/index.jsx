@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -12,26 +10,38 @@ import { pick } from 'lodash';
 /**
  * Internal dependencies
  */
-import FeaturedDomainSuggestionsPlaceholder from 'components/domains/featured-domain-suggestions/placeholder';
+import FeaturedDomainSuggestionsPlaceholder from './placeholder';
 import DomainRegistrationSuggestion from 'components/domains/domain-registration-suggestion';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 export class FeaturedDomainSuggestions extends Component {
 	static propTypes = {
 		cart: PropTypes.object,
+		fetchAlgo: PropTypes.string,
 		isSignupStep: PropTypes.bool,
 		primarySuggestion: PropTypes.object,
+		railcarId: PropTypes.string,
 		secondarySuggestion: PropTypes.object,
 		showPlaceholders: PropTypes.bool,
+		pendingCheckSuggestion: PropTypes.object,
+		unavailableDomains: PropTypes.array,
 	};
 
 	getChildProps() {
 		const childKeys = [
 			'cart',
-			'isSignupStep',
-			'selectedSite',
+			'isDomainOnly',
 			'domainsWithPlansOnly',
-			'query',
+			'isSignupStep',
 			'onButtonClick',
+			'query',
+			'selectedSite',
+			'pendingCheckSuggestion',
+			'unavailableDomains',
 		];
 		return pick( this.props, childKeys );
 	}
@@ -79,6 +89,10 @@ export class FeaturedDomainSuggestions extends Component {
 		} );
 	}
 
+	getFetchAlgorithm( suggestion ) {
+		return suggestion.fetch_algo ? suggestion.fetch_algo : this.props.fetchAlgo;
+	}
+
 	hasMatchReasons() {
 		const { primarySuggestion = {}, secondarySuggestion = {} } = this.props;
 		return (
@@ -101,14 +115,27 @@ export class FeaturedDomainSuggestions extends Component {
 					<DomainRegistrationSuggestion
 						suggestion={ primarySuggestion }
 						isFeatured
+						railcarId={ this.props.railcarId + '-0' }
+						isSignupStep={ this.props.isSignupStep }
+						uiPosition={ 0 }
+						premiumDomain={ this.props.premiumDomains[ primarySuggestion.domain_name ] }
+						fetchAlgo={ this.getFetchAlgorithm( primarySuggestion ) }
+						buttonStyles={ { primary: true } }
 						{ ...childProps }
+						isEligibleVariantForDomainTest={ this.props.isEligibleVariantForDomainTest }
 					/>
 				) }
 				{ secondarySuggestion && (
 					<DomainRegistrationSuggestion
 						suggestion={ secondarySuggestion }
 						isFeatured
+						railcarId={ this.props.railcarId + '-1' }
+						isSignupStep={ this.props.isSignupStep }
+						uiPosition={ 1 }
+						premiumDomain={ this.props.premiumDomains[ secondarySuggestion.domain_name ] }
+						fetchAlgo={ this.getFetchAlgorithm( secondarySuggestion ) }
 						{ ...childProps }
+						isEligibleVariantForDomainTest={ this.props.isEligibleVariantForDomainTest }
 					/>
 				) }
 			</div>

@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -11,7 +9,7 @@ import { find } from 'lodash';
 /**
  * Internal dependencies
  */
-import contextTypes from '../context-types';
+import { contextTypes } from '../context-types';
 
 export default class Tour extends Component {
 	static propTypes = {
@@ -27,7 +25,7 @@ export default class Tour extends Component {
 		const { children } = this.props;
 		const { step } = this.context;
 		const nextStep = Array.isArray( children )
-			? find( children, stepComponent => stepComponent.props.name === step )
+			? find( children, ( stepComponent ) => stepComponent.props.name === step )
 			: children;
 
 		return nextStep || null;

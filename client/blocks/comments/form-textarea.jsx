@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -8,27 +6,33 @@ import React from 'react';
 /**
  * Internal dependencies
  */
+import FormTextarea from 'components/forms/form-textarea';
 import withUserMentions from 'blocks/user-mentions/index';
+import withPasteToLink from 'lib/paste-to-link';
 import { isEnabled } from 'config';
 
-// @todo Move ref forwarding to the HOC
+/* eslint-disable jsx-a11y/no-autofocus */
 const PostCommentFormTextarea = React.forwardRef( ( props, ref ) => (
-	<textarea
+	<FormTextarea
 		className="comments__form-textarea"
 		value={ props.value }
 		placeholder={ props.placeholder }
-		ref={ ref }
+		forwardedRef={ ref }
 		onKeyUp={ props.onKeyUp }
 		onKeyDown={ props.onKeyDown }
 		onFocus={ props.onFocus }
 		onBlur={ props.onBlur }
 		onChange={ props.onChange }
+		onPaste={ props.onPaste }
+		autoFocus={ props.enableAutoFocus }
 	/>
 ) );
+/* eslint-enable jsx-a11y/no-autofocus */
 
-let component = PostCommentFormTextarea;
+let component = withPasteToLink( PostCommentFormTextarea );
+
 if ( isEnabled( 'reader/user-mention-suggestions' ) ) {
-	component = withUserMentions( PostCommentFormTextarea );
+	component = withUserMentions( component );
 }
 
 export default component;

@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External Dependencies
  */
@@ -6,23 +5,25 @@ import PropTypes from 'prop-types';
 import React, { PureComponent } from 'react';
 import ReactDom from 'react-dom';
 import classnames from 'classnames';
-import url from 'url';
 import { localize } from 'i18n-calypso';
 import closest from 'component-closest';
-import { get } from 'lodash';
+import { get, forEach, uniqBy } from 'lodash';
 import { connect } from 'react-redux';
 
 /**
  * Internal Dependencies
  */
-import Card from 'components/card';
+import { Card } from '@automattic/components';
 import ReaderAvatar from 'blocks/reader-avatar';
 import { getSite } from 'state/reader/sites/selectors';
 import { getFeed } from 'state/reader/feeds/selectors';
 import QueryReaderSite from 'components/data/query-reader-site';
 import QueryReaderFeed from 'components/data/query-reader-feed';
 import Emojify from 'components/emojify';
+import { getUrlParts } from 'lib/url';
+import config from 'config';
 
+/* eslint-disable wpcalypso/jsx-classname-namespace */
 class CrossPost extends PureComponent {
 	static propTypes = {
 		post: PropTypes.object.isRequired,
@@ -36,7 +37,7 @@ class CrossPost extends PureComponent {
 		feed: PropTypes.object,
 	};
 
-	handleTitleClick = event => {
+	handleTitleClick = ( event ) => {
 		// modified clicks should let the default action open a new tab/window
 		if ( event.button > 0 || event.metaKey || event.controlKey || event.shiftKey || event.altKey ) {
 			return;
@@ -45,23 +46,23 @@ class CrossPost extends PureComponent {
 		this.props.handleClick( this.props.xMetadata );
 	};
 
-	handleCardClick = event => {
+	handleCardClick = ( event ) => {
 		const rootNode = ReactDom.findDOMNode( this );
 
-		if ( closest( event.target, '.should-scroll', true, rootNode ) ) {
-			setTimeout( function() {
+		if ( closest( event.target, '.should-scroll', rootNode ) ) {
+			setTimeout( function () {
 				window.scrollTo( 0, 0 );
 			}, 100 );
 		}
 
-		if ( closest( event.target, '.ignore-click', true, rootNode ) ) {
+		if ( closest( event.target, '.ignore-click', rootNode ) ) {
 			return;
 		}
 
 		// ignore clicks on anchors inside inline content
 		if (
-			closest( event.target, 'a', true, rootNode ) &&
-			closest( event.target, '.reader__x-post', true, rootNode )
+			closest( event.target, 'a', rootNode ) &&
+			closest( event.target, '.reader__x-post', rootNode )
 		) {
 			return;
 		}
@@ -79,11 +80,11 @@ class CrossPost extends PureComponent {
 		}
 	};
 
-	getSiteNameFromURL = siteURL => {
-		return siteURL && `+${ url.parse( siteURL ).hostname.split( '.' )[ 0 ] }`;
+	getSiteNameFromURL = ( siteURL ) => {
+		return siteURL && `+${ getUrlParts( siteURL ).hostname.split( '.' )[ 0 ] }`;
 	};
 
-	getDescription = authorFirstName => {
+	getDescription = ( authorFirstName ) => {
 		let label;
 		const siteName = this.getSiteNameFromURL( this.props.xMetadata.siteURL );
 		const isCrossComment = !! this.props.xMetadata.commentURL;
@@ -122,27 +123,37 @@ class CrossPost extends PureComponent {
 	};
 
 	getXPostedToContent = () => {
-		let xPostedToList = this.props.xPostedTo;
-		if ( ! xPostedToList || xPostedToList.length === 0 ) {
-			xPostedToList = [
-				{
-					siteURL: this.props.post.site_URL,
-					siteName: this.getSiteNameFromURL( this.props.post.site_URL ),
-				},
-			];
+		const { postKey, translate } = this.props;
+
+		const xPostedToList = [
+			{
+				siteURL: this.props.post.site_URL,
+				siteName: this.getSiteNameFromURL( this.props.post.site_URL ),
+			},
+		];
+
+		// Add any other x-post URLs we know about
+		if ( postKey.xPostUrls ) {
+			forEach( postKey.xPostUrls, ( xPostUrl ) => {
+				xPostedToList.push( {
+					siteURL: xPostUrl,
+					siteName: this.getSiteNameFromURL( xPostUrl ),
+				} );
+			} );
 		}
-		return xPostedToList.map( ( xPostedTo, index, array ) => {
+
+		return uniqBy( xPostedToList, 'siteName' ).map( ( xPostedTo, index, array ) => {
 			return (
 				<span className="reader__x-post-site" key={ xPostedTo.siteURL + '-' + index }>
 					{ xPostedTo.siteName }
 					{ index + 2 < array.length && <span>, </span> }
 					{ index + 2 === array.length && (
 						<span>
-							{' '}
-							{ this.props.translate( 'and', {
+							{ ' ' }
+							{ translate( 'and', {
 								comment:
 									'last conjunction in a list of blognames: (blog1, blog2,) blog3 _and_ blog4',
-							} ) }{' '}
+							} ) }{ ' ' }
 						</span>
 					) }
 				</span>
@@ -156,10 +167,12 @@ class CrossPost extends PureComponent {
 		const siteIcon = get( site, 'icon.img' );
 		const feedIcon = get( feed, 'image' );
 
+		const isSeen = config.isEnabled( 'reader/seen-posts' ) && !! post.is_seen;
 		const articleClasses = classnames( {
 			reader__card: true,
 			'is-x-post': true,
 			'is-selected': this.props.isSelected,
+			'is-seen': isSeen,
 		} );
 
 		// Remove the x-post text from the title.
@@ -194,7 +207,7 @@ class CrossPost extends PureComponent {
 							</a>
 						</h1>
 					) }
-					<Emojify>{ this.getDescription( post.author.first_name ) }</Emojify>
+					{ post.author && <Emojify>{ this.getDescription( post.author.first_name ) }</Emojify> }
 				</div>
 				{ feedId && <QueryReaderFeed feedId={ +feedId } includeMeta={ false } /> }
 				{ siteId && <QueryReaderSite siteId={ +siteId } includeMeta={ false } /> }
@@ -202,6 +215,7 @@ class CrossPost extends PureComponent {
 		);
 	}
 }
+/* eslint-enable wpcalypso/jsx-classname-namespace */
 
 export default connect( ( state, ownProps ) => {
 	const { feedId, blogId } = ownProps.postKey;

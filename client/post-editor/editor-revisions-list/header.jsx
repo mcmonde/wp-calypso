@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -11,11 +9,13 @@ import { localize } from 'i18n-calypso';
 const EditorRevisionsListHeader = ( { numRevisions, translate } ) => {
 	return (
 		<div className="editor-revisions-list__header">
-			{ !! numRevisions &&
-				translate( '%(revisions)d revision', '%(revisions)d revisions', {
-					count: numRevisions,
-					args: { revisions: numRevisions },
-				} ) }
+			<span className="editor-revisions-list__count">
+				{ !! numRevisions &&
+					translate( '%(revisions)d revision', '%(revisions)d revisions', {
+						count: numRevisions,
+						args: { revisions: numRevisions },
+					} ) }
+			</span>
 		</div>
 	);
 };

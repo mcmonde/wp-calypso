@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  *
@@ -15,7 +13,7 @@ import { localize } from 'i18n-calypso';
 import PopoverMenuItem from 'components/popover/menu-item';
 import { bumpStat as bumpAnalyticsStat } from 'state/analytics/actions';
 import { bumpStatGenerator } from './utils';
-import { canCurrentUser } from 'state/selectors';
+import canCurrentUser from 'state/selectors/can-current-user';
 import { getPost } from 'state/posts/selectors';
 import { restorePost } from 'state/posts/actions';
 import { getCurrentUserId } from 'state/current-user/selectors';
@@ -91,6 +89,8 @@ const mergeProps = ( stateProps, dispatchProps, ownProps ) => {
 	return Object.assign( {}, ownProps, stateProps, dispatchProps, { bumpStat } );
 };
 
-export default connect( mapStateToProps, mapDispatchToProps, mergeProps )(
-	localize( PostActionsEllipsisMenuRestore )
-);
+export default connect(
+	mapStateToProps,
+	mapDispatchToProps,
+	mergeProps
+)( localize( PostActionsEllipsisMenuRestore ) );

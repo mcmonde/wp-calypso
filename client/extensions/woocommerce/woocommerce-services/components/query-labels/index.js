@@ -11,7 +11,11 @@ import { bindActionCreators } from 'redux';
  */
 import QueryLabelSettings from 'woocommerce/woocommerce-services/components/query-label-settings';
 import QueryPackages from 'woocommerce/woocommerce-services/components/query-packages';
-import { fetchLabelsData, fetchLabelsStatus } from 'woocommerce/woocommerce-services/state/shipping-label/actions';
+import QueryLocations from 'woocommerce/components/query-locations';
+import {
+	fetchLabelsData,
+	fetchLabelsStatus,
+} from 'woocommerce/woocommerce-services/state/shipping-label/actions';
 import {
 	hasRefreshedLabelStatus,
 	isError,
@@ -29,11 +33,11 @@ class QueryLabels extends Component {
 		}
 	}
 
-	componentWillMount() {
+	UNSAFE_componentWillMount() {
 		this.fetch( this.props );
 	}
 
-	componentWillReceiveProps( newProps ) {
+	UNSAFE_componentWillReceiveProps( newProps ) {
 		this.fetch( newProps );
 	}
 
@@ -44,6 +48,7 @@ class QueryLabels extends Component {
 			<div>
 				<QueryLabelSettings siteId={ siteId } />
 				<QueryPackages siteId={ siteId } />
+				<QueryLocations siteId={ siteId } />
 			</div>
 		);
 	}
@@ -61,8 +66,12 @@ export default connect(
 		error: isError( state, orderId ),
 		refreshedLabelStatus: hasRefreshedLabelStatus( state, orderId ),
 	} ),
-	( dispatch ) => bindActionCreators( {
-		fetchLabelsData,
-		fetchLabelsStatus,
-	}, dispatch )
+	( dispatch ) =>
+		bindActionCreators(
+			{
+				fetchLabelsData,
+				fetchLabelsStatus,
+			},
+			dispatch
+		)
 )( QueryLabels );

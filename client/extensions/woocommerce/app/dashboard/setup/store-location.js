@@ -1,9 +1,6 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { bindActionCreators } from 'redux';
@@ -21,8 +18,7 @@ import {
 } from 'woocommerce/state/sites/settings/general/selectors';
 import { bumpStat } from 'woocommerce/lib/analytics';
 import { errorNotice } from 'state/notices/actions';
-import { getContactDetailsCache } from 'state/selectors';
-import { isStoreManagementSupportedInCalypsoForCountry } from 'woocommerce/lib/countries';
+import getContactDetailsCache from 'state/selectors/get-contact-details-cache';
 import {
 	areLocationsLoaded,
 	getAllCountries,
@@ -37,10 +33,8 @@ import { doInitialSetup } from 'woocommerce/state/sites/settings/actions';
 import QueryContactDetailsCache from 'components/data/query-contact-details-cache';
 import QueryLocations from 'woocommerce/components/query-locations';
 import QuerySettingsGeneral from 'woocommerce/components/query-settings-general';
-import userFactory from 'lib/user';
+import user from 'lib/user';
 import VerifyEmailDialog from 'components/email-verification/email-verification-dialog';
-
-const user = userFactory();
 
 class StoreLocationSetupView extends Component {
 	constructor( props ) {
@@ -90,7 +84,7 @@ class StoreLocationSetupView extends Component {
 		} ),
 	};
 
-	componentWillReceiveProps = newProps => {
+	UNSAFE_componentWillReceiveProps = ( newProps ) => {
 		const { contactDetails, storeLocation } = newProps;
 
 		if ( ! this.state.userBeganEditing ) {
@@ -118,7 +112,7 @@ class StoreLocationSetupView extends Component {
 		}
 	};
 
-	getAddressFromContactDetails = contactDetails => {
+	getAddressFromContactDetails = ( contactDetails ) => {
 		const { address1, address2, city, state, postalCode, countryCode } = contactDetails;
 		return {
 			street: address1 || '',
@@ -130,7 +124,7 @@ class StoreLocationSetupView extends Component {
 		};
 	};
 
-	onChange = event => {
+	onChange = ( event ) => {
 		const addressKey = event.target.name;
 		const newValue = event.target.value;
 
@@ -151,12 +145,10 @@ class StoreLocationSetupView extends Component {
 		this.setState( { address, userBeganEditing: true } );
 	};
 
-	onNext = event => {
+	onNext = ( event ) => {
 		const {
-			adminURL,
 			countries,
 			currentUserEmailVerified,
-			onRequestRedirect,
 			pushDefaultsForCountry,
 			siteId,
 			translate,
@@ -185,14 +177,6 @@ class StoreLocationSetupView extends Component {
 
 			// mc stat 32 char max :P
 			this.props.bumpStat( 'calypso_woo_store_setup_country', this.state.address.country );
-
-			// If we don't support a calypso experience yet for this country, let
-			// them complete setup with the wp-admin WooCommerce wizard
-			if ( ! isStoreManagementSupportedInCalypsoForCountry( this.state.address.country ) ) {
-				const storeSetupURL =
-					adminURL + 'admin.php?page=wc-setup&step=store_setup&activate_error=false&from=calypso';
-				onRequestRedirect( storeSetupURL );
-			}
 
 			return setSetStoreAddressDuringInitialSetup( siteId, true );
 		};
@@ -251,7 +235,7 @@ class StoreLocationSetupView extends Component {
 		}
 
 		const requiredAddressFields = pick( this.state.address, requiredKeys );
-		const everyRequiredFieldHasAValue = every( requiredAddressFields, field => {
+		const everyRequiredFieldHasAValue = every( requiredAddressFields, ( field ) => {
 			return ! isEmpty( trim( field ) );
 		} );
 		const submitDisabled = this.state.isSaving || ! everyRequiredFieldHasAValue;
@@ -288,9 +272,9 @@ class StoreLocationSetupView extends Component {
 	closeVerifyEmailDialog = () => {
 		this.setState( { showEmailVerificationDialog: false } );
 		// Re-fetch the user to see if they actually took care of things
-		user.fetch();
+		user().fetch();
 		this.setState( { isFetchingUser: true } );
-		user.once( 'change', () => this.setState( { isFetchingUser: false } ) );
+		user().once( 'change', () => this.setState( { isFetchingUser: false } ) );
 	};
 
 	render = () => {

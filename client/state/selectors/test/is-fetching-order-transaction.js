@@ -1,9 +1,7 @@
-/** @format */
-
 /**
  * Internal dependencies
  */
-import { isFetchingOrderTransaction } from 'state/selectors';
+import isFetchingOrderTransaction from 'state/selectors/is-fetching-order-transaction';
 
 describe( 'isFetchingOrderTransaction', () => {
 	const orderId = 123;

@@ -1,19 +1,19 @@
-/** @format */
 /**
  * External dependencies
  */
 import React, { Component, Fragment } from 'react';
 import PropTypes from 'prop-types';
 import classnames from 'classnames';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 import { localize } from 'i18n-calypso';
 import { every, find, findIndex, get, isNaN, noop } from 'lodash';
+import formatCurrency from '@automattic/format-currency';
 
 /**
  * Internal dependencies
  */
-import Button from 'components/button';
-import formatCurrency from 'lib/format-currency';
+import { Button, ScreenReaderText } from '@automattic/components';
+import FormLabel from 'components/forms/form-label';
 import FormSettingExplanation from 'components/forms/form-setting-explanation';
 import FormTextInput from 'components/forms/form-text-input';
 import { getCurrencyFormatDecimal } from 'woocommerce/lib/currency';
@@ -33,7 +33,6 @@ import {
 import OrderAddItems from './add-items';
 import OrderLineItem from './line-item';
 import OrderTotalRow from './row-total';
-import ScreenReaderText from 'components/screen-reader-text';
 import Table from 'woocommerce/components/table';
 import TableRow from 'woocommerce/components/table/table-row';
 import TableItem from 'woocommerce/components/table/table-item';
@@ -99,7 +98,7 @@ class OrderDetailsTable extends Component {
 		);
 	};
 
-	onChange = event => {
+	onChange = ( event ) => {
 		const { order } = this.props;
 		// Name is `quantity-x`, where x is the ID of the item
 		let id = event.target.name.split( '-' )[ 1 ];
@@ -119,7 +118,7 @@ class OrderDetailsTable extends Component {
 		this.props.onChange( { line_items: { [ index ]: newItem } } );
 	};
 
-	onShippingChange = event => {
+	onShippingChange = ( event ) => {
 		const { order } = this.props;
 		const shippingLine = order.shipping_lines[ 0 ] || { method_id: 'manual' };
 		const total = event.target.value;
@@ -146,17 +145,17 @@ class OrderDetailsTable extends Component {
 		}
 	};
 
-	renderQuantity = item => {
+	renderQuantity = ( item ) => {
 		const { isEditing, translate } = this.props;
 		const inputId = `quantity-${ item.id }`;
 		if ( isEditing ) {
 			return (
 				<Fragment>
-					<label htmlFor={ inputId }>
+					<FormLabel htmlFor={ inputId }>
 						<ScreenReaderText>
 							{ translate( 'Quantity of %(item)s', { args: { item: item.name } } ) }
 						</ScreenReaderText>
-					</label>
+					</FormLabel>
 
 					<FormTextInput
 						type="number"
@@ -172,7 +171,7 @@ class OrderDetailsTable extends Component {
 		return item.quantity;
 	};
 
-	renderName = item => {
+	renderName = ( item ) => {
 		const { isEditing, site } = this.props;
 		if ( isEditing ) {
 			return <span className="order-details__item-link">{ item.name }</span>;
@@ -208,7 +207,7 @@ class OrderDetailsTable extends Component {
 		);
 	};
 
-	renderOrderItem = item => {
+	renderOrderItem = ( item ) => {
 		const { isEditing, order, site } = this.props;
 		const deleteButton = this.renderDeleteButton( item, 'line_items' );
 		return (
@@ -225,7 +224,7 @@ class OrderDetailsTable extends Component {
 		);
 	};
 
-	renderOrderFee = item => {
+	renderOrderFee = ( item ) => {
 		const { order, translate } = this.props;
 		const tax = getOrderFeeTax( order, item.id );
 		if ( item.total <= 0 ) {

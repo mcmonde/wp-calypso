@@ -1,14 +1,18 @@
-/** @format */
+/**
+ * Note: this file is imported by `client` and `test/e2e` tests. `test/e2e` do not have the config
+ * required to make aliased imports work (e.g. `import * from 'lib/'). As such, we must use relative
+ * paths here (e.g. `import * from '../../lib/`)
+ */
+
 export default {
-	multiyearSubscriptions: {
-		datestamp: '20180417',
+	cartNudgeUpdateToPremium: {
+		datestamp: '20180917',
 		variations: {
-			show: 50,
-			hide: 50,
+			test: 50,
+			control: 50,
 		},
-		defaultVariation: 'hide',
+		defaultVariation: 'control',
 		allowExistingUsers: true,
-		localeTargets: 'any',
 	},
 	springSale30PercentOff: {
 		datestamp: '20180413',
@@ -19,34 +23,7 @@ export default {
 		defaultVariation: 'control',
 		allowExistingUsers: true,
 	},
-	signupAtomicStoreVsPressable: {
-		datestamp: '20171101',
-		variations: {
-			atomic: 99,
-			pressable: 1,
-		},
-		defaultVariation: 'atomic',
-		allowExistingUsers: true,
-		localeTargets: 'any',
-	},
-	businessPlanDescriptionAT: {
-		datestamp: '20170605',
-		variations: {
-			original: 50,
-			pluginsAndThemes: 50,
-		},
-		defaultVariation: 'original',
-	},
 	ATPromptOnCancel: {
-		datestamp: '20170515',
-		variations: {
-			hide: 20,
-			show: 80,
-		},
-		defaultVariation: 'hide',
-		allowExistingUsers: true,
-	},
-	ATUpgradeOnCancel: {
 		datestamp: '20170515',
 		variations: {
 			hide: 20,
@@ -65,47 +42,190 @@ export default {
 		allowExistingUsers: true,
 		localeTargets: 'any',
 	},
-	checklistThankYouForFreeUser: {
-		datestamp: '20171204',
+	builderReferralStatsNudge: {
+		datestamp: '20181218',
 		variations: {
-			show: 50,
-			hide: 50,
+			builderReferralBanner: 25,
+			googleMyBusinessBanner: 75,
 		},
-		defaultVariation: 'hide',
-		allowExistingUsers: true,
+		defaultVariation: 'googleMyBusinessBanner',
 	},
-	checklistThankYouForPaidUser: {
-		datestamp: '20171204',
+	builderReferralThemesBanner: {
+		datestamp: '20181218',
 		variations: {
-			show: 50,
-			hide: 50,
-		},
-		defaultVariation: 'hide',
-		allowExistingUsers: true,
-	},
-	mobilePlansTablesOnSignup: {
-		datestamp: '20180330',
-		variations: {
-			original: 50,
-			vertical: 50,
-		},
-		defaultVariation: 'original',
-		allowExistingUsers: true,
-	},
-	jetpackSignupGoogleTop: {
-		datestamp: '20180427',
-		variations: {
-			original: 50,
-			top: 50,
+			builderReferralBanner: 25,
+			original: 75,
 		},
 		defaultVariation: 'original',
 	},
-	signupDomainStrikethruPrice: {
-		datestamp: '20180507',
+	pageBuilderMVP: {
+		datestamp: '20190419',
 		variations: {
-			enabled: 50,
-			disabled: 50,
+			control: 100,
+			test: 0,
 		},
-		defaultVariation: 'disabled',
+		defaultVariation: 'control',
+		allowExistingUsers: true,
+	},
+	conciergeUpsellDial: {
+		//this test is used to dial down the upsell offer
+		datestamp: '20200910',
+		variations: {
+			offer: 75,
+			noOffer: 25,
+		},
+		defaultVariation: 'noOffer',
+		allowExistingUsers: true,
+	},
+	skippableDomainStep: {
+		datestamp: '20290717',
+		variations: {
+			skippable: 0,
+			notSkippable: 100,
+		},
+		defaultVariation: 'notSkippable',
+		allowExistingUsers: true,
+	},
+	passwordlessSignup: {
+		datestamp: '20291029',
+		variations: {
+			passwordless: 0,
+			default: 100,
+		},
+		defaultVariation: 'default',
+	},
+	domainStepCopyUpdates: {
+		datestamp: '20191121',
+		variations: {
+			variantShowUpdates: 100,
+			control: 0,
+		},
+		defaultVariation: 'variantShowUpdates',
+		allowExistingUsers: true,
+	},
+	newSiteGutenbergOnboarding: {
+		datestamp: '20200818',
+		variations: {
+			gutenberg: 0,
+			control: 100,
+		},
+		defaultVariation: 'control',
+		allowExistingUsers: true,
+		localeTargets: [ 'en' ],
+		countryCodeTargets: [
+			'AE',
+			'AL',
+			'AR',
+			'AU',
+			'BD',
+			'BR',
+			'CN',
+			'CO',
+			'DE',
+			'EG',
+			'ES',
+			'ET',
+			'FI',
+			'FR',
+			'GB',
+			'GE',
+			'GH',
+			'GR',
+			'HK',
+			'HR',
+			'ID',
+			'IE',
+			'IL',
+			'IN',
+			'IT',
+			'JM',
+			'JP',
+			'KE',
+			'KH',
+			'KR',
+			'LK',
+			'MM',
+			'MX',
+			'MV',
+			'MY',
+			'NG',
+			'NL',
+			'NP',
+			'NP',
+			'NZ',
+			'PH',
+			'PK',
+			'PL',
+			'QA',
+			'RO',
+			'RS',
+			'RU',
+			'SA',
+			'SE',
+			'SG',
+			'TH',
+			'TR',
+			'TZ',
+			'UA',
+			'UG',
+			'VN',
+			'ZA',
+		],
+	},
+	offerResetFlow: {
+		datestamp: '20200916',
+		variations: {
+			showOfferResetFlow: 100,
+			control: 0,
+		},
+		defaultVariation: 'showOfferResetFlow',
+		allowExistingUsers: true,
+	},
+	userlessCheckout: {
+		datestamp: '20210806',
+		variations: {
+			variantUserless: 50,
+			control: 50,
+		},
+		defaultVariation: 'control',
+		allowExistingUsers: false,
+		countryCodeTargets: [ 'US', 'CA' ],
+	},
+	reskinSignupFlow: {
+		datestamp: '20200928',
+		variations: {
+			reskinned: 50,
+			control: 50,
+		},
+		defaultVariation: 'control',
+		allowExistingUsers: false,
+	},
+	existingUsersGutenbergOnboard: {
+		datestamp: '20200911',
+		variations: {
+			gutenberg: 50,
+			control: 50,
+		},
+		defaultVariation: 'control',
+		allowExistingUsers: true,
+		localeTargets: [ 'en' ],
+	},
+	removeUsernameInSignup: {
+		datestamp: '20201002',
+		variations: {
+			variantRemoveUsername: 50,
+			control: 50,
+		},
+		defaultVariation: 'control',
+		allowExistingUsers: false,
+	},
+	oneClickUpsell: {
+		datestamp: '20200922',
+		variations: {
+			test: 50,
+			control: 50,
+		},
+		defaultVariation: 'control',
+		allowExistingUsers: true,
 	},
 };

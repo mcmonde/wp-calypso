@@ -1,26 +1,27 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { localize } from 'i18n-calypso';
-import { noop } from 'lodash';
-import Immutable from 'immutable';
+import { find, noop } from 'lodash';
 
 /**
  * Internal dependencies
  */
-import { getSites } from 'state/selectors';
-import { isRequestingSites } from 'state/sites/selectors';
-import EmptyContentComponent from 'components/empty-content';
+import getSites from 'calypso/state/selectors/get-sites';
+import { isRequestingSites } from 'calypso/state/sites/selectors';
+import EmptyContentComponent from 'calypso/components/empty-content';
 import Blog from './blog';
-import InfiniteList from 'components/infinite-list';
+import InfiniteList from 'calypso/components/infinite-list';
 import Placeholder from './placeholder';
-import config from 'config';
+import config from 'calypso/config';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 const createPlaceholder = () => <Placeholder />;
 
@@ -30,7 +31,7 @@ class BlogsSettings extends Component {
 	static propTypes = {
 		sites: PropTypes.array.isRequired,
 		requestingSites: PropTypes.bool.isRequired,
-		settings: PropTypes.instanceOf( Immutable.List ),
+		settings: PropTypes.array,
 		hasUnsavedChanges: PropTypes.bool.isRequired,
 		onToggle: PropTypes.func.isRequired,
 		onSave: PropTypes.func.isRequired,
@@ -59,6 +60,7 @@ class BlogsSettings extends Component {
 		const renderBlog = ( site, index, disableToggle = false ) => {
 			const onSave = () => this.props.onSave( site.ID );
 			const onSaveToAll = () => this.props.onSaveToAll( site.ID );
+			const blogSettings = find( this.props.settings, { blog_id: site.ID } ) || {};
 
 			return (
 				<Blog
@@ -66,7 +68,7 @@ class BlogsSettings extends Component {
 					siteId={ site.ID }
 					disableToggle={ disableToggle }
 					hasUnsavedChanges={ this.props.hasUnsavedChanges }
-					settings={ this.props.settings.find( settings => settings.get( 'blog_id' ) === site.ID ) }
+					settings={ blogSettings }
 					onToggle={ this.props.onToggle }
 					onSave={ onSave }
 					onSaveToAll={ onSaveToAll }
@@ -93,7 +95,7 @@ class BlogsSettings extends Component {
 	}
 }
 
-const mapStateToProps = state => ( {
+const mapStateToProps = ( state ) => ( {
 	sites: getSites( state ),
 	requestingSites: isRequestingSites( state ),
 } );

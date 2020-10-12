@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -9,7 +7,7 @@ import { translate } from 'i18n-calypso';
  * Internal dependencies
  */
 import { http } from 'state/data-layer/wpcom-http/actions';
-import { dispatchRequestEx } from 'state/data-layer/wpcom-http/utils';
+import { dispatchRequest } from 'state/data-layer/wpcom-http/utils';
 import { updateConciergeBookingStatus } from 'state/concierge/actions';
 import { errorNotice } from 'state/notices/actions';
 import { CONCIERGE_APPOINTMENT_CREATE, CONCIERGE_APPOINTMENT_RESCHEDULE } from 'state/action-types';
@@ -18,12 +16,15 @@ import {
 	CONCIERGE_STATUS_BOOKING,
 	CONCIERGE_STATUS_BOOKING_ERROR,
 	CONCIERGE_ERROR_NO_AVAILABLE_STAFF,
+	CONCIERGE_ERROR_ALREADY_HAS_APPOINTMENT,
 } from 'me/concierge/constants';
 import fromApi from './from-api';
 import toApi from './to-api';
 import { recordTracksEvent, withAnalytics } from 'state/analytics/actions';
 
-export const bookConciergeAppointment = action => {
+import { registerHandlers } from 'state/data-layer/handler-registry';
+
+export const bookConciergeAppointment = ( action ) => {
 	return [
 		updateConciergeBookingStatus( CONCIERGE_STATUS_BOOKING ),
 		http(
@@ -36,6 +37,19 @@ export const bookConciergeAppointment = action => {
 			action
 		),
 	];
+};
+
+export const errorMessage = ( code ) => {
+	switch ( code ) {
+		case CONCIERGE_ERROR_NO_AVAILABLE_STAFF:
+			return translate( 'This session is no longer available. Please select a different time.' );
+		case CONCIERGE_ERROR_ALREADY_HAS_APPOINTMENT:
+			return translate(
+				'You already have an upcoming appointment. A second can not be scheduled yet.'
+			);
+		default:
+			return translate( 'We could not book your appointment. Please try again later.' );
+	}
 };
 
 export const onSuccess = ( { type } ) => {
@@ -56,22 +70,19 @@ export const onError = ( { type }, error ) => {
 			? 'calypso_concierge_appointment_rescheduling_error'
 			: 'calypso_concierge_appointment_booking_error';
 
-	const errorMessage =
-		CONCIERGE_ERROR_NO_AVAILABLE_STAFF === error.code
-			? translate( 'This session is no longer available. Please select a different time.' )
-			: translate( 'We could not book your appointment. Please try again later.' );
-
 	return [
 		withAnalytics(
 			recordTracksEvent( trackEvent ),
 			updateConciergeBookingStatus( CONCIERGE_STATUS_BOOKING_ERROR )
 		),
-		errorNotice( errorMessage ),
+		errorNotice( errorMessage( error.code ) ),
 	];
 };
 
-export default {
+registerHandlers( 'state/data-layer/wpcom/concierge/schedules/appointments/book/index.js', {
 	[ CONCIERGE_APPOINTMENT_CREATE ]: [
-		dispatchRequestEx( { fetch: bookConciergeAppointment, onSuccess, onError, fromApi } ),
+		dispatchRequest( { fetch: bookConciergeAppointment, onSuccess, onError, fromApi } ),
 	],
-};
+} );
+
+export default {};

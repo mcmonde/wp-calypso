@@ -1,47 +1,40 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { localize } from 'i18n-calypso';
-import { isEmpty } from 'lodash';
+import { get, isEmpty } from 'lodash';
 
 /**
  * Internal dependencies
  */
-import { cartItems } from 'lib/cart-values';
+import { domainRegistration } from 'lib/cart-values/cart-items';
 import StepWrapper from 'signup/step-wrapper';
-import SignupActions from 'lib/signup/actions';
-import SiteOrDomainChoice from './choice';
+import { submitSignupStep } from 'state/signup/progress/actions';
 import { getCurrentUserId } from 'state/current-user/selectors';
-// TODO: `design-type-with-store`, `design-type`, and this component could be refactored to reduce redundancy
-import DomainImage from 'signup/steps/design-type-with-store/domain-image';
-import NewSiteImage from 'signup/steps/design-type-with-store/new-site-image';
-import ExistingSite from 'signup/steps/design-type-with-store/existing-site';
-import NavigationLink from 'signup/navigation-link';
 import QueryProductsList from 'components/data/query-products-list';
 import { getAvailableProductsList } from 'state/products-list/selectors';
 import { getDomainProductSlug } from 'lib/domains';
+import SiteOrDomainChoice from './choice';
+import DomainImage from './domain-image';
+import NewSiteImage from './new-site-image';
+import ExistingSiteImage from './existing-site-image';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 class SiteOrDomain extends Component {
 	getDomainName() {
-		const { initialContext: { query }, step } = this.props;
-		let domain,
-			isValidDomain = false;
-
-		if ( query && query.new ) {
-			domain = query.new;
-		} else if ( step && step.domainItem ) {
-			domain = step.domainItem.meta;
-		}
+		const { signupDependencies } = this.props;
+		let isValidDomain = false;
+		const domain = get( signupDependencies, 'domainItem.meta', false );
 
 		if ( domain ) {
 			if ( domain.split( '.' ).length > 1 ) {
 				const productSlug = getDomainProductSlug( domain );
-
 				isValidDomain = !! this.props.productsList[ productSlug ];
 			}
 		}
@@ -58,7 +51,7 @@ class SiteOrDomain extends Component {
 				label: translate( 'New site' ),
 				image: <NewSiteImage />,
 				description: translate(
-					'Choose a theme, customize, and launch your site. Free domain included with all plans.'
+					'Choose a theme, customize, and launch your site. A free domain for one year is included with all plans.'
 				),
 			},
 		];
@@ -67,9 +60,9 @@ class SiteOrDomain extends Component {
 			choices.push( {
 				type: 'existing-site',
 				label: translate( 'Existing WordPress.com site' ),
-				image: <ExistingSite />,
+				image: <ExistingSiteImage />,
 				description: translate(
-					'Use with a site you already started. Free domain included with all plans.'
+					'Use with a site you already started. A free domain for one year is included with all plans.'
 				),
 			} );
 		}
@@ -99,42 +92,24 @@ class SiteOrDomain extends Component {
 		);
 	}
 
-	renderBackLink() {
-		// Hacky way to add back link to /domains
-		return (
-			<div className="site-or-domain__button">
-				<NavigationLink
-					direction="back"
-					flowName={ this.props.flowName }
-					positionInFlow={ 1 }
-					stepName={ this.props.stepName }
-					stepSectionName={ this.props.stepSectionName }
-					backUrl="/domains"
-					signupProgress={ this.props.signupProgress }
-				/>
-			</div>
-		);
-	}
-
 	renderScreen() {
 		return (
 			<div>
 				{ ! this.props.productsLoaded && <QueryProductsList /> }
 				{ this.renderChoices() }
-				{ this.renderBackLink() }
 			</div>
 		);
 	}
 
-	handleClickChoice = designType => {
-		const { stepName, goToStep, goToNextStep } = this.props;
+	submitDomain( designType ) {
+		const { stepName } = this.props;
 
 		const domain = this.getDomainName();
 		const productSlug = getDomainProductSlug( domain );
-		const domainItem = cartItems.domainRegistration( { productSlug, domain } );
+		const domainItem = domainRegistration( { productSlug, domain } );
 		const siteUrl = domain;
 
-		SignupActions.submitSignupStep(
+		this.props.submitSignupStep(
 			{
 				stepName,
 				domainItem,
@@ -143,26 +118,38 @@ class SiteOrDomain extends Component {
 				siteUrl,
 				isPurchasingItem: true,
 			},
-			[],
 			{ designType, domainItem, siteUrl }
 		);
+	}
+
+	submitDomainOnlyChoice() {
+		const { goToStep } = this.props;
+
+		// we can skip the next two steps in the `domain-first` flow if the
+		// user is only purchasing a domain
+		this.props.submitSignupStep( { stepName: 'site-picker', wasSkipped: true } );
+		this.props.submitSignupStep(
+			{ stepName: 'themes', wasSkipped: true },
+			{ themeSlugWithRepo: 'pub/twentysixteen' }
+		);
+		this.props.submitSignupStep(
+			{ stepName: 'plans-site-selected', wasSkipped: true },
+			{ cartItem: null }
+		);
+		goToStep( 'user' );
+	}
+
+	handleClickChoice = ( designType ) => {
+		const { goToStep, goToNextStep } = this.props;
+
+		this.submitDomain( designType );
 
 		if ( designType === 'domain' ) {
-			// we can skip the next two steps in the `domain-first` flow if the
-			// user is only purchasing a domain
-			SignupActions.submitSignupStep( { stepName: 'site-picker', wasSkipped: true }, [], {} );
-			SignupActions.submitSignupStep( { stepName: 'themes', wasSkipped: true }, [], {
-				themeSlugWithRepo: 'pub/twentysixteen',
-			} );
-			SignupActions.submitSignupStep( { stepName: 'plans-site-selected', wasSkipped: true }, [], {
-				cartItem: null,
-				privacyItem: null,
-			} );
-			goToStep( 'user' );
+			this.submitDomainOnlyChoice();
 		} else if ( designType === 'existing-site' ) {
 			goToNextStep();
 		} else {
-			SignupActions.submitSignupStep( { stepName: 'site-picker', wasSkipped: true }, [], {} );
+			this.props.submitSignupStep( { stepName: 'site-picker', wasSkipped: true } );
 			goToStep( 'themes' );
 		}
 	};
@@ -186,9 +173,8 @@ class SiteOrDomain extends Component {
 					flowName={ this.props.flowName }
 					stepName={ this.props.stepName }
 					positionInFlow={ this.props.positionInFlow }
-					headerText={ headerText }
-					subHeaderText={ subHeaderText }
-					signupProgress={ this.props.signupProgress }
+					fallbackHeaderText={ headerText }
+					fallbackSubHeaderText={ subHeaderText }
 				/>
 			);
 		}
@@ -202,20 +188,22 @@ class SiteOrDomain extends Component {
 				subHeaderText={ this.props.subHeaderText }
 				fallbackHeaderText={ this.props.headerText }
 				fallbackSubHeaderText={ this.props.subHeaderText }
-				signupProgress={ this.props.signupProgress }
 				stepContent={ this.renderScreen() }
 			/>
 		);
 	}
 }
 
-export default connect( state => {
-	const productsList = getAvailableProductsList( state );
-	const productsLoaded = ! isEmpty( productsList );
+export default connect(
+	( state ) => {
+		const productsList = getAvailableProductsList( state );
+		const productsLoaded = ! isEmpty( productsList );
 
-	return {
-		isLoggedIn: !! getCurrentUserId( state ),
-		productsList,
-		productsLoaded,
-	};
-} )( localize( SiteOrDomain ) );
+		return {
+			isLoggedIn: !! getCurrentUserId( state ),
+			productsList,
+			productsLoaded,
+		};
+	},
+	{ submitSignupStep }
+)( localize( SiteOrDomain ) );

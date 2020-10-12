@@ -6,7 +6,7 @@ import { expect } from 'chai';
 /**
  * Internal dependencies
  */
-import { AspectRatios } from 'state/ui/editor/image-editor/constants';
+import { AspectRatios } from 'state/editor/image-editor/constants';
 import { getDefaultAspectRatio } from '../utils';
 
 describe( 'getDefaultAspectRatio', () => {
@@ -64,7 +64,10 @@ describe( 'getDefaultAspectRatio', () => {
 			describe( 'when the given aspectRatio is invalid', () => {
 				it( 'returns the value of AspectRatios.FREE', () => {
 					const expected = AspectRatios.FREE;
-					const actual = getDefaultAspectRatio( 'INVALID_ASPECT', [ 'INVALID_ASPECT', 'ASPECT_1X1' ] );
+					const actual = getDefaultAspectRatio( 'INVALID_ASPECT', [
+						'INVALID_ASPECT',
+						'ASPECT_1X1',
+					] );
 
 					expect( actual ).to.equal( expected );
 				} );

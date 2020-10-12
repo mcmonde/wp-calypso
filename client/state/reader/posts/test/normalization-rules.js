@@ -1,4 +1,5 @@
-/** @format */
+/* eslint jest/expect-expect: ["error", { "assertFunctionNames": ["verifyClassification", "expect"] }] */
+
 /**
  * External dependencies
  */
@@ -15,7 +16,7 @@ import { isFeaturedImageInContent } from 'lib/post-normalizer/utils';
 
 function verifyClassification( post, displayTypes ) {
 	classifyPost( post );
-	forEach( displayTypes, displayType => {
+	forEach( displayTypes, ( displayType ) => {
 		expect( post.display_type & displayType ).to.equal( displayType );
 	} );
 }

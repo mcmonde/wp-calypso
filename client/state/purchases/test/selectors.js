@@ -1,22 +1,20 @@
-/** @format */
-/**
- * External dependencies
- */
-import { expect } from 'chai';
-
 /**
  * Internal dependencies
  */
+import { createPurchasesArray } from 'lib/purchases/assembler';
 import {
-	getPurchases,
 	getByPurchaseId,
-	isFetchingUserPurchases,
-	isFetchingSitePurchases,
 	getIncludedDomainPurchase,
+	getPurchases,
 	getSitePurchases,
+	isFetchingSitePurchases,
+	isFetchingUserPurchases,
 	isUserPaid,
+	siteHasBackupProductPurchase,
 } from '../selectors';
-import purchasesAssembler from 'lib/purchases/assembler';
+
+// Gets rid of warnings such as 'UnhandledPromiseRejectionWarning: Error: No available storage method found.'
+jest.mock( 'lib/user', () => () => {} );
 
 describe( 'selectors', () => {
 	describe( 'getPurchases', () => {
@@ -37,9 +35,7 @@ describe( 'selectors', () => {
 				},
 			};
 
-			expect( getPurchases( state ) ).to.deep.equal(
-				purchasesAssembler.createPurchasesArray( initialPurchases )
-			);
+			expect( getPurchases( state ) ).toEqual( createPurchasesArray( initialPurchases ) );
 
 			const newPurchases = Object.freeze( [
 				{ ID: 3, product_name: 'business plan', blog_id: 3117 },
@@ -53,7 +49,7 @@ describe( 'selectors', () => {
 						},
 					} )
 				)
-			).to.deep.equal( purchasesAssembler.createPurchasesArray( newPurchases ) );
+			).toEqual( createPurchasesArray( newPurchases ) );
 		} );
 	} );
 
@@ -63,7 +59,7 @@ describe( 'selectors', () => {
 				purchases: {
 					data: [
 						{ ID: 1, product_name: 'domain registration', blog_id: 1337 },
-						{ ID: 2, product_name: 'premium plan', blog_id: 1337 },
+						{ ID: 2, product_name: 'premium plan', blog_id: 1337, is_rechargable: true },
 					],
 					error: null,
 					isFetchingSitePurchases: false,
@@ -73,7 +69,7 @@ describe( 'selectors', () => {
 				},
 			};
 
-			expect( getByPurchaseId( state, 2 ) ).to.be.eql( {
+			expect( getByPurchaseId( state, 2 ) ).toEqual( {
 				id: 2,
 				productName: 'premium plan',
 				siteId: 1337,
@@ -82,40 +78,48 @@ describe( 'selectors', () => {
 				attachedToPurchaseId: NaN,
 				canExplicitRenew: false,
 				canDisableAutoRenew: false,
+				costToUnbundle: NaN,
+				costToUnbundleText: undefined,
 				currencyCode: undefined,
 				currencySymbol: undefined,
+				description: undefined,
 				domain: undefined,
+				domainRegistrationAgreementUrl: null,
 				error: null,
 				expiryDate: undefined,
-				expiryMoment: null,
 				expiryStatus: '',
-				hasPrivacyProtection: false,
 				includedDomain: undefined,
+				includedDomainPurchaseAmount: undefined,
 				isCancelable: false,
 				isDomainRegistration: false,
+				isRechargeable: true,
 				isRefundable: false,
 				isRenewable: false,
 				isRenewal: false,
 				meta: undefined,
+				mostRecentRenewDate: undefined,
 				payment: {
 					countryCode: undefined,
 					countryName: undefined,
 					name: undefined,
 					type: undefined,
 				},
-				priceText: 'undefinedundefined',
+				priceText: undefined,
 				productId: NaN,
 				productSlug: undefined,
 				pendingTransfer: false,
 				refundPeriodInDays: undefined,
+				totalRefundAmount: NaN,
+				totalRefundText: undefined,
 				refundAmount: NaN,
-				refundText: 'undefinedundefined',
+				refundText: undefined,
 				renewDate: undefined,
-				renewMoment: null,
 				siteName: undefined,
 				subscribedDate: undefined,
 				subscriptionStatus: undefined,
 				tagLine: undefined,
+				taxAmount: undefined,
+				taxText: undefined,
 				userId: NaN,
 			} );
 		} );
@@ -134,7 +138,7 @@ describe( 'selectors', () => {
 				},
 			};
 
-			expect( isFetchingUserPurchases( state ) ).to.be.true;
+			expect( isFetchingUserPurchases( state ) ).toBe( true );
 		} );
 	} );
 
@@ -151,7 +155,7 @@ describe( 'selectors', () => {
 				},
 			};
 
-			expect( isFetchingSitePurchases( state ) ).to.be.true;
+			expect( isFetchingSitePurchases( state ) ).toBe( true );
 		} );
 	} );
 
@@ -183,9 +187,46 @@ describe( 'selectors', () => {
 
 			const result = getSitePurchases( state, 1234 );
 
-			expect( result.length ).to.equal( 2 );
-			expect( result[ 0 ].siteId ).to.equal( 1234 );
-			expect( result[ 1 ].siteId ).to.equal( 1234 );
+			expect( result ).toHaveLength( 2 );
+			expect( result[ 0 ].siteId ).toBe( 1234 );
+			expect( result[ 1 ].siteId ).toBe( 1234 );
+		} );
+	} );
+
+	describe( 'siteHasBackupProductPurchase', () => {
+		test( 'should return true if a site has a Jetpack Backup purchase, false otherwise', () => {
+			const state = {
+				purchases: {
+					data: [
+						{
+							ID: '81414',
+							blog_id: '1234',
+							active: true,
+							product_slug: 'jetpack_personal',
+						},
+						{
+							ID: '82867',
+							blog_id: '1234',
+							active: true,
+							product_slug: 'something',
+						},
+						{
+							ID: '105103',
+							blog_id: '123',
+							active: true,
+							product_slug: 'jetpack_backup_daily',
+						},
+					],
+					error: null,
+					isFetchingSitePurchases: true,
+					isFetchingUserPurchases: false,
+					hasLoadedSitePurchasesFromServer: false,
+					hasLoadedUserPurchasesFromServer: false,
+				},
+			};
+
+			expect( siteHasBackupProductPurchase( state, 1234 ) ).toBe( false );
+			expect( siteHasBackupProductPurchase( state, 123 ) ).toBe( true );
 		} );
 	} );
 
@@ -223,12 +264,50 @@ describe( 'selectors', () => {
 			};
 
 			const subscriptionPurchase = getPurchases( state ).find(
-				purchase => purchase.productSlug === 'value_bundle'
+				( purchase ) => purchase.productSlug === 'value_bundle'
 			);
 
-			expect( getIncludedDomainPurchase( state, subscriptionPurchase ).meta ).to.equal(
-				'dev.live'
+			expect( getIncludedDomainPurchase( state, subscriptionPurchase ).meta ).toBe( 'dev.live' );
+		} );
+
+		test( 'should not return included domain with subscription if the domain has a non-zero amount', () => {
+			const state = {
+				purchases: {
+					data: [
+						{
+							ID: '81414',
+							meta: 'dev.live',
+							blog_id: '123',
+							is_domain_registration: 'true',
+							product_slug: 'dotlive_domain',
+						},
+						{
+							ID: '82867',
+							blog_id: '123',
+							product_slug: 'value_bundle',
+							included_domain: 'dev.live',
+							included_domain_purchase_amount: 25,
+						},
+						{
+							ID: '105103',
+							blog_id: '123',
+							meta: 'wordpress.com',
+							product_slug: 'domain_map',
+						},
+					],
+					error: null,
+					isFetchingSitePurchases: true,
+					isFetchingUserPurchases: false,
+					hasLoadedSitePurchasesFromServer: false,
+					hasLoadedUserPurchasesFromServer: false,
+				},
+			};
+
+			const subscriptionPurchase = getPurchases( state ).find(
+				( purchase ) => purchase.productSlug === 'value_bundle'
 			);
+
+			expect( getIncludedDomainPurchase( state, subscriptionPurchase ) ).toBeFalsy();
 		} );
 	} );
 
@@ -251,7 +330,7 @@ describe( 'selectors', () => {
 				},
 			};
 
-			expect( isUserPaid( state, targetUserId ) ).to.be.false;
+			expect( isUserPaid( state, targetUserId ) ).toBe( false );
 		} );
 
 		test( 'should return true because there are purchases from the target user', () => {
@@ -266,7 +345,7 @@ describe( 'selectors', () => {
 				},
 			};
 
-			expect( isUserPaid( state, targetUserId ) ).to.be.true;
+			expect( isUserPaid( state, targetUserId ) ).toBe( true );
 		} );
 
 		test( 'should return false because there are no purchases from this user', () => {
@@ -281,7 +360,7 @@ describe( 'selectors', () => {
 				},
 			};
 
-			expect( isUserPaid( state, 65535 ) ).to.be.false;
+			expect( isUserPaid( state, 65535 ) ).toBe( false );
 		} );
 
 		test( 'should return false because the data is not ready.', () => {
@@ -296,7 +375,7 @@ describe( 'selectors', () => {
 				},
 			};
 
-			expect( isUserPaid( state, targetUserId ) ).to.be.false;
+			expect( isUserPaid( state, targetUserId ) ).toBe( false );
 		} );
 	} );
 } );

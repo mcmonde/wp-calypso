@@ -1,10 +1,11 @@
-/** @format */
+/* eslint-disable no-case-declarations */
 
 /**
  * External dependencies
  */
 import React from 'react';
 import { translate } from 'i18n-calypso';
+import moment from 'moment';
 
 /**
  * Internal dependencies
@@ -19,14 +20,21 @@ import { domainAvailability } from 'lib/domains/constants';
 import {
 	domainManagementTransferToOtherSite,
 	domainManagementTransferIn,
+	domainMapping,
 	domainTransferIn,
 } from 'my-sites/domains/paths';
 
-function getAvailabilityNotice( domain, error, site ) {
+function getAvailabilityNotice( domain, error, errorData ) {
+	const tld = domain ? getTld( domain ) : null;
+	const { site, maintenanceEndTime, availabilityPreCheck } = errorData || {};
+
+	// The message is set only when there is a valid error
+	// and the conditions of the corresponding switch block are met.
+	// Consumers should check for the message prop in order
+	// to determine whether to display the notice
+	// See for e.g., client/components/domains/register-domain-step/index.jsx
 	let message,
 		severity = 'error';
-
-	const tld = getTld( domain );
 
 	switch ( error ) {
 		case domainAvailability.REGISTERED:
@@ -62,6 +70,40 @@ function getAvailabilityNotice( domain, error, site ) {
 								href={ domainManagementTransferToOtherSite( site, domain ) }
 							/>
 						),
+					},
+				}
+			);
+			break;
+		case domainAvailability.IN_REDEMPTION:
+			message = translate(
+				'{{strong}}%(domain)s{{/strong}} is not eligible to register or transfer since it is in {{redemptionLink}}redemption{{/redemptionLink}}. If you own this domain, please contact your current registrar to {{aboutRenewingLink}}redeem the domain{{/aboutRenewingLink}}.',
+				{
+					args: { domain },
+					components: {
+						strong: <strong />,
+						redemptionLink: (
+							<a
+								rel="noopener noreferrer"
+								href="https://www.icann.org/resources/pages/grace-2013-05-03-en"
+							/>
+						),
+						aboutRenewingLink: (
+							<a
+								rel="noopener noreferrer"
+								href="https://www.icann.org/news/blog/do-you-have-a-domain-name-here-s-what-you-need-to-know-part-5"
+							/>
+						),
+					},
+				}
+			);
+			break;
+		case domainAvailability.CONFLICTING_CNAME_EXISTS:
+			message = translate(
+				'There is an existing CNAME for {{strong}}%(domain)s{{/strong}}. If you want to map this subdomain, you should remove the conflicting CNAME DNS record first.',
+				{
+					args: { domain },
+					components: {
+						strong: <strong />,
 					},
 				}
 			);
@@ -131,8 +173,7 @@ function getAvailabilityNotice( domain, error, site ) {
 		case domainAvailability.NOT_REGISTRABLE:
 			if ( tld ) {
 				message = translate(
-					'To use a domain ending with {{strong}}.%(tld)s{{/strong}} on your site, ' +
-						'you can register it elsewhere first and then add it here. {{a}}Learn more{{/a}}.',
+					'To use this domain on your site, you can register it elsewhere first and then add it here. {{a}}Learn more{{/a}}.',
 					{
 						args: { tld },
 						components: {
@@ -146,10 +187,21 @@ function getAvailabilityNotice( domain, error, site ) {
 			break;
 		case domainAvailability.MAINTENANCE:
 			if ( tld ) {
+				let maintenanceEnd = translate( 'shortly', {
+					comment: 'If a specific maintenance end time is unavailable, we will show this instead.',
+				} );
+				if ( maintenanceEndTime ) {
+					maintenanceEnd = moment.unix( maintenanceEndTime ).fromNow();
+				}
+
 				message = translate(
-					'Domains ending with {{strong}}.%(tld)s{{/strong}} are undergoing maintenance. Please check back shortly.',
+					'Domains ending with {{strong}}.%(tld)s{{/strong}} are undergoing maintenance. Please ' +
+						'try a different extension or check back %(maintenanceEnd)s.',
 					{
-						args: { tld },
+						args: {
+							tld,
+							maintenanceEnd,
+						},
 						components: {
 							strong: <strong />,
 						},
@@ -158,19 +210,42 @@ function getAvailabilityNotice( domain, error, site ) {
 				severity = 'info';
 			}
 			break;
-		case domainAvailability.MAPPABLE:
-		case domainAvailability.AVAILABLE:
 		case domainAvailability.PURCHASES_DISABLED:
-		case domainAvailability.TLD_NOT_SUPPORTED:
-		case domainAvailability.UNKNOWN:
-		case domainAvailability.EMPTY_RESULTS:
-			// unavailable domains are displayed in the search results, not as a notice OR
-			// domain registrations are closed, in which case it is handled in parent
-			message = null;
+			let maintenanceEnd = translate( 'shortly', {
+				comment: 'If a specific maintenance end time is unavailable, we will show this instead.',
+			} );
+			if ( maintenanceEndTime ) {
+				maintenanceEnd = moment.unix( maintenanceEndTime ).fromNow();
+			}
+
+			message = translate(
+				'Domain registration is unavailable at this time. Please select a free subdomain ' +
+					'or check back %(maintenanceEnd)s.',
+				{
+					args: { maintenanceEnd },
+				}
+			);
+			severity = 'info';
 			break;
 
-		case domainAvailability.BLACKLISTED:
-			if ( domain.toLowerCase().indexOf( 'wordpress' ) > -1 ) {
+		case domainAvailability.MAPPABLE:
+		case domainAvailability.AVAILABLE:
+		case domainAvailability.TLD_NOT_SUPPORTED:
+		case domainAvailability.TLD_NOT_SUPPORTED_AND_DOMAIN_NOT_AVAILABLE:
+		case domainAvailability.TLD_NOT_SUPPORTED_TEMPORARILY:
+		case domainAvailability.UNKNOWN:
+			// unavailable domains are displayed in the search results, not as a notice OR
+			// domain registrations are closed, in which case it is handled in parent
+			break;
+
+		case domainAvailability.EMPTY_RESULTS:
+			message = translate(
+				"Sorry, we weren't able to generate any domain name suggestions for that search term. Please try a different set of keywords."
+			);
+			break;
+
+		case domainAvailability.DISALLOWED:
+			if ( domain && domain.toLowerCase().indexOf( 'wordpress' ) > -1 ) {
 				message = translate(
 					'Due to {{a1}}trademark policy{{/a1}}, ' +
 						'we are not able to allow domains containing {{strong}}WordPress{{/strong}} to be registered or mapped here. ' +
@@ -190,7 +265,7 @@ function getAvailabilityNotice( domain, error, site ) {
 				);
 			} else {
 				message = translate(
-					'Domain cannot be mapped to a WordPress.com blog because of blacklisted term.'
+					'Domain cannot be mapped to a WordPress.com blog because of disallowed term.'
 				);
 			}
 			break;
@@ -205,6 +280,10 @@ function getAvailabilityNotice( domain, error, site ) {
 			message = translate( 'Only the owner of the domain can map its subdomains.' );
 			break;
 
+		case domainAvailability.WPCOM_STAGING_DOMAIN:
+			message = translate( 'This domain is a reserved WordPress.com staging domain' );
+			break;
+
 		case domainAvailability.INVALID_TLD:
 		case domainAvailability.INVALID:
 			message = translate( 'Sorry, %(domain)s does not appear to be a valid domain name.', {
@@ -216,6 +295,7 @@ function getAvailabilityNotice( domain, error, site ) {
 			message = translate( 'This domain is already mapped to a WordPress.com site.' );
 			break;
 
+		case domainAvailability.DOTBLOG_SUBDOMAIN:
 		case domainAvailability.RESTRICTED:
 			message = translate(
 				'You cannot map another WordPress.com subdomain - try creating a new site or one of the custom domains below.'
@@ -254,6 +334,52 @@ function getAvailabilityNotice( domain, error, site ) {
 		case domainAvailability.INVALID_QUERY:
 			message = translate(
 				'Your search term can only contain alphanumeric characters, spaces, dots, or hyphens.'
+			);
+			break;
+
+		case domainAvailability.AVAILABILITY_CHECK_ERROR:
+			message = translate(
+				'Sorry, an error occurred when checking the availability of this domain. Please try again in a few minutes.'
+			);
+			break;
+
+		case domainAvailability.DOMAIN_SUGGESTIONS_THROTTLED:
+			message = translate(
+				'You have made too many domain suggestions requests in a short time. Please wait a few minutes and try again.'
+			);
+			break;
+
+		case domainAvailability.TRANSFERRABLE:
+			if ( availabilityPreCheck ) {
+				message = translate(
+					'Sorry, the domain name you selected is not available. Please choose another domain.'
+				);
+			}
+			break;
+
+		case domainAvailability.AVAILABLE_PREMIUM:
+			message = translate(
+				"Sorry, {{strong}}%(domain)s{{/strong}} is a premium domain. We don't support purchasing this premium domain on WordPress.com, but if you purchase the domain elsewhere, you can {{a}}map it to your site{{/a}}.",
+				{
+					args: { domain },
+					components: {
+						strong: <strong />,
+						a: <a rel="noopener noreferrer" href={ domainMapping( site, domain ) } />,
+					},
+				}
+			);
+			break;
+
+		case domainAvailability.TRANSFERRABLE_PREMIUM:
+			message = translate(
+				"Sorry, {{strong}}%(domain)s{{/strong}} is a premium domain. We don't support transfers of premium domains on WordPress.com, but if you are the owner of this domain, you can {{a}}map it to your site{{/a}}.",
+				{
+					args: { domain },
+					components: {
+						strong: <strong />,
+						a: <a rel="noopener noreferrer" href={ domainMapping( site, domain ) } />,
+					},
+				}
 			);
 			break;
 

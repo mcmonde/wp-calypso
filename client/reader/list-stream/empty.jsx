@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -30,11 +29,12 @@ class ListEmptyContent extends React.Component {
 	};
 
 	render() {
-		var action = (
+		/* eslint-disable wpcalypso/jsx-classname-namespace */
+		const action = (
 				<a
 					className="empty-content__action button is-primary"
 					onClick={ this.recordAction }
-					href="/"
+					href="/read"
 				>
 					{ this.props.translate( 'Back to Following' ) }
 				</a>
@@ -45,7 +45,7 @@ class ListEmptyContent extends React.Component {
 					onClick={ this.recordSecondaryAction }
 					href="/discover"
 				>
-					{ this.props.translate( 'Explore Discover' ) }
+					{ this.props.translate( 'Explore' ) }
 				</a>
 			) : null;
 
@@ -59,6 +59,7 @@ class ListEmptyContent extends React.Component {
 				illustrationWidth={ 400 }
 			/>
 		);
+		/* eslint-enable wpcalypso/jsx-classname-namespace */
 	}
 }
 

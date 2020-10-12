@@ -1,9 +1,6 @@
-/** @format */
-
 /**
  * External dependencies
  */
-
 import { get, orderBy } from 'lodash';
 
 /**
@@ -11,6 +8,8 @@ import { get, orderBy } from 'lodash';
  */
 import { enrichPublicizeActionsWithConnections } from 'state/selectors/utils/';
 import createSelector from 'lib/create-selector';
+
+import 'state/sharing/init';
 
 const getScheduledActions = ( state, siteId, postId ) =>
 	orderBy(
@@ -22,10 +21,10 @@ const getScheduledActions = ( state, siteId, postId ) =>
 /**
  * Return a share-scheduled-actions array propagaring data from publicize connections.
  *
- * @param {Object} state Global state tree
- * @param {Number} siteId Site ID
- * @param {Number} postId Post ID
- * @return {Array} share publihed actions array
+ * @param {object} state Global state tree
+ * @param {number} siteId Site ID
+ * @param {number} postId Post ID
+ * @returns {Array} share publihed actions array
  */
 const getPostShareScheduledActions = createSelector(
 	( state, siteId, postId ) => {

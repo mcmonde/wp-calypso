@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -9,15 +7,20 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 import { noop, flow } from 'lodash';
-import Gridicon from 'gridicons';
+import Gridicon from 'components/gridicon';
 
 /**
  * Internal dependencies
  */
-import Card from 'components/card';
+import { Card } from '@automattic/components';
 import QueryPreferences from 'components/data/query-preferences';
 import { savePreference, setPreference } from 'state/preferences/actions';
-import { getPreference } from 'state/preferences/selectors';
+import { getPreference, hasReceivedRemotePreferences } from 'state/preferences/selectors';
+
+/**
+ * Style dependencies
+ */
+import './style.scss';
 
 const PREFERENCE_PREFIX = 'dismissible-card-';
 
@@ -25,6 +28,7 @@ class DismissibleCard extends Component {
 	static propTypes = {
 		className: PropTypes.string,
 		dismissCard: PropTypes.func,
+		highlight: PropTypes.oneOf( [ 'error', 'info', 'success', 'warning' ] ),
 		isDismissed: PropTypes.bool,
 		temporary: PropTypes.bool,
 		onClick: PropTypes.func,
@@ -36,14 +40,21 @@ class DismissibleCard extends Component {
 	};
 
 	render() {
-		const { className, isDismissed, onClick, dismissCard } = this.props;
+		const {
+			className,
+			highlight,
+			isDismissed,
+			onClick,
+			dismissCard,
+			hasReceivedPreferences,
+		} = this.props;
 
-		if ( isDismissed ) {
+		if ( isDismissed || ! hasReceivedPreferences ) {
 			return null;
 		}
 
 		return (
-			<Card className={ className }>
+			<Card className={ className } highlight={ highlight }>
 				<QueryPreferences />
 				<Gridicon
 					icon="cross"
@@ -59,8 +70,10 @@ class DismissibleCard extends Component {
 export default connect(
 	( state, ownProps ) => {
 		const preference = `${ PREFERENCE_PREFIX }${ ownProps.preferenceName }`;
+
 		return {
 			isDismissed: getPreference( state, preference ),
+			hasReceivedPreferences: hasReceivedRemotePreferences( state ),
 		};
 	},
 	( dispatch, ownProps ) =>

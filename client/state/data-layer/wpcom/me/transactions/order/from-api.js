@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * Internal dependencies
  */
@@ -7,10 +5,12 @@ import makeJsonSchemaParser from 'lib/make-json-schema-parser';
 import responseSchema from './schema';
 import { ORDER_TRANSACTION_STATUS } from 'state/order-transactions/constants';
 
-export const convertProcessingStatus = responseStatus => {
+export const convertProcessingStatus = ( responseStatus ) => {
 	switch ( responseStatus ) {
 		case 'processing':
 			return ORDER_TRANSACTION_STATUS.PROCESSING;
+		case 'async-pending':
+			return ORDER_TRANSACTION_STATUS.ASYNC_PENDING;
 		case 'success':
 			return ORDER_TRANSACTION_STATUS.SUCCESS;
 		case 'payment-failure':

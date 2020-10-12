@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -13,8 +11,7 @@ import { connect } from 'react-redux';
  * Internal Dependencies
  */
 import Main from 'components/main';
-import Button from 'components/button';
-import Card from 'components/card';
+import { Button, Card } from '@automattic/components';
 import SectionHeader from 'components/section-header';
 import FAQ from 'components/faq';
 import FAQItem from 'components/faq/faq-item';
@@ -32,9 +29,13 @@ class HelloDollyPage extends Component {
 
 		return (
 			<Main className="hello-dolly__main">
-				<SectionHeader label="Hello, Dolly!">🐑</SectionHeader>
+				<SectionHeader label="Hello, Dolly!">
+					<span role="img" aria-label="sheep">
+						🐑
+					</span>
+				</SectionHeader>
 				<Card>
-					<p style={ { fontSize: 18, fontWeight: 300 } }>
+					<p style={ { fontSize: 18 } }>
 						This is not just an extension, it symbolizes the hope and enthusiasm of an entire
 						generation summed up in two words sung most famously by Louis Armstrong.
 					</p>
@@ -64,7 +65,7 @@ class HelloDollyPage extends Component {
 							'Head over to the "extensions" folder in the repository where we have a more comprehensive ',
 							'README file to walk you through the process. ',
 							<a
-								href="https://github.com/Automattic/wp-calypso/tree/master/client/extensions"
+								href="https://github.com/Automattic/wp-calypso/tree/HEAD/client/extensions"
 								key="get-started"
 							>
 								Get Started

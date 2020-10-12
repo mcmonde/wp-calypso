@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * External dependencies
  */
@@ -9,7 +7,8 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { localize } from 'i18n-calypso';
 import { filter, find, get, isEqual, map, orderBy, slice } from 'lodash';
-import ReactCSSTransitionGroup from 'react-transition-group/CSSTransitionGroup';
+import TransitionGroup from 'react-transition-group/TransitionGroup';
+import CSSTransition from 'react-transition-group/CSSTransition';
 
 /**
  * Internal dependencies
@@ -20,13 +19,15 @@ import CommentListHeader from 'my-sites/comments/comment-list/comment-list-heade
 import CommentNavigation from 'my-sites/comments/comment-navigation';
 import EmptyContent from 'components/empty-content';
 import Pagination from 'components/pagination';
-import QuerySiteCommentsList from 'components/data/query-site-comments-list';
 import QuerySiteCommentsTree from 'components/data/query-site-comments-tree';
 import QuerySiteSettings from 'components/data/query-site-settings';
-import { getSiteCommentsTree, isCommentsTreeInitialized } from 'state/selectors';
+import { getSiteCommentsTree, isCommentsTreeInitialized } from 'state/comments/selectors';
 import { bumpStat, composeAnalytics, recordTracksEvent } from 'state/analytics/actions';
-import { isJetpackMinimumVersion, isJetpackSite } from 'state/sites/selectors';
 import { COMMENTS_PER_PAGE } from '../constants';
+
+const CommentTransition = ( props ) => (
+	<CSSTransition { ...props } classNames="comment-list__transition" timeout={ 150 } />
+);
 
 export class CommentTree extends Component {
 	static propTypes = {
@@ -47,7 +48,7 @@ export class CommentTree extends Component {
 		selectedComments: [],
 	};
 
-	componentWillReceiveProps( nextProps ) {
+	UNSAFE_componentWillReceiveProps( nextProps ) {
 		const { siteId, status, changePage } = this.props;
 		const totalPages = this.getTotalPages();
 		if ( ! this.isRequestedPageValid() && totalPages > 1 ) {
@@ -66,7 +67,7 @@ export class CommentTree extends Component {
 	shouldComponentUpdate = ( nextProps, nextState ) =>
 		! isEqual( this.props, nextProps ) || ! isEqual( this.state, nextState );
 
-	changePage = page => {
+	changePage = ( page ) => {
 		const { recordChangePage, changePage } = this.props;
 
 		recordChangePage( page, this.getTotalPages() );
@@ -103,9 +104,9 @@ export class CommentTree extends Component {
 
 	getTotalPages = () => Math.ceil( this.props.comments.length / COMMENTS_PER_PAGE );
 
-	hasCommentJustMovedBackToCurrentStatus = commentId => this.state.lastUndo === commentId;
+	hasCommentJustMovedBackToCurrentStatus = ( commentId ) => this.state.lastUndo === commentId;
 
-	isCommentSelected = commentId => !! find( this.state.selectedComments, { commentId } );
+	isCommentSelected = ( commentId ) => !! find( this.state.selectedComments, { commentId } );
 
 	isRequestedPageValid = () => this.getTotalPages() >= this.props.page;
 
@@ -120,7 +121,7 @@ export class CommentTree extends Component {
 		this.setState( ( { isBulkMode } ) => ( { isBulkMode: ! isBulkMode, selectedComments: [] } ) );
 	};
 
-	toggleCommentSelected = comment => {
+	toggleCommentSelected = ( comment ) => {
 		if ( this.isCommentSelected( comment.commentId ) ) {
 			return this.setState( ( { selectedComments } ) => ( {
 				selectedComments: selectedComments.filter(
@@ -133,13 +134,12 @@ export class CommentTree extends Component {
 		} ) );
 	};
 
-	toggleSelectAll = selectedComments => this.setState( { selectedComments } );
+	toggleSelectAll = ( selectedComments ) => this.setState( { selectedComments } );
 
-	updateLastUndo = commentId => this.setState( { lastUndo: commentId } );
+	updateLastUndo = ( commentId ) => this.setState( { lastUndo: commentId } );
 
 	render() {
 		const {
-			isCommentsTreeSupported,
 			isLoading,
 			isPostView,
 			order,
@@ -166,19 +166,8 @@ export class CommentTree extends Component {
 		return (
 			<div className="comment-tree comment-list">
 				<QuerySiteSettings siteId={ siteId } />
-
-				{ ! isCommentsTreeSupported && (
-					<QuerySiteCommentsList
-						number={ 100 }
-						offset={ ( validPage - 1 ) * COMMENTS_PER_PAGE }
-						siteId={ siteId }
-						status={ status }
-					/>
-				) }
-				{ isCommentsTreeSupported && <QuerySiteCommentsTree siteId={ siteId } status={ status } /> }
-
+				<QuerySiteCommentsTree siteId={ siteId } status={ status } />
 				{ isPostView && <CommentListHeader postId={ postId } /> }
-
 				<CommentNavigation
 					commentsPage={ commentsPage }
 					isBulkMode={ isBulkMode }
@@ -193,52 +182,50 @@ export class CommentTree extends Component {
 					toggleBulkMode={ this.toggleBulkMode }
 					toggleSelectAll={ this.toggleSelectAll }
 				/>
-
-				<ReactCSSTransitionGroup
-					className="comment-tree__transition-wrapper comment-list__transition-wrapper"
-					transitionEnterTimeout={ 150 }
-					transitionLeaveTimeout={ 150 }
-					transitionName="comment-list__transition"
-				>
-					{ map( commentsPage, commentId => (
-						<Comment
-							commentId={ commentId }
-							key={ `comment-${ siteId }-${ commentId }` }
-							isBulkMode={ isBulkMode }
-							isPostView={ isPostView }
-							isSelected={ this.isCommentSelected( commentId ) }
-							refreshCommentData={
-								isCommentsTreeSupported &&
-								! this.hasCommentJustMovedBackToCurrentStatus( commentId )
-							}
-							toggleSelected={ this.toggleCommentSelected }
-							updateLastUndo={ this.updateLastUndo }
-						/>
+				{ /* eslint-disable wpcalypso/jsx-classname-namespace */ }
+				<TransitionGroup className="comment-list__transition-wrapper">
+					{ /* eslint-enable wpcalypso/jsx-classname-namespace */ }
+					{ map( commentsPage, ( commentId ) => (
+						<CommentTransition key={ `comment-${ siteId }-${ commentId }` }>
+							<Comment
+								commentId={ commentId }
+								isBulkMode={ isBulkMode }
+								isPostView={ isPostView }
+								isSelected={ this.isCommentSelected( commentId ) }
+								refreshCommentData={ ! this.hasCommentJustMovedBackToCurrentStatus( commentId ) }
+								toggleSelected={ this.toggleCommentSelected }
+								updateLastUndo={ this.updateLastUndo }
+							/>
+						</CommentTransition>
 					) ) }
 
-					{ showPlaceholder && <Comment commentId={ 0 } key="comment-detail-placeholder" /> }
+					{ showPlaceholder && (
+						<CommentTransition>
+							<Comment commentId={ 0 } key="comment-detail-placeholder" />
+						</CommentTransition>
+					) }
 
 					{ showEmptyContent && (
-						<EmptyContent
-							illustration="/calypso/images/comments/illustration_comments_gray.svg"
-							illustrationWidth={ 150 }
-							key="comment-list-empty"
-							line={ emptyMessageLine }
-							title={ emptyMessageTitle }
-						/>
+						<CommentTransition>
+							<EmptyContent
+								illustration="/calypso/images/comments/illustration_comments_gray.svg"
+								illustrationWidth={ 150 }
+								key="comment-list-empty"
+								line={ emptyMessageLine }
+								title={ emptyMessageTitle }
+							/>
+						</CommentTransition>
 					) }
-				</ReactCSSTransitionGroup>
-
-				{ ! showPlaceholder &&
-					! showEmptyContent && (
-						<Pagination
-							key="comment-list-pagination"
-							page={ validPage }
-							pageClick={ this.changePage }
-							perPage={ COMMENTS_PER_PAGE }
-							total={ commentsCount }
-						/>
-					) }
+				</TransitionGroup>
+				{ ! showPlaceholder && ! showEmptyContent && (
+					<Pagination
+						key="comment-list-pagination"
+						page={ validPage }
+						pageClick={ this.changePage }
+						perPage={ COMMENTS_PER_PAGE }
+						total={ commentsCount }
+					/>
+				) }
 			</div>
 		);
 	}
@@ -257,15 +244,13 @@ const mapStateToProps = ( state, { postId, siteId, status } ) => {
 	const isLoading = ! isCommentsTreeInitialized( state, siteId, status );
 	return {
 		comments,
-		isCommentsTreeSupported:
-			! isJetpackSite( state, siteId ) || isJetpackMinimumVersion( state, siteId, '5.5' ),
 		isLoading,
 		isPostView,
 		siteId,
 	};
 };
 
-const mapDispatchToProps = dispatch => ( {
+const mapDispatchToProps = ( dispatch ) => ( {
 	recordChangePage: ( page, total ) =>
 		dispatch(
 			composeAnalytics(

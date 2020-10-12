@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -9,12 +8,12 @@ import { translate } from 'i18n-calypso';
 /**
  * Internal dependencies
  */
-import config from 'config';
-import controller from 'me/controller';
+import config from 'calypso/config';
+import { sidebar } from 'calypso/me/controller';
 import Happychat from './main';
-import { setDocumentHeadTitle } from 'state/document-head/actions';
-import { makeLayout, render as clientRender } from 'controller';
-import PageViewTracker from 'lib/analytics/page-view-tracker';
+import { setDocumentHeadTitle } from 'calypso/state/document-head/actions';
+import { makeLayout, render as clientRender } from 'calypso/controller';
+import PageViewTracker from 'calypso/lib/analytics/page-view-tracker';
 
 const renderChat = ( context, next ) => {
 	context.store.dispatch( setDocumentHeadTitle( translate( 'Chat', { textOnly: true } ) ) );
@@ -29,6 +28,6 @@ const renderChat = ( context, next ) => {
 
 export default () => {
 	if ( config.isEnabled( 'happychat' ) ) {
-		page( '/me/chat', controller.sidebar, renderChat, makeLayout, clientRender );
+		page( '/me/chat', sidebar, renderChat, makeLayout, clientRender );
 	}
 };

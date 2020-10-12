@@ -1,4 +1,3 @@
-/** @format */
 /**
  * External dependencies
  */
@@ -18,12 +17,12 @@ import {
 	BILLING_TRANSACTIONS_REQUEST_SUCCESS,
 	BILLING_TRANSACTIONS_REQUEST_FAILURE,
 } from 'state/action-types';
-import useNock from 'test/helpers/use-nock';
-import { useSandbox } from 'test/helpers/use-sinon';
+import useNock from 'test-helpers/use-nock';
+import { useSandbox } from 'test-helpers/use-sinon';
 
 describe( 'actions', () => {
 	let spy;
-	useSandbox( sandbox => ( spy = sandbox.spy() ) );
+	useSandbox( ( sandbox ) => ( spy = sandbox.spy() ) );
 
 	describe( '#requestBillingTransactions()', () => {
 		describe( 'success', () => {
@@ -33,18 +32,22 @@ describe( 'actions', () => {
 						id: '12345678',
 						amount: '$1.23',
 						date: '2016-12-12T11:22:33+0000',
+						tax: '$0.20',
+						subtotal: '$1.03',
 					},
 				],
 				upcoming_charges: [
 					{
 						id: '87654321',
 						amount: '$4.56',
+						tax: '$0.55',
+						subtotal: '$4.01',
 						date: '2016-12-12T11:22:33+0000',
 					},
 				],
 			};
 
-			useNock( nock => {
+			useNock( ( nock ) => {
 				nock( 'https://public-api.wordpress.com:443' )
 					.persist()
 					.get( '/rest/v1.1/me/billing-history' )
@@ -82,7 +85,7 @@ describe( 'actions', () => {
 			const message =
 				'An active access token must be used to query information about the current user.';
 
-			useNock( nock => {
+			useNock( ( nock ) => {
 				nock( 'https://public-api.wordpress.com:443' )
 					.persist()
 					.get( '/rest/v1.1/me/billing-history' )
@@ -109,7 +112,7 @@ describe( 'actions', () => {
 		const receiptId = 12345678;
 
 		describe( 'success', () => {
-			useNock( nock => {
+			useNock( ( nock ) => {
 				nock( 'https://public-api.wordpress.com:443' )
 					.persist()
 					.get( '/rest/v1.1/me/billing-history/receipt/' + receiptId + '/email' )
@@ -139,7 +142,7 @@ describe( 'actions', () => {
 			const message =
 				'An active access token must be used to query information about the current user.';
 
-			useNock( nock => {
+			useNock( ( nock ) => {
 				nock( 'https://public-api.wordpress.com:443' )
 					.persist()
 					.get( '/rest/v1.1/me/billing-history/receipt/' + receiptId + '/email' )

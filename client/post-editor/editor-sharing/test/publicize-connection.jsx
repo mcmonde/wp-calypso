@@ -1,5 +1,4 @@
 /**
- * @format
  * @jest-environment jsdom
  */
 
@@ -15,20 +14,10 @@ import React from 'react';
  */
 import { EditorSharingPublicizeConnection as PublicizeConnection } from '../publicize-connection';
 
-jest.mock( 'lib/posts/actions', () => ( {
-	recordEvent: () => {},
-	deleteMetadata: () => {},
-	updateMetadata: () => {},
-} ) );
-jest.mock( 'lib/posts/stats', () => ( {
-	recordEvent: () => {},
-	recordState: () => {},
-} ) );
-
 /**
  * Module variables
  */
-var CONNECTION = {
+const CONNECTION = {
 	ID: 11247568,
 	external_ID: '257964634',
 	external_display: '@dev_press',
@@ -40,7 +29,7 @@ var CONNECTION = {
 describe( 'PublicizeConnection', () => {
 	describe( '#isConnectionSkipped()', () => {
 		test( 'should return true if connection is already skipped', () => {
-			var post, tree;
+			let post, tree;
 
 			post = {
 				metadata: [ { id: 1234, key: '_wpas_skip_9903589', value: '1' } ],
@@ -52,7 +41,7 @@ describe( 'PublicizeConnection', () => {
 		} );
 
 		test( 'should return false if connection is not skipped', () => {
-			var post, tree;
+			let post, tree;
 
 			post = {
 				metadata: [
@@ -69,7 +58,7 @@ describe( 'PublicizeConnection', () => {
 
 	describe( '#isConnectionDone()', () => {
 		test( 'should return true if connection is already publicized to', () => {
-			var post, tree;
+			let post, tree;
 
 			post = {
 				metadata: [ { id: 1234, key: '_wpas_done_9903589', value: '1' } ],
@@ -81,7 +70,7 @@ describe( 'PublicizeConnection', () => {
 		} );
 
 		test( 'should return false if connection is not publicized to yet', () => {
-			var post, tree;
+			let post, tree;
 
 			post = {
 				metadata: [

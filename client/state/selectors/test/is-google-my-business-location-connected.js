@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * Internal dependencies
  */
@@ -8,12 +6,9 @@ import isGoogleMyBusinessLocationConnected from '../is-google-my-business-locati
 describe( 'isGoogleMyBusinessLocationConnected()', () => {
 	test( 'should return false if location not connected', () => {
 		const state = {
-			siteSettings: {
+			siteKeyrings: {
 				items: {
-					1234: {
-						google_my_business_keyring_id: null,
-						google_my_business_location_id: '',
-					},
+					1234: [],
 				},
 			},
 		};
@@ -23,11 +18,25 @@ describe( 'isGoogleMyBusinessLocationConnected()', () => {
 
 	test( 'should return true if location is connected', () => {
 		const state = {
-			siteSettings: {
+			siteKeyrings: {
 				items: {
-					1234: {
-						google_my_business_keyring_id: '234523',
-						google_my_business_location_id: '2354235',
+					1234: [
+						{
+							keyring_id: '1234',
+							external_user_id: '65789',
+							service: 'google_my_business',
+						},
+					],
+				},
+			},
+			sharing: {
+				keyring: {
+					items: {
+						1234: {
+							ID: '1234',
+							external_ID: '65789',
+							service: 'google_my_business',
+						},
 					},
 				},
 			},

@@ -1,10 +1,11 @@
-/** @format */
 /**
  * External dependencies
  */
 import { assert, expect } from 'chai';
 import deepFreeze from 'deep-freeze';
 import sinon from 'sinon';
+// Importing `jest-fetch-mock` adds a jest-friendly `fetch` polyfill to the global scope.
+import 'jest-fetch-mock';
 
 /**
  * Internal dependencies
@@ -16,14 +17,14 @@ import {
 	READER_THUMBNAIL_REQUEST_SUCCESS,
 	READER_THUMBNAIL_REQUEST_FAILURE,
 	READER_THUMBNAIL_RECEIVE,
-} from 'state/action-types';
-import useNock from 'test/helpers/use-nock';
+} from 'state/reader/action-types';
+import useNock from 'test-helpers/use-nock';
 
 describe( 'actions', () => {
 	const spy = sinon.spy();
 
 	beforeEach( () => {
-		spy.reset();
+		spy.resetHistory();
 	} );
 
 	describe( '#receiveThumbnail', () => {
@@ -44,18 +45,16 @@ describe( 'actions', () => {
 		const unsupportedEmbedUrl = 'not-a-real-url';
 		const thumbnailUrl = 'https://i.vimeocdn.com/video/459553940_640.webp';
 		const successfulEmbedUrl = 'https://vimeo.com/6999927';
-		const vimeoSuccessApiUrl = 'https://vimeo.com/api/v2/video/6999927.json';
 		const failureEmbedUrl = 'https://vimeo.com/6999928';
-		const vimeoFailureApiUrl = 'https://vimeo.com/api/v2/video/6999928.json';
 		const youtubeEmbedUrl = 'https://youtube.com/?v=UoOCrbV3ZQ';
 		const youtubeThumbnailUrl = 'https://img.youtube.com/vi/UoOCrbV3ZQ/mqdefault.jpg';
 
-		useNock( nock => {
-			nock( vimeoSuccessApiUrl )
-				.get( '' )
+		useNock( ( nock ) => {
+			nock( 'https://vimeo.com' )
+				.get( '/api/v2/video/6999927.json' )
 				.reply( 200, deepFreeze( sampleVimeoResponse ) );
-			nock( vimeoFailureApiUrl )
-				.get( '' )
+			nock( 'https://vimeo.com' )
+				.get( '/api/v2/video/6999928.json' )
 				.reply( 500, deepFreeze( {} ) );
 		} );
 
@@ -81,9 +80,9 @@ describe( 'actions', () => {
 						thumbnailUrl,
 					} );
 
-					expect( dispatchSpy.calledTwice );
+					expect( dispatchSpy ).to.have.been.calledThrice;
 				} )
-				.catch( err => {
+				.catch( ( err ) => {
 					assert.fail( err, undefined, 'errback should not have been called' );
 				} );
 		} );
@@ -97,7 +96,7 @@ describe( 'actions', () => {
 				embedUrl: youtubeEmbedUrl,
 				thumbnailUrl: youtubeThumbnailUrl,
 			} );
-			expect( dispatchSpy.calledOnce );
+			expect( dispatchSpy ).to.have.been.calledOnce;
 		} );
 
 		test( 'should dispatch the right actions if network request fails', () => {
@@ -116,9 +115,9 @@ describe( 'actions', () => {
 						embedUrl: failureEmbedUrl,
 					} );
 
-					expect( dispatchSpy.calledTwice );
+					expect( dispatchSpy ).to.have.been.calledTwice;
 				} )
-				.catch( err => {
+				.catch( ( err ) => {
 					assert.fail( err, undefined, 'errback should not have been called' );
 				} );
 		} );
@@ -133,7 +132,7 @@ describe( 'actions', () => {
 				error: { type: 'UNSUPPORTED_EMBED' },
 			} );
 
-			expect( dispatchSpy.calledOnce );
+			expect( dispatchSpy ).to.have.been.calledOnce;
 		} );
 	} );
 } );
